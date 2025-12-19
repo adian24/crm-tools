@@ -197,7 +197,7 @@ export function CRMHeader({ user, onThemeToggle, isDarkMode }: CRMHeaderProps) {
                 className="w-full justify-start"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                <Activity className="mr-2 h-4 w-4" />
+                <IconActivity className="mr-2 h-4 w-4" />
                 Dashboard
               </Button>
               <Button
@@ -205,7 +205,7 @@ export function CRMHeader({ user, onThemeToggle, isDarkMode }: CRMHeaderProps) {
                 className="w-full justify-start"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                <Calendar className="mr-2 h-4 w-4" />
+                <IconCalendar className="mr-2 h-4 w-4" />
                 My Visits
               </Button>
               {(user.role === 'super_admin' || user.role === 'manager') && (
@@ -215,7 +215,7 @@ export function CRMHeader({ user, onThemeToggle, isDarkMode }: CRMHeaderProps) {
                     className="w-full justify-start"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    <Users className="mr-2 h-4 w-4" />
+                    <IconUsers className="mr-2 h-4 w-4" />
                     Team Management
                   </Button>
                   <Button
@@ -223,7 +223,7 @@ export function CRMHeader({ user, onThemeToggle, isDarkMode }: CRMHeaderProps) {
                     className="w-full justify-start"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    <TrendingUp className="mr-2 h-4 w-4" />
+                    <IconTrendingUp className="mr-2 h-4 w-4" />
                     Analytics
                   </Button>
                 </>

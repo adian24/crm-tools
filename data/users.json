@@ -1,0 +1,25 @@
+[
+  {
+    "id": "admin1",
+    "email": "admin@crm.com",
+    "password": "admin123",
+    "name": "Administrator",
+    "role": "admin"
+  },
+  {
+    "id": "mercy1",
+    "email": "mercy@crm.com",
+    "password": "mercy123",
+    "name": "Mercy",
+    "role": "staff",
+    "staffId": "1"
+  },
+  {
+    "id": "dhea1",
+    "email": "dhea@crm.com",
+    "password": "dhea123",
+    "name": "Dhea",
+    "role": "staff",
+    "staffId": "2"
+  }
+]

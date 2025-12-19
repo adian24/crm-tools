@@ -14,33 +14,36 @@ interface User {
   name: string;
   email: string;
   role: 'super_admin' | 'manager' | 'staff';
+  staffId?: string;
 }
 
 // Mock user database - ini akan diganti dengan Convex nanti
 const mockUsers: User[] = [
   {
-    id: '1',
-    name: 'Admin Super',
-    email: 'admin@demo.com',
+    id: 'super_admin1',
+    name: 'Super Admin',
+    email: 'admin@crm.com',
     role: 'super_admin'
   },
   {
-    id: '2',
-    name: 'Manager CRM',
-    email: 'manager@demo.com',
+    id: 'manager1',
+    name: 'Diara',
+    email: 'diara@crm.com',
     role: 'manager'
   },
   {
-    id: '3',
-    name: 'John Staff',
-    email: 'staff@demo.com',
-    role: 'staff'
+    id: 'staff1',
+    name: 'Mercy',
+    email: 'mercy@crm.com',
+    role: 'staff',
+    staffId: '1'
   },
   {
-    id: '4',
-    name: 'Jane Staff',
-    email: 'jane@demo.com',
-    role: 'staff'
+    id: 'staff2',
+    name: 'Dhea',
+    email: 'dhea@crm.com',
+    role: 'staff',
+    staffId: '2'
   }
 ];
 
@@ -212,16 +215,20 @@ export default function LoginPage() {
               <p className="text-sm font-medium text-blue-900 mb-2">🔑 Akun Demo:</p>
               <div className="space-y-2 text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="text-blue-700">Admin:</span>
-                  <span className="font-mono text-blue-800">admin@demo.com / password</span>
+                  <span className="text-blue-700">Super Admin:</span>
+                  <span className="font-mono text-blue-800">admin@crm.com / password</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-blue-700">Manager:</span>
-                  <span className="font-mono text-blue-800">manager@demo.com / password</span>
+                  <span className="text-blue-700">Manager (Diara):</span>
+                  <span className="font-mono text-blue-800">diara@crm.com / password</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-blue-700">Staff:</span>
-                  <span className="font-mono text-blue-800">staff@demo.com / password</span>
+                  <span className="text-blue-700">Staff (Mercy):</span>
+                  <span className="font-mono text-blue-800">mercy@crm.com / password</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-blue-700">Staff (Dhea):</span>
+                  <span className="font-mono text-blue-800">dhea@crm.com / password</span>
                 </div>
               </div>
             </div>

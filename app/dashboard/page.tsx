@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Calendar, ChevronLeft, ChevronRight, MapPin, Users, CheckCircle, Clock, AlertCircle, TrendingUp, Target, Search, Camera, X, User, Filter, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, MapPin, Users, CheckCircle, Clock, AlertCircle, TrendingUp, Target, Search, Camera, X, User, Filter, ArrowLeft, ArrowRight, LogOut, Shield } from 'lucide-react';
 import { IconTrendingDown, IconTrendingUp } from "@tabler/icons-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, CardAction } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -49,8 +49,16 @@ interface DateRange {
 const mockStaff: Staff[] = mockStaffData as Staff[];
 const mockVisitData: { [key: string]: VisitTask[] } = mockVisitDataRaw as { [key: string]: VisitTask[] };
 
+type UserRole = 'super_admin' | 'manager' | 'staff';
+
+interface User {
+  role: UserRole;
+  name: string;
+  staffId?: string;
+}
+
 export default function Dashboard() {
-  const [user, setUser] = useState<{role: string, name: string} | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date(2025, 11, 17)); // December 17, 2025 (current date)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedStaff, setSelectedStaff] = useState<string>('all');
@@ -61,6 +69,7 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [selectedChartType, setSelectedChartType] = useState<string>('area');
 
   // Date range filter states
   const currentYear = new Date().getFullYear();
@@ -210,6 +219,25 @@ export default function Dashboard() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('crm_user');
+    window.location.href = '/login';
+  };
+
+  // Get staff ID from localStorage if user is staff
+  const getLoggedInStaffId = () => {
+    try {
+      const userData = localStorage.getItem('crm_user');
+      if (userData) {
+        const parsedUser = JSON.parse(userData);
+        return parsedUser.role === 'staff' ? parsedUser.staffId : null;
+      }
+    } catch (error) {
+      console.error('Error getting staff ID:', error);
+    }
+    return null;
+  };
+
   useEffect(() => {
     try {
       const userData = localStorage.getItem('crm_user');
@@ -217,8 +245,14 @@ export default function Dashboard() {
         const parsedUser = JSON.parse(userData);
         setUser({
           role: parsedUser.role,
-          name: parsedUser.name
+          name: parsedUser.name,
+          staffId: parsedUser.staffId
         });
+
+        // If staff, auto-select their staff ID
+        if (parsedUser.role === 'staff' && parsedUser.staffId) {
+          setSelectedStaff(parsedUser.staffId);
+        }
       }
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -434,66 +468,137 @@ export default function Dashboard() {
 
   return (
     <>
+      {/* Header with User Info */}
+      <div className="border-b bg-background sticky top-0 z-50">
+        <div className="px-4 lg:px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
+                {user.role === 'super_admin' ? (
+                  <Shield className="h-5 w-5 text-white" />
+                ) : user.role === 'manager' ? (
+                  <Users className="h-5 w-5 text-white" />
+                ) : (
+                  <User className="h-5 w-5 text-white" />
+                )}
+              </div>
+              <div>
+                <h1 className="text-xl font-bold">CRM Dashboard</h1>
+                <p className="text-sm text-muted-foreground">
+                  Welcome, <span className="font-semibold">{user.name}</span>
+                  <span className="ml-2 px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                    {user.role === 'super_admin' ? 'Super Admin' :
+                     user.role === 'manager' ? 'Manager' : 'Staff'}
+                  </span>
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {user.role === 'staff' && (
+                <div className="text-sm text-muted-foreground">
+                  <span className="font-medium">Staff Access:</span> Personal Data Only
+                </div>
+              )}
+              {user.role === 'manager' && (
+                <div className="text-sm text-muted-foreground">
+                  <span className="font-medium">Manager Access:</span> View All Teams
+                </div>
+              )}
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="space-y-6 py-8">
 
 
         {/* Shadcn UI Filter Section */}
-        {user.role !== 'staff' && (
+        {true && (
           <div className="px-4 lg:px-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Filter className="h-5 w-5" />
-                  Filters
+                  {user.role === "staff"
+                    ? "Your Performance Filters"
+                    : "Team Filters"}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                {/* Team Member Cards and Recent Visits Table */}
-                <div className="mb-6">
-                  <label className="text-sm font-medium mb-4 block">Filter by Team Member</label>
-                  <div className="flex items-center gap-3 mb-4">
-                    <Button
-                      variant={selectedStaff === "all" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSelectedStaff("all")}
-                      className="flex items-center gap-2"
-                    >
-                      <Users className="h-4 w-4" />
-                      All Team Members
-                    </Button>
 
-                    {/* Month Range Filter */}
-                    <div className="flex items-center gap-2">
-                      {/* Status Filter */}
-                      <div className="flex items-center gap-1">
-                        <label className="text-sm font-medium">Status:</label>
-                        <Select value={selectedStatus} onValueChange={(value) => setSelectedStatus(value)}>
-                          <SelectTrigger className="w-28">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Status</SelectItem>
-                            <SelectItem value="visited">VISITED</SelectItem>
-                            <SelectItem value="task">TO DO</SelectItem>
-                            <SelectItem value="lanjut">LANJUT</SelectItem>
-                            <SelectItem value="loss">LOSS</SelectItem>
-                            <SelectItem value="suspend">SUSPEND</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+              <CardContent>
+                {/* FILTER CONTROLS (ALL USERS) */}
+                <div className="mb-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    {/* Status */}
+                    <div className="flex items-center gap-1">
+                      <label className="text-sm font-medium">Status:</label>
+                      <Select
+                        value={selectedStatus}
+                        onValueChange={(v) => setSelectedStatus(v)}
+                      >
+                        <SelectTrigger className="w-28">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Status</SelectItem>
+                          <SelectItem value="visited">VISITED</SelectItem>
+                          <SelectItem value="task">TO DO</SelectItem>
+                          <SelectItem value="lanjut">LANJUT</SelectItem>
+                          <SelectItem value="loss">LOSS</SelectItem>
+                          <SelectItem value="suspend">SUSPEND</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
 
+                    {/* Chart */}
+                    <div className="flex items-center gap-1">
+                      <label className="text-sm font-medium">Chart:</label>
+                      <Select
+                        value={selectedChartType}
+                        onValueChange={(v) => setSelectedChartType(v)}
+                      >
+                        <SelectTrigger className="w-28">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="area">Area</SelectItem>
+                          <SelectItem value="bar">Bar</SelectItem>
+                          <SelectItem value="line">Line</SelectItem>
+                          <SelectItem value="pie">Pie</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* DATE RANGE */}
                     <div className="flex items-center gap-2 ml-auto">
                       <div className="flex items-center gap-1">
                         <label className="text-sm font-medium">From:</label>
-                        <Select value={dateRange.startMonth.toString()} onValueChange={(value) => handleFromMonthChange(Number(value))}>
+                        <Select
+                          value={dateRange.startMonth.toString()}
+                          onValueChange={(v) =>
+                            handleFromMonthChange(Number(v))
+                          }
+                        >
                           <SelectTrigger className="w-28">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {getMonths().map(month => (
-                              <SelectItem key={month.value} value={month.value.toString()}>
-                                {month.label}
+                            {getMonths().map((m) => (
+                              <SelectItem
+                                key={m.value}
+                                value={m.value.toString()}
+                              >
+                                {m.label}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -502,30 +607,43 @@ export default function Dashboard() {
 
                       <div className="flex items-center gap-1">
                         <label className="text-sm font-medium">To:</label>
-                        <Select value={dateRange.endMonth.toString()} onValueChange={(value) => handleToMonthChange(Number(value))}>
+                        <Select
+                          value={dateRange.endMonth.toString()}
+                          onValueChange={(v) =>
+                            handleToMonthChange(Number(v))
+                          }
+                        >
                           <SelectTrigger className="w-28">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {getMonths().map(month => (
-                              <SelectItem key={month.value} value={month.value.toString()}>
-                                {month.label}
+                            {getMonths().map((m) => (
+                              <SelectItem
+                                key={m.value}
+                                value={m.value.toString()}
+                              >
+                                {m.label}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       </div>
 
-                      <div className="flex items-center gap-2 ml-2">
+                      <div className="flex items-center gap-1">
                         <label className="text-sm font-medium">Year:</label>
-                        <Select value={selectedYear.toString()} onValueChange={(value) => handleYearChange(Number(value))}>
+                        <Select
+                          value={selectedYear.toString()}
+                          onValueChange={(v) =>
+                            handleYearChange(Number(v))
+                          }
+                        >
                           <SelectTrigger className="w-24">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {getYears().map(year => (
-                              <SelectItem key={year} value={year.toString()}>
-                                {year}
+                            {getYears().map((y) => (
+                              <SelectItem key={y} value={y.toString()}>
+                                {y}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -533,157 +651,146 @@ export default function Dashboard() {
                       </div>
                     </div>
                   </div>
-
-                  <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
-                    {/* Team Member Cards */}
-                    <div className="lg:col-span-2">
-                      <div className="grid grid-cols-1 gap-4">
-                        {mockStaff.slice(0, 2).map(staff => {
-                          const staffPhoto = staff.name === 'Mercy' ? '/images/mercy.jpeg' :
-                                           staff.name === 'Dhea' ? '/images/dhea.jpeg' :
-                                           '/images/visit.jpeg';
-                          // Calculate completion rate based on selected date range and staff tasks
-                          // Get tasks for this staff based on selected date range
-                          const rangeStart = new Date(dateRange.startYear, dateRange.startMonth, 1);
-                          const rangeEnd = new Date(dateRange.endYear, dateRange.endMonth + 1, 0);
-                          const staffTasks: VisitTask[] = [];
-
-                          // Get tasks for selected date range
-                          Object.entries(mockVisitData).forEach(([date, tasks]) => {
-                            tasks.forEach(task => {
-                              if (task.staffId === staff.id) {
-                                const [year, month, day] = date.split('-').map(Number);
-                                const taskDate = new Date(year, month - 1, day);
-                                if (taskDate >= rangeStart && taskDate <= rangeEnd) {
-                                  staffTasks.push(task);
-                                }
-                              }
-                            });
-                          });
-
-                          // Dynamic calculation based on selected status
-                          const getFilteredCount = () => {
-                            if (selectedStatus === 'all' || selectedStatus === 'visited') {
-                              return staffTasks.filter(task => task.status === 'lanjut' || task.status === 'loss' || task.status === 'suspend').length;
-                            }
-                            return staffTasks.filter(task => task.status === selectedStatus).length;
-                          };
-
-                          const completedInRange = getFilteredCount();
-                          const completionRate = staffTasks.length > 0 ? Math.round((completedInRange / staffTasks.length) * 100) : 0;
-
-                          return (
-                            <Card
-                              key={staff.id}
-                              className={`cursor-pointer transition-all duration-300 hover:shadow-lg ${
-                                selectedStaff === staff.id
-                                  ? 'ring-2 ring-primary bg-primary/5'
-                                  : 'hover:bg-accent/50'
-                              }`}
-                              onClick={() => setSelectedStaff(staff.id)}
-                            >
-                              <CardContent className="p-4">
-                                <div className="flex items-center space-x-3 mb-3">
-                                  <div className="relative">
-                                    <div className="w-12 h-12 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center">
-                                      <img
-                                        src={staffPhoto}
-                                        alt={staff.name}
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => {
-                                          e.currentTarget.src = "/images/visit.jpeg";
-                                        }}
-                                      />
-                                    </div>
-                                    {selectedStaff === staff.id && (
-                                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
-                                        <CheckCircle className="h-3 w-3 text-white" />
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <h4 className="font-semibold text-sm truncate">{staff.name}</h4>
-                                    <p className="text-xs text-muted-foreground truncate">{staff.email}</p>
-                                  </div>
-                                </div>
-
-                                <div className="space-y-3">
-                                  {/* Progress Bar */}
-                                  <div>
-                                    <div className="flex justify-between items-center mb-1">
-                                      <span className="text-xs text-muted-foreground">
-                                        {dateRange.startMonth === dateRange.endMonth && dateRange.startYear === dateRange.endYear
-                                          ? `${getMonthNames()[dateRange.startMonth]} Progress`
-                                          : `${getMonthNames()[dateRange.startMonth].slice(0, 3)}-${getMonthNames()[dateRange.endMonth].slice(0, 3)} Progress`
-                                        }
-                                      </span>
-                                      <span className="text-xs font-medium">{completionRate}%</span>
-                                    </div>
-                                    <div className="w-full bg-secondary rounded-full h-2">
-                                      <div
-                                        className="bg-primary rounded-full h-2 transition-all duration-500"
-                                        style={{ width: `${completionRate}%` }}
-                                      />
-                                    </div>
-                                  </div>
-
-                                  {/* Stats Grid */}
-                                  <div className="grid grid-cols-2 gap-2 text-xs">
-                                    <div>
-                                      <p className="text-muted-foreground">Target</p>
-                                      <p className="font-semibold">{staff.targetYearly}</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-muted-foreground">Persentase</p>
-                                      <p className="font-semibold text-green-600">{staff.targetYearly > 0 ? Math.round((completedInRange / staff.targetYearly) * 100) : 0}%</p>
-                                    </div>
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-2 text-xs">
-                                    <div>
-                                      <p className="text-muted-foreground">Loss</p>
-                                      <p className="font-semibold text-red-600">{staffTasks.filter(task => task.status === 'loss').length}</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-muted-foreground">Suspend</p>
-                                      <p className="font-semibold text-orange-600">{staffTasks.filter(task => task.status === 'suspend').length}</p>
-                                    </div>
-                                  </div>
-
-                                  </div>
-                              </CardContent>
-                            </Card>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                   
-
-                    <div className="lg:col-span-8">
-                      <ChartAreaInteractive
-                        selectedStaff={selectedStaff}
-                        selectedYear={selectedYear}
-                        selectedStatus={selectedStatus}
-                        allVisitData={mockVisitData}
-                        dateRange={dateRange}
-                      />
-                    </div>
-
-                  </div>
                 </div>
 
-                </CardContent>
+                {/* ADMIN / MANAGER FILTER */}
+                {(user.role === "super_admin" ||
+                  user.role === "manager") && (
+                  <div className="mb-6">
+                    <label className="text-sm font-medium mb-4 block">
+                      Filter by Team Member
+                    </label>
+
+                    <div className="flex items-center gap-3">
+                      <Button
+                        variant={
+                          selectedStaff === "all"
+                            ? "default"
+                            : "outline"
+                        }
+                        size="sm"
+                        onClick={() => setSelectedStaff("all")}
+                        className="flex items-center gap-2"
+                      >
+                        <Users className="h-4 w-4" />
+                        All Team Members
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
             </Card>
+          </div>
+        )}
+
+        {/* CHART */}
+        <div className="mt-6 px-4 lg:px-6">
+          <ChartAreaInteractive
+            selectedStaff={selectedStaff}
+            selectedYear={selectedYear}
+            selectedStatus={selectedStatus}
+            allVisitData={mockVisitData}
+            dateRange={dateRange}
+            selectedChartType={selectedChartType}
+          />
+        </div>
+
+        {/* TEAM MEMBER CARDS */}
+        {(user.role === "super_admin" ||
+          user.role === "manager") && (
+          <div className="mt-6 px-4 lg:px-6">
+            <label className="text-sm font-medium mb-4 block">
+              Filter by Team Member
+            </label>
+
+            <div className="flex items-center gap-3 mb-4">
+              <Button
+                variant={
+                  selectedStaff === "all"
+                    ? "default"
+                    : "outline"
+                }
+                size="sm"
+                onClick={() => setSelectedStaff("all")}
+                className="flex items-center gap-2"
+              >
+                <Users className="h-4 w-4" />
+                All Team Members
+              </Button>
+
+              {mockStaff.slice(0, 2).map((staff) => (
+                <Button
+                  key={staff.id}
+                  variant={
+                    selectedStaff === staff.id
+                      ? "default"
+                      : "outline"
+                  }
+                  size="sm"
+                  onClick={() => setSelectedStaff(staff.id)}
+                >
+                  {staff.name}
+                </Button>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {mockStaff.slice(0, 2).map((staff) => {
+                const staffPhoto =
+                  staff.name === "Mercy"
+                    ? "/images/mercy.jpeg"
+                    : staff.name === "Dhea"
+                    ? "/images/dhea.jpeg"
+                    : "/images/visit.jpeg";
+
+                return (
+                  <Card
+                    key={staff.id}
+                    onClick={() => setSelectedStaff(staff.id)}
+                    className={`cursor-pointer transition-all ${
+                      selectedStaff === staff.id
+                        ? "ring-2 ring-primary"
+                        : ""
+                    }`}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={staffPhoto}
+                          onError={(e) =>
+                            (e.currentTarget.src =
+                              "/images/visit.jpeg")
+                          }
+                          className="w-12 h-12 rounded-full object-cover"
+                        />
+                        <div>
+                          <p className="font-semibold text-sm">
+                            {staff.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {staff.email}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           </div>
         )}
 
         {/* Modern CRM Stats Cards */}
         <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 xl:grid-cols-4">
+          {/* Target Card - Different for admin vs staff */}
           <Card className="@container/card">
             <CardHeader>
               <CardDescription>TARGET</CardDescription>
               <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-                {mockStaff.reduce((sum, staff) => sum + staff.targetYearly, 0)}
+                {(user.role === 'super_admin' || user.role === 'manager')
+                  ? mockStaff.reduce((sum, staff) => sum + staff.targetYearly, 0)
+                  : mockStaff.find(staff => staff.id === getLoggedInStaffId())?.targetYearly || 0
+                }
               </CardTitle>
               <CardAction>
                 <Badge variant="outline" className="text-green-600">
@@ -768,16 +875,16 @@ export default function Dashboard() {
               <div className="text-muted-foreground">
                 {selectedStatus === 'all'
                   ? `${getStatusCount()} total visits`
-                  : `${getStatusCount()} of ${selectedStaff === 'all'
+                  : `${getStatusCount()} of {(user.role === 'super_admin' || user.role === 'manager') && selectedStaff === 'all'
                       ? mockStaff.slice(0, 2).reduce((sum, staff) => sum + staff.targetYearly, 0)
-                      : mockStaff.find(staff => staff.id === selectedStaff)?.targetYearly || 0} target`
+                      : mockStaff.find(staff => staff.id === (user.role === 'staff' ? getLoggedInStaffId() : selectedStaff))?.targetYearly || 0} target`
                 }
               </div>
             </CardFooter>
           </Card>
         </div>
 
-        {/* Shadcn UI Calendar Section */}
+        {/* Shadcn UI Calendar Section - Only show for admin or with controls for staff */}
         <div className="px-4 lg:px-6">
           <Card>
             <CardHeader>
@@ -785,21 +892,23 @@ export default function Dashboard() {
               <div className="flex items-center space-x-3">
                 <Calendar className="h-6 w-6" />
                 <div>
-                  <CardTitle>Timeline Analytics</CardTitle>
+                  <CardTitle>{(user.role === 'super_admin' || user.role === 'manager') ? 'Timeline Analytics' : 'Your Visit Timeline'}</CardTitle>
                   <CardDescription>
                     {getMonthNames()[dateRange.startMonth].slice(0, 3)} {dateRange.startYear} - {getMonthNames()[dateRange.endMonth].slice(0, 3)} {dateRange.endYear}
                   </CardDescription>
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="px-3 py-1 border rounded-md">
-                  <span className="text-sm font-medium">
-                    {calendarDays.length} days displayed
-                  </span>
+              {user.role === 'super_admin' && (
+                <div className="flex items-center space-x-2">
+                  <div className="px-3 py-1 border rounded-md">
+                    <span className="text-sm font-medium">
+                      {calendarDays.length} days displayed
+                    </span>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
-          </CardHeader>
+            </CardHeader>
           <CardContent>
             <div className="w-full overflow-x-auto">
               {/* Monthly Calendar View */}
@@ -1261,7 +1370,7 @@ export default function Dashboard() {
                                   visit.status === 'lanjut' ? 'LANJUT' :
                                   visit.status === 'loss' ? 'LOSS' :
                                   visit.status === 'suspend' ? 'SUSPEND' :
-                                  visit.status.toUpperCase()}
+                                  (visit.status as string).toUpperCase()}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-xs text-right font-medium">
