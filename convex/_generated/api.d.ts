@@ -10,9 +10,14 @@
 
 import type * as auth from "../auth.js";
 import type * as initData from "../initData.js";
+import type * as migrate from "../migrate.js";
+import type * as notifications from "../notifications.js";
 import type * as seed from "../seed.js";
+import type * as staffTargets from "../staffTargets.js";
+import type * as targets from "../targets.js";
 import type * as utils_password from "../utils/password.js";
 import type * as utils_simpleHash from "../utils/simpleHash.js";
+import type * as visitHistory from "../visitHistory.js";
 
 import type {
   ApiFromModules,
@@ -23,9 +28,14 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   initData: typeof initData;
+  migrate: typeof migrate;
+  notifications: typeof notifications;
   seed: typeof seed;
+  staffTargets: typeof staffTargets;
+  targets: typeof targets;
   "utils/password": typeof utils_password;
   "utils/simpleHash": typeof utils_simpleHash;
+  visitHistory: typeof visitHistory;
 }>;
 
 /**

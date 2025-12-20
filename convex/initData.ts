@@ -15,6 +15,8 @@ export const initializeData = mutation({
         password: hashedPassword,
         role: "super_admin",
         isActive: true,
+        targetYearly: 0, // Admin tidak punya target
+        completedThisYear: 0,
         createdAt: now,
         updatedAt: now,
       });
@@ -26,6 +28,8 @@ export const initializeData = mutation({
         password: hashedPassword,
         role: "manager",
         isActive: true,
+        targetYearly: 0, // Manager tidak punya target kunjungan
+        completedThisYear: 0,
         createdAt: now,
         updatedAt: now,
       });
@@ -38,6 +42,8 @@ export const initializeData = mutation({
         role: "staff",
         staffId: "1",
         isActive: true,
+        targetYearly: 100, // Target 100 kunjungan per tahun
+        completedThisYear: 0,
         createdAt: now,
         updatedAt: now,
       });
@@ -49,6 +55,8 @@ export const initializeData = mutation({
         role: "staff",
         staffId: "2",
         isActive: true,
+        targetYearly: 100, // Target 100 kunjungan per tahun
+        completedThisYear: 0,
         createdAt: now,
         updatedAt: now,
       });

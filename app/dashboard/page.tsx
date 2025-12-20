@@ -73,12 +73,30 @@ export default function Dashboard() {
 
   // Date range filter states
   const currentYear = new Date().getFullYear();
-  const [dateRange, setDateRange] = useState<DateRange>({
-    startMonth: 0, // January
-    startYear: 2025,
-    endMonth: 11, // December
-    endYear: 2025
-  });
+  const currentMonth = new Date().getMonth();
+
+  // Default date range based on user role
+  const getDefaultDateRange = (): DateRange => {
+    if (user?.role === 'staff') {
+      // Staff: current month only
+      return {
+        startMonth: currentMonth,
+        startYear: currentYear,
+        endMonth: currentMonth,
+        endYear: currentYear
+      };
+    } else {
+      // Admin/Manager: full year
+      return {
+        startMonth: 0, // January
+        startYear: currentYear,
+        endMonth: 11, // December
+        endYear: currentYear
+      };
+    }
+  };
+
+  const [dateRange, setDateRange] = useState<DateRange>(getDefaultDateRange());
   const [showDateRangeFilter, setShowDateRangeFilter] = useState(false);
 
   // Helper functions
@@ -258,6 +276,16 @@ export default function Dashboard() {
       console.error('Error loading user data:', error);
     }
   }, []);
+
+  // Update date range and year when user changes
+  useEffect(() => {
+    if (user) {
+      const newDateRange = getDefaultDateRange();
+      setDateRange(newDateRange);
+      // Update selected year to match the date range year
+      setSelectedYear(newDateRange.startYear);
+    }
+  }, [user]);
 
   if (!user) {
     return (

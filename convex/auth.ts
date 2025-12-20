@@ -72,6 +72,8 @@ export const createUser = mutation({
       role,
       staffId,
       isActive: true,
+      targetYearly: 100, // Default target untuk staff
+      completedThisYear: 0, // Default completed kunjungan
       createdAt: now,
       updatedAt: now,
     });
