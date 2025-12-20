@@ -14,9 +14,9 @@ interface TargetData {
   id?: string;
   client: string;
   address: string;
-  pic: string; // Will be converted to user ID
-  picName: string; // Store user name for display
-  scheduleVisit: string; // Format: YYYY-MM-DD
+  pic: string;
+  picName: string;
+  scheduleVisit: string;
   statusClient: 'LANJUT' | 'LOSS' | 'SUSPEND';
   nilaiKontrak: number;
   statusKunjungan: 'TO_DO' | 'VISITED';
@@ -26,8 +26,8 @@ interface TargetData {
   photoUrl?: string;
   salesAmount?: number;
   notes?: string;
-  visitTime?: string; // Format: HH:MM
-  created_by?: string; // User ID who created the target
+  visitTime?: string;
+  created_by?: string;
 }
 
 interface VisitTask {
@@ -36,11 +36,12 @@ interface VisitTask {
   date: string;
   time: string;
   location: string;
-  status: 'completed' | 'pending' | 'in_progress' | 'overdue';
+  status: 'completed' | 'pending';
   notes?: string;
   contactPerson?: string;
   phone?: string;
   email?: string;
+  photoUrl?: string;
 }
 
 interface CalendarDay {
@@ -56,7 +57,7 @@ interface User {
   role: UserRole;
   name: string;
   staffId?: string;
-  _id?: string; // Convex user ID
+  _id?: string;
 }
 
 const mockVisitTasks: VisitTask[] = [
@@ -66,11 +67,12 @@ const mockVisitTasks: VisitTask[] = [
     date: '2025-12-01',
     time: '09:00',
     location: 'Jl. Sudirman No. 123, Jakarta Pusat',
-    status: 'completed',
+    status: 'completed', // VISITED
     notes: 'Kick off meeting Q4 2025',
     contactPerson: 'Ricky Halim',
     phone: '0812-1111-2222',
-    email: 'ricky@digitalindonesia.com'
+    email: 'ricky@digitalindonesia.com',
+    photoUrl: '/images/visit.jpeg'
   },
   {
     id: '2',
@@ -78,7 +80,7 @@ const mockVisitTasks: VisitTask[] = [
     date: '2025-12-02',
     time: '13:30',
     location: 'Jl. Gatot Subroto No. 456, Jakarta Selatan',
-    status: 'completed',
+    status: 'completed', // VISITED
     notes: 'Diskusi implementasi sistem',
     contactPerson: 'Andi Wijaya',
     phone: '0813-3333-4444',
@@ -90,11 +92,12 @@ const mockVisitTasks: VisitTask[] = [
     date: '2025-12-03',
     time: '10:00',
     location: 'Jl. MH Thamrin No. 789, Jakarta Utara',
-    status: 'completed',
+    status: 'completed', // VISITED
     notes: 'Presentasi solusi enterprise',
     contactPerson: 'Michael Chen',
     phone: '0814-5555-6666',
-    email: 'michael@globalsolution.com'
+    email: 'michael@globalsolution.com',
+    photoUrl: '/images/visit.jpeg'
   },
   {
     id: '4',
@@ -102,7 +105,7 @@ const mockVisitTasks: VisitTask[] = [
     date: '2025-12-04',
     time: '14:30',
     location: 'Ruko Golden Boulevard, Tangerang',
-    status: 'pending',
+    status: 'pending', // TO_DO
     notes: 'Meeting perkenalan produk',
     contactPerson: 'Lisa Permatasari',
     phone: '0815-7777-8888',
@@ -114,7 +117,7 @@ const mockVisitTasks: VisitTask[] = [
     date: '2025-12-05',
     time: '11:00',
     location: 'Jl. Thamrin No. 1, Jakarta Pusat',
-    status: 'completed',
+    status: 'completed', // VISITED
     notes: 'Negosiasi kontrak tahunan',
     contactPerson: 'David Kusuma',
     phone: '0816-9999-0000',
@@ -126,7 +129,7 @@ const mockVisitTasks: VisitTask[] = [
     date: '2025-12-08',
     time: '09:30',
     location: 'Kawasan Industri Bekasi',
-    status: 'completed',
+    status: 'completed', // VISITED
     notes: 'Deal berhasil - Paket Premium',
     contactPerson: 'Siti Rahayu',
     phone: '0817-1111-2222',
@@ -138,7 +141,7 @@ const mockVisitTasks: VisitTask[] = [
     date: '2025-12-10',
     time: '15:00',
     location: 'Jl. Pajajaran No. 23, Bogor',
-    status: 'completed',
+    status: 'completed', // VISITED
     notes: 'Finalisasi kerjasama',
     contactPerson: 'Budi Santoso',
     phone: '0818-3333-4444',
@@ -150,7 +153,7 @@ const mockVisitTasks: VisitTask[] = [
     date: '2025-12-11',
     time: '13:00',
     location: 'BSD City, Tangerang Selatan',
-    status: 'pending',
+    status: 'pending', // TO_DO
     notes: 'Survey lokasi proyek',
     contactPerson: 'Eko Prasetyo',
     phone: '0819-5555-6666',
@@ -162,7 +165,7 @@ const mockVisitTasks: VisitTask[] = [
     date: '2025-12-12',
     time: '10:30',
     location: 'Jl. Kemang Raya No. 45, Jakarta Selatan',
-    status: 'completed',
+    status: 'completed', // VISITED
     notes: 'Presentasi portfolio',
     contactPerson: 'Ahmad Fauzi',
     phone: '0820-7777-8888',
@@ -174,7 +177,7 @@ const mockVisitTasks: VisitTask[] = [
     date: '2025-12-15',
     time: '14:00',
     location: 'Jl. Margonda Raya No. 88, Depok',
-    status: 'completed',
+    status: 'completed', // VISITED
     notes: 'Renewal kontrak tahunan',
     contactPerson: 'Rina Wijaya',
     phone: '0821-9999-0000',
@@ -186,7 +189,7 @@ const mockVisitTasks: VisitTask[] = [
     date: '2025-12-16',
     time: '11:30',
     location: 'Jl. Sudirman No. 234, Jakarta Pusat',
-    status: 'completed',
+    status: 'completed', // VISITED
     notes: 'Review kinerja Q3',
     contactPerson: 'Doni Hermawan',
     phone: '0822-1111-2222',
@@ -198,8 +201,8 @@ const mockVisitTasks: VisitTask[] = [
     date: '2025-12-17',
     time: '09:00',
     location: 'Jl. Gatot Subroto No. 567, Jakarta Selatan',
-    status: 'in_progress',
-    notes: 'Meeting dengan direksi - Sedang berlangsung',
+    status: 'pending', // TO_DO (changed from in_progress)
+    notes: 'Meeting dengan direksi',
     contactPerson: 'Faisal Rahman',
     phone: '0823-3333-4444',
     email: 'faisal@sentosaabadi.com'
@@ -210,7 +213,7 @@ const mockVisitTasks: VisitTask[] = [
     date: '2025-12-18',
     time: '13:30',
     location: 'Jl. MH Thamrin No. 890, Jakarta Utara',
-    status: 'pending',
+    status: 'pending', // TO_DO
     notes: 'Diskusi rencana 2026',
     contactPerson: 'Yudi Pratama',
     phone: '0824-5555-6666',
@@ -222,7 +225,7 @@ const mockVisitTasks: VisitTask[] = [
     date: '2025-12-19',
     time: '10:00',
     location: 'Ruko Bekasi Square, Bekasi',
-    status: 'pending',
+    status: 'pending', // TO_DO
     notes: 'Presentasi produk baru',
     contactPerson: 'Indah Permata',
     phone: '0825-7777-8888',
@@ -234,7 +237,7 @@ const mockVisitTasks: VisitTask[] = [
     date: '2025-12-22',
     time: '14:30',
     location: 'Jl. Pajajaran No. 345, Bogor',
-    status: 'pending',
+    status: 'pending', // TO_DO
     notes: 'Meeting stakeholder',
     contactPerson: 'Rizki Ahmad',
     phone: '0826-9999-0000',
@@ -257,7 +260,6 @@ export default function MyVisitsPage() {
   const [importError, setImportError] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Get user authentication (same as dashboard)
   useEffect(() => {
     try {
       const userData = localStorage.getItem('crm_user');
@@ -271,18 +273,16 @@ export default function MyVisitsPage() {
         };
         setUser(currentUser);
       } else {
-        // Fallback user if no user data found
         const currentUser: User = {
           _id: 'user-123',
           role: 'staff',
-          name: 'Guest User', // Changed from hardcoded name
+          name: 'Guest User',
           staffId: 'STAFF001'
         };
         setUser(currentUser);
       }
     } catch (error) {
       console.error('Error loading user data:', error);
-      // Fallback user on error
       const currentUser: User = {
         _id: 'user-123',
         role: 'staff',
@@ -292,7 +292,6 @@ export default function MyVisitsPage() {
       setUser(currentUser);
     }
 
-    // Also check for system dark mode preference
     const checkDarkMode = () => {
       const systemDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
       const storedDarkMode = localStorage.getItem('darkMode') === 'true';
@@ -301,7 +300,6 @@ export default function MyVisitsPage() {
 
     checkDarkMode();
 
-    // Listen for system theme changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     mediaQuery.addEventListener('change', checkDarkMode);
 
@@ -317,7 +315,6 @@ export default function MyVisitsPage() {
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
 
-  // Filter tasks for current month
   const getTasksForMonth = (month: number, year: number) => {
     return tasks.filter(task => {
       const taskDate = new Date(task.date);
@@ -334,7 +331,6 @@ export default function MyVisitsPage() {
     return matchesSearch && matchesStatus;
   });
 
-  // Calendar helper functions
   const getDaysInMonth = (date: Date) => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   };
@@ -367,7 +363,6 @@ export default function MyVisitsPage() {
 
     const days: CalendarDay[] = [];
 
-    // Add empty cells for days before month starts
     for (let i = 0; i < firstDay; i++) {
       days.push({
         date: new Date(currentYear, currentMonth, -firstDay + i + 1),
@@ -377,7 +372,6 @@ export default function MyVisitsPage() {
       });
     }
 
-    // Add days of current month
     for (let i = 1; i <= daysInMonth; i++) {
       const date = new Date(currentYear, currentMonth, i);
       const dateStr = date.toISOString().split('T')[0];
@@ -396,20 +390,16 @@ export default function MyVisitsPage() {
 
   const getStatusVariant = (status: VisitTask['status']): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
-      case 'completed': return 'default';
-      case 'in_progress': return 'secondary';
-      case 'pending': return 'outline';
-      case 'overdue': return 'destructive';
+      case 'completed': return 'default'; // VISITED
+      case 'pending': return 'outline'; // TO_DO
       default: return 'outline';
     }
   };
 
   const getStatusText = (status: VisitTask['status']) => {
     switch (status) {
-      case 'completed': return 'Selesai';
-      case 'in_progress': return 'Berlangsung';
-      case 'pending': return 'Menunggu';
-      case 'overdue': return 'Terlambat';
+      case 'completed': return 'Visited'; // VISITED
+      case 'pending': return 'To Do'; // TO_DO
       default: return status;
     }
   };
@@ -425,30 +415,29 @@ export default function MyVisitsPage() {
     }
   };
 
-  // Excel Import Functions
   const downloadTemplate = () => {
     const currentUser = user?.name || 'Current User';
     const templateData = [
       {
         'Client': 'PT. Digital Indonesia',
         'Address': 'Jl. Sudirman No. 123, Jakarta Pusat',
-        'PIC Staff': currentUser, // Auto-filled with logged-in user
-        'Schedule Visit': '2025-12-25', // Format: YYYY-MM-DD
-        'Visit Time': '10:00', // Format: HH:MM (optional)
-        'Status Client': 'LANJUT', // Options: LANJUT, LOSS, SUSPEND
-        'Nilai Kontrak': 100000000, // Dalam Rupiah
-        'Status Kunjungan': 'TO_DO', // Options: TO_DO, VISITED
-        'Contact Person': 'Ricky Halim', // PIC dari client
+        'PIC Staff': currentUser,
+        'Schedule Visit': '2025-12-25',
+        'Visit Time': '10:00',
+        'Status Client': 'LANJUT',
+        'Nilai Kontrak': 100000000,
+        'Status Kunjungan': 'TO_DO',
+        'Contact Person': 'Ricky Halim',
         'Contact Phone': '0812-1111-2222',
         'Location': 'Gedung Graha Kirana Lt. 7',
-        'Sales Amount': 75000000, // Jumlah penjualan (optional)
+        'Sales Amount': 75000000,
         'Notes': `Template untuk ${currentUser} - Client berminat dengan paket enterprise`,
-        'Photo URL': '' // URL foto dokumentasi (optional)
+        'Photo URL': ''
       },
       {
         'Client': 'CV. Teknologi Maju',
         'Address': 'Jl. Gatot Subroto No. 456, Jakarta Selatan',
-        'PIC Staff': currentUser, // Auto-filled with logged-in user
+        'PIC Staff': currentUser,
         'Schedule Visit': '2025-12-26',
         'Visit Time': '14:00',
         'Status Client': 'LOSS',
@@ -464,7 +453,7 @@ export default function MyVisitsPage() {
       {
         'Client': 'PT. Global Solution',
         'Address': 'Jl. MH Thamrin No. 789, Jakarta Utara',
-        'PIC Staff': currentUser, // Auto-filled with logged-in user
+        'PIC Staff': currentUser,
         'Schedule Visit': '2025-12-27',
         'Visit Time': '15:30',
         'Status Client': 'SUSPEND',
@@ -483,22 +472,10 @@ export default function MyVisitsPage() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Template Targets');
 
-    // Set column widths for better readability
     const colWidths = [
-      { wch: 20 }, // Client
-      { wch: 30 }, // Address
-      { wch: 15 }, // PIC Staff
-      { wch: 15 }, // Schedule Visit
-      { wch: 12 }, // Visit Time
-      { wch: 15 }, // Status Client
-      { wch: 15 }, // Nilai Kontrak
-      { wch: 18 }, // Status Kunjungan
-      { wch: 15 }, // Contact Person
-      { wch: 15 }, // Contact Phone
-      { wch: 25 }, // Location
-      { wch: 15 }, // Sales Amount
-      { wch: 30 }, // Notes
-      { wch: 20 }  // Photo URL
+      { wch: 20 }, { wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 15 },
+      { wch: 15 }, { wch: 18 }, { wch: 15 }, { wch: 15 }, { wch: 25 }, { wch: 15 },
+      { wch: 30 }, { wch: 20 }
     ];
     ws['!cols'] = colWidths;
 
@@ -518,9 +495,7 @@ export default function MyVisitsPage() {
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-        // Convert Excel data to TargetData format
         const importedTargets: TargetData[] = jsonData.map((row: any, index: number) => {
-          // Auto-fill PIC with logged-in user if not provided in Excel
           const picStaffFromExcel = row['PIC Staff'] || row['PIC'] || row['pic'] || row['Staff'] || '';
           const finalPicStaff = picStaffFromExcel.trim() ? picStaffFromExcel : (user?.name || '');
 
@@ -528,8 +503,8 @@ export default function MyVisitsPage() {
             id: `import-${Date.now()}-${index}`,
             client: row['Client'] || row['Nama Client'] || row['client'] || '',
             address: row['Address'] || row['Alamat'] || row['address'] || '',
-            pic: user?._id || 'user-123', // Store logged-in user ID
-            picName: finalPicStaff, // Store PIC name for display
+            pic: user?._id || 'user-123',
+            picName: finalPicStaff,
             scheduleVisit: validateDate(row['Schedule Visit'] || row['ScheduleVisit'] || row['Schedule'] || row['Tanggal'] || row['Date'] || row['date'] || ''),
             visitTime: validateTime(row['Visit Time'] || row['VisitTime'] || row['Waktu'] || row['Time'] || row['time'] || ''),
             statusClient: validateStatusClient(row['Status Client'] || row['StatusClient'] || row['statusClient'] || row['Status Akhir'] || row['statusClient'] || 'LANJUT'),
@@ -541,9 +516,9 @@ export default function MyVisitsPage() {
             photoUrl: row['Photo URL'] || row['PhotoURL'] || row['photoUrl'] || row['Photo'] || row['photo'] || '',
             salesAmount: validateNumber(row['Sales Amount'] || row['SalesAmount'] || row['salesAmount'] || row['Sales'] || row['sales'] || 0),
             notes: row['Notes'] || row['Catatan'] || row['notes'] || row['Keterangan'] || row['keterangan'] || '',
-            created_by: user?._id || 'user-123' // Store who created the target
+            created_by: user?._id || 'user-123'
           };
-        }).filter(target => target.client && target.address && target.scheduleVisit); // Filter out empty rows
+        }).filter(target => target.client && target.address && target.scheduleVisit);
 
         if (importedTargets.length === 0) {
           setImportError('Tidak ada data valid yang ditemukan dalam file Excel. Pastikan kolom Client, Address, dan Schedule Visit terisi.');
@@ -562,17 +537,14 @@ export default function MyVisitsPage() {
     reader.readAsArrayBuffer(file);
   };
 
-  // Validation functions for targets schema
   const validateDate = (date: string): string => {
     if (!date) return '';
-
-    // Try to parse and format the date
     try {
       const parsedDate = new Date(date);
       if (isNaN(parsedDate.getTime())) {
-        return date; // Return original if can't parse
+        return date;
       }
-      return parsedDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+      return parsedDate.toISOString().split('T')[0];
     } catch {
       return date;
     }
@@ -580,8 +552,6 @@ export default function MyVisitsPage() {
 
   const validateTime = (time: string): string | undefined => {
     if (!time) return undefined;
-
-    // Basic time validation (HH:MM format)
     const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
     if (timeRegex.test(time)) {
       return time;
@@ -591,40 +561,21 @@ export default function MyVisitsPage() {
 
   const validateStatusClient = (status: string): 'LANJUT' | 'LOSS' | 'SUSPEND' => {
     const statusMap: { [key: string]: 'LANJUT' | 'LOSS' | 'SUSPEND' } = {
-      'lanjut': 'LANJUT',
-      'LANJUT': 'LANJUT',
-      'continue': 'LANJUT',
-      'proceed': 'LANJUT',
-      'loss': 'LOSS',
-      'LOSS': 'LOSS',
-      'lost': 'LOSS',
-      'hilang': 'LOSS',
-      'suspend': 'SUSPEND',
-      'SUSPEND': 'SUSPEND',
-      'ditunda': 'SUSPEND',
-      'pending': 'SUSPEND'
+      'lanjut': 'LANJUT', 'LANJUT': 'LANJUT', 'continue': 'LANJUT', 'proceed': 'LANJUT',
+      'loss': 'LOSS', 'LOSS': 'LOSS', 'lost': 'LOSS', 'hilang': 'LOSS',
+      'suspend': 'SUSPEND', 'SUSPEND': 'SUSPEND', 'ditunda': 'SUSPEND', 'pending': 'SUSPEND'
     };
-
     const normalizedStatus = status?.toString().toLowerCase().trim();
     return statusMap[normalizedStatus] || 'LANJUT';
   };
 
   const validateStatusKunjungan = (status: string): 'TO_DO' | 'VISITED' => {
     const statusMap: { [key: string]: 'TO_DO' | 'VISITED' } = {
-      'to_do': 'TO_DO',
-      'TO_DO': 'TO_DO',
-      'todo': 'TO_DO',
-      'to do': 'TO_DO',
-      'belum': 'TO_DO',
-      'belum dikunjungi': 'TO_DO',
-      'visited': 'VISITED',
-      'VISITED': 'VISITED',
-      'selesai': 'VISITED',
-      'done': 'VISITED',
-      'sudah': 'VISITED',
-      'sudah dikunjungi': 'VISITED'
+      'to_do': 'TO_DO', 'TO_DO': 'TO_DO', 'todo': 'TO_DO', 'to do': 'TO_DO',
+      'belum': 'TO_DO', 'belum dikunjungi': 'TO_DO',
+      'visited': 'VISITED', 'VISITED': 'VISITED', 'selesai': 'VISITED',
+      'done': 'VISITED', 'sudah': 'VISITED', 'sudah dikunjungi': 'VISITED'
     };
-
     const normalizedStatus = status?.toString().toLowerCase().trim();
     return statusMap[normalizedStatus] || 'TO_DO';
   };
@@ -633,42 +584,23 @@ export default function MyVisitsPage() {
     if (value === null || value === undefined || value === '') {
       return 0;
     }
-
     const num = parseFloat(value.toString().replace(/[^0-9.-]/g, ''));
     return isNaN(num) ? 0 : num;
   };
 
-  const validateStatus = (status: string): VisitTask['status'] => {
-    const validStatuses = ['completed', 'pending', 'in_progress', 'overdue'];
-    const statusMap: { [key: string]: VisitTask['status'] } = {
-      'selesai': 'completed',
-      'completed': 'completed',
-      'done': 'completed',
-      'menunggu': 'pending',
-      'pending': 'pending',
-      'berlangsung': 'in_progress',
-      'in_progress': 'in_progress',
-      'terlambat': 'overdue',
-      'overdue': 'overdue'
-    };
-
-    const normalizedStatus = status?.toString().toLowerCase().trim();
-    return statusMap[normalizedStatus] || 'pending';
-  };
-
   const confirmImport = () => {
-    // Convert TargetData to VisitTask format for display
     const convertedTasks: VisitTask[] = importPreview.map(target => ({
       id: target.id || `target-${Date.now()}-${Math.random()}`,
       clientName: target.client,
       date: target.scheduleVisit,
       time: target.visitTime || '09:00',
       location: target.location,
-      status: target.statusKunjungan === 'VISITED' ? 'completed' : 'pending',
+      status: target.statusKunjungan === 'VISITED' ? 'completed' : 'pending', // TO_DO = pending, VISITED = completed
       notes: target.notes,
       contactPerson: target.contactPerson,
       phone: target.contactPhone,
-      email: ''
+      email: '',
+      photoUrl: target.photoUrl
     }));
 
     setTasks([...tasks, ...convertedTasks]);
@@ -678,8 +610,6 @@ export default function MyVisitsPage() {
       fileInputRef.current.value = '';
     }
 
-    // TODO: Here you would also call Convex mutation to save to targets table
-    // Example: await createTargets(importPreview);
     console.log('Targets to import to Convex:', importPreview);
   };
 
@@ -694,37 +624,35 @@ export default function MyVisitsPage() {
 
   const calendarDays = generateCalendarDays();
 
-  // Get tasks for selected date or all month tasks
   const displayTasks = selectedDate
     ? tasks.filter(task => task.date === selectedDate.toISOString().split('T')[0])
     : filteredTasks;
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header Section */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Calendar className="h-8 w-8 text-primary" />
-                <div>
-                  <CardTitle className="text-2xl">Jadwal Kunjungan</CardTitle>
-                  <CardDescription>Kelola jadwal kunjungan klien Anda</CardDescription>
-                </div>
+    <div className="min-h-screen bg-background p-6 space-y-6">
+      {/* Header Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Calendar className="h-8 w-8 text-primary" />
+              <div>
+                <CardTitle className="text-2xl">Jadwal Kunjungan</CardTitle>
+                <CardDescription>Kelola jadwal kunjungan klien Anda</CardDescription>
               </div>
-              <div className="flex items-center gap-3">
-                {user && (
-                  <div className="text-right">
-                    <p className="text-sm font-medium">{user.name}</p>
-                    <p className="text-xs text-muted-foreground capitalize">
-                      {user.role === 'super_admin' ? 'Super Admin' :
-                       user.role === 'manager' ? 'Manager' : 'Staff'}
-                      {user.staffId && ` • ${user.staffId}`}
-                    </p>
-                  </div>
-                )}
-                <div className="flex items-center gap-2">
+            </div>
+            <div className="flex items-center gap-3">
+              {user && (
+                <div className="text-right">
+                  <p className="text-sm font-medium">{user.name}</p>
+                  <p className="text-xs text-muted-foreground capitalize">
+                    {user.role === 'super_admin' ? 'Super Admin' :
+                     user.role === 'manager' ? 'Manager' : 'Staff'}
+                    {user.staffId && ` • ${user.staffId}`}
+                  </p>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -759,152 +687,191 @@ export default function MyVisitsPage() {
                   <Plus className="h-4 w-4 mr-2" />
                   Tambah Kunjungan
                 </Button>
-                </div>
               </div>
             </div>
-          </CardHeader>
+          </div>
+        </CardHeader>
+      </Card>
+
+      {/* Stats Dashboard */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <Users className="h-8 w-8 text-blue-600" />
+              <div className="ml-4">
+                <h3 className="text-2xl font-bold">{currentMonthTasks.length}</h3>
+                <p className="text-sm text-muted-foreground">Total Kunjungan</p>
+              </div>
+            </div>
+          </CardContent>
         </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+              <div className="ml-4">
+                <h3 className="text-2xl font-bold">{currentMonthTasks.filter(t => t.status === 'completed').length}</h3>
+                <p className="text-sm text-muted-foreground">Selesai</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <Clock className="h-8 w-8 text-blue-600" />
+              <div className="ml-4">
+                <h3 className="text-2xl font-bold">{currentMonthTasks.filter(t => t.status === 'in_progress').length}</h3>
+                <p className="text-sm text-muted-foreground">Berlangsung</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <AlertCircle className="h-8 w-8 text-yellow-600" />
+              <div className="ml-4">
+                <h3 className="text-2xl font-bold">{currentMonthTasks.filter(t => t.status === 'pending').length}</h3>
+                <p className="text-sm text-muted-foreground">Menunggu</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-        {/* Stats Dashboard */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Calendar Section */}
+        <div className="lg:col-span-1">
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <Users className="h-8 w-8 text-blue-600" />
-                <div className="ml-4">
-                  <h3 className="text-2xl font-bold">{currentMonthTasks.length}</h3>
-                  <p className="text-sm text-muted-foreground">Total Kunjungan</p>
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigateMonth('prev')}
+                  className="hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-all duration-200"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <div className="text-center flex-1">
+                  <CardTitle className="text-xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+                    {getMonthName(currentDate)}
+                  </CardTitle>
+                  <CardDescription className="text-sm font-medium">Kalender Kunjungan</CardDescription>
                 </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigateMonth('next')}
+                  className="hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-all duration-200"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <CheckCircle className="h-8 w-8 text-green-600" />
-                <div className="ml-4">
-                  <h3 className="text-2xl font-bold">{currentMonthTasks.filter(t => t.status === 'completed').length}</h3>
-                  <p className="text-sm text-muted-foreground">Selesai</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <Clock className="h-8 w-8 text-blue-600" />
-                <div className="ml-4">
-                  <h3 className="text-2xl font-bold">{currentMonthTasks.filter(t => t.status === 'in_progress').length}</h3>
-                  <p className="text-sm text-muted-foreground">Berlangsung</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <AlertCircle className="h-8 w-8 text-yellow-600" />
-                <div className="ml-4">
-                  <h3 className="text-2xl font-bold">{currentMonthTasks.filter(t => t.status === 'pending').length}</h3>
-                  <p className="text-sm text-muted-foreground">Menunggu</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          {/* Calendar Section */}
-          <div className="xl:col-span-2">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => navigateMonth('prev')}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <div className="text-center">
-                    <CardTitle>{getMonthName(currentDate)}</CardTitle>
-                    <CardDescription>Kalender Kunjungan</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Calendar Grid */}
+              <div className="grid grid-cols-7 gap-1.5 text-center mb-4">
+                {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map(day => (
+                  <div key={day} className="text-xs font-bold text-muted-foreground/70 uppercase tracking-wider py-2">
+                    {day}
                   </div>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => navigateMonth('next')}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {/* Calendar Grid */}
-                <div className="grid grid-cols-7 gap-2 text-center mb-4">
-                  {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map(day => (
-                    <div key={day} className="text-sm font-semibold text-muted-foreground py-2">
-                      {day}
-                    </div>
-                  ))}
-                </div>
+                ))}
+              </div>
 
-                {/* Calendar Days */}
-                <div className="grid grid-cols-7 gap-2">
-                  {calendarDays.map((day, index) => (
-                    <div
-                      key={index}
-                      onClick={() => day.isCurrentMonth && setSelectedDate(day.date)}
-                      className={`
-                        relative group min-h-[80px] p-2 border rounded-lg cursor-pointer transition-colors
-                        ${day.isCurrentMonth ? 'border-border hover:border-primary hover:bg-accent' : 'border-transparent opacity-30'}
-                        ${day.isToday ? 'border-primary bg-accent' : ''}
-                        ${selectedDate?.toDateString() === day.date.toDateString() ? 'ring-2 ring-primary bg-accent' : ''}
-                      `}
-                    >
-                      <div className={`text-sm font-semibold ${
-                        day.isCurrentMonth
-                          ? day.isToday
+              {/* Calendar Days */}
+              <div className="grid grid-cols-7 gap-1.5">
+                {calendarDays.map((day, index) => (
+                  <div
+                    key={index}
+                    onClick={() => day.isCurrentMonth && setSelectedDate(day.date)}
+                    className={`
+                      relative group min-h-[90px] p-2.5 rounded-xl cursor-pointer transition-all duration-200 transform
+                      ${day.isCurrentMonth
+                        ? 'bg-background border border-border hover:shadow-md hover:scale-[1.02] hover:border-primary/50 hover:bg-gradient-to-br hover:from-primary/5 hover:to-accent/20'
+                        : 'opacity-25'
+                      }
+                      ${day.isToday
+                        ? 'bg-gradient-to-br from-primary/10 to-primary/20 border-2 border-primary/50 shadow-sm ring-2 ring-primary/20'
+                        : ''
+                      }
+                      ${selectedDate?.toDateString() === day.date.toDateString()
+                        ? 'bg-gradient-to-br from-primary/15 to-accent/30 border-2 border-primary shadow-md ring-2 ring-primary/30 scale-[1.02]'
+                        : ''
+                      }
+                    `}
+                  >
+                    {/* Date Number */}
+                    <div className={`text-sm font-bold mb-2 ${
+                      day.isCurrentMonth
+                        ? day.isToday
+                          ? 'text-primary'
+                          : selectedDate?.toDateString() === day.date.toDateString()
                             ? 'text-primary'
-                            : selectedDate?.toDateString() === day.date.toDateString()
-                              ? 'text-primary'
-                              : 'text-foreground'
-                          : 'text-muted-foreground'
-                      }`}>
-                        {day.date.getDate()}
-                      </div>
-                      <div className="space-y-1 mt-1">
-                        {day.tasks.slice(0, 3).map((task, taskIndex) => (
-                          <div
-                            key={taskIndex}
-                            className={`w-2 h-2 rounded-full mx-auto ${
-                              task.status === 'completed' ? 'bg-green-500' :
-                              task.status === 'in_progress' ? 'bg-blue-500' :
-                              task.status === 'pending' ? 'bg-yellow-500' : 'bg-red-500'
-                            }`}
-                            title={`${task.clientName} - ${getStatusText(task.status)}`}
-                          />
-                        ))}
-                        {day.tasks.length > 3 && (
-                          <div className="text-xs text-muted-foreground">
-                            +{day.tasks.length - 3}
+                            : 'text-foreground'
+                        : 'text-muted-foreground'
+                    }`}>
+                      {day.date.getDate()}
+                    </div>
+
+                    {/* Tasks Container */}
+                    <div className="space-y-1.5">
+                      {day.tasks.slice(0, 2).map((task, taskIndex) => (
+                        <div
+                          key={taskIndex}
+                          className={`
+                            relative text-[10px] px-1.5 py-0.5 rounded-md font-medium truncate text-center
+                            shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.05]
+                            ${task.status === 'completed'
+                              ? 'bg-gradient-to-r from-emerald-400 to-emerald-500 text-white shadow-emerald-200/50' // VISITED
+                              : 'bg-gradient-to-r from-blue-400 to-blue-500 text-white shadow-blue-200/50' // TO_DO
+                            }
+                          `}
+                          title={`${task.clientName} - ${getStatusText(task.status)}`}
+                        >
+                          <div className="flex items-center gap-1">
+                            {task.status === 'completed' && <span className="w-1 h-1 bg-white/60 rounded-full"></span>} {/* VISITED */}
+                            {task.status === 'pending' && <span className="w-1 h-1 bg-white/60 rounded-full animate-pulse"></span>} {/* TO_DO */}
+                            <span className="truncate">{task.clientName}</span>
                           </div>
-                        )}
-                      </div>
-                      {day.isToday && (
-                        <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></div>
+                        </div>
+                      ))}
+                      {day.tasks.length > 2 && (
+                        <div className="text-[10px] font-medium text-center bg-gradient-to-r from-muted/80 to-muted px-2 py-0.5 rounded-md text-muted-foreground/80 shadow-sm">
+                          +{day.tasks.length - 2} lagi
+                        </div>
                       )}
                     </div>
-                  ))}
-                </div>
 
-                {/* Selected Date Info */}
-                {selectedDate && (
-                  <div className="mt-6 p-4 bg-accent rounded-lg border">
-                    <div className="flex items-center justify-between">
+                    {/* Today Indicator */}
+                    {day.isToday && (
+                      <div className="absolute top-2 right-2 flex items-center gap-1">
+                        <div className="w-2 h-2 bg-primary rounded-full animate-pulse shadow-sm"></div>
+                        <span className="text-[9px] font-bold text-primary/80">Hari Ini</span>
+                      </div>
+                    )}
+
+                    {/* Hover Effect Overlay */}
+                    {day.isCurrentMonth && day.tasks.length > 0 && (
+                      <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"></div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Selected Date Info */}
+              {selectedDate && (
+                <div className="mt-6 p-4 bg-gradient-to-r from-primary/10 to-accent/20 rounded-xl border border-primary/30 shadow-md">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
+                        <Calendar className="w-5 h-5 text-primary" />
+                      </div>
                       <div>
-                        <p className="text-sm font-medium">
+                        <p className="text-sm font-semibold text-primary/90">
                           {selectedDate.toLocaleDateString('id-ID', {
                             weekday: 'long',
                             day: 'numeric',
@@ -913,110 +880,138 @@ export default function MyVisitsPage() {
                           })}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {tasks.filter(task => task.date === selectedDate.toISOString().split('T')[0]).length} kunjungan terjadwal
+                          <span className="font-medium text-primary/80">
+                            {tasks.filter(task => task.date === selectedDate.toISOString().split('T')[0]).length}
+                          </span> kunjungan terjadwal
                         </p>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedDate(null)}
-                      >
-                        <span className="sr-only">Clear selection</span>
-                        ✕
-                      </Button>
                     </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedDate(null)}
+                      className="hover:bg-primary/10 hover:text-primary"
+                    >
+                      <span className="sr-only">Clear selection</span>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </Button>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Tasks List Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                {selectedDate ? 'Detail Kunjungan' : 'Kunjungan Bulan Ini'}
-              </CardTitle>
-              {selectedDate && (
-                <CardDescription>
-                  {selectedDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
-                </CardDescription>
-              )}
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {/* Search and Filter */}
-                <div className="space-y-2">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                    <Input
-                      placeholder="Cari nama klien..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger>
-                      <Filter className="h-4 w-4 mr-2" />
-                      <SelectValue placeholder="Filter Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua Status</SelectItem>
-                      <SelectItem value="pending">Menunggu</SelectItem>
-                      <SelectItem value="in_progress">Berlangsung</SelectItem>
-                      <SelectItem value="completed">Selesai</SelectItem>
-                      <SelectItem value="overdue">Terlambat</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
-                {/* Tasks List */}
-                <div className="space-y-3 max-h-[500px] overflow-y-auto">
-                  {displayTasks.length > 0 ? (
-                    displayTasks.map((task) => (
-                      <Card key={task.id} className="hover:shadow-md transition-shadow">
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-2">
-                                <h4 className="font-semibold truncate">{task.clientName}</h4>
-                                <Badge variant={getStatusVariant(task.status)}>
-                                  {getStatusText(task.status)}
-                                </Badge>
-                              </div>
+        {/* Tasks List Section - Fixed height with internal scrolling */}
+        <Card className="flex flex-col h-[calc(100vh-24rem)]">
+          <CardHeader className="flex-shrink-0">
+            <CardTitle>
+              {selectedDate ? 'Detail Kunjungan' : 'Kunjungan Bulan Ini'}
+            </CardTitle>
+            {selectedDate && (
+              <CardDescription>
+                {selectedDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </CardDescription>
+            )}
+          </CardHeader>
+          <CardContent className="flex-1 overflow-y-auto">
+            <div className="space-y-4">
+              {/* Search and Filter */}
+              <div className="space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="Cari nama klien..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Filter Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Status</SelectItem>
+                    <SelectItem value="pending">To Do</SelectItem>
+                    <SelectItem value="completed">Visited</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-                              <div className="space-y-1 text-sm text-muted-foreground">
-                                <div className="flex items-center gap-2">
-                                  <Calendar className="h-4 w-4" />
-                                  <span>
-                                    {new Date(task.date).toLocaleDateString('id-ID', {
-                                      day: 'numeric',
-                                      month: 'short',
-                                      year: 'numeric'
-                                    })} • {task.time} WIB
-                                  </span>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                  <MapPin className="h-4 w-4 mt-0.5" />
-                                  <span className="truncate">{task.location}</span>
-                                </div>
-                                {task.contactPerson && (
-                                  <div className="flex items-center gap-2">
-                                    <Users className="h-4 w-4" />
-                                    <span>
-                                      <span className="font-medium">Contact:</span> {task.contactPerson}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
+              {/* Tasks List */}
+              <div className="space-y-3">
+                {displayTasks.length > 0 ? (
+                  displayTasks.map((task) => (
+                    <Card key={task.id} className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-4">
+                          {/* Kiri: Detail Client */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="font-semibold truncate">{task.clientName}</h4>
+                              <Badge variant={getStatusVariant(task.status)}>
+                                {getStatusText(task.status)}
+                              </Badge>
                             </div>
 
-                            <div className="flex items-center gap-1 ml-2">
+                            <div className="space-y-1 text-sm text-muted-foreground">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4 flex-shrink-0" />
+                                <span className="truncate">
+                                  {new Date(task.date).toLocaleDateString('id-ID', {
+                                    day: 'numeric',
+                                    month: 'short',
+                                    year: 'numeric'
+                                  })} • {task.time} WIB
+                                </span>
+                              </div>
+                              <div className="flex items-start gap-2">
+                                <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                                <span className="truncate">{task.location}</span>
+                              </div>
+                              {task.contactPerson && (
+                                <div className="flex items-center gap-2">
+                                  <Users className="h-4 w-4 flex-shrink-0" />
+                                  <span className="truncate">
+                                    <span className="font-medium">Contact:</span> {task.contactPerson}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Tengah: Foto */}
+                          <div className="flex-shrink-0">
+                            {task.photoUrl ? (
+                              <div className="relative group cursor-pointer" onClick={() => handleViewDetail(task)}>
+                                <img
+                                  src={task.photoUrl}
+                                  alt="Bukti kunjungan"
+                                  className="w-32 h-24 object-cover rounded-lg border-2 border-muted transition-all duration-200 hover:scale-105 hover:shadow-md"
+                                />
+                                <div className="absolute inset-0 bg-black/50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                                  <Eye className="h-5 w-5 text-white" />
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="w-32 h-24 border-2 border-dashed border-muted rounded-lg flex items-center justify-center">
+                                <span className="text-xs text-muted-foreground">No Photo</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Kanan: Action Buttons */}
+                          <div className="flex-shrink-0">
+                            <div className="flex gap-1">
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleViewDetail(task)}
+                                className="h-8 w-8 p-0"
                               >
                                 <Eye className="h-4 w-4" />
                                 <span className="sr-only">View detail</span>
@@ -1024,6 +1019,7 @@ export default function MyVisitsPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                className="h-8 w-8 p-0"
                               >
                                 <Edit className="h-4 w-4" />
                                 <span className="sr-only">Edit</span>
@@ -1032,197 +1028,217 @@ export default function MyVisitsPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleDeleteTask(task.id)}
+                                className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
                               >
                                 <Trash2 className="h-4 w-4" />
                                 <span className="sr-only">Delete</span>
                               </Button>
                             </div>
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  ) : (
-                    <div className="text-center py-12">
-                      <Calendar className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                      <p className="text-lg font-medium text-muted-foreground">
-                        {selectedDate ? 'Tidak ada kunjungan terjadwal' : 'Tidak ada kunjungan bulan ini'}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {selectedDate ? 'Pilih tanggal lain untuk melihat jadwal' : 'Mulai tambahkan kunjungan baru'}
-                      </p>
-                    </div>
-                  )}
-                </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="text-center py-12">
+                    <Calendar className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-lg font-medium text-muted-foreground">
+                      {selectedDate ? 'Tidak ada kunjungan terjadwal' : 'Tidak ada kunjungan bulan ini'}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedDate ? 'Pilih tanggal lain untuk melihat jadwal' : 'Mulai tambahkan kunjungan baru'}
+                    </p>
+                  </div>
+                )}
               </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Detail Modal */}
-        <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            {selectedTask && (
-              <>
-                <DialogHeader>
-                  <DialogTitle>Detail Kunjungan</DialogTitle>
-                  <DialogDescription>
-                    Informasi lengkap mengenai kunjungan ke {selectedTask.clientName}
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="space-y-3">
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Nama Klien</p>
-                          <p className="font-semibold">{selectedTask.clientName}</p>
-                        </div>
-                        {selectedTask.contactPerson && (
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground">Contact Person</p>
-                            <p className="font-semibold">{selectedTask.contactPerson}</p>
-                          </div>
-                        )}
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Status</p>
-                          <Badge variant={getStatusVariant(selectedTask.status)}>
-                            {getStatusText(selectedTask.status)}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="space-y-3">
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Tanggal & Waktu</p>
-                          <p className="font-semibold">
-                            {new Date(selectedTask.date).toLocaleDateString('id-ID', {
-                              weekday: 'long',
-                              day: 'numeric',
-                              month: 'long',
-                              year: 'numeric'
-                            })} pukul {selectedTask.time} WIB
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Lokasi</p>
-                          <p className="text-sm">{selectedTask.location}</p>
-                        </div>
-                        {selectedTask.notes && (
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground">Catatan</p>
-                            <p className="text-sm">{selectedTask.notes}</p>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                  {selectedTask.phone && (
-                    <Card>
-                      <CardContent className="p-4">
-                        <p className="text-sm font-medium text-muted-foreground">Telepon</p>
-                        <p className="font-semibold">{selectedTask.phone}</p>
-                      </CardContent>
-                    </Card>
-                  )}
-                  {selectedTask.email && (
-                    <Card>
-                      <CardContent className="p-4">
-                        <p className="text-sm font-medium text-muted-foreground">Email</p>
-                        <p className="font-semibold text-sm break-all">{selectedTask.email}</p>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-              </>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* Import Preview Modal */}
-        <Dialog open={showImportModal} onOpenChange={setShowImportModal}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <FileSpreadsheet className="h-5 w-5" />
-                Preview Import Data Excel
-              </DialogTitle>
-              <DialogDescription>
-                Periksa data yang akan diimpor. Pastikan semua data sudah benar sebelum melanjutkan.
-              </DialogDescription>
-            </DialogHeader>
-
-            {importError ? (
-              <Card className="border-red-200 bg-red-50">
-                <CardContent className="p-4">
-                  <p className="text-red-600 font-medium">❌ {importError}</p>
-                  <p className="text-red-500 text-sm mt-1">
-                    Pastikan file Excel memiliki kolom wajib: <strong>Client</strong>, <strong>Address</strong>, <strong>Schedule Visit</strong>.<br/>
-                    Kolom opsional: PIC Staff, Visit Time, Status Client, Nilai Kontrak, Status Kunjungan, Contact Person, Contact Phone, Location, Sales Amount, Notes, Photo URL
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              <>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-blue-700 font-medium">
-                    📊 Ditemukan <span className="font-bold">{importPreview.length}</span> data kunjungan yang akan diimpor
-                  </p>
-                </div>
-
-                <div className="max-h-[400px] overflow-y-auto border rounded-lg">
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted sticky top-0">
-                      <tr>
-                        <th className="text-left p-3 border-b">Client</th>
-                        <th className="text-left p-3 border-b">PIC Staff</th>
-                        <th className="text-left p-3 border-b">Schedule Visit</th>
-                        <th className="text-left p-3 border-b">Status Client</th>
-                        <th className="text-left p-3 border-b">Status Kunjungan</th>
-                        <th className="text-left p-3 border-b">Nilai Kontrak</th>
-                        <th className="text-left p-3 border-b">Contact Person</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {importPreview.map((target, index) => (
-                        <tr key={index} className="hover:bg-muted/50">
-                          <td className="p-3 border-b font-medium max-w-xs truncate">{target.client}</td>
-                          <td className="p-3 border-b">{target.picName}</td>
-                          <td className="p-3 border-b">{target.scheduleVisit}</td>
-                          <td className="p-3 border-b">
-                            <Badge variant={target.statusClient === 'LANJUT' ? 'default' : target.statusClient === 'LOSS' ? 'destructive' : 'secondary'}>
-                              {target.statusClient}
-                            </Badge>
-                          </td>
-                          <td className="p-3 border-b">
-                            <Badge variant={target.statusKunjungan === 'VISITED' ? 'default' : 'outline'}>
-                              {target.statusKunjungan}
-                            </Badge>
-                          </td>
-                          <td className="p-3 border-b">Rp {target.nilaiKontrak.toLocaleString('id-ID')}</td>
-                          <td className="p-3 border-b text-sm max-w-xs truncate">{target.contactPerson || '-'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button variant="outline" onClick={cancelImport}>
-                    Batal
-                  </Button>
-                  <Button onClick={confirmImport}>
-                    <Upload className="h-4 w-4 mr-2" />
-                    Import {importPreview.length} Data
-                  </Button>
-                </div>
-              </>
-            )}
-          </DialogContent>
-        </Dialog>
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Detail Modal */}
+      <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          {selectedTask && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Detail Kunjungan</DialogTitle>
+                <DialogDescription>
+                  Informasi lengkap mengenai kunjungan ke {selectedTask.clientName}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Foto Bukti Kunjungan */}
+                {selectedTask.photoUrl && (
+                  <Card className="md:col-span-2">
+                    <CardContent className="p-4">
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground mb-2">Bukti Kunjungan</p>
+                          <div className="flex justify-center">
+                            <img
+                              src={selectedTask.photoUrl}
+                              alt="Bukti kunjungan"
+                              className="max-w-full max-h-96 object-contain rounded-lg border-2 border-muted shadow-lg"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Nama Klien</p>
+                        <p className="font-semibold">{selectedTask.clientName}</p>
+                      </div>
+                      {selectedTask.contactPerson && (
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Contact Person</p>
+                          <p className="font-semibold">{selectedTask.contactPerson}</p>
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Status</p>
+                        <Badge variant={getStatusVariant(selectedTask.status)}>
+                          {getStatusText(selectedTask.status)}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Tanggal & Waktu</p>
+                        <p className="font-semibold">
+                          {new Date(selectedTask.date).toLocaleDateString('id-ID', {
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                          })} pukul {selectedTask.time} WIB
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Lokasi</p>
+                        <p className="text-sm">{selectedTask.location}</p>
+                      </div>
+                      {selectedTask.notes && (
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Catatan</p>
+                          <p className="text-sm">{selectedTask.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+                {selectedTask.phone && (
+                  <Card>
+                    <CardContent className="p-4">
+                      <p className="text-sm font-medium text-muted-foreground">Telepon</p>
+                      <p className="font-semibold">{selectedTask.phone}</p>
+                    </CardContent>
+                  </Card>
+                )}
+                {selectedTask.email && (
+                  <Card>
+                    <CardContent className="p-4">
+                      <p className="text-sm font-medium text-muted-foreground">Email</p>
+                      <p className="font-semibold text-sm break-all">{selectedTask.email}</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Preview Modal */}
+      <Dialog open={showImportModal} onOpenChange={setShowImportModal}>
+        <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5" />
+              Preview Import Data Excel
+            </DialogTitle>
+            <DialogDescription>
+              Periksa data yang akan diimpor. Pastikan semua data sudah benar sebelum melanjutkan.
+            </DialogDescription>
+          </DialogHeader>
+
+          {importError ? (
+            <Card className="border-red-200 bg-red-50">
+              <CardContent className="p-4">
+                <p className="text-red-600 font-medium">❌ {importError}</p>
+                <p className="text-red-500 text-sm mt-1">
+                  Pastikan file Excel memiliki kolom wajib: <strong>Client</strong>, <strong>Address</strong>, <strong>Schedule Visit</strong>.<br/>
+                  Kolom opsional: PIC Staff, Visit Time, Status Client, Nilai Kontrak, Status Kunjungan, Contact Person, Contact Phone, Location, Sales Amount, Notes, Photo URL
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-blue-700 font-medium">
+                  📊 Ditemukan <span className="font-bold">{importPreview.length}</span> data kunjungan yang akan diimpor
+                </p>
+              </div>
+
+              <div className="max-h-[400px] overflow-y-auto border rounded-lg">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted sticky top-0">
+                    <tr>
+                      <th className="text-left p-3 border-b">Client</th>
+                      <th className="text-left p-3 border-b">PIC Staff</th>
+                      <th className="text-left p-3 border-b">Schedule Visit</th>
+                      <th className="text-left p-3 border-b">Status Client</th>
+                      <th className="text-left p-3 border-b">Status Kunjungan</th>
+                      <th className="text-left p-3 border-b">Nilai Kontrak</th>
+                      <th className="text-left p-3 border-b">Contact Person</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {importPreview.map((target, index) => (
+                      <tr key={index} className="hover:bg-muted/50">
+                        <td className="p-3 border-b font-medium max-w-xs truncate">{target.client}</td>
+                        <td className="p-3 border-b">{target.picName}</td>
+                        <td className="p-3 border-b">{target.scheduleVisit}</td>
+                        <td className="p-3 border-b">
+                          <Badge variant={target.statusClient === 'LANJUT' ? 'default' : target.statusClient === 'LOSS' ? 'destructive' : 'secondary'}>
+                            {target.statusClient}
+                          </Badge>
+                        </td>
+                        <td className="p-3 border-b">
+                          <Badge variant={target.statusKunjungan === 'VISITED' ? 'default' : 'outline'}>
+                            {target.statusKunjungan}
+                          </Badge>
+                        </td>
+                        <td className="p-3 border-b">Rp {target.nilaiKontrak.toLocaleString('id-ID')}</td>
+                        <td className="p-3 border-b text-sm max-w-xs truncate">{target.contactPerson || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <Button variant="outline" onClick={cancelImport}>
+                  Batal
+                </Button>
+                <Button onClick={confirmImport}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Import {importPreview.length} Data
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
