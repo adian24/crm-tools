@@ -1,6 +1,34 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+
+// Add CSS for custom animations
+const customStyles = `
+  @keyframes fadeInSlide {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .fade-in-slide {
+    animation: fadeInSlide 0.4s ease-out;
+  }
+
+  @keyframes numberChange {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+
+  .number-change {
+    animation: numberChange 0.3s ease-in-out;
+  }
+`;
 import { useQuery, useMutation } from 'convex/react';
 import { Calendar, ChevronLeft, ChevronRight, MapPin, Users, CheckCircle, Clock, AlertCircle, TrendingUp, Target, Search, Camera, X, User, Filter, ArrowLeft, ArrowRight, LogOut, Shield } from 'lucide-react';
 import { IconTrendingDown, IconTrendingUp } from "@tabler/icons-react";
@@ -569,6 +597,16 @@ export default function ManagerDashboard() {
     }
   };
 
+  const handleMonthCellClick = (monthIndex: number, year: number, staffId: string) => {
+    const tasks = getTasksForMonthAndStaff(monthIndex, year, staffId);
+    if (tasks.length > 0) {
+      // Sort by date to get the most recent task
+      tasks.sort((a, b) => new Date(b.scheduleVisit || b.date || '').getTime() - new Date(a.scheduleVisit || a.date || '').getTime());
+      setSelectedVisit(tasks[0]);
+      setShowDetailModal(true);
+    }
+  };
+
   // Determine if we should show monthly calendar (more than 1 month) or daily calendar (1 month)
   const isMultiMonthView = dateRange.endMonth > dateRange.startMonth || dateRange.endYear > dateRange.startYear;
 
@@ -628,6 +666,9 @@ export default function ManagerDashboard() {
 
   return (
     <>
+      {/* Custom Animation Styles */}
+      <style dangerouslySetInnerHTML={{ __html: customStyles }} />
+
       {/* Header with User Info */}
       <div className="border-b bg-background sticky top-0 z-50">
         <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
@@ -671,360 +712,349 @@ export default function ManagerDashboard() {
         </div>
       </div>
 
-      <div className="space-y-6 py-8">
-
-
-        {/* Shadcn UI Filter Section */}
-        {true && (
-          <div className="px-4 lg:px-6">
+      <div className="flex flex-col lg:flex-row gap-6 py-8 px-4 lg:px-6">
+        {/* LEFT SIDEBAR - FILTERS (Desktop Only) */}
+        <div className="hidden lg:block lg:w-80 flex-shrink-0">
+          <div className="sticky top-24 space-y-6">
+            {/* Filter Card */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Filter className="h-5 w-5" />
-                  {user.role === "staff"
-                    ? "Your Performance Filters"
-                    : "Team Filters"}
+                  Filters
                 </CardTitle>
               </CardHeader>
-
-              <CardContent>
-                {/* FILTER CONTROLS (ALL USERS) */}
-                <div className="mb-6 space-y-4">
-                  {/* Staff Filter Buttons */}
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Filter by Team Member</label>
-                    <div className="flex flex-wrap gap-2">
+              <CardContent className="space-y-6">
+                {/* Staff Filter Buttons */}
+                <div>
+                  <label className="text-sm font-medium mb-3 block">Filter by Team Member</label>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant={selectedStaff === "all" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedStaff("all")}
+                      className="flex items-center gap-1 text-xs h-8 px-2"
+                    >
+                      <Users className="h-3 w-3" />
+                      All Team
+                    </Button>
+                    {staffData.map((staff) => (
                       <Button
-                        variant={
-                          selectedStaff === "all"
-                            ? "default"
-                            : "outline"
-                        }
+                        key={staff._id}
+                        variant={selectedStaff === staff._id ? "default" : "outline"}
                         size="sm"
-                        onClick={() => setSelectedStaff("all")}
-                        className="flex items-center gap-1 text-xs sm:text-sm h-8 px-2 sm:px-3"
+                        onClick={() => setSelectedStaff(staff._id)}
+                        className="flex items-center gap-1 text-xs h-8 px-2"
                       >
-                        <Users className="h-3 w-3" />
-                        <span className="hidden sm:inline">All Team Members</span>
-                        <span className="sm:hidden">All</span>
+                        <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex-shrink-0"></div>
+                        {staff.name}
                       </Button>
-                      {staffData.map((staff) => (
-                        <Button
-                          key={staff._id}
-                          variant={
-                            selectedStaff === staff._id
-                              ? "default"
-                              : "outline"
-                          }
-                          size="sm"
-                          onClick={() => setSelectedStaff(staff._id)}
-                          className="flex items-center gap-1 text-xs sm:text-sm h-8 px-2 sm:px-3"
-                        >
-                          <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex-shrink-0"></div>
-                          {staff.name}
-                        </Button>
-                      ))}
-                    </div>
+                    ))}
                   </div>
-                  {/* Other Filters */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-                    {/* Status */}
-                    <div>
-                      <label className="text-sm font-medium">Status:</label>
-                      <Select
-                        value={selectedStatus}
-                        onValueChange={(v) => setSelectedStatus(v)}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Status</SelectItem>
-                          <SelectItem value="visited">VISITED</SelectItem>
-                          <SelectItem value="task">TO DO</SelectItem>
-                          <SelectItem value="lanjut">LANJUT</SelectItem>
-                          <SelectItem value="loss">LOSS</SelectItem>
-                          <SelectItem value="suspend">SUSPEND</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Chart */}
-                    <div>
-                      <label className="text-sm font-medium">Chart:</label>
-                      <Select
-                        value={selectedChartType}
-                        onValueChange={(v) => setSelectedChartType(v)}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="area">Area</SelectItem>
-                          <SelectItem value="bar">Bar</SelectItem>
-                          <SelectItem value="line">Line</SelectItem>
-                          <SelectItem value="pie">Pie</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* From Month */}
-                    <div>
-                      <label className="text-sm font-medium">From:</label>
-                      <Select
-                        value={dateRange.startMonth.toString()}
-                        onValueChange={(v) =>
-                          handleFromMonthChange(Number(v))
-                        }
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {getMonths().map((m) => (
-                            <SelectItem
-                              key={m.value}
-                              value={m.value.toString()}
-                            >
-                              {m.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* To Month */}
-                    <div>
-                      <label className="text-sm font-medium">To:</label>
-                      <Select
-                        value={dateRange.endMonth.toString()}
-                        onValueChange={(v) =>
-                          handleToMonthChange(Number(v))
-                        }
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {getMonths().map((m) => (
-                            <SelectItem
-                              key={m.value}
-                              value={m.value.toString()}
-                            >
-                              {m.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    {/* Year Filter */}
-                    <div>
-                      <label className="text-sm font-medium">Year:</label>
-                      <Select
-                        value={selectedYear.toString()}
-                        onValueChange={(v) =>
-                          handleYearChange(Number(v))
-                        }
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {getYears().map((y) => (
-                            <SelectItem key={y} value={y.toString()}>
-                              {y}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-
                 </div>
 
-                {/* ADMIN / MANAGER FILTER - WITH TEAM MEMBER PERFORMANCE AND CHART */}
-                {(user.role === "super_admin" ||
-                  user.role === "manager") && (
-                  <div className="mb-6">
-
-                    {/* TEAM MEMBER PERFORMANCE AND CHART SECTION */}
-                    <div className="grid lg:grid-cols-12 grid-cols-1 gap-4 min-h-[400px]">
-                      {/* LEFT COLUMN - TEAM MEMBER PERFORMANCE - SHOW ONLY WHEN STAFF IS SELECTED */}
-                      {selectedStaff !== "all" && staffData.find(staff => staff._id === selectedStaff) && (
-                        <div className="lg:col-span-2 h-full">
-                          {/* <Card className="h-full ring-2 ring-primary shadow-lg"> */}
-                            <CardContent className="h-full flex flex-col">
-                              {(() => {
-                                const selectedStaffData = staffData.find(staff => staff._id === selectedStaff);
-                                if (!selectedStaffData) return null;
-
-                                const staffPhoto = selectedStaffData.name.toLowerCase() === 'dhea'
-                                  ? '/images/dhea.jpeg'
-                                  : selectedStaffData.name.toLowerCase() === 'mercy'
-                                  ? '/images/mercy.jpeg'
-                                  : `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedStaffData.name}`;
-
-                                // Get additional stats for the selected staff
-                                const getStaffStats = () => {
-                                  const visitData = getVisitDataByDate();
-                                  const currentYear = new Date().getFullYear();
-                                  let completedVisits = 0;
-                                  let suspendVisits = 0;
-                                  let lossVisits = 0;
-                                  let totalVisits = 0;
-                                  let totalAmount = 0;
-
-                                  Object.entries(visitData).forEach(([dateStr, tasks]) => {
-                                    const [year, month, day] = dateStr.split('-').map(Number);
-                                    if (year === currentYear) {
-                                      const staffTasks = tasks.filter(task => task.staffId === selectedStaffData._id);
-                                      totalVisits += staffTasks.filter(t => t.statusKunjungan === 'VISITED').length;
-                                        completedVisits += staffTasks.filter(t => t.status === 'lanjut').length;
-                                        suspendVisits += staffTasks.filter(t => t.status === 'suspend').length;
-                                        lossVisits += staffTasks.filter(t => t.status === 'loss').length;
-                                      staffTasks.forEach(task => {
-                                        totalAmount += task.salesAmount || 0;
-                                      });
-                                    }
-                                  });
-
-                                  return { completedVisits, suspendVisits, lossVisits, totalVisits, totalAmount };
-                                };
-
-                                const staffStats = getStaffStats();
-                                const completionRate = Math.round((staffStats.completedVisits / selectedStaffData.targetYearly) * 100);
-
-                                return (
-                                  <div className="flex flex-col h-full">
-                                    {/* Profile Photo - Centered at Top */}
-                                    <div className="flex justify-center pb-3 border-b">
-                                      <div className="relative">
-                                        <img
-                                          src={staffPhoto}
-                                          onError={(e) =>
-                                            (e.currentTarget.src = "/images/visit.jpeg")
-                                          }
-                                          className="w-32 h-32 rounded-full object-cover border-4 border-background shadow-xl"
-                                        />
-                                        {selectedStaffData.isActive && (
-                                          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-background"></div>
-                                        )}
-                                      </div>
-                                    </div>
-
-                                    {/* Profile Info */}
-                                    <div className="text-center pb-3 border-b space-y-1">
-                                      <p className="font-semibold text-sm truncate">
-                                        {selectedStaffData.name}
-                                      </p>
-                                      <p className="text-xs text-muted-foreground truncate">
-                                        {selectedStaffData.email}
-                                      </p>
-                                      <p className="text-xs text-blue-600 font-medium">
-                                        Staff ID: {selectedStaffData.staffId}
-                                      </p>
-                                    </div>
-
-                                    {/* Performance Overview */}
-                                    <div className="pb-3 border-b">
-                                      <div className="flex items-center justify-between">
-                                        <div className="text-xs text-muted-foreground">
-                                          Target Achievement
-                                        </div>
-                                        <div className="text-2xl font-bold text-primary">
-                                          {completionRate}%
-                                        </div>
-                                      </div>
-                                      <div className="flex items-center justify-between mt-1">
-                                        <div className="text-xs text-muted-foreground">
-                                          Total Visits
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">
-                                          {staffStats.totalVisits}/{selectedStaffData.targetYearly} visits
-                                        </div>
-                                      </div>
-                                      <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                                        <div
-                                          className="bg-blue-600 h-2 rounded-full transition-all duration-500"
-                                          style={{ width: `${Math.min((staffStats.totalVisits / selectedStaffData.targetYearly) * 100, 100)}%` }}
-                                        />
-                                      </div>
-                                    </div>
-
-                                    {/* Detailed Statistics */}
-                                    <div className="flex-1 space-y-3">
-                                      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                        Performance Breakdown
-                                      </div>
-
-                                      <div className="space-y-2">
-                                        <div className="flex justify-between items-center">
-                                          <span className="text-xs text-green-600">✓ Lanjut</span>
-                                          <span className="text-xs font-medium">{staffStats.completedVisits}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                          <span className="text-xs text-yellow-600">⏸ Suspend</span>
-                                          <span className="text-xs font-medium">{staffStats.suspendVisits}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                          <span className="text-xs text-red-600">✗ Loss</span>
-                                          <span className="text-xs font-medium">{staffStats.lossVisits}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                          <span className="text-xs text-blue-600">📋 To Do</span>
-                                          <span className="text-xs font-medium">{staffStats.totalVisits - staffStats.completedVisits - staffStats.suspendVisits - staffStats.lossVisits}</span>
-                                        </div>
-                                      </div>
-
-                                      <div className="pt-2 border-t">
-                                        <div className="flex justify-between items-center">
-                                          <span className="text-xs text-muted-foreground">Total Revenue</span>
-                                          <span className="text-xs font-bold text-green-600">
-                                            Rp {staffStats.totalAmount.toLocaleString('id-ID')}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    
-                                  </div>
-                                );
-                              })()}
-                            </CardContent>
-                          {/* </Card> */}
-                        </div>
-                      )}
-
-                      {/* RIGHT COLUMN - SALES PERFORMANCE CHART */}
-                      <div className={`${selectedStaff !== "all" && staffData.find(staff => staff._id === selectedStaff) ? "lg:col-span-10" : "lg:col-span-12"} h-full`}>
-                          <ChartAreaInteractive
-                            selectedStaff={selectedStaff}
-                            selectedYear={selectedYear}
-                            selectedStatus={selectedStatus}
-                            allVisitData={getVisitDataByDate()}
-                            dateRange={dateRange}
-                            selectedChartType={selectedChartType}
-                          />
-                      </div>
-                    </div>
+                {/* Other Filters */}
+                <div className="space-y-4">
+                  {/* Status */}
+                  <div>
+                    <label className="text-sm font-medium">Status:</label>
+                    <Select value={selectedStatus} onValueChange={(v) => setSelectedStatus(v)}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="visited">VISITED</SelectItem>
+                        <SelectItem value="task">TO DO</SelectItem>
+                        <SelectItem value="lanjut">LANJUT</SelectItem>
+                        <SelectItem value="loss">LOSS</SelectItem>
+                        <SelectItem value="suspend">SUSPEND</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                )}
+
+                  {/* Chart */}
+                  <div>
+                    <label className="text-sm font-medium">Chart:</label>
+                    <Select value={selectedChartType} onValueChange={(v) => setSelectedChartType(v)}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="area">Area</SelectItem>
+                        <SelectItem value="bar">Bar</SelectItem>
+                        <SelectItem value="line">Line</SelectItem>
+                        <SelectItem value="pie">Pie</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* From Month */}
+                  <div>
+                    <label className="text-sm font-medium">From:</label>
+                    <Select
+                      value={dateRange.startMonth.toString()}
+                      onValueChange={(v) => handleFromMonthChange(Number(v))}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getMonths().map((m) => (
+                          <SelectItem key={m.value} value={m.value.toString()}>
+                            {m.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* To Month */}
+                  <div>
+                    <label className="text-sm font-medium">To:</label>
+                    <Select
+                      value={dateRange.endMonth.toString()}
+                      onValueChange={(v) => handleToMonthChange(Number(v))}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getMonths().map((m) => (
+                          <SelectItem key={m.value} value={m.value.toString()}>
+                            {m.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Year Filter */}
+                  <div>
+                    <label className="text-sm font-medium">Year:</label>
+                    <Select value={selectedYear.toString()} onValueChange={(v) => handleYearChange(Number(v))}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getYears().map((y) => (
+                          <SelectItem key={y} value={y.toString()}>
+                            {y}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </CardContent>
             </Card>
-          </div>
-        )}
 
-  
-        {/* Modern CRM Stats Cards */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4 px-3 sm:px-4 lg:px-6">
+            </div>
+        </div>
+
+        {/* MOBILE FILTERS */}
+        <div className="lg:hidden px-0">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <Filter className="h-4 w-4" />
+                Filters
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Mobile Staff Filter */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">Team Member</label>
+                <Select value={selectedStaff} onValueChange={(v) => setSelectedStaff(v)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Team Members</SelectItem>
+                    {staffData.map((staff) => (
+                      <SelectItem key={staff._id} value={staff._id}>
+                        {staff.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Mobile Status Filter */}
+              <div>
+                <label className="text-sm font-medium">Status:</label>
+                <Select value={selectedStatus} onValueChange={(v) => setSelectedStatus(v)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="visited">VISITED</SelectItem>
+                    <SelectItem value="task">TO DO</SelectItem>
+                    <SelectItem value="lanjut">LANJUT</SelectItem>
+                    <SelectItem value="loss">LOSS</SelectItem>
+                    <SelectItem value="suspend">SUSPEND</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* MAIN CONTENT */}
+        <div className="flex-1 min-w-0 space-y-6">
+          {/* Chart and Performance Section */}
+          {(user.role === "super_admin" || user.role === "manager") && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+              {/* Staff Performance Card - Show only when staff is selected */}
+              {selectedStaff !== "all" && staffData.find(staff => staff._id === selectedStaff) && (
+                <div className="lg:col-span-2">
+                    <Card className='min-h-[445px]'>
+                    <CardContent>
+                      {(() => {
+                        const selectedStaffData = staffData.find(staff => staff._id === selectedStaff);
+                        if (!selectedStaffData) return null;
+
+                        const staffPhoto = selectedStaffData.name.toLowerCase() === 'dhea'
+                          ? '/images/dhea.jpeg'
+                          : selectedStaffData.name.toLowerCase() === 'mercy'
+                          ? '/images/mercy.jpeg'
+                          : `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedStaffData.name}`;
+
+                        // Get additional stats for the selected staff
+                        const getStaffStats = () => {
+                          const visitData = getVisitDataByDate();
+                          const currentYear = new Date().getFullYear();
+                          let completedVisits = 0;
+                          let suspendVisits = 0;
+                          let lossVisits = 0;
+                          let totalVisits = 0;
+                          let totalAmount = 0;
+
+                          Object.entries(visitData).forEach(([dateStr, tasks]) => {
+                            const [year, month, day] = dateStr.split('-').map(Number);
+                            if (year === currentYear) {
+                              const staffTasks = tasks.filter(task => task.staffId === selectedStaffData._id);
+                              totalVisits += staffTasks.filter(t => t.statusKunjungan === 'VISITED').length;
+                              completedVisits += staffTasks.filter(t => t.status === 'lanjut').length;
+                              suspendVisits += staffTasks.filter(t => t.status === 'suspend').length;
+                              lossVisits += staffTasks.filter(t => t.status === 'loss').length;
+                              staffTasks.forEach(task => {
+                                totalAmount += task.salesAmount || 0;
+                              });
+                            }
+                          });
+
+                          return { completedVisits, suspendVisits, lossVisits, totalVisits, totalAmount };
+                        };
+
+                        const staffStats = getStaffStats();
+                        const completionRate = Math.round((staffStats.completedVisits / selectedStaffData.targetYearly) * 100);
+
+                        return (
+                          <div className="space-y-4">
+                            {/* Profile Photo */}
+                            <div className="flex justify-center">
+                              <div className="relative">
+                                <img
+                                  src={staffPhoto}
+                                  onError={(e) => (e.currentTarget.src = "/images/visit.jpeg")}
+                                  className="w-24 h-24 rounded-full object-cover border-4 border-background shadow-lg"
+                                />
+                                {selectedStaffData.isActive && (
+                                  <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-background"></div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Profile Info */}
+                            <div className="text-center space-y-1">
+                              <p className="font-semibold text-sm truncate">{selectedStaffData.name}</p>
+                              <p className="text-xs text-muted-foreground truncate">{selectedStaffData.email}</p>
+                              <p className="text-xs text-blue-600 font-medium">ID: {selectedStaffData.staffId}</p>
+                            </div>
+
+                            {/* Performance Overview */}
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-muted-foreground">Target Achievement</span>
+                                <span className="text-lg font-bold text-primary">{completionRate}%</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-muted-foreground">Total Visits</span>
+                                <span className="text-xs text-muted-foreground">{staffStats.totalVisits}/{selectedStaffData.targetYearly}</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div
+                                  className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                                  style={{ width: `${Math.min((staffStats.totalVisits / selectedStaffData.targetYearly) * 100, 100)}%` }}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Detailed Statistics */}
+                            <div className="space-y-2">
+                              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Performance Breakdown</div>
+                              <div className="grid grid-cols-2 gap-2 text-xs">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-green-600">✓ Lanjut</span>
+                                  <span className="font-medium">{staffStats.completedVisits}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-yellow-600">⏸ Suspend</span>
+                                  <span className="font-medium">{staffStats.suspendVisits}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-red-600">✗ Loss</span>
+                                  <span className="font-medium">{staffStats.lossVisits}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-blue-600">📋 To Do</span>
+                                  <span className="font-medium">{selectedStaffData.targetYearly - staffStats.completedVisits - staffStats.suspendVisits - staffStats.lossVisits}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Total Revenue */}
+                            <div className="pt-2 border-t">
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs text-muted-foreground">Total Revenue</span>
+                                <span className="text-xs font-bold text-green-600">
+                                  Rp {staffStats.totalAmount.toLocaleString('id-ID')}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </CardContent>
+                    </Card>
+                </div>
+              )}
+              {/* Chart */}
+              <div className={`${selectedStaff !== "all" && staffData.find(staff => staff._id === selectedStaff) ? "lg:col-span-10" : "lg:col-span-12"} h-full`}>
+                <ChartAreaInteractive
+                  selectedStaff={selectedStaff}
+                  selectedYear={selectedYear}
+                  selectedStatus={selectedStatus}
+                  allVisitData={getVisitDataByDate()}
+                  dateRange={dateRange}
+                  selectedChartType={selectedChartType}
+                />
+              </div>
+
+              
+            </div>
+          )}
+
+          {/* Modern CRM Stats Cards */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4 transition-all duration-300 ease-in-out" key={`${selectedStaff}-${selectedStatus}-${selectedYear}-${dateRange.startMonth}-${dateRange.endMonth}`}>
           {/* Target Card - Total data from Convex table with progress bar */}
-          <Card className="@container/card">
+          <Card className="@container/card transition-all duration-300 ease-in-out hover:shadow-lg transform hover:-translate-y-1">
             <CardHeader className="pb-2 sm:pb-4">
               <CardDescription className="text-xs sm:text-sm">TARGET</CardDescription>
-              <CardTitle className="text-xl sm:text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-                {(() => {
+              <CardTitle className="text-xl sm:text-2xl font-semibold tabular-nums @[250px]/card:text-3xl transition-all duration-300 ease-in-out">
+                <span className="number-change inline-block">{(() => {
                   // Calculate total data from Convex targets table
                   let totalTargets = 0;
                   let totalVisited = 0;
@@ -1044,7 +1074,7 @@ export default function ManagerDashboard() {
                   });
 
                   return totalTargets;
-                })()}
+                })()}</span>
               </CardTitle>
               <CardAction className="pt-1">
                 <Badge variant="outline" className="text-xs sm:text-sm text-green-600">
@@ -1064,7 +1094,7 @@ export default function ManagerDashboard() {
                 <div className="flex justify-between text-xs">
                   <span className="text-muted-foreground">Progress</span>
                   <span className="font-medium">
-                    {(() => {
+                    <span className="number-change inline-block">{(() => {
                       let totalTargets = 0;
                       let totalVisited = 0;
                       const visitData = getVisitDataByDate();
@@ -1086,9 +1116,10 @@ export default function ManagerDashboard() {
                       return `${totalVisited}/${totalTargets} (${percentage}%)`;
                     })()}
                   </span>
+                  </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
-                  {(() => {
+                  <span className="number-change inline-block">{(() => {
                     let totalTargets = 0;
                     let totalVisited = 0;
                     const visitData = getVisitDataByDate();
@@ -1109,11 +1140,12 @@ export default function ManagerDashboard() {
                     const percentage = totalTargets > 0 ? Math.round((totalVisited / totalTargets) * 100) : 0;
                     return (
                       <div
-                        className="bg-green-500 h-2 rounded-full transition-all duration-500"
+                        className="bg-green-500 h-2 rounded-full transition-all duration-700 ease-out"
                         style={{ width: `${Math.min(percentage, 100)}%` }}
                       />
                     );
                   })()}
+                  </span>
                 </div>
               </div>
 
@@ -1123,11 +1155,11 @@ export default function ManagerDashboard() {
             </CardFooter>
           </Card>
 
-          <Card className="@container/card">
+          <Card className="@container/card transition-all duration-300 ease-in-out hover:shadow-lg transform hover:-translate-y-1">
             <CardHeader className="pb-2 sm:pb-4">
               <CardDescription className="text-xs sm:text-sm">LANJUT</CardDescription>
-              <CardTitle className="text-xl sm:text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-                {(() => {
+              <CardTitle className="text-xl sm:text-2xl font-semibold tabular-nums @[250px]/card:text-3xl transition-all duration-300 ease-in-out">
+                <span className="number-change inline-block">{(() => {
                   // Calculate total visits with LANJUT status
                   let lanjutCount = 0;
                   const visitData = getVisitDataByDate();
@@ -1145,7 +1177,7 @@ export default function ManagerDashboard() {
                   });
 
                   return lanjutCount;
-                })()}
+                })()}</span>
               </CardTitle>
               <CardAction className="pt-1">
                 <Badge variant="outline" className="text-xs sm:text-sm text-green-600">
@@ -1168,10 +1200,10 @@ export default function ManagerDashboard() {
             </CardFooter>
           </Card>
 
-          <Card className="@container/card">
+          <Card className="@container/card transition-all duration-300 ease-in-out hover:shadow-lg transform hover:-translate-y-1">
             <CardHeader className="pb-2 sm:pb-4">
               <CardDescription className="text-xs sm:text-sm">LOSS</CardDescription>
-              <CardTitle className="text-xl sm:text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+              <CardTitle className="text-xl sm:text-2xl font-semibold tabular-nums @[250px]/card:text-3xl transition-all duration-300 ease-in-out">
                 {lossVisits}
               </CardTitle>
               <CardAction className="pt-1">
@@ -1195,10 +1227,10 @@ export default function ManagerDashboard() {
             </CardFooter>
           </Card>
           
-           <Card className="@container/card">
+           <Card className="@container/card transition-all duration-300 ease-in-out hover:shadow-lg transform hover:-translate-y-1">
             <CardHeader className="pb-2 sm:pb-4">
               <CardDescription className="text-xs sm:text-sm">SUSPEND</CardDescription>
-              <CardTitle className="text-xl sm:text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+              <CardTitle className="text-xl sm:text-2xl font-semibold tabular-nums @[250px]/card:text-3xl transition-all duration-300 ease-in-out">
                 {suspendVisits}
               </CardTitle>
               <CardAction className="pt-1">
@@ -1225,7 +1257,7 @@ export default function ManagerDashboard() {
         </div>
 
         {/* Shadcn UI Calendar Section - Only show for admin or with controls for staff */}
-        <div className="px-3 sm:px-4 lg:px-6">
+        <div className="transition-all duration-300 ease-in-out" key={`calendar-${selectedStaff}-${selectedStatus}-${selectedYear}`}>
           <Card>
             <CardHeader className="pb-3 sm:pb-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1327,7 +1359,7 @@ export default function ManagerDashboard() {
                               key={`${staff.id}-${month.year}-${month.monthIndex}`}
                               className={`text-center cursor-pointer hover:bg-muted/50 py-1 px-1 border border-border ${isCurrentMonth ? 'border-blue-400 bg-blue-50/30' : ''}`}
                               style={{ width: `${100/(calendarMonths.length + 4)}%` }}
-                              onClick={() => hasTask && handleCellClick(new Date(month.year, month.monthIndex, 1), staff.id)}
+                              onClick={() => hasFilteredTask && handleMonthCellClick(month.monthIndex, month.year, staff._id)}
                             >
                               {hasFilteredTask ? (
                                 <div className="text-xs font-semibold">
@@ -1341,7 +1373,7 @@ export default function ManagerDashboard() {
                         })}
                         <TableCell className="text-center py-1 px-1" style={{ width: `${100/(calendarMonths.length + 4)}%` }}>
                           <div className="font-bold text-sm">
-                            {(() => {
+                            <span className="number-change inline-block">{(() => {
                               let totalFilteredVisits = 0;
                               calendarMonths.forEach(month => {
                                 const tasks = getTasksForMonthAndStaff(month.monthIndex, month.year, staff._id);
@@ -1355,11 +1387,12 @@ export default function ManagerDashboard() {
                               });
                               return totalFilteredVisits;
                             })()}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell className="text-center py-1 px-1" style={{ width: `${100/(calendarMonths.length + 4)}%` }}>
                           <div className="font-bold text-sm">
-                            {(() => {
+                            <span className="number-change inline-block">{(() => {
                               let totalFilteredVisits = 0;
                               let totalTasks = 0;
                               calendarMonths.forEach(month => {
@@ -1377,11 +1410,12 @@ export default function ManagerDashboard() {
                               const percentage = totalTasks > 0 ? Math.round((totalFilteredVisits / totalTasks) * 100) : 0;
                               return `${percentage}%`;
                             })()}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell className="text-center py-1 px-1" style={{ width: `${100/(calendarMonths.length + 4)}%` }}>
                           <div className="font-bold text-xs">
-                            {(() => {
+                            <span className="number-change inline-block">{(() => {
                               let totalAmount = 0;
                               calendarMonths.forEach(month => {
                                 const tasks = getTasksForMonthAndStaff(month.monthIndex, month.year, staff._id);
@@ -1405,6 +1439,7 @@ export default function ManagerDashboard() {
                                 maximumFractionDigits: 0
                               }).format(totalAmount);
                             })()}
+                            </span>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -1415,7 +1450,7 @@ export default function ManagerDashboard() {
 
               {/* Daily Calendar View */}
               {!isMultiMonthView && (
-                <Table className="w-full" style={{ width: '100%', tableLayout: 'auto' }}>
+                <Table className="w-full" style={{ tableLayout: 'auto' }}>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[80px] py-1">
@@ -1424,7 +1459,8 @@ export default function ManagerDashboard() {
                           Staff
                         </div>
                       </TableHead>
-                      {calendarDays.map((date, index) => {
+
+                      {calendarDays.map((date) => {
                         const isWeekend = date.getDay() === 0 || date.getDay() === 6;
                         const isToday = date.toDateString() === new Date().toDateString();
 
@@ -1435,10 +1471,11 @@ export default function ManagerDashboard() {
                         return (
                           <TableHead
                             key={date.toISOString()}
-                            className={`text-center py-0.5 px-0.5 min-w-[25px] ${isOutsideRange ? 'opacity-60' : ''} ${isWeekend ? 'bg-red-200/50' : ''}`}
-                            style={{ width: `${100/(calendarDays.length + 3)}%` }}
+                            className={`text-center py-0.5 px-0.5 min-w-[25px]
+                              ${isOutsideRange ? 'opacity-60' : ''}
+                              ${isWeekend ? 'bg-red-200/50' : ''}`}
                           >
-                            <div className={`font-semibold ${isToday ? 'text-sm text-blue-600' : 'text-sm'}`}>
+                            <div className={`font-semibold ${isToday ? 'text-blue-600' : ''}`}>
                               {date.getDate()}
                             </div>
                             <div className="text-[10px] leading-none">
@@ -1452,115 +1489,104 @@ export default function ManagerDashboard() {
                           </TableHead>
                         );
                       })}
-                      <TableHead className="text-center min-w-[50px] py-1 text-sm font-semibold" style={{ width: `${100/(calendarDays.length + 3)}%` }}>Total</TableHead>
-                      <TableHead className="text-center min-w-[50px] py-1 text-sm font-semibold" style={{ width: `${100/(calendarDays.length + 3)}%` }}>Lanjut</TableHead>
+
+                      <TableHead className="text-center min-w-[50px]">Total</TableHead>
+                      <TableHead className="text-center min-w-[50px]">Lanjut</TableHead>
                     </TableRow>
                   </TableHeader>
-                <TableBody>
-                  {filteredStaff.map((staff, staffIndex) => (
-                    <TableRow key={staff.id}>
-                      <TableCell className="font-medium py-1 px-1">
-                        <div className="flex items-center gap-2">
-                          <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center">
-                            <User className="h-3 w-3 text-blue-600" />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="font-semibold text-xs truncate">{staff.name}</div>
-                            <div className="text-[9px] text-muted-foreground leading-none">
-                              {Object.values(getVisitDataByDate()).flat().filter(task => task.staffId === staff._id).length}/{staff.targetYearly}
+
+                  <TableBody>
+                    {filteredStaff.map((staff, staffIndex) => (
+                      <TableRow key={staff._id}>
+                        <TableCell className="py-1 px-1">
+                          <div className="flex items-center gap-2">
+                            <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center">
+                              <User className="h-3 w-3 text-blue-600" />
+                            </div>
+                            <div>
+                              <div className="font-semibold text-xs truncate">{staff.name}</div>
+                              <div className="text-[9px] text-muted-foreground">
+                                {
+                                  Object.values(getVisitDataByDate())
+                                    .flat()
+                                    .filter(task => task.staffId === staff._id).length
+                                }/{staff.targetYearly}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      {calendarDays.map((date, dayIndex) => {
-                        const tasks = getTasksForDateAndStaff(date, staff._id);
-                        const hasTask = tasks.length > 0;
-                        const isToday = date.toDateString() === new Date().toDateString();
-                        const isDiagonal = staffIndex === dayIndex;
+                        </TableCell>
 
-                        const rangeStart = new Date(dateRange.startYear, dateRange.startMonth, 1);
-                        const rangeEnd = new Date(dateRange.endYear, dateRange.endMonth + 1, 0);
-                        const isOutsideRange = date < rangeStart || date > rangeEnd;
+                        {calendarDays.map((date, dayIndex) => {
+                          const tasks = getTasksForDateAndStaff(date, staff._id);
+                          const hasTask = tasks.length > 0;
+                          const isToday = date.toDateString() === new Date().toDateString();
+                          const isDiagonal = staffIndex === dayIndex;
 
-                        return (
-                          <TableCell
-                            key={date.toISOString()}
-                            className={`text-center cursor-pointer hover:bg-muted/50 py-1 px-1 border border-border ${isOutsideRange ? 'opacity-40' : ''} ${isToday ? 'border-blue-400 bg-blue-50/30' : ''} ${date.getDay() === 0 || date.getDay() === 6 ? 'bg-red-200/50' : ''}`}
-                            style={{ width: `${100/(calendarDays.length + 3)}%` }}
-                            onClick={() => hasTask && !isOutsideRange && handleCellClick(date, staff.id)}
-                          >
-                            {hasTask ? (
-                              <div className="flex justify-center">
-                                {(() => {
-                                  const icon = getTaskIcon(tasks[0].status);
-                                  if (tasks[0].status === 'task') {
-                                    return icon; // Return the animated border circle directly
-                                  }
-                                  return (
-                                    <div className={`w-3.5 h-3.5 ${getTaskStatusColor(tasks[0].status)} rounded-full flex items-center justify-center text-white text-[8px] font-bold`}>
-                                      {icon}
-                                    </div>
-                                  );
-                                })()}
-                              </div>
-                            ) : isDiagonal ? (
-                              <div className="w-4 h-4 border-2 border-dashed border-blue-400 rounded-full mx-auto animate-pulse"></div>
-                            ) : null}
-                          </TableCell>
-                        );
-                      })}
-                      <TableCell className="text-center py-1 px-1" style={{ width: `${100/(calendarDays.length + 3)}%` }}>
-                        <div className="font-bold text-sm">
+                          return (
+                            <TableCell
+                              key={date.toISOString()}
+                              className={`text-center cursor-pointer py-1 px-1 border
+                                ${isToday ? 'border-blue-400 bg-blue-50/30' : ''}
+                                ${date.getDay() === 0 || date.getDay() === 6 ? 'bg-red-200/50' : ''}`}
+                              onClick={() => hasTask && handleCellClick(date, staff._id)}
+                            >
+                              {hasTask ? (
+                                <div className="flex justify-center">
+                                  {tasks[0].status === 'task'
+                                    ? getTaskIcon(tasks[0].status)
+                                    : (
+                                      <div className={`w-3.5 h-3.5 ${getTaskStatusColor(tasks[0].status)} rounded-full flex items-center justify-center text-white text-[8px]`}>
+                                        {getTaskIcon(tasks[0].status)}
+                                      </div>
+                                    )}
+                                </div>
+                              ) : null}
+                            </TableCell>
+                          );
+                        })}
+
+                        {/* TOTAL */}
+                        <TableCell className="text-center">
+                          <div className="font-bold text-sm number-change">
+                            {calendarDays.reduce((sum, d) => (
+                              sum + getTasksForDateAndStaff(d, staff._id).length
+                            ), 0)}
+                          </div>
+                        </TableCell>
+
+                        {/* PERCENTAGE */}
+                        <TableCell className="text-center">
                           {(() => {
-                            let totalVisits = 0;
-                            calendarDays.forEach(date => {
-                              const tasks = getTasksForDateAndStaff(date, staff._id);
-                              totalVisits += tasks.length;
+                            let total = 0;
+                            let done = 0;
+
+                            calendarDays.forEach(d => {
+                              const tasks = getTasksForDateAndStaff(d, staff._id);
+                              total += tasks.length;
+                              done += tasks.filter(t => t.status === 'lanjut').length;
                             });
-                            return totalVisits;
+
+                            const percent = total ? Math.round((done / total) * 100) : 0;
+
+                            return (
+                              <>
+                                <div className="font-bold text-sm number-change">{percent}%</div>
+                                <div className="w-full bg-muted rounded-full h-1.5 mt-1">
+                                  <div
+                                    className="bg-green-500 h-1.5 rounded-full transition-all"
+                                    style={{ width: `${percent}%` }}
+                                  />
+                                </div>
+                              </>
+                            );
                           })()}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-center py-1 px-1" style={{ width: `${100/(calendarDays.length + 3)}%` }}>
-                        <div className="flex flex-col items-center">
-                          <div className="font-bold text-sm">
-                            {(() => {
-                              let totalVisits = 0;
-                              let completedVisits = 0;
-                              calendarDays.forEach(date => {
-                                const tasks = getTasksForDateAndStaff(date, staff._id);
-                                totalVisits += tasks.length;
-                                completedVisits += tasks.filter(t => t.status === 'lanjut').length;
-                              });
-                              const percentage = totalVisits > 0 ? Math.round((completedVisits / totalVisits) * 100) : 0;
-                              return `${percentage}%`;
-                            })()}
-                          </div>
-                          <div className="w-full bg-muted rounded-full h-1.5 mt-1">
-                            {(() => {
-                              let totalVisits = 0;
-                              let completedVisits = 0;
-                              calendarDays.forEach(date => {
-                                const tasks = getTasksForDateAndStaff(date, staff._id);
-                                totalVisits += tasks.length;
-                                completedVisits += tasks.filter(t => t.status === 'lanjut').length;
-                              });
-                              const percentage = totalVisits > 0 ? Math.round((completedVisits / totalVisits) * 100) : 0;
-                              return (
-                                <div
-                                  className="bg-green-500 h-1.5 rounded-full transition-all duration-500"
-                                  style={{ width: `${percentage}%` }}
-                                />
-                              );
-                            })()}
-                          </div>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               )}
+
             </div>
 
             {/* Timeline Info */}
@@ -1609,7 +1635,7 @@ export default function ManagerDashboard() {
 
         {/* Interactive Chart Component */}
          {/* Recent Visits Table */}
-         <div className="px-3 sm:px-4 lg:px-6">
+         <div className="transition-all duration-300 ease-in-out" key={`table-${selectedStaff}-${selectedStatus}-${selectedYear}`}>
           <div className="">
             <Card>
               <CardHeader className="pb-3 sm:pb-4">
@@ -1636,11 +1662,11 @@ export default function ManagerDashboard() {
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
                         <TableHead className="text-xs font-medium w-12 text-center">No</TableHead>
-                        <TableHead className="text-xs font-medium min-w-[80px]">PIC CRM</TableHead>
-                        <TableHead className="text-xs font-medium min-w-[120px]">Client</TableHead>
-                        <TableHead className="text-xs font-medium min-w-[80px]">Tgl</TableHead>
-                        <TableHead className="text-xs font-medium min-w-[80px]">Status</TableHead>
-                        <TableHead className="text-xs font-medium text-right min-w-[100px]">Nilai Kontrak</TableHead>
+                        <TableHead className="text-xs font-medium min-w-[100px]">PIC CRM</TableHead>
+                        <TableHead className="text-xs font-medium min-w-[150px]">Client</TableHead>
+                        <TableHead className="text-xs font-medium min-w-[120px]">Tanggal Kunjungan</TableHead>
+                        <TableHead className="text-xs font-medium min-w-[100px]">Status</TableHead>
+                        <TableHead className="text-xs font-medium text-right min-w-[120px]">Nilai Kontrak</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1650,7 +1676,6 @@ export default function ManagerDashboard() {
                         // Get visits within date range
                         const rangeStart = new Date(dateRange.startYear, dateRange.startMonth, 1);
                         const rangeEnd = new Date(dateRange.endYear, dateRange.endMonth + 1, 0);
-
 
                         Object.entries(getVisitDataByDate()).forEach(([dateStr, visits]) => {
                           const [year, month, day] = dateStr.split('-').map(Number);
@@ -1683,67 +1708,89 @@ export default function ManagerDashboard() {
                         recentVisits.sort((a, b) => new Date(b.scheduleVisit || b.date || '').getTime() - new Date(a.scheduleVisit || a.date || '').getTime());
                         const displayVisits = recentVisits;
 
-                        return (
-                          <>
-                            {displayVisits.map((visit, index) => (
+                        if (displayVisits.length === 0) {
+                          return (
+                            <TableRow>
+                              <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                                {searchTerm ? 'No visits found matching your search criteria' : 'No visits found for the selected filters'}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        }
+
+                        return displayVisits.map((visit, index) => (
                           <TableRow key={visit._id} className="hover:bg-muted/50 cursor-pointer">
-                            <TableCell className="text-xs font-medium text-center w-12 py-2 sm:py-3">{index + 1}</TableCell>
-                            <TableCell className="text-xs font-medium py-2 sm:py-3 truncate max-w-[80px] sm:max-w-none">{(visit as any).staffName}</TableCell>
-                            <TableCell className="text-xs py-2 sm:py-3 truncate max-w-[120px] sm:max-w-none">{visit.client}</TableCell>
-                            <TableCell className="text-xs py-2 sm:py-3">
-                              {(() => {
-                                const [year, month, day] = visit.scheduleVisit.split('-').map(Number);
-                                const date = new Date(year, month - 1, day);
-                                return (
-                                  <>
-                                    <span className="hidden sm:inline">
-                                      {date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                    </span>
-                                    <span className="sm:hidden">
-                                      {date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })}
-                                    </span>
-                                  </>
-                                );
-                              })()}
+                            <TableCell className="text-xs font-medium text-center w-12 py-3">{index + 1}</TableCell>
+                            <TableCell className="text-xs font-medium py-3 truncate max-w-[100px]" title={(visit as any).staffName}>
+                              {(visit as any).staffName || 'Unknown'}
                             </TableCell>
-                            <TableCell className="text-xs py-2 sm:py-3">
+                            <TableCell className="text-xs py-3 truncate max-w-[150px]" title={visit.client}>
+                              {visit.client}
+                            </TableCell>
+                            <TableCell className="text-xs py-3">
+                              <span className="number-change inline-block">
+                                {(() => {
+                                  const dateStr = visit.scheduleVisit;
+                                  if (!dateStr) return 'Invalid Date';
+
+                                  const [year, month, day] = dateStr.split('-').map(Number);
+                                  const date = new Date(year, month - 1, day);
+
+                                  // Check if date is valid
+                                  if (isNaN(date.getTime())) return 'Invalid Date';
+
+                                  return (
+                                    <>
+                                      <span className="hidden sm:inline">
+                                        {date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                      </span>
+                                      <span className="sm:hidden">
+                                        {date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })}
+                                      </span>
+                                    </>
+                                  );
+                                })()}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-xs py-3">
                               <Badge
                                 variant="outline"
-                                className={`text-xs px-1 sm:px-1.5 py-0.5 ${
+                                className={`text-xs px-2 py-1 whitespace-nowrap ${
                                   visit.statusClient === 'LANJUT' ? 'border-green-500 text-green-700 bg-green-50' :
                                   visit.statusClient === 'LOSS' ? 'border-red-500 text-red-700 bg-red-50' :
                                   visit.statusClient === 'SUSPEND' ? 'border-yellow-500 text-yellow-700 bg-yellow-50' :
-                                  'border-blue-500 text-blue-700 bg-blue-50'
+                                  visit.statusClient === 'TO_DO' ? 'border-blue-500 text-blue-700 bg-blue-50' :
+                                  'border-gray-500 text-gray-700 bg-gray-50'
                                 }`}
                               >
                                 {visit.statusClient === 'TO_DO' ? 'TO DO' : visit.statusClient}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-xs text-right font-medium py-2 sm:py-3 truncate">
+                            <TableCell className="text-xs text-right font-medium py-3 truncate">
                               {visit.salesAmount ? (
-                                <>
+                                <div className="number-change inline-block">
                                   <span className="hidden sm:inline">
                                     Rp {visit.salesAmount.toLocaleString('id-ID')}
                                   </span>
-                                  <span className="sm:hidden">
+                                  <span className="sm:hidden text-green-600 font-semibold">
                                     {(visit.salesAmount / 1000000).toFixed(1)}M
                                   </span>
-                                </>
-                              ) : '-'}
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
                             </TableCell>
                           </TableRow>
-                            ))}
-                          </>
-                        );
+                        ));
                       })()}
                     </TableBody>
                     <TableFooter>
                       <TableRow className="bg-muted/50 font-semibold">
-                        <TableCell colSpan={5} className="text-xs text-right">
+                        <TableCell colSpan={5} className="text-xs text-right py-3">
                           Total Nilai Kontrak:
                         </TableCell>
-                        <TableCell className="text-xs text-right font-bold text-green-600">
-                          Rp {(() => {
+                        <TableCell className="text-xs text-right font-bold text-green-600 py-3">
+                          {(() => {
                             const recentVisits: VisitTask[] = [];
                             const rangeStart = new Date(dateRange.startYear, dateRange.startMonth, 1);
                             const rangeEnd = new Date(dateRange.endYear, dateRange.endMonth + 1, 0);
@@ -1775,9 +1822,15 @@ export default function ManagerDashboard() {
                               }
                             });
 
-                            recentVisits.sort((a, b) => new Date(b.scheduleVisit || b.date || '').getTime() - new Date(a.scheduleVisit || a.date || '').getTime());
                             const totalContractValue = recentVisits.reduce((sum, visit) => sum + (visit.salesAmount || 0), 0);
-                            return totalContractValue.toLocaleString('id-ID');
+
+                            return totalContractValue > 0 ? (
+                              <span className="number-change inline-block">
+                                Rp {totalContractValue.toLocaleString('id-ID')}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">Rp 0</span>
+                            );
                           })()}
                         </TableCell>
                       </TableRow>
@@ -1788,7 +1841,7 @@ export default function ManagerDashboard() {
             </Card>
           </div>
          </div>
-
+        </div>
       </div>
 
       {/* Shadcn UI Dialog Modal */}
@@ -1835,16 +1888,17 @@ export default function ManagerDashboard() {
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Date & Time</label>
                     <p className="text-lg font-semibold">
-                      {(() => {
-                      const [year, month, day] = selectedVisit.scheduleVisit.split('-').map(Number);
-                      const date = new Date(year, month - 1, day);
-                      return date.toLocaleDateString('id-ID', {
-                        weekday: 'long',
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric'
-                      });
-                    })()} at {selectedVisit.visitTime} WIB
+                      <span className="number-change inline-block">{(() => {
+                        const [year, month, day] = selectedVisit.scheduleVisit.split('-').map(Number);
+                        const date = new Date(year, month - 1, day);
+                        return date.toLocaleDateString('id-ID', {
+                          weekday: 'long',
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric'
+                        });
+                      })()} at {selectedVisit.visitTime} WIB
+                      </span>
                     </p>
                   </div>
                   <div>
