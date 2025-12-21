@@ -47,7 +47,11 @@ export default function LoginPage() {
         localStorage.setItem('crm_user', JSON.stringify(user));
 
         // Redirect ke dashboard berdasarkan role
-        router.push('/dashboard');
+        if (user.role === 'manager' || user.role === 'super_admin') {
+          router.push('/dashboard-manager');
+        } else {
+          router.push('/dashboard');
+        }
       }
     } catch (err: any) {
       setError(err.message || 'Terjadi kesalahan. Silakan coba lagi.');

@@ -14,11 +14,11 @@ interface User {
   role: 'super_admin' | 'manager' | 'staff';
 }
 
-interface DashboardLayoutProps {
+interface ManagerDashboardLayoutProps {
   children: React.ReactNode;
 }
 
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
+export default function ManagerDashboardLayout({ children }: ManagerDashboardLayoutProps) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [user, setUser] = useState<User | null>(null);
@@ -27,20 +27,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   useEffect(() => {
     setMounted(true);
-    // Check user authentication
+    // Check user authentication and role
     const checkAuth = () => {
       try {
         const userData = localStorage.getItem('crm_user');
         if (userData) {
           const parsedUser = JSON.parse(userData);
 
-          // Check if user has staff role (redirect manager to manager dashboard)
+          // Check if user has manager or super_admin role
           if (parsedUser.role === 'manager' || parsedUser.role === 'super_admin') {
-            router.push('/dashboard-manager');
-            return;
+            setUser(parsedUser);
+          } else {
+            // Redirect staff to regular dashboard
+            router.push('/dashboard');
           }
-
-          setUser(parsedUser);
         } else {
           // Redirect to login if no user data
           router.push('/login');
@@ -83,7 +83,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   return (
-    <SidebarProvider defaultOpen={user.role !== 'manager'}>
+    <SidebarProvider defaultOpen={true}>
       <div className="flex h-screen overflow-hidden bg-background">
         <CRMSidebar user={user} />
         <div className="flex flex-1 flex-col overflow-hidden">
