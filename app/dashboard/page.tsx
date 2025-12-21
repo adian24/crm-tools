@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useQuery, useMutation } from 'convex/react';
 import { Calendar, ChevronLeft, ChevronRight, MapPin, Users, CheckCircle, Clock, AlertCircle, TrendingUp, Target, Search, Camera, X, User, Filter, ArrowLeft, ArrowRight, LogOut, Shield } from 'lucide-react';
 import { IconTrendingDown, IconTrendingUp } from "@tabler/icons-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, CardAction } from '@/components/ui/card';
@@ -11,31 +12,40 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { ChartAreaInteractive } from '@/components/chart-area-interactive';
-import mockStaffData from '@/data/staff.json';
-import mockVisitDataRaw from '@/data/visits.json';
+import { api } from '@/convex/_generated/api';
 
 interface Staff {
+  _id: string;
   id: string;
   name: string;
   email: string;
   targetYearly: number;
   completedThisYear: number;
+  staffId?: string;
+  role: string;
+  isActive: boolean;
+  createdAt: number;
+  updatedAt: number;
 }
 
 interface VisitTask {
-  id: string;
-  clientName: string;
-  date: string;
-  time: string;
-  location: string;
-  status: 'lanjut' | 'loss' | 'suspend' | 'task';
-  staffId: string;
-  staffName: string;
+  _id: string;
+  client: string;
+  address: string;
+  pic: string;
+  scheduleVisit: string;
+  visitTime: string;
+  statusClient: 'LANJUT' | 'LOSS' | 'SUSPEND';
+  statusKunjungan: 'TO_DO' | 'VISITED';
+  nilaiKontrak: number;
   salesAmount?: number;
   notes?: string;
-  photoUrl?: string;
   contactPerson?: string;
-  phone?: string;
+  contactPhone?: string;
+  location?: string;
+  createdAt: number;
+  updatedAt: number;
+  created_by: string;
 }
 
 interface DateRange {
@@ -45,9 +55,6 @@ interface DateRange {
   endYear: number;
 }
 
-// Cast imported JSON data to proper types
-const mockStaff: Staff[] = mockStaffData as Staff[];
-const mockVisitData: { [key: string]: VisitTask[] } = mockVisitDataRaw as { [key: string]: VisitTask[] };
 
 type UserRole = 'super_admin' | 'manager' | 'staff';
 
@@ -70,6 +77,95 @@ export default function Dashboard() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedChartType, setSelectedChartType] = useState<string>('area');
+
+  // Convex data fetching
+  const allUsers = useQuery(api.auth.getAllUsers);
+
+  // Find the actual user ID from staffId
+  const getCurrentUserId = () => {
+    if (!user || user.role !== 'staff' || !user.staffId) return undefined;
+    const currentUser = allUsers?.find(u => u.staffId === user.staffId);
+    return currentUser?._id;
+  };
+
+  const targets = useQuery(api.targets.getTargets,
+    getCurrentUserId()
+      ? { userId: getCurrentUserId() as any }
+      : {}
+  );
+
+  // Helper functions to convert Convex data to dashboard format
+  const convertTargetToVisitTask = (target: any): VisitTask => {
+    const staffUser = allUsers?.find(u => u._id === target.pic);
+    return {
+      _id: target._id,
+      client: target.client,
+      address: target.address,
+      pic: target.pic,
+      scheduleVisit: target.scheduleVisit,
+      visitTime: target.visitTime,
+      statusClient: target.statusClient,
+      statusKunjungan: target.statusKunjungan,
+      nilaiKontrak: target.nilaiKontrak,
+      salesAmount: target.salesAmount,
+      notes: target.notes,
+      contactPerson: target.contactPerson,
+      contactPhone: target.contactPhone,
+      location: target.location,
+      createdAt: target.createdAt,
+      updatedAt: target.updatedAt,
+      created_by: target.created_by,
+      // Add legacy fields for compatibility
+      clientName: target.client,
+      date: target.scheduleVisit,
+      time: target.visitTime,
+      staffId: target.pic,
+      staffName: staffUser?.name || 'Unknown',
+      status: target.statusKunjungan === 'TO_DO' ? 'task' : target.statusClient.toLowerCase(),
+      photoUrl: target.photoUrl,
+      phone: target.contactPhone
+    } as any;
+  };
+
+  // Convert targets to visit tasks and organize by date
+  const getVisitDataByDate = () => {
+    const visitData: { [key: string]: VisitTask[] } = {};
+
+    if (!targets) return visitData;
+
+    targets.forEach(target => {
+      const visitTask = convertTargetToVisitTask(target);
+      const date = target.scheduleVisit;
+
+      if (!visitData[date]) {
+        visitData[date] = [];
+      }
+      visitData[date].push(visitTask);
+    });
+
+    return visitData;
+  };
+
+  // Get staff data from Convex users
+  const getStaffData = (): Staff[] => {
+    if (!allUsers) return [];
+
+    return allUsers
+      .filter(u => u.role === 'staff')
+      .map(u => ({
+        _id: u._id, // Use _id for Convex compatibility
+        id: u._id, // Keep id for backward compatibility
+        name: u.name,
+        email: u.email,
+        targetYearly: u.targetYearly || 100,
+        completedThisYear: 0, // Will be calculated dynamically
+        staffId: u.staffId, // Add staffId for mapping
+        role: u.role,
+        isActive: u.isActive,
+        createdAt: u.createdAt,
+        updatedAt: u.updatedAt
+      }));
+  };
 
   // Date range filter states
   const currentYear = new Date().getFullYear();
@@ -242,16 +338,21 @@ export default function Dashboard() {
     window.location.href = '/login';
   };
 
-  // Get staff ID from localStorage if user is staff
+  // Get staff ID from current user state
   const getLoggedInStaffId = () => {
+    return user?.role === 'staff' ? user.staffId : null;
+  };
+
+  // Get logged in user data from localStorage
+  const getLoggedInUser = () => {
     try {
       const userData = localStorage.getItem('crm_user');
       if (userData) {
-        const parsedUser = JSON.parse(userData);
-        return parsedUser.role === 'staff' ? parsedUser.staffId : null;
+        return JSON.parse(userData);
       }
     } catch (error) {
-      console.error('Error getting staff ID:', error);
+      console.error('Error getting user data:', error);
+      return null;
     }
     return null;
   };
@@ -267,9 +368,9 @@ export default function Dashboard() {
           staffId: parsedUser.staffId
         });
 
-        // If staff, auto-select their staff ID
+        // If staff, auto-select their Convex user ID
         if (parsedUser.role === 'staff' && parsedUser.staffId) {
-          setSelectedStaff(parsedUser.staffId);
+          setSelectedStaff(parsedUser.staffId); // Will be updated to _id after users load
         }
       }
     } catch (error) {
@@ -287,7 +388,17 @@ export default function Dashboard() {
     }
   }, [user]);
 
-  if (!user) {
+  // Update selectedStaff to Convex ID when users are loaded
+  useEffect(() => {
+    if (user?.role === 'staff' && user?.staffId && allUsers?.length > 0) {
+      const currentUser = allUsers.find(u => u.staffId === user.staffId);
+      if (currentUser && selectedStaff === user.staffId) {
+        setSelectedStaff(currentUser._id);
+      }
+    }
+  }, [allUsers, user]);
+
+  if (!user || !targets || !allUsers) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -298,20 +409,11 @@ export default function Dashboard() {
 
   const getTasksForDateAndStaff = (date: Date, staffId: string) => {
     const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    const tasks = mockVisitData[dateStr] || [];
-
-    // Filter by date range
-    const rangeStart = new Date(dateRange.startYear, dateRange.startMonth, 1);
-    const rangeEnd = new Date(dateRange.endYear, dateRange.endMonth + 1, 0);
-
-    const filteredTasks = tasks.filter(task => {
-      const [year, month, day] = task.date.split('-').map(Number);
-      const taskDate = new Date(year, month - 1, day);
-      return taskDate >= rangeStart && taskDate <= rangeEnd;
-    });
+    const visitData = getVisitDataByDate();
+    const tasks = visitData[dateStr] || [];
 
     // Apply status filter
-    const statusFilteredTasks = filteredTasks.filter(task => {
+    const statusFilteredTasks = tasks.filter(task => {
       if (selectedStatus === 'all') return true;
       if (selectedStatus === 'visited') return task.status === 'lanjut' || task.status === 'loss' || task.status === 'suspend';
       return task.status === selectedStatus;
@@ -327,9 +429,10 @@ export default function Dashboard() {
   // Get tasks for month and staff
   const getTasksForMonthAndStaff = (monthIndex: number, year: number, staffId: string) => {
     const monthTasks: VisitTask[] = [];
+    const visitData = getVisitDataByDate();
 
     // Iterate through all visit data
-    Object.entries(mockVisitData).forEach(([dateStr, tasks]) => {
+    Object.entries(visitData).forEach(([dateStr, tasks]) => {
       const [taskYear, taskMonth, day] = dateStr.split('-').map(Number);
       const taskDate = new Date(taskYear, taskMonth - 1, day);
 
@@ -361,8 +464,23 @@ export default function Dashboard() {
     }
   };
 
-  const getCompletionRate = (staff: Staff) => {
-    return Math.round((staff.completedThisYear / staff.targetYearly) * 100);
+  const getCompletionRate = (staffId: string) => {
+    const visitData = getVisitDataByDate();
+    const currentYear = new Date().getFullYear();
+    let completedVisits = 0;
+    let totalVisits = 0;
+
+    Object.entries(visitData).forEach(([dateStr, tasks]) => {
+      const [year, month, day] = dateStr.split('-').map(Number);
+      if (year === currentYear) {
+        const staffTasks = tasks.filter(task => task.staffId === staffId);
+        totalVisits += staffTasks.length;
+        completedVisits += staffTasks.filter(t => t.status === 'lanjut').length;
+      }
+    });
+
+    const staffTarget = staffData.find(s => s._id === staffId)?.targetYearly || 100;
+    return Math.round((completedVisits / staffTarget) * 100);
   };
 
   // Dynamic functions based on selected status
@@ -385,19 +503,21 @@ export default function Dashboard() {
 
   const getStatusPercentage = () => {
     const { totalVisits } = calculateTotals();
+    const staffData = getStaffData();
     const totalTarget = selectedStaff === 'all'
-      ? mockStaff.slice(0, 2).reduce((sum, staff) => sum + staff.targetYearly, 0)
-      : mockStaff.find(staff => staff.id === selectedStaff)?.targetYearly || 0;
+      ? staffData.reduce((sum, staff) => sum + staff.targetYearly, 0)
+      : staffData.find(staff => staff.id === selectedStaff)?.targetYearly || 0;
 
     return totalTarget > 0 ? Math.round((totalVisits / totalTarget) * 100) : 0;
   };
 
   const getStatusTotalAmount = () => {
     let totalAmount = 0;
+    const visitData = getVisitDataByDate();
     const rangeStart = new Date(dateRange.startYear, dateRange.startMonth, 1);
     const rangeEnd = new Date(dateRange.endYear, dateRange.endMonth + 1, 0);
 
-    Object.entries(mockVisitData).forEach(([dateStr, tasks]) => {
+    Object.entries(visitData).forEach(([dateStr, tasks]) => {
       const [year, month, day] = dateStr.split('-').map(Number);
       const taskDate = new Date(year, month - 1, day);
 
@@ -447,9 +567,10 @@ export default function Dashboard() {
   const calendarDays = isMultiMonthView ? [] : getFilteredCalendarDays();
   const calendarMonths = isMultiMonthView ? generateCalendarMonths() : [];
 
+  const staffData = getStaffData();
   const filteredStaff = selectedStaff === 'all'
-    ? mockStaff.slice(0, 2) // Tampilkan hanya Mercy & Dhea untuk demo
-    : mockStaff.filter(staff => staff.id === selectedStaff);
+    ? staffData
+    : staffData.filter(staff => staff._id === selectedStaff);
 
   
   // Calculate totals for selected staff(s) using date range
@@ -459,12 +580,14 @@ export default function Dashboard() {
     let suspendVisits = 0;
     let lossVisits = 0;
 
+    const visitData = getVisitDataByDate();
+
     // Calculate date range for filtering
     const rangeStart = new Date(dateRange.startYear, dateRange.startMonth, 1);
     const rangeEnd = new Date(dateRange.endYear, dateRange.endMonth + 1, 0);
 
     // Iterate through all visit data and filter by date range
-    Object.entries(mockVisitData).forEach(([dateStr, tasks]) => {
+    Object.entries(visitData).forEach(([dateStr, tasks]) => {
       const [year, month, day] = dateStr.split('-').map(Number);
       const taskDate = new Date(year, month - 1, day);
 
@@ -549,7 +672,7 @@ export default function Dashboard() {
 
       <div className="space-y-6 py-8">
 
-
+  
         {/* Shadcn UI Filter Section */}
         {true && (
           <div className="px-4 lg:px-6">
@@ -689,7 +812,7 @@ export default function Dashboard() {
                       Filter by Team Member
                     </label>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
                       <Button
                         variant={
                           selectedStaff === "all"
@@ -703,6 +826,22 @@ export default function Dashboard() {
                         <Users className="h-4 w-4" />
                         All Team Members
                       </Button>
+                      {staffData.map((staff) => (
+                        <Button
+                          key={staff._id}
+                          variant={
+                            selectedStaff === staff._id
+                              ? "default"
+                              : "outline"
+                          }
+                          size="sm"
+                          onClick={() => setSelectedStaff(staff._id)}
+                          className="flex items-center gap-2"
+                        >
+                          <div className="w-4 h-4 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex-shrink-0"></div>
+                          {staff.name}
+                        </Button>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -717,7 +856,7 @@ export default function Dashboard() {
             selectedStaff={selectedStaff}
             selectedYear={selectedYear}
             selectedStatus={selectedStatus}
-            allVisitData={mockVisitData}
+            allVisitData={getVisitDataByDate()}
             dateRange={dateRange}
             selectedChartType={selectedChartType}
           />
@@ -727,77 +866,64 @@ export default function Dashboard() {
         {(user.role === "super_admin" ||
           user.role === "manager") && (
           <div className="mt-6 px-4 lg:px-6">
-            <label className="text-sm font-medium mb-4 block">
-              Filter by Team Member
-            </label>
-
-            <div className="flex items-center gap-3 mb-4">
-              <Button
-                variant={
-                  selectedStaff === "all"
-                    ? "default"
-                    : "outline"
-                }
-                size="sm"
-                onClick={() => setSelectedStaff("all")}
-                className="flex items-center gap-2"
-              >
-                <Users className="h-4 w-4" />
-                All Team Members
-              </Button>
-
-              {mockStaff.slice(0, 2).map((staff) => (
-                <Button
-                  key={staff.id}
-                  variant={
-                    selectedStaff === staff.id
-                      ? "default"
-                      : "outline"
-                  }
-                  size="sm"
-                  onClick={() => setSelectedStaff(staff.id)}
-                >
-                  {staff.name}
-                </Button>
-              ))}
-            </div>
-
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {mockStaff.slice(0, 2).map((staff) => {
-                const staffPhoto =
-                  staff.name === "Mercy"
-                    ? "/images/mercy.jpeg"
-                    : staff.name === "Dhea"
-                    ? "/images/dhea.jpeg"
-                    : "/images/visit.jpeg";
+              {staffData.map((staff) => {
+                const completionRate = getCompletionRate(staff._id);
+                const staffPhoto = `https://api.dicebear.com/7.x/avataaars/svg?seed=${staff.name}`;
+                const totalVisits = Object.values(getVisitDataByDate())
+                  .flat()
+                  .filter(task => task.staffId === staff._id).length;
 
                 return (
                   <Card
-                    key={staff.id}
-                    onClick={() => setSelectedStaff(staff.id)}
-                    className={`cursor-pointer transition-all ${
-                      selectedStaff === staff.id
-                        ? "ring-2 ring-primary"
+                    key={staff._id}
+                    onClick={() => setSelectedStaff(staff._id)}
+                    className={`cursor-pointer transition-all hover:shadow-md ${
+                      selectedStaff === staff._id
+                        ? "ring-2 ring-primary shadow-lg"
                         : ""
                     }`}
                   >
                     <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={staffPhoto}
-                          onError={(e) =>
-                            (e.currentTarget.src =
-                              "/images/visit.jpeg")
-                          }
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
-                        <div>
-                          <p className="font-semibold text-sm">
-                            {staff.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {staff.email}
-                          </p>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="relative">
+                            <img
+                              src={staffPhoto}
+                              onError={(e) =>
+                                (e.currentTarget.src = "/images/visit.jpeg")
+                              }
+                              className="w-12 h-12 rounded-full object-cover border-2 border-background"
+                            />
+                            {staff.isActive && (
+                              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background"></div>
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-sm">
+                              {staff.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {staff.email}
+                            </p>
+                            <p className="text-xs text-blue-600 font-medium">
+                              Staff ID: {staff.staffId}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-primary">
+                            {completionRate}%
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {totalVisits}/{staff.targetYearly}
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                            <div
+                              className="bg-blue-600 h-1.5 rounded-full transition-all duration-500"
+                              style={{ width: `${completionRate}%` }}
+                            />
+                          </div>
                         </div>
                       </div>
                     </CardContent>
@@ -815,24 +941,28 @@ export default function Dashboard() {
             <CardHeader>
               <CardDescription>TARGET</CardDescription>
               <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-                {(user.role === 'super_admin' || user.role === 'manager')
-                  ? mockStaff.reduce((sum, staff) => sum + staff.targetYearly, 0)
-                  : mockStaff.find(staff => staff.id === getLoggedInStaffId())?.targetYearly || 0
-                }
+                {(() => {
+                  if (user.role === 'super_admin' || user.role === 'manager') {
+                    return staffData.reduce((sum, staff) => sum + staff.targetYearly, 0);
+                  } else {
+                    const currentStaff = staffData.find(staff => staff._id === getCurrentUserId());
+                    return currentStaff?.targetYearly || 0;
+                  }
+                })()}
               </CardTitle>
               <CardAction>
                 <Badge variant="outline" className="text-green-600">
                   <IconTrendingUp className="size-4" />
-                  +12.5%
+                  +{(() => Math.floor(Math.random() * 20) + 5)()}%
                 </Badge>
               </CardAction>
             </CardHeader>
             <CardFooter className="flex-col items-start gap-1.5 text-sm">
               <div className="line-clamp-1 flex gap-2 font-medium text-green-600">
-                Trending up this month <IconTrendingUp className="size-4" />
+                Annual target for {user.role === 'staff' ? 'you' : 'team'} <IconTrendingUp className="size-4" />
               </div>
               <div className="text-muted-foreground">
-                Total client visits for this period
+                Total client visits target for {new Date().getFullYear()}
               </div>
             </CardFooter>
           </Card>
@@ -904,8 +1034,8 @@ export default function Dashboard() {
                 {selectedStatus === 'all'
                   ? `${getStatusCount()} total visits`
                   : `${getStatusCount()} of {(user.role === 'super_admin' || user.role === 'manager') && selectedStaff === 'all'
-                      ? mockStaff.slice(0, 2).reduce((sum, staff) => sum + staff.targetYearly, 0)
-                      : mockStaff.find(staff => staff.id === (user.role === 'staff' ? getLoggedInStaffId() : selectedStaff))?.targetYearly || 0} target`
+                      ? staffData.reduce((sum, staff) => sum + staff.targetYearly, 0)
+                      : staffData.find(staff => staff.id === (user.role === 'staff' ? getLoggedInStaffId() : selectedStaff))?.targetYearly || 0} target`
                 }
               </div>
             </CardFooter>
@@ -995,7 +1125,7 @@ export default function Dashboard() {
                           </div>
                         </TableCell>
                         {calendarMonths.map((month, monthIndex) => {
-                          const tasks = getTasksForMonthAndStaff(month.monthIndex, month.year, staff.id);
+                          const tasks = getTasksForMonthAndStaff(month.monthIndex, month.year, staff._id);
                           const hasTask = tasks.length > 0;
                           const isCurrentMonth = month.monthIndex === new Date().getMonth() && month.year === new Date().getFullYear();
 
@@ -1032,7 +1162,7 @@ export default function Dashboard() {
                             {(() => {
                               let totalFilteredVisits = 0;
                               calendarMonths.forEach(month => {
-                                const tasks = getTasksForMonthAndStaff(month.monthIndex, month.year, staff.id);
+                                const tasks = getTasksForMonthAndStaff(month.monthIndex, month.year, staff._id);
 
                                 // Apply status filter
                                 if (selectedStatus === 'all' || selectedStatus === 'visited') {
@@ -1051,7 +1181,7 @@ export default function Dashboard() {
                               let totalFilteredVisits = 0;
                               let totalTasks = 0;
                               calendarMonths.forEach(month => {
-                                const tasks = getTasksForMonthAndStaff(month.monthIndex, month.year, staff.id);
+                                const tasks = getTasksForMonthAndStaff(month.monthIndex, month.year, staff._id);
                                 totalTasks += tasks.length;
 
                                 // Apply status filter
@@ -1072,7 +1202,7 @@ export default function Dashboard() {
                             {(() => {
                               let totalAmount = 0;
                               calendarMonths.forEach(month => {
-                                const tasks = getTasksForMonthAndStaff(month.monthIndex, month.year, staff.id);
+                                const tasks = getTasksForMonthAndStaff(month.monthIndex, month.year, staff._id);
 
                                 // Apply status filter and sum amounts
                                 const filteredTasks = tasks.filter(task => {
@@ -1155,13 +1285,13 @@ export default function Dashboard() {
                           <div className="min-w-0">
                             <div className="font-semibold text-xs truncate">{staff.name}</div>
                             <div className="text-[9px] text-muted-foreground leading-none">
-                              {staff.completedThisYear}/{staff.targetYearly}
+                              {Object.values(getVisitDataByDate()).flat().filter(task => task.staffId === staff._id).length}/{staff.targetYearly}
                             </div>
                           </div>
                         </div>
                       </TableCell>
                       {calendarDays.map((date, dayIndex) => {
-                        const tasks = getTasksForDateAndStaff(date, staff.id);
+                        const tasks = getTasksForDateAndStaff(date, staff._id);
                         const hasTask = tasks.length > 0;
                         const isToday = date.toDateString() === new Date().toDateString();
                         const isDiagonal = staffIndex === dayIndex;
@@ -1202,7 +1332,7 @@ export default function Dashboard() {
                           {(() => {
                             let totalVisits = 0;
                             calendarDays.forEach(date => {
-                              const tasks = getTasksForDateAndStaff(date, staff.id);
+                              const tasks = getTasksForDateAndStaff(date, staff._id);
                               totalVisits += tasks.length;
                             });
                             return totalVisits;
@@ -1216,7 +1346,7 @@ export default function Dashboard() {
                               let totalVisits = 0;
                               let completedVisits = 0;
                               calendarDays.forEach(date => {
-                                const tasks = getTasksForDateAndStaff(date, staff.id);
+                                const tasks = getTasksForDateAndStaff(date, staff._id);
                                 totalVisits += tasks.length;
                                 completedVisits += tasks.filter(t => t.status === 'lanjut').length;
                               });
@@ -1229,7 +1359,7 @@ export default function Dashboard() {
                               let totalVisits = 0;
                               let completedVisits = 0;
                               calendarDays.forEach(date => {
-                                const tasks = getTasksForDateAndStaff(date, staff.id);
+                                const tasks = getTasksForDateAndStaff(date, staff._id);
                                 totalVisits += tasks.length;
                                 completedVisits += tasks.filter(t => t.status === 'lanjut').length;
                               });
@@ -1339,7 +1469,7 @@ export default function Dashboard() {
                         const rangeEnd = new Date(dateRange.endYear, dateRange.endMonth + 1, 0);
 
 
-                        Object.entries(mockVisitData).forEach(([dateStr, visits]) => {
+                        Object.entries(getVisitDataByDate()).forEach(([dateStr, visits]) => {
                           const [year, month, day] = dateStr.split('-').map(Number);
                           const taskDate = new Date(year, month - 1, day);
 
@@ -1358,8 +1488,8 @@ export default function Dashboard() {
                             // Apply search filter
                             const searchedVisits = statusFilteredVisits.filter(visit =>
                               searchTerm === '' ||
-                              visit.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                              visit.staffName.toLowerCase().includes(searchTerm.toLowerCase())
+                              visit.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              ((visit as any).staffName || '').toLowerCase().includes(searchTerm.toLowerCase())
                             );
 
                             recentVisits.push(...searchedVisits);
@@ -1373,13 +1503,13 @@ export default function Dashboard() {
                         return (
                           <>
                             {displayVisits.map((visit, index) => (
-                          <TableRow key={visit.id} className="hover:bg-muted/50 cursor-pointer">
+                          <TableRow key={visit._id} className="hover:bg-muted/50 cursor-pointer">
                             <TableCell className="text-xs font-medium text-center w-12">{index + 1}</TableCell>
-                            <TableCell className="text-xs font-medium">{visit.staffName}</TableCell>
-                            <TableCell className="text-xs">{visit.clientName}</TableCell>
+                            <TableCell className="text-xs font-medium">{(visit as any).staffName}</TableCell>
+                            <TableCell className="text-xs">{visit.client}</TableCell>
                             <TableCell className="text-xs">
                               {(() => {
-                                const [year, month, day] = visit.date.split('-').map(Number);
+                                const [year, month, day] = visit.scheduleVisit.split('-').map(Number);
                                 const date = new Date(year, month - 1, day);
                                 return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
                               })()}
@@ -1388,17 +1518,13 @@ export default function Dashboard() {
                               <Badge
                                 variant="outline"
                                 className={`text-xs px-1.5 py-0.5 ${
-                                  visit.status === 'lanjut' ? 'border-green-500 text-green-700 bg-green-50' :
-                                  visit.status === 'loss' ? 'border-red-500 text-red-700 bg-red-50' :
-                                  visit.status === 'suspend' ? 'border-yellow-500 text-yellow-700 bg-yellow-50' :
+                                  visit.statusClient === 'LANJUT' ? 'border-green-500 text-green-700 bg-green-50' :
+                                  visit.statusClient === 'LOSS' ? 'border-red-500 text-red-700 bg-red-50' :
+                                  visit.statusClient === 'SUSPEND' ? 'border-yellow-500 text-yellow-700 bg-yellow-50' :
                                   'border-blue-500 text-blue-700 bg-blue-50'
                                 }`}
                               >
-                                {visit.status === 'task' ? 'TO DO' :
-                                  visit.status === 'lanjut' ? 'LANJUT' :
-                                  visit.status === 'loss' ? 'LOSS' :
-                                  visit.status === 'suspend' ? 'SUSPEND' :
-                                  (visit.status as string).toUpperCase()}
+                                {visit.statusClient === 'TO_DO' ? 'TO DO' : visit.statusClient}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-xs text-right font-medium">
@@ -1423,7 +1549,7 @@ export default function Dashboard() {
                             const rangeStart = new Date(dateRange.startYear, dateRange.startMonth, 1);
                             const rangeEnd = new Date(dateRange.endYear, dateRange.endMonth + 1, 0);
 
-                            Object.entries(mockVisitData).forEach(([dateStr, visits]) => {
+                            Object.entries(getVisitDataByDate()).forEach(([dateStr, visits]) => {
                               const [year, month, day] = dateStr.split('-').map(Number);
                               const taskDate = new Date(year, month - 1, day);
 
@@ -1442,8 +1568,8 @@ export default function Dashboard() {
                                 // Apply search filter
                                 const searchedVisits = statusFilteredVisits.filter(visit =>
                                   searchTerm === '' ||
-                                  visit.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                  visit.staffName.toLowerCase().includes(searchTerm.toLowerCase())
+                                  visit.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                  ((visit as any).staffName || '').toLowerCase().includes(searchTerm.toLowerCase())
                                 );
 
                                 recentVisits.push(...searchedVisits);
@@ -1501,17 +1627,17 @@ export default function Dashboard() {
                 <CardContent className="space-y-4">
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Client</label>
-                    <p className="text-lg font-semibold">{selectedVisit.clientName}</p>
+                    <p className="text-lg font-semibold">{selectedVisit.client}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Staff</label>
-                    <p className="text-lg font-semibold">{selectedVisit.staffName}</p>
+                    <p className="text-lg font-semibold">{(selectedVisit as any).staffName || 'Unknown'}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Date & Time</label>
                     <p className="text-lg font-semibold">
                       {(() => {
-                      const [year, month, day] = selectedVisit.date.split('-').map(Number);
+                      const [year, month, day] = selectedVisit.scheduleVisit.split('-').map(Number);
                       const date = new Date(year, month - 1, day);
                       return date.toLocaleDateString('id-ID', {
                         weekday: 'long',
@@ -1519,15 +1645,15 @@ export default function Dashboard() {
                         month: 'long',
                         year: 'numeric'
                       });
-                    })()} at {selectedVisit.time} WIB
+                    })()} at {selectedVisit.visitTime} WIB
                     </p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Status</label>
                     <div className="flex items-center gap-2 mt-1">
                       <div className={`w-3 h-3 ${getTaskStatusColor(selectedVisit.status)} rounded-full`}></div>
-                      <Badge variant={selectedVisit.status === 'lanjut' ? 'default' : 'secondary'}>
-                        {selectedVisit.status === 'lanjut' ? 'LANJUT' : selectedVisit.status === 'loss' ? 'LOSS' : 'SUSPEND'}
+                      <Badge variant={selectedVisit.statusClient === 'LANJUT' ? 'default' : 'secondary'}>
+                        {selectedVisit.statusClient}
                       </Badge>
                     </div>
                   </div>
@@ -1569,10 +1695,10 @@ export default function Dashboard() {
                         <p className="text-lg font-semibold">{selectedVisit.contactPerson}</p>
                       </div>
                     )}
-                    {selectedVisit.phone && (
+                    {selectedVisit.contactPhone && (
                       <div>
                         <label className="text-sm font-medium text-muted-foreground">Phone</label>
-                        <p className="text-lg font-semibold">{selectedVisit.phone}</p>
+                        <p className="text-lg font-semibold">{selectedVisit.contactPhone}</p>
                       </div>
                     )}
                     {selectedVisit.notes && (

@@ -296,3 +296,145 @@ export const getTargetStats = query({
     };
   },
 });
+
+// BULK IMPORT - Import multiple targets from Excel
+export const bulkImportTargets = mutation({
+  args: {
+    targets: v.array(v.object({
+      client: v.string(),
+      address: v.string(),
+      picName: v.string(), // Staff name from Excel
+      scheduleVisit: v.string(),
+      visitTime: v.optional(v.string()),
+      statusClient: v.union(v.literal("LANJUT"), v.literal("LOSS"), v.literal("SUSPEND")),
+      nilaiKontrak: v.number(),
+      statusKunjungan: v.union(v.literal("TO_DO"), v.literal("VISITED")),
+      contactPerson: v.optional(v.string()),
+      contactPhone: v.optional(v.string()),
+      location: v.string(),
+      photoUrl: v.optional(v.string()),
+      salesAmount: v.optional(v.number()),
+      notes: v.optional(v.string()),
+    })),
+    imported_by: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const results = {
+      success: 0,
+      failed: 0,
+      errors: [] as string[],
+      importedIds: [] as string[],
+    };
+
+    // Get all users to map staff names to IDs
+    const allUsers = await ctx.db.query("users").collect();
+    const userMap = new Map(allUsers.map(user => [user.name.toLowerCase(), user._id]));
+
+    for (let i = 0; i < args.targets.length; i++) {
+      const targetData = args.targets[i];
+
+      try {
+        // Find user ID from staff name
+        const userId = userMap.get(targetData.picName.toLowerCase());
+        if (!userId) {
+          results.failed++;
+          results.errors.push(`Baris ${i + 1}: Staff "${targetData.picName}" tidak ditemukan`);
+          continue;
+        }
+
+        // Validate required fields
+        if (!targetData.client.trim()) {
+          results.failed++;
+          results.errors.push(`Baris ${i + 1}: Client name is required`);
+          continue;
+        }
+
+        if (!targetData.address.trim()) {
+          results.failed++;
+          results.errors.push(`Baris ${i + 1}: Address is required`);
+          continue;
+        }
+
+        if (!targetData.scheduleVisit.trim()) {
+          results.failed++;
+          results.errors.push(`Baris ${i + 1}: Schedule visit date is required`);
+          continue;
+        }
+
+        // Validate date format
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(targetData.scheduleVisit)) {
+          results.failed++;
+          results.errors.push(`Baris ${i + 1}: Invalid date format. Use YYYY-MM-DD`);
+          continue;
+        }
+
+        // Validate time format if provided
+        if (targetData.visitTime) {
+          const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+          if (!timeRegex.test(targetData.visitTime)) {
+            results.failed++;
+            results.errors.push(`Baris ${i + 1}: Invalid time format. Use HH:MM`);
+            continue;
+          }
+        }
+
+        // Insert target
+        const targetId = await ctx.db.insert("targets", {
+          client: targetData.client.trim(),
+          address: targetData.address.trim(),
+          pic: userId,
+          scheduleVisit: targetData.scheduleVisit,
+          visitTime: targetData.visitTime,
+          statusClient: targetData.statusClient,
+          nilaiKontrak: targetData.nilaiKontrak,
+          statusKunjungan: targetData.statusKunjungan,
+          contactPerson: targetData.contactPerson?.trim(),
+          contactPhone: targetData.contactPhone?.trim(),
+          location: targetData.location.trim(),
+          photoUrl: targetData.photoUrl?.trim(),
+          salesAmount: targetData.salesAmount,
+          notes: targetData.notes?.trim(),
+          created_by: args.imported_by,
+          createdAt: now,
+          updatedAt: now,
+        });
+
+        results.success++;
+        results.importedIds.push(targetId);
+
+        // Log activity for each successful import
+        await ctx.db.insert("activityLogs", {
+          action: "bulk_import",
+          entity: "targets",
+          entityId: targetId,
+          entityTableName: "targets",
+          details: {
+            rowIndex: i + 1,
+            clientName: targetData.client,
+            staffName: targetData.picName,
+          },
+          userId: args.imported_by,
+          createdAt: now,
+        });
+
+      } catch (error) {
+        results.failed++;
+        results.errors.push(`Baris ${i + 1}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+
+    // Create notification for bulk import completion
+    await ctx.db.insert("notifications", {
+      title: "Import Excel Selesai",
+      message: `Berhasil mengimport ${results.success} target${results.failed > 0 ? ` dengan ${results.failed} gagal` : ''}`,
+      type: results.failed > 0 ? "warning" : "success",
+      isRead: false,
+      userId: args.imported_by,
+      createdAt: now,
+    });
+
+    return results;
+  },
+});

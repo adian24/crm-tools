@@ -106,3 +106,15 @@ export const hasUsers = query({
     return users.length > 0;
   },
 });
+
+// Fungsi untuk mendapatkan semua user
+export const getAllUsers = query({
+  handler: async (ctx) => {
+    const users = await ctx.db.query("users").collect();
+    // Return user data tanpa password
+    return users.map(user => {
+      const { password: _, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    });
+  },
+});

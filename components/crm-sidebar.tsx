@@ -9,9 +9,7 @@ import {
   IconSettings,
   IconHelp,
   IconSearch,
-  IconCamera,
   IconActivity,
-  IconBell,
   IconLogout,
 } from "@tabler/icons-react"
 
@@ -41,6 +39,21 @@ export interface CRMSidebarProps extends React.ComponentProps<typeof Sidebar> {
 }
 
 const getNavigationItems = (role: string) => {
+  if (role === 'staff') {
+    return [
+      {
+        title: "Dashboard",
+        url: "/dashboard",
+        icon: IconActivity,
+      },
+      {
+        title: "My Visits",
+        url: "/dashboard/my-visits",
+        icon: IconCalendar,
+      }
+    ];
+  }
+
   if (role === 'manager') {
     return [
       {
@@ -51,6 +64,7 @@ const getNavigationItems = (role: string) => {
     ];
   }
 
+  // Super admin sees all items
   return [
     {
       title: "Dashboard",
@@ -61,7 +75,6 @@ const getNavigationItems = (role: string) => {
       title: "Team Management",
       url: "/dashboard/team",
       icon: IconUsers,
-      roles: ['super_admin', 'manager']
     },
     {
       title: "My Visits",
@@ -72,27 +85,52 @@ const getNavigationItems = (role: string) => {
       title: "Analytics",
       url: "/dashboard/analytics",
       icon: IconTrendingUp,
-      roles: ['super_admin', 'manager']
     },
     {
       title: "Targets",
       url: "/dashboard/targets",
       icon: IconTarget,
     }
-  ].filter(item => !item.roles || item.roles.includes(role));
+  ];
 };
 
 const getSecondaryItems = (role: string) => {
-  if (role === 'manager') {
-    return [];
+  if (role === 'staff') {
+    return [
+      {
+        title: "Get Help",
+        url: "#",
+        icon: IconHelp,
+      },
+      {
+        title: "Search",
+        url: "#",
+        icon: IconSearch,
+      },
+    ];
   }
 
+  if (role === 'manager') {
+    return [
+      {
+        title: "Get Help",
+        url: "#",
+        icon: IconHelp,
+      },
+      {
+        title: "Search",
+        url: "#",
+        icon: IconSearch,
+      },
+    ];
+  }
+
+  // Super admin gets all secondary items including settings
   return [
     {
       title: "Settings",
       url: "/dashboard/settings",
       icon: IconSettings,
-      roles: ['super_admin']
     },
     {
       title: "Get Help",
@@ -104,7 +142,7 @@ const getSecondaryItems = (role: string) => {
       url: "#",
       icon: IconSearch,
     },
-  ].filter(item => !item.roles || item.roles.includes(role));
+  ];
 };
 
 export function CRMSidebar({ user, ...props }: CRMSidebarProps) {
@@ -137,36 +175,6 @@ export function CRMSidebar({ user, ...props }: CRMSidebarProps) {
 
       <SidebarContent className="gap-4 py-4">
         <NavMain items={navItems} />
-
-        {/* Only show Quick Actions for non-manager roles */}
-        {user.role !== 'manager' && (
-          <div className="px-3 py-2">
-            <div className="text-xs font-medium text-sidebar-foreground uppercase tracking-wider">
-              Quick Actions
-            </div>
-            <div className="mt-2 space-y-1">
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <button className="w-full justify-start">
-                      <IconCamera className="h-4 w-4" />
-                      <span>Add Visit</span>
-                    </button>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <button className="w-full justify-start">
-                      <IconBell className="h-4 w-4" />
-                      <span>Notifications</span>
-                    </button>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </div>
-          </div>
-        )}
-
         <NavSecondary items={secondaryItems} className="mt-auto" />
       </SidebarContent>
 
