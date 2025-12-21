@@ -35,7 +35,7 @@ interface VisitTask {
   pic: string;
   scheduleVisit: string;
   visitTime: string;
-  statusClient: 'LANJUT' | 'LOSS' | 'SUSPEND';
+  statusClient: 'LANJUT' | 'LOSS' | 'SUSPEND' | 'TO_DO';
   statusKunjungan: 'TO_DO' | 'VISITED';
   nilaiKontrak: number;
   salesAmount?: number;
@@ -43,9 +43,18 @@ interface VisitTask {
   contactPerson?: string;
   contactPhone?: string;
   location?: string;
+  photoUrl?: string;
   createdAt: number;
   updatedAt: number;
   created_by: string;
+  // Legacy properties for compatibility
+  clientName?: string;
+  date?: string;
+  status?: string;
+  staffId?: string;
+  staffName?: string;
+  time?: string;
+  phone?: string;
 }
 
 interface DateRange {
@@ -325,7 +334,7 @@ export default function Dashboard() {
     if (selectedVisit?.photoUrl) {
       const link = document.createElement('a');
       link.href = selectedVisit.photoUrl;
-      link.download = `visit-${selectedVisit.clientName}-${selectedVisit.date}.jpg`;
+      link.download = `visit-${selectedVisit.client || selectedVisit.clientName || 'unknown'}-${selectedVisit.scheduleVisit || selectedVisit.date || 'unknown'}.jpg`;
       link.target = '_blank';
       document.body.appendChild(link);
       link.click();
@@ -390,7 +399,7 @@ export default function Dashboard() {
 
   // Update selectedStaff to Convex ID when users are loaded
   useEffect(() => {
-    if (user?.role === 'staff' && user?.staffId && allUsers?.length > 0) {
+    if (user?.role === 'staff' && user?.staffId && allUsers && allUsers.length > 0) {
       const currentUser = allUsers.find(u => u.staffId === user.staffId);
       if (currentUser && selectedStaff === user.staffId) {
         setSelectedStaff(currentUser._id);
@@ -1497,7 +1506,7 @@ export default function Dashboard() {
                         });
 
                         // Sort by date (most recent first) and display all
-                        recentVisits.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                        recentVisits.sort((a, b) => new Date(b.scheduleVisit || b.date || '').getTime() - new Date(a.scheduleVisit || a.date || '').getTime());
                         const displayVisits = recentVisits;
 
                         return (
@@ -1576,7 +1585,7 @@ export default function Dashboard() {
                               }
                             });
 
-                            recentVisits.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                            recentVisits.sort((a, b) => new Date(b.scheduleVisit || b.date || '').getTime() - new Date(a.scheduleVisit || a.date || '').getTime());
                             const totalContractValue = recentVisits.reduce((sum, visit) => sum + (visit.salesAmount || 0), 0);
                             return totalContractValue.toLocaleString('id-ID');
                           })()}
@@ -1770,7 +1779,7 @@ export default function Dashboard() {
                 <div className="w-full max-w-3xl">
                   <img
                     src={selectedVisit.photoUrl}
-                    alt={`Visit photo for ${selectedVisit.clientName}`}
+                    alt={`Visit photo for ${selectedVisit.client || selectedVisit.clientName || 'unknown'}`}
                     className="w-full h-auto rounded-lg border shadow-lg"
                     onError={(e) => {
                       e.currentTarget.src = "/images/visit.jpeg";
@@ -1779,7 +1788,7 @@ export default function Dashboard() {
                 </div>
                 <div className="text-center space-y-2">
                   <p className="text-sm text-muted-foreground">
-                    {selectedVisit.clientName} - {selectedVisit.date}
+                    {selectedVisit.client || selectedVisit.clientName || 'unknown'} - {selectedVisit.scheduleVisit || selectedVisit.date || 'unknown'}
                   </p>
                   <div className="flex gap-2 justify-center">
                     <Button onClick={handleDownloadPhoto}>

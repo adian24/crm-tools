@@ -38,16 +38,16 @@ const chartConfig = {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-background border rounded-lg shadow-lg p-3">
-        <p className="font-semibold text-sm mb-2">{label}</p>
+      <div className="bg-background border rounded-lg shadow-lg p-2 sm:p-3 max-w-[200px] sm:max-w-none">
+        <p className="font-semibold text-xs sm:text-sm mb-1 sm:mb-2">{label}</p>
         {payload.map((entry: any, index: number) => (
-          <div key={index} className="flex items-center gap-2 text-sm">
+          <div key={index} className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
             <div
-              className="w-3 h-3 rounded-full"
+              className="w-2 h-2 sm:w-3 sm:h-3 rounded-full flex-shrink-0"
               style={{ backgroundColor: entry.color }}
             />
-            <span className="font-medium">{entry.name}:</span>
-            <span className="font-bold">
+            <span className="font-medium truncate">{entry.name}:</span>
+            <span className="font-bold flex-shrink-0">
               {entry.value > 0 ? formatRupiahShort(entry.value) : '0'}
             </span>
           </div>
@@ -88,19 +88,19 @@ function ChartCard({ title, data, statusColor, chartType }: {
       {/* Futuristic background overlay */}
       <div className={`absolute inset-0 ${getBackgroundGradient()} opacity-80`}></div>
       <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 via-transparent to-purple-500/10 animate-pulse"></div>
-      <CardHeader className="relative z-10">
-        <CardTitle>{title}</CardTitle>
+      <CardHeader className="relative z-10 pb-2">
+        <CardTitle className="text-sm sm:text-base">{title}</CardTitle>
       </CardHeader>
-      <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6 relative z-10">
+      <CardContent className="px-2 pt-4 sm:px-4 sm:pt-6 relative z-10">
         <ChartContainer
           config={chartConfig}
-          className="aspect-auto h-[250px] w-full"
+          className="aspect-auto h-[280px] sm:h-[250px] w-full"
         >
           {(() => {
             switch (chartType) {
               case 'bar':
                 return (
-                  <BarChart data={chartData} margin={{ top: 30, right: 30, left: 20, bottom: 0 }}>
+                  <BarChart data={chartData} margin={{ top: 20, right: 20, left: 10, bottom: 40 }}>
                     <defs>
                       <linearGradient id="colorMercyBar" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="hsl(270, 60%, 50%)" stopOpacity={0.8}/>
@@ -116,14 +116,15 @@ function ChartCard({ title, data, statusColor, chartType }: {
                       dataKey="month"
                       tickLine={false}
                       axisLine={false}
-                      tickMargin={8}
-                      minTickGap={32}
+                      tickMargin={6}
+                      minTickGap={20}
+                      tick={{ fontSize: 10 }}
                       className="fill-muted-foreground"
                     />
                     <YAxis
                       tickLine={false}
                       axisLine={false}
-                      tickMargin={8}
+                      tickMargin={6}
                       tick={{ fontSize: 10 }}
                       className="fill-muted-foreground"
                       domain={[0, 'dataMax']}
@@ -136,7 +137,8 @@ function ChartCard({ title, data, statusColor, chartType }: {
                       <LabelList
                         dataKey="mercy"
                         position="top"
-                        fontSize={10}
+                        fontSize={8}
+                        className="hidden sm:inline"
                         fill="hsl(270, 60%, 50%)"
                         formatter={(value: number, entry: any) => {
                           if (entry && entry.payload && (entry.payload.isPadding || !entry.payload.month)) return '';
@@ -148,7 +150,8 @@ function ChartCard({ title, data, statusColor, chartType }: {
                       <LabelList
                         dataKey="dhea"
                         position="top"
-                        fontSize={10}
+                        fontSize={8}
+                        className="hidden sm:inline"
                         fill="hsl(210, 80%, 50%)"
                         formatter={(value: number, entry: any) => {
                           if (entry && entry.payload && (entry.payload.isPadding || !entry.payload.month)) return '';
@@ -160,20 +163,21 @@ function ChartCard({ title, data, statusColor, chartType }: {
                 );
               case 'line':
                 return (
-                  <LineChart data={chartData} margin={{ top: 30, right: 30, left: 20, bottom: 0 }}>
+                  <LineChart data={chartData} margin={{ top: 20, right: 20, left: 10, bottom: 40 }}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis
                       dataKey="month"
                       tickLine={false}
                       axisLine={false}
-                      tickMargin={8}
-                      minTickGap={32}
+                      tickMargin={6}
+                      minTickGap={20}
+                      tick={{ fontSize: 10 }}
                       className="fill-muted-foreground"
                     />
                     <YAxis
                       tickLine={false}
                       axisLine={false}
-                      tickMargin={8}
+                      tickMargin={6}
                       tick={{ fontSize: 10 }}
                       className="fill-muted-foreground"
                       domain={[0, 'dataMax']}
@@ -186,14 +190,15 @@ function ChartCard({ title, data, statusColor, chartType }: {
                       type="monotone"
                       dataKey="mercy"
                       stroke="hsl(270, 60%, 50%)"
-                      strokeWidth={3}
-                      dot={{ fill: 'hsl(270, 60%, 50%)', strokeWidth: 2, r: 6 }}
-                      activeDot={{ r: 8 }}
+                      strokeWidth={2}
+                      dot={{ fill: 'hsl(270, 60%, 50%)', strokeWidth: 1.5, r: 4, className: 'hidden sm:inline' }}
+                      activeDot={{ r: 6 }}
                     >
                       <LabelList
                         dataKey="mercy"
                         position="top"
-                        fontSize={10}
+                        fontSize={8}
+                        className="hidden sm:inline"
                         fill="hsl(270, 60%, 50%)"
                         formatter={(value: number, entry: any) => {
                           if (entry && entry.payload && (entry.payload.isPadding || !entry.payload.month)) return '';
@@ -205,14 +210,15 @@ function ChartCard({ title, data, statusColor, chartType }: {
                       type="monotone"
                       dataKey="dhea"
                       stroke="hsl(210, 80%, 50%)"
-                      strokeWidth={3}
-                      dot={{ fill: 'hsl(210, 80%, 50%)', strokeWidth: 2, r: 6 }}
-                      activeDot={{ r: 8 }}
+                      strokeWidth={2}
+                      dot={{ fill: 'hsl(210, 80%, 50%)', strokeWidth: 1.5, r: 4, className: 'hidden sm:inline' }}
+                      activeDot={{ r: 6 }}
                     >
                       <LabelList
                         dataKey="dhea"
                         position="top"
-                        fontSize={10}
+                        fontSize={8}
+                        className="hidden sm:inline"
                         fill="hsl(210, 80%, 50%)"
                         formatter={(value: number, entry: any) => {
                           if (entry && entry.payload && (entry.payload.isPadding || !entry.payload.month)) return '';
@@ -252,7 +258,7 @@ function ChartCard({ title, data, statusColor, chartType }: {
                       fill="white"
                       textAnchor={x > cx ? 'start' : 'end'}
                       dominantBaseline="central"
-                      className="font-semibold text-sm"
+                      className="font-semibold text-xs sm:text-sm"
                     >
                       {`${(percent * 100).toFixed(1)}%`}
                     </text>
@@ -278,7 +284,8 @@ function ChartCard({ title, data, statusColor, chartType }: {
                         cy="50%"
                         labelLine={false}
                         label={CustomPieLabel}
-                        outerRadius={90}
+                        outerRadius={60}
+                        innerRadius={0}
                         fill="#8884d8"
                         dataKey="value"
                         animationBegin={0}
@@ -301,7 +308,7 @@ function ChartCard({ title, data, statusColor, chartType }: {
                 );
               default: // area chart
                 return (
-                  <AreaChart data={chartData} margin={{ top: 30, right: 30, left: 20, bottom: 0 }}>
+                  <AreaChart data={chartData} margin={{ top: 20, right: 20, left: 10, bottom: 40 }}>
                     <defs>
                       {/* Futuristic gradient for Mercy - Purple */}
                       <linearGradient id="colorMercy" x1="0" y1="0" x2="0" y2="1">
@@ -338,14 +345,15 @@ function ChartCard({ title, data, statusColor, chartType }: {
                       dataKey="month"
                       tickLine={false}
                       axisLine={false}
-                      tickMargin={8}
-                      minTickGap={32}
+                      tickMargin={6}
+                      minTickGap={20}
+                      tick={{ fontSize: 10 }}
                       className="fill-muted-foreground"
                     />
                     <YAxis
                       tickLine={false}
                       axisLine={false}
-                      tickMargin={8}
+                      tickMargin={6}
                       tick={{ fontSize: 10 }}
                       className="fill-muted-foreground"
                       domain={[0, 'dataMax']}
@@ -364,7 +372,8 @@ function ChartCard({ title, data, statusColor, chartType }: {
                       <LabelList
                         dataKey="mercy"
                         position="top"
-                        fontSize={10}
+                        fontSize={8}
+                        className="hidden sm:inline"
                         fill="hsl(270, 60%, 50%)"
                         formatter={(value: number, entry: any) => {
                           // Don't show label for padding months or empty month labels
@@ -383,7 +392,8 @@ function ChartCard({ title, data, statusColor, chartType }: {
                       <LabelList
                         dataKey="dhea"
                         position="top"
-                        fontSize={10}
+                        fontSize={8}
+                        className="hidden sm:inline"
                         fill="hsl(210, 80%, 50%)"
                         formatter={(value: number, entry: any) => {
                           // Don't show label for padding months or empty month labels
@@ -399,14 +409,16 @@ function ChartCard({ title, data, statusColor, chartType }: {
         </ChartContainer>
 
         {/* Chart Legend */}
-        <div className="flex items-center justify-center space-x-4 mt-4 p-3 bg-muted/20 rounded-lg">
+        <div className="flex items-center justify-center space-x-2 sm:space-x-4 mt-3 sm:mt-4 p-2 sm:p-3 bg-muted/20 rounded-lg">
           <div className="flex items-center gap-1">
-            <div className="w-3 h-3" style={{ backgroundColor: 'hsl(270, 60%, 50%)' }}></div>
-            <span className="text-xs font-medium">Mercy</span>
+            <div className="w-2 h-2 sm:w-3 sm:h-3" style={{ backgroundColor: 'hsl(270, 60%, 50%)' }}></div>
+            <span className="text-xs sm:text-xs font-medium hidden sm:inline">Mercy</span>
+            <span className="text-xs sm:text-xs font-medium sm:hidden">M</span>
           </div>
           <div className="flex items-center gap-1">
-            <div className="w-3 h-3" style={{ backgroundColor: 'hsl(210, 80%, 50%)' }}></div>
-            <span className="text-xs font-medium">Dhea</span>
+            <div className="w-2 h-2 sm:w-3 sm:h-3" style={{ backgroundColor: 'hsl(210, 80%, 50%)' }}></div>
+            <span className="text-xs sm:text-xs font-medium hidden sm:inline">Dhea</span>
+            <span className="text-xs sm:text-xs font-medium sm:hidden">D</span>
           </div>
         </div>
       </CardContent>
@@ -546,13 +558,13 @@ export function ChartAreaInteractive({ selectedStaff, selectedYear, selectedStat
   // Determine grid layout based on selected status
   const getGridLayoutClass = () => {
     if (selectedStatus === 'lanjut') {
-      return 'grid gap-4 md:grid-cols-1 lg:grid-cols-1 h-[445px]';
+      return 'grid gap-3 sm:gap-4 md:grid-cols-1 lg:grid-cols-1 h-[400px] sm:h-[445px]';
     } else if (selectedStatus === 'loss') {
-      return 'grid gap-4 md:grid-cols-1 lg:grid-cols-1 h-[445px]';
+      return 'grid gap-3 sm:gap-4 md:grid-cols-1 lg:grid-cols-1 h-[400px] sm:h-[445px]';
     } else if (selectedStatus === 'suspend') {
-      return 'grid gap-4 md:grid-cols-1 lg:grid-cols-1 h-[445px]';
+      return 'grid gap-3 sm:gap-4 md:grid-cols-1 lg:grid-cols-1 h-[400px] sm:h-[445px]';
     } else {
-      return 'grid gap-4 md:grid-cols-1 lg:grid-cols-3 h-[445px]';
+      return 'grid gap-3 sm:gap-4 md:grid-cols-1 lg:grid-cols-3 h-[400px] sm:h-[445px]';
     }
   };
 

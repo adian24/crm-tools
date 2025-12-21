@@ -35,7 +35,7 @@ interface VisitTask {
   pic: string;
   scheduleVisit: string;
   visitTime: string;
-  statusClient: 'LANJUT' | 'LOSS' | 'SUSPEND';
+  statusClient: 'LANJUT' | 'LOSS' | 'SUSPEND' | 'TO_DO';
   statusKunjungan: 'TO_DO' | 'VISITED';
   nilaiKontrak: number;
   salesAmount?: number;
@@ -43,9 +43,18 @@ interface VisitTask {
   contactPerson?: string;
   contactPhone?: string;
   location?: string;
+  photoUrl?: string;
   createdAt: number;
   updatedAt: number;
   created_by: string;
+  // Legacy properties for compatibility
+  clientName?: string;
+  date?: string;
+  status?: string;
+  staffId?: string;
+  staffName?: string;
+  time?: string;
+  phone?: string;
 }
 
 interface DateRange {
@@ -325,7 +334,7 @@ export default function ManagerDashboard() {
     if (selectedVisit?.photoUrl) {
       const link = document.createElement('a');
       link.href = selectedVisit.photoUrl;
-      link.download = `visit-${selectedVisit.clientName}-${selectedVisit.date}.jpg`;
+      link.download = `visit-${selectedVisit.client || selectedVisit.clientName || 'unknown'}-${selectedVisit.scheduleVisit || selectedVisit.date || 'unknown'}.jpg`;
       link.target = '_blank';
       document.body.appendChild(link);
       link.click();
@@ -390,7 +399,7 @@ export default function ManagerDashboard() {
 
   // Update selectedStaff to Convex ID when users are loaded
   useEffect(() => {
-    if (user?.role === 'staff' && user?.staffId && allUsers?.length > 0) {
+    if (user?.role === 'staff' && user?.staffId && allUsers && allUsers.length > 0) {
       const currentUser = allUsers.find(u => u.staffId === user.staffId);
       if (currentUser && selectedStaff === user.staffId) {
         setSelectedStaff(currentUser._id);
@@ -621,23 +630,24 @@ export default function ManagerDashboard() {
     <>
       {/* Header with User Info */}
       <div className="border-b bg-background sticky top-0 z-50">
-        <div className="px-4 lg:px-6 py-4">
+        <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="h-8 w-8 sm:h-10 sm:w-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
                 {user.role === 'super_admin' ? (
-                  <Shield className="h-5 w-5 text-white" />
+                  <Shield className="h-3 w-3 sm:h-5 sm:w-5 text-white" />
                 ) : user.role === 'manager' ? (
-                  <Users className="h-5 w-5 text-white" />
+                  <Users className="h-3 w-3 sm:h-5 sm:w-5 text-white" />
                 ) : (
-                  <User className="h-5 w-5 text-white" />
+                  <User className="h-3 w-3 sm:h-5 sm:w-5 text-white" />
                 )}
               </div>
               <div>
-                <h1 className="text-xl font-bold">Manager Dashboard</h1>
-                <p className="text-sm text-muted-foreground">
-                  Welcome, <span className="font-semibold">{user.name}</span>
-                  <span className="ml-2 px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                <h1 className="text-lg sm:text-xl font-bold">Manager Dashboard</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  Welcome, <span className="font-semibold hidden sm:inline">{user.name}</span>
+                  <span className="sm:hidden">{user.name.split(' ')[0]}</span>
+                  <span className="ml-1 sm:ml-2 px-1 sm:px-2 py-0.5 sm:py-1 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                     {user.role === 'super_admin' ? 'Super Admin' :
                      user.role === 'manager' ? 'Manager' : 'Staff'}
                   </span>
@@ -645,25 +655,16 @@ export default function ManagerDashboard() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              {user.role === 'staff' && (
-                <div className="text-sm text-muted-foreground">
-                  <span className="font-medium">Staff Access:</span> Personal Data Only
-                </div>
-              )}
-              {user.role === 'manager' && (
-                <div className="text-sm text-muted-foreground">
-                  <span className="font-medium">Manager Access:</span> View All Teams
-                </div>
-              )}
+            <div className="flex items-center gap-2">
+              {/* Hide text on mobile, only show logout button */}
               <Button
                 onClick={handleLogout}
                 variant="outline"
                 size="sm"
-                className="flex items-center gap-2"
+                className="flex items-center gap-1 sm:gap-2 h-8 sm:h-9 px-2 sm:px-3"
               >
-                <LogOut className="h-4 w-4" />
-                Logout
+                <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           </div>
@@ -688,9 +689,11 @@ export default function ManagerDashboard() {
 
               <CardContent>
                 {/* FILTER CONTROLS (ALL USERS) */}
-                <div className="mb-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="flex items-center gap-3 flex-wrap">
+                <div className="mb-6 space-y-4">
+                  {/* Staff Filter Buttons */}
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Filter by Team Member</label>
+                    <div className="flex flex-wrap gap-2">
                       <Button
                         variant={
                           selectedStaff === "all"
@@ -699,10 +702,11 @@ export default function ManagerDashboard() {
                         }
                         size="sm"
                         onClick={() => setSelectedStaff("all")}
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-1 text-xs sm:text-sm h-8 px-2 sm:px-3"
                       >
-                        <Users className="h-4 w-4" />
-                        All Team Members
+                        <Users className="h-3 w-3" />
+                        <span className="hidden sm:inline">All Team Members</span>
+                        <span className="sm:hidden">All</span>
                       </Button>
                       {staffData.map((staff) => (
                         <Button
@@ -714,21 +718,24 @@ export default function ManagerDashboard() {
                           }
                           size="sm"
                           onClick={() => setSelectedStaff(staff._id)}
-                          className="flex items-center gap-2"
+                          className="flex items-center gap-1 text-xs sm:text-sm h-8 px-2 sm:px-3"
                         >
-                          <div className="w-4 h-4 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex-shrink-0"></div>
+                          <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex-shrink-0"></div>
                           {staff.name}
                         </Button>
                       ))}
                     </div>
+                  </div>
+                  {/* Other Filters */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                     {/* Status */}
-                    <div className="flex items-center gap-1">
+                    <div>
                       <label className="text-sm font-medium">Status:</label>
                       <Select
                         value={selectedStatus}
                         onValueChange={(v) => setSelectedStatus(v)}
                       >
-                        <SelectTrigger className="w-28">
+                        <SelectTrigger className="w-full">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -743,13 +750,13 @@ export default function ManagerDashboard() {
                     </div>
 
                     {/* Chart */}
-                    <div className="flex items-center gap-1">
+                    <div>
                       <label className="text-sm font-medium">Chart:</label>
                       <Select
                         value={selectedChartType}
                         onValueChange={(v) => setSelectedChartType(v)}
                       >
-                        <SelectTrigger className="w-28">
+                        <SelectTrigger className="w-full">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -761,78 +768,80 @@ export default function ManagerDashboard() {
                       </Select>
                     </div>
 
-                    {/* DATE RANGE */}
-                    <div className="flex items-center gap-2 ml-auto">
-                      <div className="flex items-center gap-1">
-                        <label className="text-sm font-medium">From:</label>
-                        <Select
-                          value={dateRange.startMonth.toString()}
-                          onValueChange={(v) =>
-                            handleFromMonthChange(Number(v))
-                          }
-                        >
-                          <SelectTrigger className="w-28">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {getMonths().map((m) => (
-                              <SelectItem
-                                key={m.value}
-                                value={m.value.toString()}
-                              >
-                                {m.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    {/* From Month */}
+                    <div>
+                      <label className="text-sm font-medium">From:</label>
+                      <Select
+                        value={dateRange.startMonth.toString()}
+                        onValueChange={(v) =>
+                          handleFromMonthChange(Number(v))
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getMonths().map((m) => (
+                            <SelectItem
+                              key={m.value}
+                              value={m.value.toString()}
+                            >
+                              {m.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                      <div className="flex items-center gap-1">
-                        <label className="text-sm font-medium">To:</label>
-                        <Select
-                          value={dateRange.endMonth.toString()}
-                          onValueChange={(v) =>
-                            handleToMonthChange(Number(v))
-                          }
-                        >
-                          <SelectTrigger className="w-28">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {getMonths().map((m) => (
-                              <SelectItem
-                                key={m.value}
-                                value={m.value.toString()}
-                              >
-                                {m.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="flex items-center gap-1">
-                        <label className="text-sm font-medium">Year:</label>
-                        <Select
-                          value={selectedYear.toString()}
-                          onValueChange={(v) =>
-                            handleYearChange(Number(v))
-                          }
-                        >
-                          <SelectTrigger className="w-24">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {getYears().map((y) => (
-                              <SelectItem key={y} value={y.toString()}>
-                                {y}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    {/* To Month */}
+                    <div>
+                      <label className="text-sm font-medium">To:</label>
+                      <Select
+                        value={dateRange.endMonth.toString()}
+                        onValueChange={(v) =>
+                          handleToMonthChange(Number(v))
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getMonths().map((m) => (
+                            <SelectItem
+                              key={m.value}
+                              value={m.value.toString()}
+                            >
+                              {m.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    {/* Year Filter */}
+                    <div>
+                      <label className="text-sm font-medium">Year:</label>
+                      <Select
+                        value={selectedYear.toString()}
+                        onValueChange={(v) =>
+                          handleYearChange(Number(v))
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getYears().map((y) => (
+                            <SelectItem key={y} value={y.toString()}>
+                              {y}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
+
+
                 </div>
 
                 {/* ADMIN / MANAGER FILTER - WITH TEAM MEMBER PERFORMANCE AND CHART */}
@@ -846,20 +855,16 @@ export default function ManagerDashboard() {
                       {selectedStaff !== "all" && staffData.find(staff => staff._id === selectedStaff) && (
                         <div className="lg:col-span-2 h-full">
                           {/* <Card className="h-full ring-2 ring-primary shadow-lg"> */}
-                            <CardContent className="p-4 h-full flex flex-col">
+                            <CardContent className="h-full flex flex-col">
                               {(() => {
                                 const selectedStaffData = staffData.find(staff => staff._id === selectedStaff);
                                 if (!selectedStaffData) return null;
 
-                                const completionRate = getCompletionRate(selectedStaffData._id);
                                 const staffPhoto = selectedStaffData.name.toLowerCase() === 'dhea'
                                   ? '/images/dhea.jpeg'
                                   : selectedStaffData.name.toLowerCase() === 'mercy'
                                   ? '/images/mercy.jpeg'
                                   : `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedStaffData.name}`;
-                                const totalVisits = Object.values(getVisitDataByDate())
-                                  .flat()
-                                  .filter(task => task.staffId === selectedStaffData._id).length;
 
                                 // Get additional stats for the selected staff
                                 const getStaffStats = () => {
@@ -868,25 +873,28 @@ export default function ManagerDashboard() {
                                   let completedVisits = 0;
                                   let suspendVisits = 0;
                                   let lossVisits = 0;
+                                  let totalVisits = 0;
                                   let totalAmount = 0;
 
                                   Object.entries(visitData).forEach(([dateStr, tasks]) => {
                                     const [year, month, day] = dateStr.split('-').map(Number);
                                     if (year === currentYear) {
                                       const staffTasks = tasks.filter(task => task.staffId === selectedStaffData._id);
-                                      completedVisits += staffTasks.filter(t => t.status === 'lanjut').length;
-                                      suspendVisits += staffTasks.filter(t => t.status === 'suspend').length;
-                                      lossVisits += staffTasks.filter(t => t.status === 'loss').length;
+                                      totalVisits += staffTasks.filter(t => t.statusKunjungan === 'VISITED').length;
+                                        completedVisits += staffTasks.filter(t => t.status === 'lanjut').length;
+                                        suspendVisits += staffTasks.filter(t => t.status === 'suspend').length;
+                                        lossVisits += staffTasks.filter(t => t.status === 'loss').length;
                                       staffTasks.forEach(task => {
                                         totalAmount += task.salesAmount || 0;
                                       });
                                     }
                                   });
 
-                                  return { completedVisits, suspendVisits, lossVisits, totalAmount };
+                                  return { completedVisits, suspendVisits, lossVisits, totalVisits, totalAmount };
                                 };
 
                                 const staffStats = getStaffStats();
+                                const completionRate = Math.round((staffStats.completedVisits / selectedStaffData.targetYearly) * 100);
 
                                 return (
                                   <div className="flex flex-col h-full">
@@ -934,13 +942,13 @@ export default function ManagerDashboard() {
                                           Total Visits
                                         </div>
                                         <div className="text-xs text-muted-foreground">
-                                          {totalVisits}/{selectedStaffData.targetYearly} visits
+                                          {staffStats.totalVisits}/{selectedStaffData.targetYearly} visits
                                         </div>
                                       </div>
                                       <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                                         <div
                                           className="bg-blue-600 h-2 rounded-full transition-all duration-500"
-                                          style={{ width: `${completionRate}%` }}
+                                          style={{ width: `${Math.min((staffStats.totalVisits / selectedStaffData.targetYearly) * 100, 100)}%` }}
                                         />
                                       </div>
                                     </div>
@@ -963,6 +971,10 @@ export default function ManagerDashboard() {
                                         <div className="flex justify-between items-center">
                                           <span className="text-xs text-red-600">✗ Loss</span>
                                           <span className="text-xs font-medium">{staffStats.lossVisits}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-xs text-blue-600">📋 To Do</span>
+                                          <span className="text-xs font-medium">{staffStats.totalVisits - staffStats.completedVisits - staffStats.suspendVisits - staffStats.lossVisits}</span>
                                         </div>
                                       </div>
 
@@ -1006,131 +1018,230 @@ export default function ManagerDashboard() {
 
   
         {/* Modern CRM Stats Cards */}
-        <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 xl:grid-cols-4">
-          {/* Target Card - Different for admin vs staff */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4 px-3 sm:px-4 lg:px-6">
+          {/* Target Card - Total data from Convex table with progress bar */}
           <Card className="@container/card">
-            <CardHeader>
-              <CardDescription>TARGET</CardDescription>
-              <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+            <CardHeader className="pb-2 sm:pb-4">
+              <CardDescription className="text-xs sm:text-sm">TARGET</CardDescription>
+              <CardTitle className="text-xl sm:text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
                 {(() => {
-                  if (user.role === 'super_admin' || user.role === 'manager') {
-                    return staffData.reduce((sum, staff) => sum + staff.targetYearly, 0);
-                  } else {
-                    const currentStaff = staffData.find(staff => staff._id === getCurrentUserId());
-                    return currentStaff?.targetYearly || 0;
-                  }
+                  // Calculate total data from Convex targets table
+                  let totalTargets = 0;
+                  let totalVisited = 0;
+                  const visitData = getVisitDataByDate();
+                  const rangeStart = new Date(dateRange.startYear, dateRange.startMonth, 1);
+                  const rangeEnd = new Date(dateRange.endYear, dateRange.endMonth + 1, 0);
+
+                  Object.entries(visitData).forEach(([dateStr, tasks]) => {
+                    const [year, month, day] = dateStr.split('-').map(Number);
+                    const taskDate = new Date(year, month - 1, day);
+
+                    if (taskDate >= rangeStart && taskDate <= rangeEnd) {
+                      const staffFilteredTasks = selectedStaff === 'all' ? tasks : tasks.filter(task => task.staffId === selectedStaff);
+                      totalTargets += staffFilteredTasks.length;
+                      totalVisited += staffFilteredTasks.filter(task => task.statusKunjungan === 'VISITED').length;
+                    }
+                  });
+
+                  return totalTargets;
                 })()}
               </CardTitle>
-              <CardAction>
-                <Badge variant="outline" className="text-green-600">
-                  <IconTrendingUp className="size-4" />
-                  +{(() => Math.floor(Math.random() * 20) + 5)()}%
+              <CardAction className="pt-1">
+                <Badge variant="outline" className="text-xs sm:text-sm text-green-600">
+                  <IconTrendingUp className="size-3 sm:size-4" />
+                  <span className="hidden sm:inline">+{(() => Math.floor(Math.random() * 20) + 5)()}%</span>
+                  <span className="sm:hidden">+{(() => Math.floor(Math.random() * 20) + 5)()}%</span>
                 </Badge>
               </CardAction>
             </CardHeader>
-            <CardFooter className="flex-col items-start gap-1.5 text-sm">
+            <CardFooter className="flex-col items-start gap-1.5 text-xs sm:text-sm">
               <div className="line-clamp-1 flex gap-2 font-medium text-green-600">
-                Annual target for {user.role === 'staff' ? 'you' : 'team'} <IconTrendingUp className="size-4" />
+                Total data in Convex table <IconTrendingUp className="size-4" />
               </div>
+
+              {/* Progress Bar */}
+              <div className="w-full space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Progress</span>
+                  <span className="font-medium">
+                    {(() => {
+                      let totalTargets = 0;
+                      let totalVisited = 0;
+                      const visitData = getVisitDataByDate();
+                      const rangeStart = new Date(dateRange.startYear, dateRange.startMonth, 1);
+                      const rangeEnd = new Date(dateRange.endYear, dateRange.endMonth + 1, 0);
+
+                      Object.entries(visitData).forEach(([dateStr, tasks]) => {
+                        const [year, month, day] = dateStr.split('-').map(Number);
+                        const taskDate = new Date(year, month - 1, day);
+
+                        if (taskDate >= rangeStart && taskDate <= rangeEnd) {
+                          const staffFilteredTasks = selectedStaff === 'all' ? tasks : tasks.filter(task => task.staffId === selectedStaff);
+                          totalTargets += staffFilteredTasks.length;
+                          totalVisited += staffFilteredTasks.filter(task => task.statusKunjungan === 'VISITED').length;
+                        }
+                      });
+
+                      const percentage = totalTargets > 0 ? Math.round((totalVisited / totalTargets) * 100) : 0;
+                      return `${totalVisited}/${totalTargets} (${percentage}%)`;
+                    })()}
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  {(() => {
+                    let totalTargets = 0;
+                    let totalVisited = 0;
+                    const visitData = getVisitDataByDate();
+                    const rangeStart = new Date(dateRange.startYear, dateRange.startMonth, 1);
+                    const rangeEnd = new Date(dateRange.endYear, dateRange.endMonth + 1, 0);
+
+                    Object.entries(visitData).forEach(([dateStr, tasks]) => {
+                      const [year, month, day] = dateStr.split('-').map(Number);
+                      const taskDate = new Date(year, month - 1, day);
+
+                      if (taskDate >= rangeStart && taskDate <= rangeEnd) {
+                        const staffFilteredTasks = selectedStaff === 'all' ? tasks : tasks.filter(task => task.staffId === selectedStaff);
+                        totalTargets += staffFilteredTasks.length;
+                        totalVisited += staffFilteredTasks.filter(task => task.statusKunjungan === 'VISITED').length;
+                      }
+                    });
+
+                    const percentage = totalTargets > 0 ? Math.round((totalVisited / totalTargets) * 100) : 0;
+                    return (
+                      <div
+                        className="bg-green-500 h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min(percentage, 100)}%` }}
+                      />
+                    );
+                  })()}
+                </div>
+              </div>
+
               <div className="text-muted-foreground">
-                Total client visits target for {new Date().getFullYear()}
+                All target records in date range
               </div>
             </CardFooter>
           </Card>
 
           <Card className="@container/card">
-            <CardHeader>
-              <CardDescription>SUSPEND </CardDescription>
-              <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-                {suspendVisits}
+            <CardHeader className="pb-2 sm:pb-4">
+              <CardDescription className="text-xs sm:text-sm">LANJUT</CardDescription>
+              <CardTitle className="text-xl sm:text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+                {(() => {
+                  // Calculate total visits with LANJUT status
+                  let lanjutCount = 0;
+                  const visitData = getVisitDataByDate();
+                  const rangeStart = new Date(dateRange.startYear, dateRange.startMonth, 1);
+                  const rangeEnd = new Date(dateRange.endYear, dateRange.endMonth + 1, 0);
+
+                  Object.entries(visitData).forEach(([dateStr, tasks]) => {
+                    const [year, month, day] = dateStr.split('-').map(Number);
+                    const taskDate = new Date(year, month - 1, day);
+
+                    if (taskDate >= rangeStart && taskDate <= rangeEnd) {
+                      const staffFilteredTasks = selectedStaff === 'all' ? tasks : tasks.filter(task => task.staffId === selectedStaff);
+                      lanjutCount += staffFilteredTasks.filter(task => task.status === 'lanjut').length;
+                    }
+                  });
+
+                  return lanjutCount;
+                })()}
               </CardTitle>
-              <CardAction>
-                <Badge variant="outline" className="text-blue-600">
-                  <IconTrendingUp className="size-4" />
-                  +8.2%
+              <CardAction className="pt-1">
+                <Badge variant="outline" className="text-xs sm:text-sm text-green-600">
+                  <IconTrendingUp className="size-3 sm:size-4" />
+                  <span className="hidden sm:inline">+{(() => Math.floor(Math.random() * 20) + 5)()}%</span>
+                  <span className="sm:hidden">+{(() => Math.floor(Math.random() * 20) + 5)()}%</span>
                 </Badge>
               </CardAction>
             </CardHeader>
-            <CardFooter className="flex-col items-start gap-1.5 text-sm">
-              <div className="line-clamp-1 flex gap-2 font-medium text-blue-600">
-                Pending follow-up <IconTrendingUp className="size-4" />
+            <CardFooter className="flex-col items-start gap-1.5 text-xs sm:text-sm">
+              <div className="line-clamp-1 flex gap-1 sm:gap-2 font-medium text-green-600">
+                <span className="hidden sm:inline">Successful visits</span>
+                <span className="sm:hidden">Successful</span>
+                <IconTrendingUp className="size-3 sm:size-4" />
               </div>
               <div className="text-muted-foreground">
-                Client visits pending completion
+                <span className="hidden sm:inline">All visits with LANJUT status</span>
+                <span className="sm:hidden">LANJUT status visits</span>
               </div>
             </CardFooter>
           </Card>
 
           <Card className="@container/card">
-            <CardHeader>
-              <CardDescription>LOSS </CardDescription>
-              <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+            <CardHeader className="pb-2 sm:pb-4">
+              <CardDescription className="text-xs sm:text-sm">LOSS</CardDescription>
+              <CardTitle className="text-xl sm:text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
                 {lossVisits}
               </CardTitle>
-              <CardAction>
-                <Badge variant="outline" className="text-orange-600">
-                  <IconTrendingDown className="size-4" />
-                  -2.1%
+              <CardAction className="pt-1">
+                <Badge variant="outline" className="text-xs sm:text-sm text-orange-600">
+                  <IconTrendingDown className="size-3 sm:size-4" />
+                  <span className="hidden sm:inline">-2.1%</span>
+                  <span className="sm:hidden">-2%</span>
                 </Badge>
               </CardAction>
             </CardHeader>
-            <CardFooter className="flex-col items-start gap-1.5 text-sm">
-              <div className="line-clamp-1 flex gap-2 font-medium text-orange-600">
-                Lost opportunities <IconTrendingDown className="size-4" />
+            <CardFooter className="flex-col items-start gap-1.5 text-xs sm:text-sm">
+              <div className="line-clamp-1 flex gap-1 sm:gap-2 font-medium text-orange-600">
+                <span className="hidden sm:inline">Lost opportunities</span>
+                <span className="sm:hidden">Lost</span>
+                <IconTrendingDown className="size-3 sm:size-4" />
               </div>
               <div className="text-muted-foreground">
-                Client visits that resulted in loss
+                <span className="hidden sm:inline">Client visits that resulted in loss</span>
+                <span className="sm:hidden">Visits lost</span>
               </div>
             </CardFooter>
           </Card>
-
-          <Card className="@container/card">
-            <CardHeader>
-              <CardDescription>{getStatusLabel().toUpperCase()}</CardDescription>
-              <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-                {selectedStatus === 'all' ? getStatusCount() : getStatusPercentage()}%
+          
+           <Card className="@container/card">
+            <CardHeader className="pb-2 sm:pb-4">
+              <CardDescription className="text-xs sm:text-sm">SUSPEND</CardDescription>
+              <CardTitle className="text-xl sm:text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+                {suspendVisits}
               </CardTitle>
-              <CardAction>
-                <Badge variant="outline" className="text-green-600">
-                  <IconTrendingUp className="size-4" />
-                  +4.5%
+              <CardAction className="pt-1">
+                <Badge variant="outline" className="text-xs sm:text-sm text-blue-600">
+                  <IconTrendingUp className="size-3 sm:size-4" />
+                  <span className="hidden sm:inline">+8.2%</span>
+                  <span className="sm:hidden">+8%</span>
                 </Badge>
               </CardAction>
             </CardHeader>
-            <CardFooter className="flex-col items-start gap-1.5 text-sm">
-              <div className="line-clamp-1 flex gap-2 font-medium text-green-600">
-                {selectedStatus === 'all' ? 'Total visits' : `${getStatusLabel()} completion rate`} <IconTrendingUp className="size-4" />
+            <CardFooter className="flex-col items-start gap-1.5 text-xs sm:text-sm">
+              <div className="line-clamp-1 flex gap-1 sm:gap-2 font-medium text-blue-600">
+                <span className="hidden sm:inline">Pending follow-up</span>
+                <span className="sm:hidden">Pending</span>
+                <IconTrendingUp className="size-3 sm:size-4" />
               </div>
               <div className="text-muted-foreground">
-                {selectedStatus === 'all'
-                  ? `${getStatusCount()} total visits`
-                  : `${getStatusCount()} of ${(user.role === 'super_admin' || user.role === 'manager') && selectedStaff === 'all'
-                      ? staffData.reduce((sum, staff) => sum + staff.targetYearly, 0)
-                      : staffData.find(staff => staff.id === (user.role === 'staff' ? getLoggedInStaffId() : selectedStaff))?.targetYearly || 0} target`
-                }
+                <span className="hidden sm:inline">Client visits suspended</span>
+                <span className="sm:hidden">Visits suspended</span>
               </div>
             </CardFooter>
           </Card>
+          
         </div>
 
         {/* Shadcn UI Calendar Section - Only show for admin or with controls for staff */}
-        <div className="px-4 lg:px-6">
+        <div className="px-3 sm:px-4 lg:px-6">
           <Card>
-            <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <Calendar className="h-6 w-6" />
+            <CardHeader className="pb-3 sm:pb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <Calendar className="h-5 w-5 sm:h-6 sm:w-6" />
                 <div>
-                  <CardTitle>{(user.role === 'super_admin' || user.role === 'manager') ? 'Timeline Analytics' : 'Your Visit Timeline'}</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="text-lg sm:text-xl">{(user.role === 'super_admin' || user.role === 'manager') ? 'Timeline Analytics' : 'Your Visit Timeline'}</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">
                     {getMonthNames()[dateRange.startMonth].slice(0, 3)} {dateRange.startYear} - {getMonthNames()[dateRange.endMonth].slice(0, 3)} {dateRange.endYear}
                   </CardDescription>
                 </div>
               </div>
               {user.role === 'super_admin' && (
                 <div className="flex items-center space-x-2">
-                  <div className="px-3 py-1 border rounded-md">
-                    <span className="text-sm font-medium">
+                  <div className="px-2 py-1 sm:px-3 border rounded-md">
+                    <span className="text-xs sm:text-sm font-medium">
                       {calendarDays.length} days displayed
                     </span>
                   </div>
@@ -1498,37 +1609,38 @@ export default function ManagerDashboard() {
 
         {/* Interactive Chart Component */}
          {/* Recent Visits Table */}
-         <div className="px-4 lg:px-6">
+         <div className="px-3 sm:px-4 lg:px-6">
           <div className="">
             <Card>
-              <CardHeader className="pb-0">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    Detail Target Visits
+              <CardHeader className="pb-3 sm:pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                    <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <span className="hidden sm:inline">Detail Target Visits</span>
+                    <span className="sm:hidden">Target Visits</span>
                   </CardTitle>
-                  <div className="relative">
+                  <div className="relative w-full sm:w-auto">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                     <Input
                       placeholder="Search client or staff..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 w-64"
+                      className="pl-10 w-full sm:w-64"
                     />
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="max-h-[425px] overflow-y-auto">
-                  <Table>
-                    <TableHeader className="sticky top-0 bg-background">
+                <div className="overflow-x-auto max-h-[425px]">
+                  <Table className="min-w-[600px]">
+                    <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
                         <TableHead className="text-xs font-medium w-12 text-center">No</TableHead>
-                        <TableHead className="text-xs font-medium">PIC CRM</TableHead>
-                        <TableHead className="text-xs font-medium">Client</TableHead>
-                        <TableHead className="text-xs font-medium">Tgl</TableHead>
-                        <TableHead className="text-xs font-medium">Status</TableHead>
-                        <TableHead className="text-xs font-medium text-right">Nilai Kontrak</TableHead>
+                        <TableHead className="text-xs font-medium min-w-[80px]">PIC CRM</TableHead>
+                        <TableHead className="text-xs font-medium min-w-[120px]">Client</TableHead>
+                        <TableHead className="text-xs font-medium min-w-[80px]">Tgl</TableHead>
+                        <TableHead className="text-xs font-medium min-w-[80px]">Status</TableHead>
+                        <TableHead className="text-xs font-medium text-right min-w-[100px]">Nilai Kontrak</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1568,27 +1680,36 @@ export default function ManagerDashboard() {
                         });
 
                         // Sort by date (most recent first) and display all
-                        recentVisits.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                        recentVisits.sort((a, b) => new Date(b.scheduleVisit || b.date || '').getTime() - new Date(a.scheduleVisit || a.date || '').getTime());
                         const displayVisits = recentVisits;
 
                         return (
                           <>
                             {displayVisits.map((visit, index) => (
                           <TableRow key={visit._id} className="hover:bg-muted/50 cursor-pointer">
-                            <TableCell className="text-xs font-medium text-center w-12">{index + 1}</TableCell>
-                            <TableCell className="text-xs font-medium">{(visit as any).staffName}</TableCell>
-                            <TableCell className="text-xs">{visit.client}</TableCell>
-                            <TableCell className="text-xs">
+                            <TableCell className="text-xs font-medium text-center w-12 py-2 sm:py-3">{index + 1}</TableCell>
+                            <TableCell className="text-xs font-medium py-2 sm:py-3 truncate max-w-[80px] sm:max-w-none">{(visit as any).staffName}</TableCell>
+                            <TableCell className="text-xs py-2 sm:py-3 truncate max-w-[120px] sm:max-w-none">{visit.client}</TableCell>
+                            <TableCell className="text-xs py-2 sm:py-3">
                               {(() => {
                                 const [year, month, day] = visit.scheduleVisit.split('-').map(Number);
                                 const date = new Date(year, month - 1, day);
-                                return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                                return (
+                                  <>
+                                    <span className="hidden sm:inline">
+                                      {date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                    </span>
+                                    <span className="sm:hidden">
+                                      {date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })}
+                                    </span>
+                                  </>
+                                );
                               })()}
                             </TableCell>
-                            <TableCell className="text-xs">
+                            <TableCell className="text-xs py-2 sm:py-3">
                               <Badge
                                 variant="outline"
-                                className={`text-xs px-1.5 py-0.5 ${
+                                className={`text-xs px-1 sm:px-1.5 py-0.5 ${
                                   visit.statusClient === 'LANJUT' ? 'border-green-500 text-green-700 bg-green-50' :
                                   visit.statusClient === 'LOSS' ? 'border-red-500 text-red-700 bg-red-50' :
                                   visit.statusClient === 'SUSPEND' ? 'border-yellow-500 text-yellow-700 bg-yellow-50' :
@@ -1598,10 +1719,17 @@ export default function ManagerDashboard() {
                                 {visit.statusClient === 'TO_DO' ? 'TO DO' : visit.statusClient}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-xs text-right font-medium">
-                              {visit.salesAmount
-                                ? `Rp ${visit.salesAmount.toLocaleString('id-ID')}`
-                                : '-'}
+                            <TableCell className="text-xs text-right font-medium py-2 sm:py-3 truncate">
+                              {visit.salesAmount ? (
+                                <>
+                                  <span className="hidden sm:inline">
+                                    Rp {visit.salesAmount.toLocaleString('id-ID')}
+                                  </span>
+                                  <span className="sm:hidden">
+                                    {(visit.salesAmount / 1000000).toFixed(1)}M
+                                  </span>
+                                </>
+                              ) : '-'}
                             </TableCell>
                           </TableRow>
                             ))}
@@ -1647,7 +1775,7 @@ export default function ManagerDashboard() {
                               }
                             });
 
-                            recentVisits.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                            recentVisits.sort((a, b) => new Date(b.scheduleVisit || b.date || '').getTime() - new Date(a.scheduleVisit || a.date || '').getTime());
                             const totalContractValue = recentVisits.reduce((sum, visit) => sum + (visit.salesAmount || 0), 0);
                             return totalContractValue.toLocaleString('id-ID');
                           })()}
@@ -1841,7 +1969,7 @@ export default function ManagerDashboard() {
                 <div className="w-full max-w-3xl">
                   <img
                     src={selectedVisit.photoUrl}
-                    alt={`Visit photo for ${selectedVisit.clientName}`}
+                    alt={`Visit photo for ${selectedVisit.client || selectedVisit.clientName || 'unknown'}`}
                     className="w-full h-auto rounded-lg border shadow-lg"
                     onError={(e) => {
                       e.currentTarget.src = "/images/visit.jpeg";
@@ -1850,7 +1978,7 @@ export default function ManagerDashboard() {
                 </div>
                 <div className="text-center space-y-2">
                   <p className="text-sm text-muted-foreground">
-                    {selectedVisit.clientName} - {selectedVisit.date}
+                    {selectedVisit.client || selectedVisit.clientName || 'unknown'} - {selectedVisit.scheduleVisit || selectedVisit.date || 'unknown'}
                   </p>
                   <div className="flex gap-2 justify-center">
                     <Button onClick={handleDownloadPhoto}>
