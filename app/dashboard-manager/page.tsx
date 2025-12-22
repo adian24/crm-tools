@@ -114,6 +114,8 @@ export default function ManagerDashboard() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedChartType, setSelectedChartType] = useState<string>('area');
+  const [showMoneyBreakdownModal, setShowMoneyBreakdownModal] = useState(false);
+  const [moneyBreakdownData, setMoneyBreakdownData] = useState<{staffName: string, visits: VisitTask[]}[]>([]);
 
   // Convex data fetching
   const allUsers = useQuery(api.auth.getAllUsers);
@@ -607,6 +609,46 @@ export default function ManagerDashboard() {
     }
   };
 
+  const handleMoneyCellClick = () => {
+    const breakdownData: {staffName: string, visits: VisitTask[]}[] = [];
+
+    // Get all filtered staff
+    const staffToShow = selectedStaff === 'all' ? staffData : staffData.filter(staff => staff._id === selectedStaff);
+
+    staffToShow.forEach(staff => {
+      const staffVisits: VisitTask[] = [];
+
+      // Get all tasks for this staff within the date range and filters
+      calendarMonths.forEach(month => {
+        const tasks = getTasksForMonthAndStaff(month.monthIndex, month.year, staff._id);
+
+        // Apply status filter
+        const filteredTasks = tasks.filter(task => {
+          if (selectedStatus === 'all' || selectedStatus === 'visited') {
+            return task.status === 'lanjut' || task.status === 'loss' || task.status === 'suspend';
+          }
+          return task.status === selectedStatus;
+        });
+
+        // Only include visits that have sales amounts
+        const visitsWithAmount = filteredTasks.filter(task => (task.salesAmount || 0) > 0);
+        staffVisits.push(...visitsWithAmount);
+      });
+
+      if (staffVisits.length > 0) {
+        // Sort by date (most recent first)
+        staffVisits.sort((a, b) => new Date(b.scheduleVisit || b.date || '').getTime() - new Date(a.scheduleVisit || a.date || '').getTime());
+        breakdownData.push({
+          staffName: staff.name,
+          visits: staffVisits
+        });
+      }
+    });
+
+    setMoneyBreakdownData(breakdownData);
+    setShowMoneyBreakdownModal(true);
+  };
+
   // Determine if we should show monthly calendar (more than 1 month) or daily calendar (1 month)
   const isMultiMonthView = dateRange.endMonth > dateRange.startMonth || dateRange.endYear > dateRange.startYear;
 
@@ -921,25 +963,44 @@ export default function ManagerDashboard() {
                           ? '/images/mercy.jpeg'
                           : `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedStaffData.name}`;
 
-                        // Get additional stats for the selected staff
+                        // Get additional stats for the selected staff based on current filters
                         const getStaffStats = () => {
                           const visitData = getVisitDataByDate();
-                          const currentYear = new Date().getFullYear();
                           let completedVisits = 0;
                           let suspendVisits = 0;
                           let lossVisits = 0;
                           let totalVisits = 0;
                           let totalAmount = 0;
 
+                          // Calculate date range from current filters
+                          const rangeStart = new Date(dateRange.startYear, dateRange.startMonth, 1);
+                          const rangeEnd = new Date(dateRange.endYear, dateRange.endMonth + 1, 0);
+
                           Object.entries(visitData).forEach(([dateStr, tasks]) => {
                             const [year, month, day] = dateStr.split('-').map(Number);
-                            if (year === currentYear) {
+                            const taskDate = new Date(year, month - 1, day);
+
+                            // Filter by date range
+                            if (taskDate >= rangeStart && taskDate <= rangeEnd) {
                               const staffTasks = tasks.filter(task => task.staffId === selectedStaffData._id);
-                              totalVisits += staffTasks.filter(t => t.statusKunjungan === 'VISITED').length;
-                              completedVisits += staffTasks.filter(t => t.status === 'lanjut').length;
-                              suspendVisits += staffTasks.filter(t => t.status === 'suspend').length;
-                              lossVisits += staffTasks.filter(t => t.status === 'loss').length;
-                              staffTasks.forEach(task => {
+
+                              // Apply status filter
+                              let filteredTasks = staffTasks;
+                              if (selectedStatus === 'all') {
+                                // For 'all', include all tasks regardless of status
+                                filteredTasks = staffTasks;
+                              } else if (selectedStatus === 'visited') {
+                                filteredTasks = staffTasks.filter(task => task.status === 'lanjut' || task.status === 'loss' || task.status === 'suspend');
+                              } else {
+                                filteredTasks = staffTasks.filter(task => task.status === selectedStatus);
+                              }
+
+                              totalVisits += filteredTasks.filter(t => t.statusKunjungan === 'VISITED').length;
+                              completedVisits += filteredTasks.filter(t => t.status === 'lanjut').length;
+                              suspendVisits += filteredTasks.filter(t => t.status === 'suspend').length;
+                              lossVisits += filteredTasks.filter(t => t.status === 'loss').length;
+
+                              filteredTasks.forEach(task => {
                                 totalAmount += task.salesAmount || 0;
                               });
                             }
@@ -949,7 +1010,10 @@ export default function ManagerDashboard() {
                         };
 
                         const staffStats = getStaffStats();
-                        const completionRate = Math.round((staffStats.completedVisits / selectedStaffData.targetYearly) * 100);
+                        // Calculate completion rate based on filtered data
+                        const completionRate = selectedStaffData.targetYearly > 0
+                          ? Math.round((staffStats.totalVisits / selectedStaffData.targetYearly) * 100)
+                          : 0;
 
                         return (
                           <div className="space-y-4">
@@ -1010,7 +1074,7 @@ export default function ManagerDashboard() {
                                 </div>
                                 <div className="flex justify-between items-center">
                                   <span className="text-blue-600">📋 To Do</span>
-                                  <span className="font-medium">{selectedStaffData.targetYearly - staffStats.completedVisits - staffStats.suspendVisits - staffStats.lossVisits}</span>
+                                  <span className="font-medium">{Math.max(0, selectedStaffData.targetYearly - staffStats.totalVisits)}</span>
                                 </div>
                               </div>
                             </div>
@@ -1018,12 +1082,13 @@ export default function ManagerDashboard() {
                             {/* Total Revenue */}
                             <div className="pt-2 border-t">
                               <div className="flex justify-between items-center">
-                                <span className="text-xs text-muted-foreground">Total Revenue</span>
+                                <span className="text-xs text-muted-foreground">Revenue</span>
                                 <span className="text-xs font-bold text-green-600">
                                   Rp {staffStats.totalAmount.toLocaleString('id-ID')}
                                 </span>
                               </div>
                             </div>
+
                           </div>
                         );
                       })()}
@@ -1260,377 +1325,379 @@ export default function ManagerDashboard() {
         <div className="transition-all duration-300 ease-in-out" key={`calendar-${selectedStaff}-${selectedStatus}-${selectedYear}`}>
           <Card>
             <CardHeader className="pb-3 sm:pb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center space-x-2 sm:space-x-3">
-                <Calendar className="h-5 w-5 sm:h-6 sm:w-6" />
-                <div>
-                  <CardTitle className="text-lg sm:text-xl">{(user.role === 'super_admin' || user.role === 'manager') ? 'Timeline Analytics' : 'Your Visit Timeline'}</CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">
-                    {getMonthNames()[dateRange.startMonth].slice(0, 3)} {dateRange.startYear} - {getMonthNames()[dateRange.endMonth].slice(0, 3)} {dateRange.endYear}
-                  </CardDescription>
-                </div>
-              </div>
-              {user.role === 'super_admin' && (
-                <div className="flex items-center space-x-2">
-                  <div className="px-2 py-1 sm:px-3 border rounded-md">
-                    <span className="text-xs sm:text-sm font-medium">
-                      {calendarDays.length} days displayed
-                    </span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center space-x-2 sm:space-x-3">
+                  <Calendar className="h-5 w-5 sm:h-6 sm:w-6" />
+                  <div>
+                    <CardTitle className="text-lg sm:text-xl">{(user.role === 'super_admin' || user.role === 'manager') ? 'Timeline Analytics' : 'Your Visit Timeline'}</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">
+                      {getMonthNames()[dateRange.startMonth].slice(0, 3)} {dateRange.startYear} - {getMonthNames()[dateRange.endMonth].slice(0, 3)} {dateRange.endYear}
+                    </CardDescription>
                   </div>
                 </div>
-              )}
-            </div>
+                {user.role === 'super_admin' && (
+                  <div className="flex items-center space-x-2">
+                    <div className="px-2 py-1 sm:px-3 border rounded-md">
+                      <span className="text-xs sm:text-sm font-medium">
+                        {calendarDays.length} days displayed
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
             </CardHeader>
-          <CardContent>
-            <div className="w-full overflow-x-auto">
-              {/* Monthly Calendar View */}
-              {isMultiMonthView && (
-                <Table className="w-full" style={{ width: '100%', tableLayout: 'auto' }}>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[80px] py-1">
-                        <div className="flex items-center gap-1">
-                          <Users className="h-3 w-3" />
-                          Staff
-                        </div>
-                      </TableHead>
-                      {calendarMonths.map((month) => {
-                        const isCurrentMonth = month.monthIndex === new Date().getMonth() && month.year === new Date().getFullYear();
-
-                        return (
-                          <TableHead
-                            key={`${month.year}-${month.monthIndex}`}
-                            className={`text-center py-0.5 px-0.5 min-w-[60px] ${isCurrentMonth ? 'bg-blue-100' : ''}`}
-                            style={{ width: `${100/(calendarMonths.length + 3)}%` }}
-                          >
-                            <div className={`font-semibold ${isCurrentMonth ? 'text-sm text-blue-600' : 'text-sm'}`}>
-                              {month.monthShort}
-                            </div>
-                            <div className="text-[10px] leading-none">
-                              {month.year}
-                            </div>
-                            {isCurrentMonth && (
-                              <Badge variant="secondary" className="text-[8px] px-1 py-0.5 mt-0.5">
-                                ★
-                              </Badge>
-                            )}
-                          </TableHead>
-                        );
-                      })}
-                      <TableHead className="text-center min-w-[50px] py-1 text-sm font-semibold" style={{ width: `${100/(calendarMonths.length + 4)}%` }}>Target</TableHead>
-                      <TableHead className="text-center min-w-[50px] py-1 text-sm font-semibold" style={{ width: `${100/(calendarMonths.length + 4)}%` }}>Persentase</TableHead>
-                      <TableHead className="text-center min-w-[70px] py-1 text-sm font-semibold" style={{ width: `${100/(calendarMonths.length + 4)}%` }}>Total Uang</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredStaff.map((staff, staffIndex) => (
-                      <TableRow key={staff.id}>
-                        <TableCell className="font-medium py-1 px-1">
-                          <div className="flex items-center gap-2">
-                            <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center">
-                              <User className="h-3 w-3 text-blue-600" />
-                            </div>
-                            <div className="min-w-0">
-                              <div className="font-semibold text-xs truncate">{staff.name}</div>
-                              <div className="text-[9px] text-muted-foreground leading-none">
-                                {staff.completedThisYear}/{staff.targetYearly}
-                              </div>
-                            </div>
+            <CardContent>
+              <div className="w-full overflow-x-auto">
+                {/* Monthly Calendar View */}
+                {isMultiMonthView && (
+                  <Table className="w-full" style={{ width: '100%', tableLayout: 'auto' }}>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[80px] py-1">
+                          <div className="flex items-center gap-1">
+                            <Users className="h-3 w-3" />
+                            Staff
                           </div>
-                        </TableCell>
-                        {calendarMonths.map((month, monthIndex) => {
-                          const tasks = getTasksForMonthAndStaff(month.monthIndex, month.year, staff._id);
-                          const hasTask = tasks.length > 0;
+                        </TableHead>
+                        {calendarMonths.map((month) => {
                           const isCurrentMonth = month.monthIndex === new Date().getMonth() && month.year === new Date().getFullYear();
 
-                          // Calculate filtered tasks based on selected status
-                          const getFilteredTaskCount = (taskList: any[]) => {
-                            if (selectedStatus === 'all' || selectedStatus === 'visited') {
-                              return taskList.filter(task => task.status === 'lanjut' || task.status === 'loss' || task.status === 'suspend').length;
-                            }
-                            return taskList.filter(task => task.status === selectedStatus).length;
-                          };
-
-                          const filteredTaskCount = getFilteredTaskCount(tasks);
-                          const hasFilteredTask = filteredTaskCount > 0;
-
                           return (
-                            <TableCell
-                              key={`${staff.id}-${month.year}-${month.monthIndex}`}
-                              className={`text-center cursor-pointer hover:bg-muted/50 py-1 px-1 border border-border ${isCurrentMonth ? 'border-blue-400 bg-blue-50/30' : ''}`}
-                              style={{ width: `${100/(calendarMonths.length + 4)}%` }}
-                              onClick={() => hasFilteredTask && handleMonthCellClick(month.monthIndex, month.year, staff._id)}
+                            <TableHead
+                              key={`${month.year}-${month.monthIndex}`}
+                              className={`text-center py-0.5 px-0.5 min-w-[60px] ${isCurrentMonth ? 'bg-blue-100' : ''}`}
+                              style={{ width: `${100/(calendarMonths.length + 3)}%` }}
                             >
-                              {hasFilteredTask ? (
-                                <div className="text-xs font-semibold">
-                                  {filteredTaskCount}
-                                </div>
-                              ) : (
-                                <div className="text-xs text-gray-400">-</div>
+                              <div className={`font-semibold ${isCurrentMonth ? 'text-sm text-blue-600' : 'text-sm'}`}>
+                                {month.monthShort}
+                              </div>
+                              <div className="text-[10px] leading-none">
+                                {month.year}
+                              </div>
+                              {isCurrentMonth && (
+                                <Badge variant="secondary" className="text-[8px] px-1 py-0.5 mt-0.5">
+                                  ★
+                                </Badge>
                               )}
-                            </TableCell>
+                            </TableHead>
                           );
                         })}
-                        <TableCell className="text-center py-1 px-1" style={{ width: `${100/(calendarMonths.length + 4)}%` }}>
-                          <div className="font-bold text-sm">
-                            <span className="number-change inline-block">{(() => {
-                              let totalFilteredVisits = 0;
-                              calendarMonths.forEach(month => {
-                                const tasks = getTasksForMonthAndStaff(month.monthIndex, month.year, staff._id);
-
-                                // Apply status filter
-                                if (selectedStatus === 'all' || selectedStatus === 'visited') {
-                                  totalFilteredVisits += tasks.filter(task => task.status === 'lanjut' || task.status === 'loss' || task.status === 'suspend').length;
-                                } else {
-                                  totalFilteredVisits += tasks.filter(task => task.status === selectedStatus).length;
-                                }
-                              });
-                              return totalFilteredVisits;
-                            })()}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center py-1 px-1" style={{ width: `${100/(calendarMonths.length + 4)}%` }}>
-                          <div className="font-bold text-sm">
-                            <span className="number-change inline-block">{(() => {
-                              let totalFilteredVisits = 0;
-                              let totalTasks = 0;
-                              calendarMonths.forEach(month => {
-                                const tasks = getTasksForMonthAndStaff(month.monthIndex, month.year, staff._id);
-                                totalTasks += tasks.length;
-
-                                // Apply status filter
-                                if (selectedStatus === 'all' || selectedStatus === 'visited') {
-                                  totalFilteredVisits += tasks.filter(task => task.status === 'lanjut' || task.status === 'loss' || task.status === 'suspend').length;
-                                } else {
-                                  totalFilteredVisits += tasks.filter(task => task.status === selectedStatus).length;
-                                }
-                              });
-
-                              const percentage = totalTasks > 0 ? Math.round((totalFilteredVisits / totalTasks) * 100) : 0;
-                              return `${percentage}%`;
-                            })()}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center py-1 px-1" style={{ width: `${100/(calendarMonths.length + 4)}%` }}>
-                          <div className="font-bold text-xs">
-                            <span className="number-change inline-block">{(() => {
-                              let totalAmount = 0;
-                              calendarMonths.forEach(month => {
-                                const tasks = getTasksForMonthAndStaff(month.monthIndex, month.year, staff._id);
-
-                                // Apply status filter and sum amounts
-                                const filteredTasks = tasks.filter(task => {
-                                  if (selectedStatus === 'all' || selectedStatus === 'visited') {
-                                    return task.status === 'lanjut' || task.status === 'loss' || task.status === 'suspend';
-                                  }
-                                  return task.status === selectedStatus;
-                                });
-
-                                filteredTasks.forEach(task => {
-                                  totalAmount += task.salesAmount || 0;
-                                });
-                              });
-
-                              // Format as Indonesian Rupiah
-                              return new Intl.NumberFormat('id-ID', {
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0
-                              }).format(totalAmount);
-                            })()}
-                            </span>
-                          </div>
-                        </TableCell>
+                        <TableHead className="text-center min-w-[50px] py-1 text-sm font-semibold" style={{ width: `${100/(calendarMonths.length + 4)}%` }}>Target</TableHead>
+                        <TableHead className="text-center min-w-[50px] py-1 text-sm font-semibold" style={{ width: `${100/(calendarMonths.length + 4)}%` }}>Persentase</TableHead>
+                        <TableHead className="text-center min-w-[70px] py-1 text-sm font-semibold" style={{ width: `${100/(calendarMonths.length + 4)}%` }}>Actual Revenue</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-
-              {/* Daily Calendar View */}
-              {!isMultiMonthView && (
-                <Table className="w-full" style={{ tableLayout: 'auto' }}>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[80px] py-1">
-                        <div className="flex items-center gap-1">
-                          <Users className="h-3 w-3" />
-                          Staff
-                        </div>
-                      </TableHead>
-
-                      {calendarDays.map((date) => {
-                        const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-                        const isToday = date.toDateString() === new Date().toDateString();
-
-                        const rangeStart = new Date(dateRange.startYear, dateRange.startMonth, 1);
-                        const rangeEnd = new Date(dateRange.endYear, dateRange.endMonth + 1, 0);
-                        const isOutsideRange = date < rangeStart || date > rangeEnd;
-
-                        return (
-                          <TableHead
-                            key={date.toISOString()}
-                            className={`text-center py-0.5 px-0.5 min-w-[25px]
-                              ${isOutsideRange ? 'opacity-60' : ''}
-                              ${isWeekend ? 'bg-red-200/50' : ''}`}
-                          >
-                            <div className={`font-semibold ${isToday ? 'text-blue-600' : ''}`}>
-                              {date.getDate()}
-                            </div>
-                            <div className="text-[10px] leading-none">
-                              {date.toLocaleDateString('id-ID', { weekday: 'short' }).slice(0, 1)}
-                            </div>
-                            {isToday && (
-                              <Badge variant="secondary" className="text-[8px] px-1 py-0.5 mt-0.5">
-                                ★
-                              </Badge>
-                            )}
-                          </TableHead>
-                        );
-                      })}
-
-                      <TableHead className="text-center min-w-[50px]">Total</TableHead>
-                      <TableHead className="text-center min-w-[50px]">Lanjut</TableHead>
-                    </TableRow>
-                  </TableHeader>
-
-                  <TableBody>
-                    {filteredStaff.map((staff, staffIndex) => (
-                      <TableRow key={staff._id}>
-                        <TableCell className="py-1 px-1">
-                          <div className="flex items-center gap-2">
-                            <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center">
-                              <User className="h-3 w-3 text-blue-600" />
-                            </div>
-                            <div>
-                              <div className="font-semibold text-xs truncate">{staff.name}</div>
-                              <div className="text-[9px] text-muted-foreground">
-                                {
-                                  Object.values(getVisitDataByDate())
-                                    .flat()
-                                    .filter(task => task.staffId === staff._id).length
-                                }/{staff.targetYearly}
+                    </TableHeader>
+                    <TableBody>
+                      {filteredStaff.map((staff, staffIndex) => (
+                        <TableRow key={staff.id}>
+                          <TableCell className="font-medium py-1 px-1">
+                            <div className="flex items-center gap-2">
+                              <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center">
+                                <User className="h-3 w-3 text-blue-600" />
+                              </div>
+                              <div className="min-w-0">
+                                <div className="font-semibold text-xs truncate">{staff.name}</div>
                               </div>
                             </div>
-                          </div>
-                        </TableCell>
+                          </TableCell>
+                          {calendarMonths.map((month, monthIndex) => {
+                            const tasks = getTasksForMonthAndStaff(month.monthIndex, month.year, staff._id);
+                            const hasTask = tasks.length > 0;
+                            const isCurrentMonth = month.monthIndex === new Date().getMonth() && month.year === new Date().getFullYear();
 
-                        {calendarDays.map((date, dayIndex) => {
-                          const tasks = getTasksForDateAndStaff(date, staff._id);
-                          const hasTask = tasks.length > 0;
+                            // Calculate filtered tasks based on selected status
+                            const getFilteredTaskCount = (taskList: any[]) => {
+                              if (selectedStatus === 'all' || selectedStatus === 'visited') {
+                                return taskList.filter(task => task.status === 'lanjut' || task.status === 'loss' || task.status === 'suspend').length;
+                              }
+                              return taskList.filter(task => task.status === selectedStatus).length;
+                            };
+
+                            const filteredTaskCount = getFilteredTaskCount(tasks);
+                            const hasFilteredTask = filteredTaskCount > 0;
+
+                            return (
+                              <TableCell
+                                key={`${staff.id}-${month.year}-${month.monthIndex}`}
+                                className={`text-center hover:bg-muted/50 py-1 px-1 border border-border ${isCurrentMonth ? 'border-blue-400 bg-blue-50/30' : ''}`}
+                                style={{ width: `${100/(calendarMonths.length + 4)}%` }}
+                                // onClick={() => hasFilteredTask && handleMonthCellClick(month.monthIndex, month.year, staff._id)}
+                              >
+                                {hasFilteredTask ? (
+                                  <div className="text-xs font-semibold">
+                                    {filteredTaskCount}
+                                  </div>
+                                ) : (
+                                  <div className="text-xs text-gray-400">-</div>
+                                )}
+                              </TableCell>
+                            );
+                          })}
+                          <TableCell className="text-center py-1 px-1" style={{ width: `${100/(calendarMonths.length + 4)}%` }}>
+                            <div className="font-bold text-sm">
+                              <span className="number-change inline-block">{(() => {
+                                let totalFilteredVisits = 0;
+                                calendarMonths.forEach(month => {
+                                  const tasks = getTasksForMonthAndStaff(month.monthIndex, month.year, staff._id);
+
+                                  // Apply status filter
+                                  if (selectedStatus === 'all' || selectedStatus === 'visited') {
+                                    totalFilteredVisits += tasks.filter(task => task.status === 'lanjut' || task.status === 'loss' || task.status === 'suspend').length;
+                                  } else {
+                                    totalFilteredVisits += tasks.filter(task => task.status === selectedStatus).length;
+                                  }
+                                });
+                                return totalFilteredVisits;
+                              })()}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center py-1 px-1" style={{ width: `${100/(calendarMonths.length + 4)}%` }}>
+                            <div className="font-bold text-sm">
+                              <span className="number-change inline-block">{(() => {
+                                let totalFilteredVisits = 0;
+                                let totalTasks = 0;
+                                calendarMonths.forEach(month => {
+                                  const tasks = getTasksForMonthAndStaff(month.monthIndex, month.year, staff._id);
+                                  totalTasks += tasks.length;
+
+                                  // Apply status filter
+                                  if (selectedStatus === 'all' || selectedStatus === 'visited') {
+                                    totalFilteredVisits += tasks.filter(task => task.status === 'lanjut' || task.status === 'loss' || task.status === 'suspend').length;
+                                  } else {
+                                    totalFilteredVisits += tasks.filter(task => task.status === selectedStatus).length;
+                                  }
+                                });
+
+                                const percentage = totalTasks > 0 ? Math.round((totalFilteredVisits / totalTasks) * 100) : 0;
+                                return `${percentage}%`;
+                              })()}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell
+                              className="text-center py-1 px-1 cursor-pointer hover:bg-muted/50 transition-colors"
+                              style={{ width: `${100/(calendarMonths.length + 4)}%` }}
+                              onClick={handleMoneyCellClick}
+                              title="Click to see detailed breakdown"
+                            >
+                              <div className="font-bold text-xs">
+                                <span className="number-change inline-block hover:text-blue-600 transition-colors">{(() => {
+                                let totalAmount = 0;
+                                calendarMonths.forEach(month => {
+                                  const tasks = getTasksForMonthAndStaff(month.monthIndex, month.year, staff._id);
+
+                                  // Apply status filter and sum amounts
+                                  const filteredTasks = tasks.filter(task => {
+                                    if (selectedStatus === 'all' || selectedStatus === 'visited') {
+                                      return task.status === 'lanjut' || task.status === 'loss' || task.status === 'suspend';
+                                    }
+                                    return task.status === selectedStatus;
+                                  });
+
+                                  filteredTasks.forEach(task => {
+                                    totalAmount += task.salesAmount || 0;
+                                  });
+                                });
+
+                                // Format as Indonesian Rupiah
+                                return new Intl.NumberFormat('id-ID', {
+                                  minimumFractionDigits: 0,
+                                  maximumFractionDigits: 0
+                                }).format(totalAmount);
+                              })()}
+                              </span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+
+                {/* Daily Calendar View */}
+                {!isMultiMonthView && (
+                  <Table className="w-full" style={{ tableLayout: 'auto' }}>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[80px] py-1">
+                          <div className="flex items-center gap-1">
+                            <Users className="h-3 w-3" />
+                            Staff
+                          </div>
+                        </TableHead>
+
+                        {calendarDays.map((date) => {
+                          const isWeekend = date.getDay() === 0 || date.getDay() === 6;
                           const isToday = date.toDateString() === new Date().toDateString();
-                          const isDiagonal = staffIndex === dayIndex;
+
+                          const rangeStart = new Date(dateRange.startYear, dateRange.startMonth, 1);
+                          const rangeEnd = new Date(dateRange.endYear, dateRange.endMonth + 1, 0);
+                          const isOutsideRange = date < rangeStart || date > rangeEnd;
 
                           return (
-                            <TableCell
+                            <TableHead
                               key={date.toISOString()}
-                              className={`text-center cursor-pointer py-1 px-1 border
-                                ${isToday ? 'border-blue-400 bg-blue-50/30' : ''}
-                                ${date.getDay() === 0 || date.getDay() === 6 ? 'bg-red-200/50' : ''}`}
-                              onClick={() => hasTask && handleCellClick(date, staff._id)}
+                              className={`text-center py-0.5 px-0.5 min-w-[25px]
+                                ${isOutsideRange ? 'opacity-60' : ''}
+                                ${isWeekend ? 'bg-red-200/50' : ''}`}
                             >
-                              {hasTask ? (
-                                <div className="flex justify-center">
-                                  {tasks[0].status === 'task'
-                                    ? getTaskIcon(tasks[0].status)
-                                    : (
-                                      <div className={`w-3.5 h-3.5 ${getTaskStatusColor(tasks[0].status)} rounded-full flex items-center justify-center text-white text-[8px]`}>
-                                        {getTaskIcon(tasks[0].status)}
-                                      </div>
-                                    )}
-                                </div>
-                              ) : null}
-                            </TableCell>
+                              <div className={`font-semibold ${isToday ? 'text-blue-600' : ''}`}>
+                                {date.getDate()}
+                              </div>
+                              <div className="text-[10px] leading-none">
+                                {date.toLocaleDateString('id-ID', { weekday: 'short' }).slice(0, 1)}
+                              </div>
+                              {isToday && (
+                                <Badge variant="secondary" className="text-[8px] px-1 py-0.5 mt-0.5">
+                                  ★
+                                </Badge>
+                              )}
+                            </TableHead>
                           );
                         })}
 
-                        {/* TOTAL */}
-                        <TableCell className="text-center">
-                          <div className="font-bold text-sm number-change">
-                            {calendarDays.reduce((sum, d) => (
-                              sum + getTasksForDateAndStaff(d, staff._id).length
-                            ), 0)}
-                          </div>
-                        </TableCell>
+                        <TableHead className="text-center min-w-[50px]">Total</TableHead>
+                        <TableHead className="text-center min-w-[50px]">Visited</TableHead>
+                      </TableRow>
+                    </TableHeader>
 
-                        {/* PERCENTAGE */}
-                        <TableCell className="text-center">
-                          {(() => {
-                            let total = 0;
-                            let done = 0;
+                    <TableBody>
+                      {filteredStaff.map((staff, staffIndex) => (
+                        <TableRow key={staff._id}>
+                          <TableCell className="py-1 px-1">
+                            <div className="flex items-center gap-2">
+                              <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center">
+                                <User className="h-3 w-3 text-blue-600" />
+                              </div>
+                              <div>
+                                <div className="font-semibold text-xs truncate">{staff.name}</div>
+                                <div className="text-[9px] text-muted-foreground">
+                                  {
+                                    Object.values(getVisitDataByDate())
+                                      .flat()
+                                      .filter(task => task.staffId === staff._id).length
+                                  }/{staff.targetYearly}
+                                </div>
+                              </div>
+                            </div>
+                          </TableCell>
 
-                            calendarDays.forEach(d => {
-                              const tasks = getTasksForDateAndStaff(d, staff._id);
-                              total += tasks.length;
-                              done += tasks.filter(t => t.status === 'lanjut').length;
-                            });
-
-                            const percent = total ? Math.round((done / total) * 100) : 0;
+                          {calendarDays.map((date, dayIndex) => {
+                            const tasks = getTasksForDateAndStaff(date, staff._id);
+                            const hasTask = tasks.length > 0;
+                            const isToday = date.toDateString() === new Date().toDateString();
+                            const isDiagonal = staffIndex === dayIndex;
 
                             return (
-                              <>
-                                <div className="font-bold text-sm number-change">{percent}%</div>
-                                <div className="w-full bg-muted rounded-full h-1.5 mt-1">
-                                  <div
-                                    className="bg-green-500 h-1.5 rounded-full transition-all"
-                                    style={{ width: `${percent}%` }}
-                                  />
-                                </div>
-                              </>
+                              <TableCell
+                                key={date.toISOString()}
+                                className={`text-center cursor-pointer py-1 px-1 border
+                                  ${isToday ? 'border-blue-400 bg-blue-50/30' : ''}
+                                  ${date.getDay() === 0 || date.getDay() === 6 ? 'bg-red-200/50' : ''}`}
+                                onClick={() => hasTask && handleCellClick(date, staff._id)}
+                              >
+                                {hasTask ? (
+                                  <div className="flex justify-center">
+                                    {tasks[0].status === 'task'
+                                      ? getTaskIcon(tasks[0].status)
+                                      : (
+                                        <div className={`w-3.5 h-3.5 ${getTaskStatusColor(tasks[0].status)} rounded-full flex items-center justify-center text-white text-[8px]`}>
+                                          {getTaskIcon(tasks[0].status)}
+                                        </div>
+                                      )}
+                                  </div>
+                                ) : null}
+                              </TableCell>
                             );
-                          })()}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
+                          })}
 
-            </div>
+                          {/* TOTAL */}
+                          <TableCell className="text-center">
+                            <div className="font-bold text-sm number-change">
+                              {calendarDays.reduce((sum, d) => (
+                                sum + getTasksForDateAndStaff(d, staff._id).length
+                              ), 0)}
+                            </div>
+                          </TableCell>
 
-            {/* Timeline Info */}
-            <div className="flex justify-between items-center mt-4 p-3 bg-muted/30 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-3 w-3 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">
-                  {isMultiMonthView
-                    ? `Showing monthly view for ${calendarMonths.length} month${calendarMonths.length > 1 ? 's' : ''}`
-                    : `Showing daily view for ${calendarDays.length} day${calendarDays.length > 1 ? 's' : ''}`
-                  }
-                </span>
-              </div>
-              <div className="flex items-center">
-                <Badge variant="secondary" className="text-xs">
-                  {isMultiMonthView
-                    ? `${calendarMonths.filter(month => getTasksForMonthAndStaff(month.monthIndex, month.year, selectedStaff).length > 0).length} Active Months`
-                    : `${calendarDays.filter(date => getTasksForDateAndStaff(date, selectedStaff).length > 0).length} Active Days`
-                  }
-                </Badge>
-              </div>
-            </div>
+                          {/* PERCENTAGE */}
+                          <TableCell className="text-center">
+                            {(() => {
+                              let total = 0;
+                              let done = 0;
 
-            {/* Legend */}
-            <div className="flex items-center justify-center space-x-4 mt-3 p-3 bg-muted/20 rounded-lg">
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-xs font-medium">LANJUT</span>
+                              calendarDays.forEach(d => {
+                                const tasks = getTasksForDateAndStaff(d, staff._id);
+                                total += tasks.length;
+                                done += tasks.filter(t => t.statusKunjungan === 'VISITED').length;
+                              });
+
+                              const percent = total ? Math.round((done / total) * 100) : 0;
+
+                              return (
+                                <>
+                                  <div className="font-bold text-sm number-change">{percent}% ({done})</div>
+                                  <div className="w-full bg-muted rounded-full h-1.5 mt-1">
+                                    <div
+                                      className="bg-green-500 h-1.5 rounded-full transition-all"
+                                      style={{ width: `${percent}%` }}
+                                    />
+                                  </div>
+                                </>
+                              );
+                            })()}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+
               </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                <span className="text-xs font-medium">LOSS</span>
+
+              {/* Timeline Info */}
+              <div className="flex justify-between items-center mt-4 p-3 bg-muted/30 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">
+                    {isMultiMonthView
+                      ? `Showing monthly view for ${calendarMonths.length} month${calendarMonths.length > 1 ? 's' : ''}`
+                      : `Showing daily view for ${calendarDays.length} day${calendarDays.length > 1 ? 's' : ''}`
+                    }
+                  </span>
+                </div>
+                <div className="flex items-center">
+                  <Badge variant="secondary" className="text-xs">
+                    {isMultiMonthView
+                      ? `${calendarMonths.filter(month => getTasksForMonthAndStaff(month.monthIndex, month.year, selectedStaff).length > 0).length} Active Months`
+                      : `${calendarDays.filter(date => getTasksForDateAndStaff(date, selectedStaff).length > 0).length} Active Days`
+                    }
+                  </Badge>
+                </div>
               </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                <span className="text-xs font-medium">SUSPEND</span>
+
+              {/* Legend */}
+              <div className="flex items-center justify-center space-x-4 mt-3 p-3 bg-muted/20 rounded-lg">
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="text-xs font-medium">LANJUT</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                  <span className="text-xs font-medium">LOSS</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                  <span className="text-xs font-medium">SUSPEND</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 border-[1.5px] border-dashed border-blue-400 rounded-full animate-pulse"></div>
+                  <span className="text-xs font-medium">TASK</span>
+                </div>
               </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 border-[1.5px] border-dashed border-blue-400 rounded-full animate-pulse"></div>
-                <span className="text-xs font-medium">TASK</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Interactive Chart Component */}
@@ -2054,6 +2121,142 @@ export default function ManagerDashboard() {
                 </Button>
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Money Breakdown Modal */}
+      <Dialog open={showMoneyBreakdownModal} onOpenChange={setShowMoneyBreakdownModal}>
+        <DialogContent
+          className="max-h-[90vh] overflow-y-auto"
+          style={{
+            width: '95vw',
+            maxWidth: '1600px',
+            minWidth: '1000px'
+          }}
+        >
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <TrendingUp className="h-6 w-6" />
+              <div>
+                <DialogTitle>Total Money Breakdown</DialogTitle>
+                <DialogDescription>
+                  Detailed breakdown of sales amounts by staff member
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {moneyBreakdownData.map((staffData, staffIndex) => (
+              <Card key={staffIndex}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 justify-between">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      {staffData.staffName}
+                    </div>
+                    <div className="text-lg font-bold text-green-600">
+                      Rp {staffData.visits.reduce((sum, visit) => sum + (visit.salesAmount || 0), 0).toLocaleString('id-ID')}
+                    </div>
+                  </CardTitle>
+                  <CardDescription>
+                    {staffData.visits.length} visit{staffData.visits.length > 1 ? 's' : ''} with sales amounts
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <Table className="min-w-[700px]">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-xs font-medium w-12 text-center">No</TableHead>
+                          <TableHead className="text-xs font-medium min-w-[150px]">Client</TableHead>
+                          <TableHead className="text-xs font-medium min-w-[120px]">Date</TableHead>
+                          <TableHead className="text-xs font-medium min-w-[100px]">Status</TableHead>
+                          <TableHead className="text-xs font-medium text-right min-w-[150px]">Sales Amount</TableHead>
+                          <TableHead className="text-xs font-medium min-w-[200px]">Location</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {staffData.visits.map((visit, visitIndex) => (
+                          <TableRow key={visit._id} className="hover:bg-muted/50">
+                            <TableCell className="text-xs font-medium text-center w-12 py-3">
+                              {visitIndex + 1}
+                            </TableCell>
+                            <TableCell className="text-xs py-3 truncate max-w-[150px]" title={visit.client}>
+                              {visit.client}
+                            </TableCell>
+                            <TableCell className="text-xs py-3">
+                              {(() => {
+                                const dateStr = visit.scheduleVisit;
+                                if (!dateStr) return 'Invalid Date';
+                                const [year, month, day] = dateStr.split('-').map(Number);
+                                const date = new Date(year, month - 1, day);
+                                return isNaN(date.getTime()) ? 'Invalid Date' :
+                                  date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                              })()}
+                            </TableCell>
+                            <TableCell className="text-xs py-3">
+                              <Badge
+                                variant="outline"
+                                className={`text-xs px-2 py-1 whitespace-nowrap ${
+                                  visit.statusClient === 'LANJUT' ? 'border-green-500 text-green-700 bg-green-50' :
+                                  visit.statusClient === 'LOSS' ? 'border-red-500 text-red-700 bg-red-50' :
+                                  visit.statusClient === 'SUSPEND' ? 'border-yellow-500 text-yellow-700 bg-yellow-50' :
+                                  visit.statusClient === 'TO_DO' ? 'border-blue-500 text-blue-700 bg-blue-50' :
+                                  'border-gray-500 text-gray-700 bg-gray-50'
+                                }`}
+                              >
+                                {visit.statusClient === 'TO_DO' ? 'TO DO' : visit.statusClient}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs text-right font-medium py-3 text-green-600">
+                              Rp {visit.salesAmount?.toLocaleString('id-ID') || 0}
+                            </TableCell>
+                            <TableCell className="text-xs py-3 truncate max-w-[200px]" title={visit.location}>
+                              {visit.location || '-'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                      <TableFooter>
+                        <TableRow className="bg-muted/50 font-semibold">
+                          <TableCell colSpan={4} className="text-xs text-right py-3">
+                            Total for {staffData.staffName}:
+                          </TableCell>
+                          <TableCell className="text-xs text-right font-bold text-green-600 py-3">
+                            Rp {staffData.visits.reduce((sum, visit) => sum + (visit.salesAmount || 0), 0).toLocaleString('id-ID')}
+                          </TableCell>
+                          <TableCell></TableCell>
+                        </TableRow>
+                      </TableFooter>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+
+            {/* Grand Total */}
+            <Card className="bg-gradient-to-r from-blue-50 to-green-50 border-blue-200">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <TrendingUp className="h-8 w-8 text-green-600" />
+                    <div>
+                      <h3 className="text-lg font-semibold text-green-600">Grand Total All Staff</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {moneyBreakdownData.reduce((sum, staff) => sum + staff.visits.length, 0)} total visits with sales amounts
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-2xl font-bold text-green-600">
+                    Rp {moneyBreakdownData.reduce((sum, staff) =>
+                      sum + staff.visits.reduce((visitSum, visit) => visitSum + (visit.salesAmount || 0), 0), 0
+                    ).toLocaleString('id-ID')}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </DialogContent>
       </Dialog>

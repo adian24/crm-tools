@@ -94,13 +94,13 @@ function ChartCard({ title, data, statusColor, chartType }: {
       <CardContent className="px-2 pt-4 sm:px-4 sm:pt-6 relative z-10">
         <ChartContainer
           config={chartConfig}
-          className="aspect-auto h-[280px] sm:h-[250px] w-full"
+          className="aspect-auto h-[320px] sm:h-[280px] w-full"
         >
           {(() => {
             switch (chartType) {
               case 'bar':
                 return (
-                  <BarChart data={chartData} margin={{ top: 20, right: 20, left: 10, bottom: 40 }}>
+                  <BarChart data={chartData} margin={{ top: 30, right: 30, left: 10, bottom: 50 }}>
                     <defs>
                       <linearGradient id="colorMercyBar" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="hsl(270, 60%, 50%)" stopOpacity={0.8}/>
@@ -124,10 +124,11 @@ function ChartCard({ title, data, statusColor, chartType }: {
                     <YAxis
                       tickLine={false}
                       axisLine={false}
-                      tickMargin={6}
-                      tick={{ fontSize: 10 }}
+                      tickMargin={8}
+                      tick={{ fontSize: 9 }}
                       className="fill-muted-foreground"
                       domain={[0, 'dataMax']}
+                      width={80}
                     />
                     <ChartTooltip
                       cursor={true}
@@ -137,7 +138,8 @@ function ChartCard({ title, data, statusColor, chartType }: {
                       <LabelList
                         dataKey="mercy"
                         position="top"
-                        fontSize={8}
+                        fontSize={9}
+                        fontWeight="bold"
                         className="hidden sm:inline"
                         fill="hsl(270, 60%, 50%)"
                         formatter={(value: number, entry: any) => {
@@ -150,7 +152,8 @@ function ChartCard({ title, data, statusColor, chartType }: {
                       <LabelList
                         dataKey="dhea"
                         position="top"
-                        fontSize={8}
+                        fontSize={9}
+                        fontWeight="bold"
                         className="hidden sm:inline"
                         fill="hsl(210, 80%, 50%)"
                         formatter={(value: number, entry: any) => {
@@ -163,7 +166,7 @@ function ChartCard({ title, data, statusColor, chartType }: {
                 );
               case 'line':
                 return (
-                  <LineChart data={chartData} margin={{ top: 20, right: 20, left: 10, bottom: 40 }}>
+                  <LineChart data={chartData} margin={{ top: 30, right: 30, left: 10, bottom: 50 }}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis
                       dataKey="month"
@@ -177,10 +180,11 @@ function ChartCard({ title, data, statusColor, chartType }: {
                     <YAxis
                       tickLine={false}
                       axisLine={false}
-                      tickMargin={6}
-                      tick={{ fontSize: 10 }}
+                      tickMargin={8}
+                      tick={{ fontSize: 9 }}
                       className="fill-muted-foreground"
                       domain={[0, 'dataMax']}
+                      width={80}
                     />
                     <ChartTooltip
                       cursor={true}
@@ -197,7 +201,8 @@ function ChartCard({ title, data, statusColor, chartType }: {
                       <LabelList
                         dataKey="mercy"
                         position="top"
-                        fontSize={8}
+                        fontSize={9}
+                        fontWeight="bold"
                         className="hidden sm:inline"
                         fill="hsl(270, 60%, 50%)"
                         formatter={(value: number, entry: any) => {
@@ -217,7 +222,8 @@ function ChartCard({ title, data, statusColor, chartType }: {
                       <LabelList
                         dataKey="dhea"
                         position="top"
-                        fontSize={8}
+                        fontSize={9}
+                        fontWeight="bold"
                         className="hidden sm:inline"
                         fill="hsl(210, 80%, 50%)"
                         formatter={(value: number, entry: any) => {
@@ -308,7 +314,7 @@ function ChartCard({ title, data, statusColor, chartType }: {
                 );
               default: // area chart
                 return (
-                  <AreaChart data={chartData} margin={{ top: 20, right: 20, left: 10, bottom: 40 }}>
+                  <AreaChart data={chartData} margin={{ top: 30, right: 30, left: 10, bottom: 50 }}>
                     <defs>
                       {/* Futuristic gradient for Mercy - Purple */}
                       <linearGradient id="colorMercy" x1="0" y1="0" x2="0" y2="1">
@@ -353,10 +359,11 @@ function ChartCard({ title, data, statusColor, chartType }: {
                     <YAxis
                       tickLine={false}
                       axisLine={false}
-                      tickMargin={6}
-                      tick={{ fontSize: 10 }}
+                      tickMargin={8}
+                      tick={{ fontSize: 9 }}
                       className="fill-muted-foreground"
                       domain={[0, 'dataMax']}
+                      width={80}
                     />
                     <ChartTooltip
                       cursor={true}
@@ -372,7 +379,8 @@ function ChartCard({ title, data, statusColor, chartType }: {
                       <LabelList
                         dataKey="mercy"
                         position="top"
-                        fontSize={8}
+                        fontSize={9}
+                        fontWeight="bold"
                         className="hidden sm:inline"
                         fill="hsl(270, 60%, 50%)"
                         formatter={(value: number, entry: any) => {
@@ -392,7 +400,8 @@ function ChartCard({ title, data, statusColor, chartType }: {
                       <LabelList
                         dataKey="dhea"
                         position="top"
-                        fontSize={8}
+                        fontSize={9}
+                        fontWeight="bold"
                         className="hidden sm:inline"
                         fill="hsl(210, 80%, 50%)"
                         formatter={(value: number, entry: any) => {
