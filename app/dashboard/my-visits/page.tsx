@@ -1315,23 +1315,23 @@ export default function MyVisitsPage() {
           <CardContent className="flex-1 overflow-hidden p-4 lg:min-h-0 flex flex-col">
             <div className="flex-1 overflow-y-auto">
               {/* Calendar Grid - Responsive */}
-              <div className="grid grid-cols-7 gap-1 text-center mb-2 sticky top-0 bg-background z-10">
+              <div className="grid grid-cols-7 gap-1.5 sm:gap-3 text-center mb-2 sticky top-0 bg-background z-10">
                 {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map(day => (
-                  <div key={day} className="text-xs font-bold text-muted-foreground uppercase tracking-wide py-2">
+                  <div key={day} className="text-[9px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wide py-1.5 sm:py-2">
                     {day}
                   </div>
                 ))}
               </div>
 
               {/* Calendar Days - Responsive */}
-              <div className="grid grid-cols-7 gap-3">
+              <div className="grid grid-cols-7 gap-1.5 sm:gap-3">
               {calendarDays.map((day, index) => (
                 <div
                   key={index}
                   onClick={() => day.isCurrentMonth && setSelectedDate(day.date)}
-                  style={{ cursor: day.isCurrentMonth ? 'pointer' : 'default' }}
+                  style={{ cursor: day.isCurrentMonth ? 'pointer' : 'default', aspectRatio: '1 / 1' }}
                   className={`
-                    relative group min-h-[30px] h-[80px] p-2 rounded-lg transition-all duration-200
+                    relative group min-h-[36px] sm:min-h-[44px] p-1.5 sm:p-2 rounded-lg transition-all duration-200 flex flex-col
                     ${day.isCurrentMonth
                       ? 'bg-background border border-border hover:shadow-md hover:border-primary/50 hover:bg-gradient-to-br hover:from-primary/5 hover:to-accent/20'
                       : 'opacity-25'
@@ -1347,7 +1347,7 @@ export default function MyVisitsPage() {
                   `}
                 >
                   {/* Date Number */}
-                  <div className={`text-xs sm:text-sm font-bold mb-0.5 ${
+                  <div className={`text-[10px] sm:text-xs md:text-sm font-bold mb-0.5 ${
                     day.isCurrentMonth
                       ? day.isToday || selectedDate?.toDateString() === day.date.toDateString()
                         ? 'text-primary'
@@ -1358,10 +1358,10 @@ export default function MyVisitsPage() {
                   </div>
 
                   {/* Tasks - Show dots on mobile, full on desktop */}
-                  <div className="space-y-0.5 sm:space-y-1">
+                  <div className="space-y-0.5 sm:space-y-1 flex-1">
                     {/* Mobile: Show clickable dots */}
-                    <div className="sm:hidden flex gap-0.5 flex-wrap">
-                      {day.tasks.slice(0, 3).map((task, taskIndex) => (
+                    <div className="sm:hidden flex gap-0.5 flex-wrap justify-center">
+                      {day.tasks.slice(0, 4).map((task, taskIndex) => (
                         <div
                           key={taskIndex}
                           className={`w-1.5 h-1.5 rounded-full cursor-pointer hover:scale-125 transition-transform ${
@@ -1375,7 +1375,7 @@ export default function MyVisitsPage() {
                         />
                       ))}
                     </div>
-                    
+
                     {/* Desktop: Show full task cards */}
                     <div className="hidden sm:block space-y-0.5 sm:space-y-1">
                       {day.tasks.slice(0, 2).map((task, taskIndex) => (
