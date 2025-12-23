@@ -910,7 +910,7 @@ export default function ManagerDashboard() {
       </div>
 
       {/* Header with User Info */}
-      <div className="border-b bg-background sticky top-0 z-50">
+      <div className="border-b bg-background">
         <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 sm:gap-3">
@@ -955,7 +955,7 @@ export default function ManagerDashboard() {
       <div className="flex flex-col lg:flex-row gap-6 py-8 px-4 lg:px-6">
         {/* LEFT SIDEBAR - FILTERS (Desktop Only) */}
         <div className="hidden lg:block lg:w-80 flex-shrink-0">
-          <div className="sticky top-24 space-y-6">
+          <div className="sticky top-6 space-y-6">
             {/* Filter Card */}
             <Card className={`${animationsReady ? 'animate-on-mount slide-in-left' : ''}`}>
               <CardHeader>
