@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useMutation, useQuery } from 'convex/react';
 import { Plus, Search, Filter, MapPin, Calendar, Clock, CheckCircle, AlertCircle, Edit, Trash2, Eye, Users, Target, ChevronLeft, ChevronRight, Sun, Moon, Upload, FileSpreadsheet, Download, Menu, X, Save } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTarget, CardTitle } from '@/components/ui/card';
@@ -19,7 +19,7 @@ interface TargetData {
   pic: string;
   picName: string;
   scheduleVisit: string;
-  statusClient: 'LANJUT' | 'LOSS' | 'SUSPEND';
+  statusClient: 'LANJUT' | 'LOSS' | 'SUSPEND' | '';
   nilaiKontrak: number;
   statusKunjungan: 'TO_DO' | 'VISITED';
   contactPerson?: string;
@@ -90,6 +90,180 @@ interface User {
   staffId?: string;
   _id?: string;
 }
+
+// Ultra-fast Form Row Component - no memo, direct DOM manipulation
+interface FormDataRowProps {
+  row: TargetData;
+  index: number;
+  onFieldChange: (index: number, field: keyof TargetData, value: any) => void;
+  onRemove: (index: number) => void;
+  totalRows: number;
+}
+
+// Helper component for formatted currency input
+const CurrencyInput = ({ value, onChange, placeholder }: { value: number; onChange: (val: number) => void; placeholder: string }) => {
+  const [displayValue, setDisplayValue] = React.useState('');
+
+  // Format number with thousand separator
+  const formatNumber = (num: number): string => {
+    if (!num) return '';
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  };
+
+  // Parse formatted string back to number
+  const parseNumber = (str: string): number => {
+    const cleaned = str.replace(/\./g, '').replace(/[^0-9]/g, '');
+    return cleaned ? parseInt(cleaned, 10) : 0;
+  };
+
+  React.useEffect(() => {
+    if (value === 0) {
+      setDisplayValue('');
+    } else {
+      setDisplayValue(formatNumber(value));
+    }
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+    setDisplayValue(inputValue);
+
+    const numValue = parseNumber(inputValue);
+    onChange(numValue);
+  };
+
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.select();
+  };
+
+  return (
+    <input
+      type="text"
+      value={displayValue}
+      onChange={handleChange}
+      onFocus={handleFocus}
+      placeholder={placeholder}
+      className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded text-right"
+    />
+  );
+};
+
+const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows }: FormDataRowProps) => {
+  const handleChange = (field: keyof TargetData, value: any) => {
+    onFieldChange(index, field, value);
+  };
+
+  return (
+    <tr className="hover:bg-muted/30">
+      <td className="border border-border p-1">
+        <input
+          type="text"
+          defaultValue={row.client}
+          onChange={(e) => handleChange('client', e.target.value)}
+          placeholder="Nama klien"
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
+        />
+      </td>
+      <td className="border border-border p-1">
+        <input
+          type="text"
+          defaultValue={row.address}
+          onChange={(e) => handleChange('address', e.target.value)}
+          placeholder="Alamat lengkap"
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
+        />
+      </td>
+      <td className="border border-border p-1">
+        <input
+          type="date"
+          defaultValue={row.scheduleVisit}
+          onChange={(e) => handleChange('scheduleVisit', e.target.value)}
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
+        />
+      </td>
+      <td className="border border-border p-1">
+        <input
+          type="time"
+          defaultValue={row.visitTime}
+          onChange={(e) => handleChange('visitTime', e.target.value)}
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
+        />
+      </td>
+      <td className="border border-border p-1">
+        <input
+          type="text"
+          defaultValue={row.location}
+          onChange={(e) => handleChange('location', e.target.value)}
+          placeholder="Lokasi"
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
+        />
+      </td>
+      <td className="border border-border p-1">
+        <input
+          type="text"
+          defaultValue={row.contactPerson}
+          onChange={(e) => handleChange('contactPerson', e.target.value)}
+          placeholder="Nama"
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
+        />
+      </td>
+      <td className="border border-border p-1">
+        <input
+          type="text"
+          defaultValue={row.contactPhone}
+          onChange={(e) => handleChange('contactPhone', e.target.value)}
+          placeholder="08xx-xxxx-xxxx"
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
+        />
+      </td>
+      <td className="border border-border p-1">
+        <CurrencyInput
+          value={row.nilaiKontrak || 0}
+          onChange={(val) => handleChange('nilaiKontrak', val)}
+          placeholder="0"
+        />
+      </td>
+      <td className="border border-border p-1">
+        <CurrencyInput
+          value={row.salesAmount || 0}
+          onChange={(val) => handleChange('salesAmount', val)}
+          placeholder="0"
+        />
+      </td>
+      <td className="border border-border p-1">
+        <select
+          defaultValue={row.statusClient}
+          onChange={(e) => handleChange('statusClient', e.target.value as 'LANJUT' | 'LOSS' | 'SUSPEND' | '')}
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
+        >
+          <option value="">- Pilih -</option>
+          <option value="LANJUT">Lanjut</option>
+          <option value="LOSS">Loss</option>
+          <option value="SUSPEND">Suspend</option>
+        </select>
+      </td>
+      <td className="border border-border p-1">
+        <input
+          type="text"
+          defaultValue={row.notes || ''}
+          onChange={(e) => handleChange('notes', e.target.value)}
+          placeholder="Catatan..."
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
+        />
+      </td>
+      <td className="border border-border p-1 text-center">
+        <button
+          onClick={() => onRemove(index)}
+          disabled={totalRows === 1}
+          className="text-red-500 hover:text-red-700 disabled:text-gray-300 disabled:cursor-not-allowed cursor-pointer"
+          title="Hapus baris"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </td>
+    </tr>
+  );
+};
 
 const mockVisitTasks: VisitTask[] = [
   {
@@ -192,10 +366,32 @@ export default function MyVisitsPage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [showAddFormModal, setShowAddFormModal] = useState(false);
+  const [formData, setFormData] = useState<TargetData[]>([{
+    client: '',
+    address: '',
+    pic: user?._id || 'user-123',
+    picName: user?.name || '',
+    scheduleVisit: '',
+    visitTime: '',
+    statusClient: '',
+    nilaiKontrak: 0,
+    statusKunjungan: 'TO_DO',
+    contactPerson: '',
+    contactPhone: '',
+    location: '',
+    photoUrl: '',
+    salesAmount: 0,
+    notes: '',
+    created_by: user?._id || 'user-123'
+  }]);
+  const formDataRef = useRef(formData);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const bulkImportTargets = useMutation(api.targets.bulkImportTargets);
+  const createTarget = useMutation(api.targets.createTarget);
   const updateTarget = useMutation(api.targets.updateTarget);
   const deleteTarget = useMutation(api.targets.deleteTarget);
 
@@ -650,10 +846,11 @@ export default function MyVisitsPage() {
       const targetsForConvex = importPreview.map(target => ({
         client: target.client,
         address: target.address,
-        picName: target.picName,
+        pic: target.pic || user?._id || 'user-123',
+        picName: user?.name || target.picName || 'Unknown',
         scheduleVisit: target.scheduleVisit,
         visitTime: target.visitTime,
-        statusClient: target.statusClient,
+        statusClient: target.statusClient || 'LANJUT',
         nilaiKontrak: target.nilaiKontrak,
         statusKunjungan: target.statusKunjungan,
         contactPerson: target.contactPerson,
@@ -709,6 +906,143 @@ export default function MyVisitsPage() {
     setImportError('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+
+  const handleAddFormDataChange = useCallback((index: number, field: keyof TargetData, value: any) => {
+    setFormData(prevFormData => {
+      const newFormData = [...prevFormData];
+      newFormData[index] = {
+        ...newFormData[index],
+        [field]: value
+      };
+      return newFormData;
+    });
+  }, []);
+
+  const addNewFormRow = () => {
+    setFormData([...formData, {
+      client: '',
+      address: '',
+      pic: user?._id || 'user-123',
+      picName: user?.name || '',
+      scheduleVisit: '',
+      visitTime: '',
+      statusClient: '',
+      nilaiKontrak: 0,
+      statusKunjungan: 'TO_DO',
+      contactPerson: '',
+      contactPhone: '',
+      location: '',
+      photoUrl: '',
+      salesAmount: 0,
+      notes: '',
+      created_by: user?._id || 'user-123'
+    }]);
+  };
+
+  const removeFormRow = (index: number) => {
+    if (formData.length > 1) {
+      const newFormData = formData.filter((_, i) => i !== index);
+      setFormData(newFormData);
+    }
+  };
+
+  const validateFormData = (data: TargetData[]): boolean => {
+    return data.every(row =>
+      row.client.trim() !== '' &&
+      row.address.trim() !== '' &&
+      row.scheduleVisit.trim() !== ''
+    );
+  };
+
+  const submitFormData = async () => {
+    if (!user) {
+      alert('User tidak ditemukan. Silakan login kembali.');
+      return;
+    }
+
+    if (!validateFormData(formData)) {
+      alert('Mohon lengkapi data Client, Address, dan Schedule Visit untuk semua baris.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const validFormData = formData.filter(row =>
+        row.client.trim() !== '' &&
+        row.address.trim() !== '' &&
+        row.scheduleVisit.trim() !== ''
+      );
+
+      if (validFormData.length === 0) {
+        alert('Tidak ada data valid untuk disimpan.');
+        return;
+      }
+
+      const targetsForConvex = validFormData.map(row => ({
+        client: row.client,
+        address: row.address,
+        picName: user?.name || 'Unknown',
+        scheduleVisit: row.scheduleVisit,
+        visitTime: row.visitTime,
+        statusClient: row.statusClient || 'LANJUT',
+        nilaiKontrak: row.nilaiKontrak,
+        statusKunjungan: row.statusKunjungan,
+        contactPerson: row.contactPerson,
+        contactPhone: row.contactPhone,
+        location: row.location,
+        photoUrl: row.photoUrl,
+        salesAmount: row.salesAmount,
+        notes: row.notes,
+      }));
+
+      const result = await bulkImportTargets({
+        targets: targetsForConvex,
+        imported_by: user._id as any,
+      });
+
+      if (result.success > 0) {
+        alert(`✅ Data berhasil ditambahkan!\n\nBerhasil: ${result.success} data${result.failed > 0 ? `\nGagal: ${result.failed} data` : ''}`);
+
+        setSuccessMessage(`✅ Berhasil menambahkan ${result.success} data kunjungan baru!`);
+        setShowSuccessMessage(true);
+
+        setTimeout(() => {
+          setShowSuccessMessage(false);
+        }, 3000);
+
+        setShowAddFormModal(false);
+        setFormData([{
+          client: '',
+          address: '',
+          pic: user?._id || 'user-123',
+          picName: user?.name || '',
+          scheduleVisit: '',
+          visitTime: '',
+          statusClient: '',
+          nilaiKontrak: 0,
+          statusKunjungan: 'TO_DO',
+          contactPerson: '',
+          contactPhone: '',
+          location: '',
+          photoUrl: '',
+          salesAmount: 0,
+          notes: '',
+          created_by: user?._id || 'user-123'
+        }]);
+
+        if (result.failed > 0) {
+          console.error('Import errors:', result.errors);
+        }
+      } else {
+        alert(`❌ Gagal menambahkan data! Semua data gagal disimpan.\n\nError:\n${result.errors.join('\n')}`);
+      }
+    } catch (error) {
+      console.error('Submit form error:', error);
+      alert(`❌ Terjadi kesalahan saat menyimpan data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -803,7 +1137,7 @@ export default function MyVisitsPage() {
                 className="hidden"
               />
               <Button
-                onClick={() => {}}
+                onClick={() => setShowAddFormModal(true)}
                 className="hover:bg-primary/90 transition-colors shadow-sm cursor-pointer"
               >
                 <Plus className="h-4 w-4 mr-2" />
@@ -853,7 +1187,7 @@ export default function MyVisitsPage() {
                   {isDarkMode ? <Sun className="h-4 w-4 mr-2" /> : <Moon className="h-4 w-4 mr-2" />}
                   {isDarkMode ? 'Light' : 'Dark'}
                 </Button>
-                <Button size="sm" onClick={() => {}}>
+                <Button size="sm" onClick={() => setShowAddFormModal(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Tambah
                 </Button>
@@ -1820,21 +2154,376 @@ export default function MyVisitsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Success Message Toast */}
+      {/* Excel-like Add Form Modal */}
+      <Dialog open={showAddFormModal} onOpenChange={setShowAddFormModal}>
+        <DialogContent className="max-w-[98vw] sm:max-w-[95vw] lg:max-w-[98vw] xl:max-w-[98vw] max-h-[90vh] sm:max-h-[85vh] overflow-y-auto p-4 sm:p-6">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
+              Tambah Data Kunjungan (Excel-like Form)
+            </DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
+              Isi data kunjungan baru dalam format tabel seperti Excel. Kolom dengan tanda * wajib diisi.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Instructions */}
+            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 sm:p-4">
+              <p className="text-blue-700 dark:text-blue-300 font-medium text-xs sm:text-sm mb-2">
+                📝 Petunjuk Pengisian:
+              </p>
+              <ul className="text-blue-600 dark:text-blue-400 text-xs sm:text-sm space-y-1">
+                <li className="hidden sm:block">• Isi semua data langsung di tabel (horizontal scroll untuk melihat semua kolom)</li>
+                <li className="sm:hidden">• Isi form di bawah untuk setiap baris data</li>
+                <li>• Kolom wajib diisi: Client, Address, Schedule Visit</li>
+                <li>• Tambah baris baru dengan tombol "Tambah Baris"</li>
+                <li className="hidden sm:block">• Scroll horizontal tabel untuk melihat semua kolom</li>
+              </ul>
+            </div>
+
+            {/* Desktop: Excel-like Table */}
+            <div className="hidden sm:block border rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs border-collapse">
+                  <thead className="bg-muted sticky top-0">
+                    <tr>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[150px]">
+                        Client *
+                      </th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[200px]">
+                        Address *
+                      </th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[120px]">
+                        Schedule *
+                      </th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[90px]">
+                        Time
+                      </th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">
+                        Location
+                      </th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[130px]">
+                        Contact Person
+                      </th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[120px]">
+                        Contact Phone
+                      </th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[110px]">
+                        Nilai Kontrak
+                      </th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[110px]">
+                        Sales Amount
+                      </th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">
+                        Status Client
+                      </th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[200px]">
+                        Notes
+                      </th>
+                      <th className="p-2 border border-border text-center font-medium text-xs whitespace-nowrap min-w-[50px]">
+                        Action
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {formData.map((row, index) => (
+                      <FormDataRow
+                        key={index}
+                        row={row}
+                        index={index}
+                        onFieldChange={handleAddFormDataChange}
+                        onRemove={removeFormRow}
+                        totalRows={formData.length}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Mobile: Card-based Form Layout */}
+            <div className="sm:hidden space-y-4">
+              {formData.map((row, index) => (
+                <div key={index} className="border rounded-lg p-4 space-y-3 bg-card shadow-sm">
+                  {/* Row Header */}
+                  <div className="flex items-center justify-between border-b pb-2">
+                    <h3 className="font-semibold text-sm text-foreground">Data Baris {index + 1}</h3>
+                    <button
+                      onClick={() => removeFormRow(index)}
+                      disabled={formData.length === 1}
+                      className="text-red-500 hover:text-red-700 disabled:text-gray-300 disabled:cursor-not-allowed cursor-pointer p-1"
+                      title="Hapus baris"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* Required Fields */}
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-foreground">
+                        Client * <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        defaultValue={row.client}
+                        onChange={(e) => handleAddFormDataChange(index, 'client', e.target.value)}
+                        placeholder="Nama klien"
+                        className="w-full px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-foreground">
+                        Address * <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        defaultValue={row.address}
+                        onChange={(e) => handleAddFormDataChange(index, 'address', e.target.value)}
+                        placeholder="Alamat lengkap"
+                        className="w-full px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium text-foreground">
+                          Schedule * <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="date"
+                          defaultValue={row.scheduleVisit}
+                          onChange={(e) => handleAddFormDataChange(index, 'scheduleVisit', e.target.value)}
+                          className="w-full px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium text-foreground">Time</label>
+                        <input
+                          type="time"
+                          defaultValue={row.visitTime}
+                          onChange={(e) => handleAddFormDataChange(index, 'visitTime', e.target.value)}
+                          className="w-full px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Optional Fields - Collapsible */}
+                  <details className="group">
+                    <summary className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground list-none flex items-center gap-2">
+                      <span>Show More Fields</span>
+                      <ChevronRight className="h-3 w-3 transition-transform group-open:rotate-90" />
+                    </summary>
+                    <div className="mt-3 space-y-3">
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium text-foreground">Location</label>
+                        <input
+                          type="text"
+                          defaultValue={row.location}
+                          onChange={(e) => handleAddFormDataChange(index, 'location', e.target.value)}
+                          placeholder="Detail lokasi"
+                          className="w-full px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-xs font-medium text-foreground">Contact Person</label>
+                          <input
+                            type="text"
+                            defaultValue={row.contactPerson}
+                            onChange={(e) => handleAddFormDataChange(index, 'contactPerson', e.target.value)}
+                            placeholder="Nama"
+                            className="w-full px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs font-medium text-foreground">Phone</label>
+                          <input
+                            type="tel"
+                            defaultValue={row.contactPhone}
+                            onChange={(e) => handleAddFormDataChange(index, 'contactPhone', e.target.value)}
+                            placeholder="08xx-xxxx-xxxx"
+                            className="w-full px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-xs font-medium text-foreground">Nilai Kontrak</label>
+                          <input
+                            type="tel"
+                            defaultValue={row.nilaiKontrak || 0}
+                            onChange={(e) => handleAddFormDataChange(index, 'nilaiKontrak', parseInt(e.target.value.replace(/\./g, '')) || 0)}
+                            placeholder="0"
+                            className="w-full px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs font-medium text-foreground">Sales Amount</label>
+                          <input
+                            type="tel"
+                            defaultValue={row.salesAmount || 0}
+                            onChange={(e) => handleAddFormDataChange(index, 'salesAmount', parseInt(e.target.value.replace(/\./g, '')) || 0)}
+                            placeholder="0"
+                            className="w-full px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium text-foreground">Status Client</label>
+                        <select
+                          defaultValue={row.statusClient}
+                          onChange={(e) => handleAddFormDataChange(index, 'statusClient', e.target.value as 'LANJUT' | 'LOSS' | 'SUSPEND' | '')}
+                          className="w-full px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                        >
+                          <option value="">- Pilih -</option>
+                          <option value="LANJUT">Lanjut</option>
+                          <option value="LOSS">Loss</option>
+                          <option value="SUSPEND">Suspend</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium text-foreground">Notes</label>
+                        <textarea
+                          defaultValue={row.notes || ''}
+                          onChange={(e) => handleAddFormDataChange(index, 'notes', e.target.value)}
+                          placeholder="Catatan tambahan..."
+                          rows={2}
+                          className="w-full px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background resize-none"
+                        />
+                      </div>
+                    </div>
+                  </details>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 pt-4 border-t">
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={addNewFormRow}
+                className="cursor-pointer"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Tambah Baris
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowAddFormModal(false);
+                  setFormData([{
+                    client: '',
+                    address: '',
+                    pic: user?._id || 'user-123',
+                    picName: user?.name || '',
+                    scheduleVisit: '',
+                    visitTime: '',
+                    statusClient: '',
+                    nilaiKontrak: 0,
+                    statusKunjungan: 'TO_DO',
+                    contactPerson: '',
+                    contactPhone: '',
+                    location: '',
+                    photoUrl: '',
+                    salesAmount: 0,
+                    notes: '',
+                    created_by: user?._id || 'user-123'
+                  }]);
+                }}
+                className="cursor-pointer"
+                disabled={isSubmitting}
+              >
+                Batal
+              </Button>
+              <Button
+                onClick={submitFormData}
+                className="cursor-pointer"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full"></div>
+                    Menyimpan...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Simpan {formData.filter(row => row.client.trim() !== '' && row.address.trim() !== '' && row.scheduleVisit.trim() !== '').length} Data
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Success Message Toast - Modern Design */}
       {showSuccessMessage && (
         <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-right duration-300">
-          <div className="bg-green-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 min-w-[300px]">
-            <CheckCircle className="h-5 w-5 flex-shrink-0" />
-            <span className="font-medium text-sm">{successMessage}</span>
+          <div className="bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 min-w-[380px] max-w-md border border-white/20 backdrop-blur-sm">
+            {/* Animated Check Icon */}
+            <div className="relative flex-shrink-0">
+              <div className="absolute inset-0 bg-white/30 rounded-full animate-ping"></div>
+              <div className="relative bg-white/20 backdrop-blur-sm rounded-full p-2.5">
+                <CheckCircle className="h-6 w-6 text-white" strokeWidth={3} />
+              </div>
+            </div>
+
+            {/* Message Content */}
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-base leading-tight">
+                Data Berhasil Disimpan!
+              </p>
+              <p className="text-emerald-100 text-sm mt-1 line-clamp-2">
+                {successMessage}
+              </p>
+            </div>
+
+            {/* Close Button */}
             <button
               onClick={() => setShowSuccessMessage(false)}
-              className="ml-auto text-white/80 hover:text-white transition-colors cursor-pointer"
+              className="flex-shrink-0 ml-2 w-8 h-8 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-all duration-200 cursor-pointer group"
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4 text-white group-hover:rotate-90 transition-transform duration-200" />
             </button>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="mt-2 h-1 bg-white/20 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-white/80 rounded-full animate-[shrink_3s_linear_forwards]"
+              style={{
+                animation: 'shrink 3s linear forwards',
+                transformOrigin: 'left'
+              }}
+            ></div>
           </div>
         </div>
       )}
+
+      {/* Custom Animation Styles */}
+      <style jsx>{`
+        @keyframes shrink {
+          from {
+            width: 100%;
+          }
+          to {
+            width: 0%;
+          }
+        }
+      `}</style>
     </div>
   );
 }

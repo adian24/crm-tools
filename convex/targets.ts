@@ -189,7 +189,6 @@ export const deleteTarget = mutation({
       entity: "targets",
       entityId: args.targetId,
       entityTableName: "targets",
-      details: { deletedTargetName: target.client },
       userId: args.deleted_by,
       createdAt: Date.now(),
     });
@@ -410,11 +409,6 @@ export const bulkImportTargets = mutation({
           entity: "targets",
           entityId: targetId,
           entityTableName: "targets",
-          details: {
-            rowIndex: i + 1,
-            clientName: targetData.client,
-            staffName: targetData.picName,
-          },
           userId: args.imported_by,
           createdAt: now,
         });
