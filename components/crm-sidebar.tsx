@@ -62,6 +62,16 @@ const getNavigationItems = (role: string) => {
         title: "Dashboard Manager",
         url: "/dashboard-manager",
         icon: IconChartBar,
+      },
+      {
+        title: "Dashboard Data",
+        url: "/dashboard-manager/dashboard-data",
+        icon: IconDatabase,
+      },
+      {
+        title: "CRM Data",
+        url: "/dashboard-manager/crm-data",
+        icon: IconTarget,
       }
     ];
   }
@@ -74,9 +84,14 @@ const getNavigationItems = (role: string) => {
       icon: IconChartBar,
     },
     {
+      title: "Dashboard Data",
+      url: "/dashboard-manager/dashboard-data",
+      icon: IconDatabase,
+    },
+    {
       title: "CRM Data",
       url: "/dashboard-manager/crm-data",
-      icon: IconDatabase,
+      icon: IconTarget,
     },
     {
       title: "My Visits",
