@@ -1,0 +1,97 @@
+[
+  {
+    "id": 1,
+    "kode": "001",
+    "nama": "NAC"
+  },
+  {
+    "id": 2,
+    "kode": "002",
+    "nama": "Ajit"
+  },
+  {
+    "id": 3,
+    "kode": "003",
+    "nama": "ARH"
+  },
+  {
+    "id": 4,
+    "kode": "004",
+    "nama": "BSC"
+  },
+  {
+    "id": 5,
+    "kode": "005",
+    "nama": "CRM"
+  },
+  {
+    "id": 6,
+    "kode": "006",
+    "nama": "Celine"
+  },
+  {
+    "id": 7,
+    "kode": "007",
+    "nama": "DRF"
+  },
+  {
+    "id": 8,
+    "kode": "008",
+    "nama": "Erick"
+  },
+  {
+    "id": 9,
+    "kode": "009",
+    "nama": "Eva"
+  },
+  {
+    "id": 10,
+    "kode": "010",
+    "nama": "Gatya"
+  },
+  {
+    "id": 11,
+    "kode": "011",
+    "nama": "JSF"
+  },
+  {
+    "id": 12,
+    "kode": "012",
+    "nama": "Karl"
+  },
+  {
+    "id": 13,
+    "kode": "013",
+    "nama": "OFC"
+  },
+  {
+    "id": 14,
+    "kode": "014",
+    "nama": "PRM"
+  },
+  {
+    "id": 15,
+    "kode": "015",
+    "nama": "Surya"
+  },
+  {
+    "id": 16,
+    "kode": "016",
+    "nama": "Tata"
+  },
+  {
+    "id": 17,
+    "kode": "017",
+    "nama": "Tiara"
+  },
+  {
+    "id": 18,
+    "kode": "018",
+    "nama": "Tika"
+  },
+  {
+    "id": 19,
+    "kode": "019",
+    "nama": "Diki"
+  }
+]

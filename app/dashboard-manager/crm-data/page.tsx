@@ -22,6 +22,7 @@ import indonesiaData from '@/data/indonesia-provinsi-kota.json';
 
 interface CrmTarget {
   _id: Id<"crmTargets">;
+  tahun?: string;
   bulanExpDate: string;
   produk: string;
   picCrm: string;
@@ -349,7 +350,7 @@ export default function CrmDataManagementPage() {
   const itemsPerPage = 10;
 
   // Ref for select all checkbox
-  const selectAllCheckboxRef = React.useRef<HTMLButtonElement>(null);
+  const selectAllCheckboxRef = React.useRef<any>(null);
 
   // Comprehensive Filters
   const [expandedFilterSections, setExpandedFilterSections] = useState<string[]>(['date', 'details']);
@@ -398,8 +399,8 @@ export default function CrmDataManagementPage() {
     { value: '11', label: 'November' },
     { value: '12', label: 'Desember' },
   ];
-  const alasanOptions = [...new Set(crmTargets?.map(t => t.alasan).filter(Boolean) || [])].sort();
-  const standarOptions = [...new Set(crmTargets?.map(t => t.std).filter(Boolean) || [])].sort();
+  const alasanOptions = [...new Set(crmTargets?.map(t => t.alasan).filter(Boolean) || [])].sort() as string[];
+  const standarOptions = [...new Set(crmTargets?.map(t => t.std).filter(Boolean) || [])].sort() as string[];
 
   // Get provinsi options from Indonesia data
   const provinsiOptions = Object.keys(indonesiaData).sort();
@@ -412,13 +413,13 @@ export default function CrmDataManagementPage() {
 
   // Get kota options based on selected provinsi from Indonesia data
   const kotaOptions = filterProvinsi !== 'all' && (indonesiaData as any)[filterProvinsi]
-    ? [...new Set((indonesiaData as any)[filterProvinsi].kabupaten_kota)].sort() // Remove duplicates with Set
+    ? [...new Set((indonesiaData as any)[filterProvinsi].kabupaten_kota)].sort() as string[] // Remove duplicates with Set
     : [];
 
   // Tahapan Audit - Default options + dynamic from data
   const defaultTahapanAudit = ['IA', 'SV1', 'SV2', 'SV3', 'SV4', 'RC'];
   const tahapanAuditFromData = [...new Set(crmTargets?.map(t => t.tahapAudit).filter(Boolean) || [])];
-  const tahapanAuditOptions = [...new Set([...defaultTahapanAudit, ...tahapanAuditFromData])].sort();
+  const tahapanAuditOptions = [...new Set([...defaultTahapanAudit, ...tahapanAuditFromData])].sort() as string[];
 
   // Toggle filter section
   const toggleFilterSection = (section: string) => {
@@ -893,7 +894,7 @@ export default function CrmDataManagementPage() {
       // Delete all selected items
       for (const id of selectedIds) {
         try {
-          await deleteTarget({ id });
+          await deleteTarget({ id: id as Id<"crmTargets"> });
           successCount++;
         } catch (error) {
           console.error(`Failed to delete ${id}:`, error);
@@ -1009,7 +1010,7 @@ export default function CrmDataManagementPage() {
       for (const row of validFormData) {
         try {
           await createTarget({
-            tahun: row.tahun || undefined,
+            tahun: row.tahun || undefined as any,
             bulanExpDate: row.bulanExpDate,
             produk: row.produk,
             picCrm: row.picCrm,
@@ -1093,6 +1094,7 @@ export default function CrmDataManagementPage() {
   const openEditDialog = (target: CrmTarget) => {
     setSelectedTarget(target);
     setFormData({
+      tahun: target.tahun || '',
       bulanExpDate: target.bulanExpDate,
       produk: target.produk,
       picCrm: target.picCrm,

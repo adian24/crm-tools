@@ -20,7 +20,8 @@
       "Bash(PORT=3005 npm run dev:*)",
       "Bash(npx tsc:*)",
       "Bash(grep:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(PORT=3001 npm run dev:*)"
     ],
     "deny": [],
     "ask": []
