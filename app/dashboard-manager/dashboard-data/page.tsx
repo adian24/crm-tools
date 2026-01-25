@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Search, Filter, BarChart3, ChevronDown, ChevronRight } from 'lucide-react';
+import { Search, Filter, BarChart3, ChevronDown, ChevronRight, Users, X } from 'lucide-react';
 import indonesiaData from '@/data/indonesia-provinsi-kota.json';
 import masterSalesData from '@/data/master-sales.json';
 import { ChartCardCrmData } from '@/components/chart-card-crm-data';
@@ -79,9 +79,10 @@ export default function CrmDataManagementPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [selectedChartType, setSelectedChartType] = useState<string>('area');
+  const [activeFilterSheet, setActiveFilterSheet] = useState<string | null>(null);
 
   // Comprehensive Filters
-  const [expandedFilterSections, setExpandedFilterSections] = useState<string[]>(['date', 'details']);
+  const [expandedFilterSections, setExpandedFilterSections] = useState<string[]>(['date', 'details', 'picSales', 'lokasi', 'sertifikat', 'pembayaran', 'jadwal']);
   const currentYear = new Date().getFullYear().toString();
   const [filterTahun, setFilterTahun] = useState<string>(currentYear);
   const [filterFromBulanExp, setFilterFromBulanExp] = useState<string>('all');
@@ -425,7 +426,7 @@ export default function CrmDataManagementPage() {
   }
 
   return (
-    <div className="lg:flex lg:flex-row gap-6 py-4 lg:py-8 px-4 lg:px-6">
+    <div className="lg:flex lg:flex-row gap-6 py-4 lg:py-8 px-4 lg:px-6 pb-20 lg:pb-8">
       {/* LEFT SIDEBAR - FILTERS */}
       <div className="hidden lg:block lg:w-80 flex-shrink-0">
         <div className="sticky top-6 space-y-4">
@@ -1125,110 +1126,804 @@ export default function CrmDataManagementPage() {
         </div>
       </div>
 
-      {/* MOBILE FILTERS */}
-      <div className="lg:hidden mb-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label className="mb-2 block">Search</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Company, Sales, PIC..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
+      {/* MOBILE FILTERS - Bottom Tab Bar */}
+      <div className="lg:hidden">
+        {/* Bottom Tab Bar */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border lg:hidden safe-area-bottom">
+          <div className="flex items-center justify-around px-2 py-1">
+            {/* Date Filter */}
+            <button
+              onClick={() => setActiveFilterSheet(activeFilterSheet === 'date' ? null : 'date')}
+              className={`flex flex-col items-center justify-center py-1 px-2 min-w-0 flex-1 ${
+                activeFilterSheet === 'date' ? 'text-primary' : 'text-muted-foreground'
+              }`}
+            >
+              <Filter className="h-5 w-5 mb-0.5" />
+              <span className="text-[10px] font-medium leading-none">Date</span>
+            </button>
+
+            {/* Status */}
+            <button
+              onClick={() => setActiveFilterSheet(activeFilterSheet === 'status' ? null : 'status')}
+              className={`flex flex-col items-center justify-center py-1 px-2 min-w-0 flex-1 ${
+                activeFilterSheet === 'status' ? 'text-primary' : 'text-muted-foreground'
+              }`}
+            >
+              <BarChart3 className="h-5 w-5 mb-0.5" />
+              <span className="text-[10px] font-medium leading-none">Status</span>
+            </button>
+
+            {/* PIC CRM */}
+            <button
+              onClick={() => setActiveFilterSheet(activeFilterSheet === 'picCrm' ? null : 'picCrm')}
+              className={`flex flex-col items-center justify-center py-1 px-2 min-w-0 flex-1 ${
+                activeFilterSheet === 'picCrm' ? 'text-primary' : 'text-muted-foreground'
+              }`}
+            >
+              <Users className="h-5 w-5 mb-0.5" />
+              <span className="text-[10px] font-medium leading-none">PIC</span>
+            </button>
+
+            {/* More Filters */}
+            <button
+              onClick={() => setActiveFilterSheet(activeFilterSheet === 'more' ? null : 'more')}
+              className={`flex flex-col items-center justify-center py-1 px-2 min-w-0 flex-1 ${
+                activeFilterSheet === 'more' ? 'text-primary' : 'text-muted-foreground'
+              }`}
+            >
+              <ChevronDown className="h-5 w-5 mb-0.5" />
+              <span className="text-[10px] font-medium leading-none">More</span>
+            </button>
+
+            {/* Reset */}
+            <button
+              onClick={() => {
+                resetAllFilters();
+                setActiveFilterSheet(null);
+              }}
+              className="flex flex-col items-center justify-center py-1 px-2 min-w-0 flex-1 text-red-600"
+            >
+              <X className="h-5 w-5 mb-0.5" />
+              <span className="text-[10px] font-medium leading-none">Reset</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Action Sheet Overlay */}
+        {activeFilterSheet && (
+          <div
+            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+            onClick={() => setActiveFilterSheet(null)}
+          >
+            <div
+              className="absolute bottom-[53px] left-0 right-0 bg-background border-t border-border rounded-t-2xl shadow-2xl max-h-[70vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Handle Bar */}
+              <div className="flex justify-center py-2 border-b border-border/50 sticky top-0 bg-background z-10">
+                <div className="w-10 h-1 bg-muted-foreground/30 rounded-full"></div>
               </div>
-              <div>
-                <Label className="mb-2 block">Status</Label>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant={filterStatus === "all" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setFilterStatus("all")}
-                    className={`flex items-center gap-1 text-xs h-8 px-2 cursor-pointer ${
-                      filterStatus === "all"
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : ""
+
+              {/* Date Filter Sheet */}
+              {activeFilterSheet === 'date' && (
+                <div className="p-4 space-y-4">
+                  <h3 className="text-sm font-semibold mb-3">Filter Date</h3>
+
+                  {/* Tahun */}
+                  <div>
+                    <Label className="mb-1.5 block text-xs">Tahun</Label>
+                    <Select value={filterTahun} onValueChange={setFilterTahun}>
+                      <SelectTrigger className="w-full h-10">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Tahun</SelectItem>
+                        {tahunOptions.map(tahun => (
+                          <SelectItem key={tahun} value={tahun}>{tahun}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* From/To Bulan Exp */}
+                  <div className="space-y-2">
+                    <Label className="mb-1.5 block text-xs">Bulan Exp Date Range</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="mb-1 block text-[10px] text-muted-foreground">From</Label>
+                        <Select value={filterFromBulanExp} onValueChange={setFilterFromBulanExp}>
+                          <SelectTrigger className="w-full h-9 text-xs">
+                            <SelectValue placeholder="From" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All</SelectItem>
+                            {bulanOptions.map(bulan => (
+                              <SelectItem key={bulan.value} value={bulan.value}>{bulan.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="mb-1 block text-[10px] text-muted-foreground">To</Label>
+                        <Select value={filterToBulanExp} onValueChange={setFilterToBulanExp}>
+                          <SelectTrigger className="w-full h-9 text-xs">
+                            <SelectValue placeholder="To" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All</SelectItem>
+                            {bulanOptions.map(bulan => (
+                              <SelectItem key={bulan.value} value={bulan.value}>{bulan.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* From/To Bulan TTD */}
+                  <div className="space-y-2">
+                    <Label className="mb-1.5 block text-xs">Bulan TTD Range</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="mb-1 block text-[10px] text-muted-foreground">From</Label>
+                        <Select value={filterFromBulanTTD} onValueChange={setFilterFromBulanTTD}>
+                          <SelectTrigger className="w-full h-9 text-xs">
+                            <SelectValue placeholder="From" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All</SelectItem>
+                            {bulanOptions.map(bulan => (
+                              <SelectItem key={bulan.value} value={bulan.value}>{bulan.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="mb-1 block text-[10px] text-muted-foreground">To</Label>
+                        <Select value={filterToBulanTTD} onValueChange={setFilterToBulanTTD}>
+                          <SelectTrigger className="w-full h-9 text-xs">
+                            <SelectValue placeholder="To" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All</SelectItem>
+                            {bulanOptions.map(bulan => (
+                              <SelectItem key={bulan.value} value={bulan.value}>{bulan.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setActiveFilterSheet(null)}
+                    className="w-full py-3 bg-primary text-primary-foreground rounded-lg font-medium text-sm mt-2"
+                  >
+                    Done
+                  </button>
+                </div>
+              )}
+
+              {/* Status Sheet */}
+              {activeFilterSheet === 'status' && (
+                <div className="p-4 space-y-2">
+                  <h3 className="text-sm font-semibold mb-3">Filter by Status</h3>
+                  <button
+                    onClick={() => { setFilterStatus('all'); setActiveFilterSheet(null); }}
+                    className={`w-full text-left py-3 px-4 rounded-lg font-medium text-sm ${
+                      filterStatus === 'all'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted hover:bg-muted/80'
                     }`}
                   >
                     All Status
-                  </Button>
+                  </button>
                   {uniqueStatuses.map((status) => {
                     const statusUpper = status?.toUpperCase() || '';
                     let statusColor = '';
 
                     switch (statusUpper) {
                       case 'PROSES':
-                        statusColor = 'bg-blue-100 hover:bg-blue-200 text-blue-700 border-blue-300';
+                        statusColor = 'bg-blue-100 hover:bg-blue-200 text-blue-700';
                         break;
                       case 'LANJUT':
-                        statusColor = 'bg-green-100 hover:bg-green-200 text-green-700 border-green-300';
+                        statusColor = 'bg-green-100 hover:bg-green-200 text-green-700';
                         break;
                       case 'LOSS':
-                        statusColor = 'bg-red-100 hover:bg-red-200 text-red-700 border-red-300';
+                        statusColor = 'bg-red-100 hover:bg-red-200 text-red-700';
                         break;
                       case 'SUSPEND':
-                        statusColor = 'bg-orange-100 hover:bg-orange-200 text-orange-700 border-orange-300';
+                        statusColor = 'bg-orange-100 hover:bg-orange-200 text-orange-700';
                         break;
                       case 'WAITING':
-                        statusColor = 'bg-gray-200 hover:bg-gray-300 text-gray-700 border-gray-300';
+                        statusColor = 'bg-gray-200 hover:bg-gray-300 text-gray-700';
                         break;
                       case 'DONE':
-                        statusColor = 'bg-purple-100 hover:bg-purple-200 text-purple-700 border-purple-300';
+                        statusColor = 'bg-purple-100 hover:bg-purple-200 text-purple-700';
                         break;
                       default:
-                        statusColor = 'bg-gray-200 hover:bg-gray-300 text-gray-700 border-gray-300';
+                        statusColor = 'bg-gray-200 hover:bg-gray-300 text-gray-700';
                     }
 
                     return (
-                      <Button
+                      <button
                         key={status}
-                        size="sm"
-                        onClick={() => setFilterStatus(status)}
-                        className={`flex items-center gap-1 text-xs h-8 px-2 border cursor-pointer ${
+                        onClick={() => { setFilterStatus(status); setActiveFilterSheet(null); }}
+                        className={`w-full text-left py-3 px-4 rounded-lg font-medium text-sm ${
                           filterStatus === status
-                            ? 'bg-black hover:bg-gray-800 text-white border-black'
+                            ? 'bg-primary text-primary-foreground'
                             : statusColor
                         }`}
                       >
                         {status}
-                      </Button>
+                      </button>
                     );
                   })}
                 </div>
-              </div>
-              <div>
-                <Label className="mb-2 block">PIC CRM</Label>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant={filterPicCrm === "all" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setFilterPicCrm("all")}
-                    className="flex items-center gap-1 text-xs h-8 px-2 cursor-pointer"
+              )}
+
+              {/* PIC CRM Sheet */}
+              {activeFilterSheet === 'picCrm' && (
+                <div className="p-4 space-y-2">
+                  <h3 className="text-sm font-semibold mb-3">Filter by PIC CRM</h3>
+                  <button
+                    onClick={() => { setFilterPicCrm('all'); setActiveFilterSheet(null); }}
+                    className={`w-full text-left py-3 px-4 rounded-lg font-medium text-sm flex items-center gap-2 ${
+                      filterPicCrm === 'all'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted hover:bg-muted/80'
+                    }`}
                   >
+                    <Users className="h-4 w-4" />
                     All PIC
-                  </Button>
+                  </button>
                   {uniquePicCrms.map((pic) => (
-                    <Button
+                    <button
                       key={pic}
-                      variant={filterPicCrm === pic ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setFilterPicCrm(pic)}
-                      className="flex items-center gap-1 text-xs h-8 px-2 cursor-pointer"
+                      onClick={() => { setFilterPicCrm(pic); setActiveFilterSheet(null); }}
+                      className={`w-full text-left py-3 px-4 rounded-lg font-medium text-sm flex items-center gap-2 ${
+                        filterPicCrm === pic
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted hover:bg-muted/80'
+                      }`}
                     >
-                      <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex-shrink-0"></div>
+                      <div className="w-4 h-4 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"></div>
                       {pic}
-                    </Button>
+                    </button>
                   ))}
                 </div>
-              </div>
+              )}
+
+              {/* More Filters Sheet - Complete with Sections */}
+              {activeFilterSheet === 'more' && (
+                <div className="space-y-3">
+                  {/* PIC Sales Section */}
+                  <div className="border rounded-lg overflow-hidden mx-4 mt-4">
+                    <button
+                      onClick={() => {
+                        const newSections = expandedFilterSections.includes('picSales')
+                          ? expandedFilterSections.filter(s => s !== 'picSales')
+                          : [...expandedFilterSections, 'picSales'];
+                        setExpandedFilterSections(newSections);
+                      }}
+                      className="w-full flex items-center justify-between p-3 bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
+                    >
+                      <span className="font-medium text-xs">Filter PIC Sales</span>
+                      {expandedFilterSections.includes('picSales') ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </button>
+                    {expandedFilterSections.includes('picSales') && (
+                      <div className="p-3 border-t">
+                        <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
+                          <button
+                            onClick={() => setFilterPicSales('all')}
+                            className={`py-2 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-1 ${
+                              filterPicSales === 'all'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted hover:bg-muted/80'
+                            }`}
+                          >
+                            <Users className="h-3 w-3" />
+                            All Sales
+                          </button>
+                          {salesOptions.slice(0, 20).map((sales) => (
+                            <button
+                              key={sales}
+                              onClick={() => setFilterPicSales(sales)}
+                              className={`py-2 px-2 rounded-lg text-xs font-medium flex items-center gap-1 ${
+                                filterPicSales === sales
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-muted hover:bg-muted/80'
+                              }`}
+                            >
+                              <div className="w-3 h-3 rounded-full bg-gradient-to-r from-orange-500 to-red-500 flex-shrink-0"></div>
+                              <span className="truncate">{sales}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Details Section */}
+                  <div className="border rounded-lg overflow-hidden mx-4">
+                    <button
+                      onClick={() => {
+                        const newSections = expandedFilterSections.includes('details')
+                          ? expandedFilterSections.filter(s => s !== 'details')
+                          : [...expandedFilterSections, 'details'];
+                        setExpandedFilterSections(newSections);
+                      }}
+                      className="w-full flex items-center justify-between p-3 bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
+                    >
+                      <span className="font-medium text-xs">Filter Details</span>
+                      {expandedFilterSections.includes('details') ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </button>
+                    {expandedFilterSections.includes('details') && (
+                      <div className="p-3 space-y-3 border-t">
+                        {/* Alasan */}
+                        <div>
+                          <Label className="mb-1.5 block text-xs">Alasan</Label>
+                          <Select value={filterAlasan} onValueChange={setFilterAlasan}>
+                            <SelectTrigger className="w-full h-9 text-xs">
+                              <SelectValue placeholder="All Alasan" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Alasan</SelectItem>
+                              {alasanOptions.map((alasan) => (
+                                <SelectItem key={alasan} value={alasan}>{alasan}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Category */}
+                        <div>
+                          <Label className="mb-1.5 block text-xs">Category</Label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              onClick={() => setFilterCategory('all')}
+                              className={`py-2 px-3 rounded-lg text-xs font-medium ${
+                                filterCategory === 'all'
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-muted hover:bg-muted/80'
+                              }`}
+                            >
+                              All
+                            </button>
+                            {['GOLD', 'SILVER', 'BRONZE'].map((category) => {
+                              let categoryColor = '';
+                              switch (category) {
+                                case 'GOLD':
+                                  categoryColor = 'bg-yellow-100 hover:bg-yellow-200 text-yellow-800';
+                                  break;
+                                case 'SILVER':
+                                  categoryColor = 'bg-gray-100 hover:bg-gray-200 text-gray-800';
+                                  break;
+                                case 'BRONZE':
+                                  categoryColor = 'bg-orange-100 hover:bg-orange-200 text-orange-800';
+                                  break;
+                              }
+                              return (
+                                <button
+                                  key={category}
+                                  onClick={() => setFilterCategory(category)}
+                                  className={`py-2 px-3 rounded-lg text-xs font-medium ${
+                                    filterCategory === category
+                                      ? 'bg-primary text-primary-foreground'
+                                      : categoryColor
+                                  }`}
+                                >
+                                  {category}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Lokasi Section */}
+                  <div className="border rounded-lg overflow-hidden mx-4">
+                    <button
+                      onClick={() => {
+                        const newSections = expandedFilterSections.includes('lokasi')
+                          ? expandedFilterSections.filter(s => s !== 'lokasi')
+                          : [...expandedFilterSections, 'lokasi'];
+                        setExpandedFilterSections(newSections);
+                      }}
+                      className="w-full flex items-center justify-between p-3 bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
+                    >
+                      <span className="font-medium text-xs">Filter Lokasi</span>
+                      {expandedFilterSections.includes('lokasi') ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </button>
+                    {expandedFilterSections.includes('lokasi') && (
+                      <div className="p-3 space-y-3 border-t">
+                        {/* Provinsi */}
+                        <div>
+                          <Label className="mb-1.5 block text-xs">Provinsi</Label>
+                          <Select
+                            value={filterProvinsi}
+                            onValueChange={(val) => {
+                              setFilterProvinsi(val);
+                              setFilterKota('all');
+                            }}
+                          >
+                            <SelectTrigger className="w-full h-9 text-xs">
+                              <SelectValue placeholder="All Provinsi" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Provinsi</SelectItem>
+                              {provinsiOptions.slice(0, 30).map((provinsi) => (
+                                <SelectItem key={provinsi} value={provinsi}>{provinsi}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Kota */}
+                        {filterProvinsi !== 'all' && (
+                          <div>
+                            <Label className="mb-1.5 block text-xs">Kota</Label>
+                            <Select value={filterKota} onValueChange={setFilterKota}>
+                              <SelectTrigger className="w-full h-9 text-xs">
+                                <SelectValue placeholder="All Kota" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All Kota</SelectItem>
+                                {kotaOptions.map((kota) => (
+                                  <SelectItem key={kota} value={kota}>{kota}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Sertifikat Section */}
+                  <div className="border rounded-lg overflow-hidden mx-4">
+                    <button
+                      onClick={() => {
+                        const newSections = expandedFilterSections.includes('sertifikat')
+                          ? expandedFilterSections.filter(s => s !== 'sertifikat')
+                          : [...expandedFilterSections, 'sertifikat'];
+                        setExpandedFilterSections(newSections);
+                      }}
+                      className="w-full flex items-center justify-between p-3 bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
+                    >
+                      <span className="font-medium text-xs">Filter Sertifikat</span>
+                      {expandedFilterSections.includes('sertifikat') ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </button>
+                    {expandedFilterSections.includes('sertifikat') && (
+                      <div className="p-3 space-y-3 border-t">
+                        {/* Standar */}
+                        <div>
+                          <Label className="mb-1.5 block text-xs">Standar</Label>
+                          <Select value={filterStandar} onValueChange={setFilterStandar}>
+                            <SelectTrigger className="w-full h-9 text-xs">
+                              <SelectValue placeholder="All Standar" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Standar</SelectItem>
+                              {standarOptions.map((standar) => (
+                                <SelectItem key={standar} value={standar}>{standar}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Akreditasi */}
+                        <div>
+                          <Label className="mb-1.5 block text-xs">Akreditasi</Label>
+                          <div className="grid grid-cols-3 gap-2">
+                            <button
+                              onClick={() => setFilterAkreditasi('all')}
+                              className={`py-2 px-3 rounded-lg text-xs font-medium ${
+                                filterAkreditasi === 'all'
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-muted hover:bg-muted/80'
+                              }`}
+                            >
+                              All
+                            </button>
+                            {['KAN', 'NON AKRE'].map((akreditasi) => (
+                              <button
+                                key={akreditasi}
+                                onClick={() => setFilterAkreditasi(akreditasi)}
+                                className={`py-2 px-3 rounded-lg text-xs font-medium ${
+                                  filterAkreditasi === akreditasi
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-muted hover:bg-muted/80'
+                                }`}
+                              >
+                                {akreditasi}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* EA Code */}
+                        <div>
+                          <Label className="mb-1.5 block text-xs">EA Code</Label>
+                          <Input
+                            placeholder="Search EA Code..."
+                            value={filterEaCode}
+                            onChange={(e) => setFilterEaCode(e.target.value)}
+                            className="h-9"
+                          />
+                        </div>
+
+                        {/* Tahapan Audit */}
+                        <div>
+                          <Label className="mb-1.5 block text-xs">Tahapan Audit</Label>
+                          <Select value={filterTahapAudit} onValueChange={setFilterTahapAudit}>
+                            <SelectTrigger className="w-full h-9 text-xs">
+                              <SelectValue placeholder="All Tahapan" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Tahapan</SelectItem>
+                              {tahapanAuditOptions.map((tahap) => (
+                                <SelectItem key={tahap} value={tahap}>{tahap}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Status Sertifikat */}
+                        <div>
+                          <Label className="mb-1.5 block text-xs">Status Sertifikat</Label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              onClick={() => setFilterStatusSertifikat('all')}
+                              className={`py-2 px-3 rounded-lg text-xs font-medium ${
+                                filterStatusSertifikat === 'all'
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-muted hover:bg-muted/80'
+                              }`}
+                            >
+                              All
+                            </button>
+                            {['Terbit', 'Belum Terbit'].map((status) => (
+                              <button
+                                key={status}
+                                onClick={() => setFilterStatusSertifikat(status)}
+                                className={`py-2 px-3 rounded-lg text-xs font-medium ${
+                                  filterStatusSertifikat === status
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-muted hover:bg-muted/80'
+                                }`}
+                              >
+                                {status}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Pembayaran Section */}
+                  <div className="border rounded-lg overflow-hidden mx-4">
+                    <button
+                      onClick={() => {
+                        const newSections = expandedFilterSections.includes('pembayaran')
+                          ? expandedFilterSections.filter(s => s !== 'pembayaran')
+                          : [...expandedFilterSections, 'pembayaran'];
+                        setExpandedFilterSections(newSections);
+                      }}
+                      className="w-full flex items-center justify-between p-3 bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
+                    >
+                      <span className="font-medium text-xs">Filter Pembayaran</span>
+                      {expandedFilterSections.includes('pembayaran') ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </button>
+                    {expandedFilterSections.includes('pembayaran') && (
+                      <div className="p-3 space-y-3 border-t">
+                        {/* Termin */}
+                        <div>
+                          <Label className="mb-1.5 block text-xs">Termin</Label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              onClick={() => setFilterTermin('all')}
+                              className={`py-2 px-3 rounded-lg text-xs font-medium ${
+                                filterTermin === 'all'
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-muted hover:bg-muted/80'
+                              }`}
+                            >
+                              All
+                            </button>
+                            {['DP', 'Lunas Diawal', 'Lunas Diakhir'].map((termin) => (
+                              <button
+                                key={termin}
+                                onClick={() => setFilterTermin(termin)}
+                                className={`py-2 px-3 rounded-lg text-xs font-medium ${
+                                  filterTermin === termin
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-muted hover:bg-muted/80'
+                                }`}
+                              >
+                                {termin}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Tipe Produk */}
+                        <div>
+                          <Label className="mb-1.5 block text-xs">Tipe Produk</Label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              onClick={() => setFilterTipeProduk('all')}
+                              className={`py-2 px-3 rounded-lg text-xs font-medium ${
+                                filterTipeProduk === 'all'
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-muted hover:bg-muted/80'
+                              }`}
+                            >
+                              All
+                            </button>
+                            {['XMS', 'SUSTAIN'].map((tipe) => {
+                              let tipeColor = '';
+                              switch (tipe) {
+                                case 'XMS':
+                                  tipeColor = 'bg-blue-100 hover:bg-blue-200 text-blue-700';
+                                  break;
+                                case 'SUSTAIN':
+                                  tipeColor = 'bg-green-100 hover:bg-green-200 text-green-700';
+                                  break;
+                              }
+                              return (
+                                <button
+                                  key={tipe}
+                                  onClick={() => setFilterTipeProduk(tipe)}
+                                  className={`py-2 px-3 rounded-lg text-xs font-medium ${
+                                    filterTipeProduk === tipe
+                                      ? 'bg-primary text-primary-foreground'
+                                      : tipeColor
+                                  }`}
+                                >
+                                  {tipe}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Jadwal Kunjungan Section */}
+                  <div className="border rounded-lg overflow-hidden mx-4 mb-4">
+                    <button
+                      onClick={() => {
+                        const newSections = expandedFilterSections.includes('jadwal')
+                          ? expandedFilterSections.filter(s => s !== 'jadwal')
+                          : [...expandedFilterSections, 'jadwal'];
+                        setExpandedFilterSections(newSections);
+                      }}
+                      className="w-full flex items-center justify-between p-3 bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
+                    >
+                      <span className="font-medium text-xs">Filter Jadwal Kunjungan</span>
+                      {expandedFilterSections.includes('jadwal') ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </button>
+                    {expandedFilterSections.includes('jadwal') && (
+                      <div className="p-3 space-y-3 border-t">
+                        {/* Jadwal Kunjungan */}
+                        <div>
+                          <Label className="mb-1.5 block text-xs">Jadwal Kunjungan</Label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <Label className="mb-1 block text-[10px] text-muted-foreground">From</Label>
+                              <Select value={filterFromKunjungan} onValueChange={setFilterFromKunjungan}>
+                                <SelectTrigger className="w-full h-9 text-xs">
+                                  <SelectValue placeholder="From" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="all">All</SelectItem>
+                                  {bulanOptions.map(bulan => (
+                                    <SelectItem key={bulan.value} value={bulan.value}>{bulan.label}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label className="mb-1 block text-[10px] text-muted-foreground">To</Label>
+                              <Select value={filterToKunjungan} onValueChange={setFilterToKunjungan}>
+                                <SelectTrigger className="w-full h-9 text-xs">
+                                  <SelectValue placeholder="To" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="all">All</SelectItem>
+                                  {bulanOptions.map(bulan => (
+                                    <SelectItem key={bulan.value} value={bulan.value}>{bulan.label}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Status Kunjungan */}
+                        <div>
+                          <Label className="mb-1.5 block text-xs">Status Kunjungan</Label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              onClick={() => setFilterStatusKunjungan('all')}
+                              className={`py-2 px-3 rounded-lg text-xs font-medium ${
+                                filterStatusKunjungan === 'all'
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-muted hover:bg-muted/80'
+                              }`}
+                            >
+                              All
+                            </button>
+                            {['VISITED', 'NOT YET'].map((status) => {
+                              let statusColor = '';
+                              switch (status) {
+                                case 'VISITED':
+                                  statusColor = 'bg-green-100 hover:bg-green-200 text-green-700';
+                                  break;
+                                case 'NOT YET':
+                                  statusColor = 'bg-gray-200 hover:bg-gray-300 text-gray-700';
+                                  break;
+                              }
+                              return (
+                                <button
+                                  key={status}
+                                  onClick={() => setFilterStatusKunjungan(status)}
+                                  className={`py-2 px-3 rounded-lg text-xs font-medium ${
+                                    filterStatusKunjungan === status
+                                      ? 'bg-primary text-primary-foreground'
+                                      : statusColor
+                                  }`}
+                                >
+                                  {status}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => setActiveFilterSheet(null)}
+                    className="w-full py-3 bg-primary text-primary-foreground rounded-lg font-medium text-sm mx-4 mb-4"
+                  >
+                    Done
+                  </button>
+                </div>
+              )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        )}
       </div>
 
       {/* MAIN CONTENT */}
@@ -1240,6 +1935,282 @@ export default function CrmDataManagementPage() {
             <p className="text-muted-foreground mt-1">
               {filteredTargets.length} records found
             </p>
+          </div>
+          {/* Filter Tagline - Desktop Only */}
+          <div className="hidden lg:block">
+            <div className="flex flex-wrap gap-2 items-center">
+              <span className="text-sm text-muted-foreground">Active Filters:</span>
+
+              {/* Tahun */}
+              {filterTahun !== 'all' && (
+                <Badge variant="secondary" className="gap-1">
+                  <span className="font-semibold">Tahun:</span> {filterTahun}
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-destructive"
+                    onClick={() => setFilterTahun(currentYear)}
+                  />
+                </Badge>
+              )}
+
+              {/* Bulan Exp Range */}
+              {(filterFromBulanExp !== 'all' || filterToBulanExp !== 'all') && (
+                <Badge variant="secondary" className="gap-1">
+                  <span className="font-semibold">Bulan Exp:</span>
+                  {filterFromBulanExp !== 'all' ? bulanOptions.find(b => b.value === filterFromBulanExp)?.label : 'All'}
+                  {filterFromBulanExp !== 'all' && filterToBulanExp !== 'all' ? ' - ' : ''}
+                  {filterToBulanExp !== 'all' ? bulanOptions.find(b => b.value === filterToBulanExp)?.label : ''}
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-destructive"
+                    onClick={() => {
+                      setFilterFromBulanExp('all');
+                      setFilterToBulanExp('all');
+                    }}
+                  />
+                </Badge>
+              )}
+
+              {/* Bulan TTD Range */}
+              {(filterFromBulanTTD !== 'all' || filterToBulanTTD !== 'all') && (
+                <Badge variant="secondary" className="gap-1">
+                  <span className="font-semibold">Bulan TTD:</span>
+                  {filterFromBulanTTD !== 'all' ? bulanOptions.find(b => b.value === filterFromBulanTTD)?.label : 'All'}
+                  {filterFromBulanTTD !== 'all' && filterToBulanTTD !== 'all' ? ' - ' : ''}
+                  {filterToBulanTTD !== 'all' ? bulanOptions.find(b => b.value === filterToBulanTTD)?.label : ''}
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-destructive"
+                    onClick={() => {
+                      setFilterFromBulanTTD('all');
+                      setFilterToBulanTTD('all');
+                    }}
+                  />
+                </Badge>
+              )}
+
+              {/* Status */}
+              {filterStatus !== 'all' && (
+                <Badge
+                  variant="secondary"
+                  className={`${getStatusBadgeColor(filterStatus)} gap-1`}
+                >
+                  <span className="font-semibold">Status:</span> {filterStatus}
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-white"
+                    onClick={() => setFilterStatus('all')}
+                  />
+                </Badge>
+              )}
+
+              {/* PIC CRM */}
+              {filterPicCrm !== 'all' && (
+                <Badge variant="secondary" className="gap-1">
+                  <span className="font-semibold">PIC CRM:</span> {filterPicCrm}
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-destructive"
+                    onClick={() => setFilterPicCrm('all')}
+                  />
+                </Badge>
+              )}
+
+              {/* PIC Sales */}
+              {filterPicSales !== 'all' && (
+                <Badge variant="secondary" className="gap-1">
+                  <span className="font-semibold">Sales:</span> {filterPicSales}
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-destructive"
+                    onClick={() => setFilterPicSales('all')}
+                  />
+                </Badge>
+              )}
+
+              {/* Alasan */}
+              {filterAlasan !== 'all' && (
+                <Badge variant="secondary" className="gap-1">
+                  <span className="font-semibold">Alasan:</span> {filterAlasan}
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-destructive"
+                    onClick={() => setFilterAlasan('all')}
+                  />
+                </Badge>
+              )}
+
+              {/* Category */}
+              {filterCategory !== 'all' && (
+                <Badge
+                  variant="secondary"
+                  className={`${getCategoryBadgeStyle(filterCategory)} gap-1`}
+                >
+                  <span className="font-semibold">Category:</span> {filterCategory}
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-white"
+                    onClick={() => setFilterCategory('all')}
+                  />
+                </Badge>
+              )}
+
+              {/* Provinsi */}
+              {filterProvinsi !== 'all' && (
+                <Badge variant="secondary" className="gap-1">
+                  <span className="font-semibold">Provinsi:</span> {filterProvinsi}
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-destructive"
+                    onClick={() => {
+                      setFilterProvinsi('all');
+                      setFilterKota('all');
+                    }}
+                  />
+                </Badge>
+              )}
+
+              {/* Kota */}
+              {filterKota !== 'all' && (
+                <Badge variant="secondary" className="gap-1">
+                  <span className="font-semibold">Kota:</span> {filterKota}
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-destructive"
+                    onClick={() => setFilterKota('all')}
+                  />
+                </Badge>
+              )}
+
+              {/* Standar */}
+              {filterStandar !== 'all' && (
+                <Badge variant="secondary" className="gap-1">
+                  <span className="font-semibold">Standar:</span> {filterStandar}
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-destructive"
+                    onClick={() => setFilterStandar('all')}
+                  />
+                </Badge>
+              )}
+
+              {/* Akreditasi */}
+              {filterAkreditasi !== 'all' && (
+                <Badge variant="secondary" className="gap-1">
+                  <span className="font-semibold">Akreditasi:</span> {filterAkreditasi}
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-destructive"
+                    onClick={() => setFilterAkreditasi('all')}
+                  />
+                </Badge>
+              )}
+
+              {/* EA Code */}
+              {filterEaCode && (
+                <Badge variant="secondary" className="gap-1">
+                  <span className="font-semibold">EA Code:</span> {filterEaCode}
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-destructive"
+                    onClick={() => setFilterEaCode('')}
+                  />
+                </Badge>
+              )}
+
+              {/* Tahap Audit */}
+              {filterTahapAudit !== 'all' && (
+                <Badge variant="secondary" className="gap-1">
+                  <span className="font-semibold">Tahap:</span> {filterTahapAudit}
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-destructive"
+                    onClick={() => setFilterTahapAudit('all')}
+                  />
+                </Badge>
+              )}
+
+              {/* Status Sertifikat */}
+              {filterStatusSertifikat !== 'all' && (
+                <Badge variant="secondary" className="gap-1">
+                  <span className="font-semibold">Sertifikat:</span> {filterStatusSertifikat}
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-destructive"
+                    onClick={() => setFilterStatusSertifikat('all')}
+                  />
+                </Badge>
+              )}
+
+              {/* Termin */}
+              {filterTermin !== 'all' && (
+                <Badge variant="secondary" className="gap-1">
+                  <span className="font-semibold">Termin:</span> {filterTermin}
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-destructive"
+                    onClick={() => setFilterTermin('all')}
+                  />
+                </Badge>
+              )}
+
+              {/* Tipe Produk */}
+              {filterTipeProduk !== 'all' && (
+                <Badge variant="secondary" className="gap-1">
+                  <span className="font-semibold">Produk:</span> {filterTipeProduk}
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-destructive"
+                    onClick={() => setFilterTipeProduk('all')}
+                  />
+                </Badge>
+              )}
+
+              {/* Jadwal Kunjungan Range */}
+              {(filterFromKunjungan !== 'all' || filterToKunjungan !== 'all') && (
+                <Badge variant="secondary" className="gap-1">
+                  <span className="font-semibold">Kunjungan:</span>
+                  {filterFromKunjungan !== 'all' ? bulanOptions.find(b => b.value === filterFromKunjungan)?.label : 'All'}
+                  {filterFromKunjungan !== 'all' && filterToKunjungan !== 'all' ? ' - ' : ''}
+                  {filterToKunjungan !== 'all' ? bulanOptions.find(b => b.value === filterToKunjungan)?.label : ''}
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-destructive"
+                    onClick={() => {
+                      setFilterFromKunjungan('all');
+                      setFilterToKunjungan('all');
+                    }}
+                  />
+                </Badge>
+              )}
+
+              {/* Status Kunjungan */}
+              {filterStatusKunjungan !== 'all' && (
+                <Badge
+                  variant="secondary"
+                  className={`${getStatusKunjunganBadgeStyle(filterStatusKunjungan)} gap-1`}
+                >
+                  <span className="font-semibold">Status Kunjungan:</span> {filterStatusKunjungan}
+                  <X
+                    className="h-3 w-3 cursor-pointer hover:text-white"
+                    onClick={() => setFilterStatusKunjungan('all')}
+                  />
+                </Badge>
+              )}
+
+              {/* Reset All Filters Button */}
+              {(filterTahun !== 'all' ||
+                filterFromBulanExp !== 'all' || filterToBulanExp !== 'all' ||
+                filterFromBulanTTD !== 'all' || filterToBulanTTD !== 'all' ||
+                filterStatus !== 'all' ||
+                filterPicCrm !== 'all' ||
+                filterPicSales !== 'all' ||
+                filterAlasan !== 'all' ||
+                filterCategory !== 'all' ||
+                filterProvinsi !== 'all' ||
+                filterKota !== 'all' ||
+                filterStandar !== 'all' ||
+                filterAkreditasi !== 'all' ||
+                filterEaCode !== '' ||
+                filterTahapAudit !== 'all' ||
+                filterStatusSertifikat !== 'all' ||
+                filterTermin !== 'all' ||
+                filterTipeProduk !== 'all' ||
+                filterFromKunjungan !== 'all' || filterToKunjungan !== 'all' ||
+                filterStatusKunjungan !== 'all' ||
+                searchTerm !== '') && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={resetAllFilters}
+                  className="h-7 text-xs"
+                >
+                  Reset All
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -1570,14 +2541,14 @@ export default function CrmDataManagementPage() {
         <Card>
           {/* Header - Title & Search */}
           <div className="border-b border-border p-4">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold">Detail Perusahaan</h2>
                 <p className="text-sm text-muted-foreground mt-1">
                   {filteredTargets.length} records
                 </p>
               </div>
-              <div className="relative w-80">
+              <div className="relative w-full sm:w-80">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search Company, Sales, PIC..."
