@@ -1250,17 +1250,17 @@ export default function CrmDataManagementPage() {
             <Card>
               <CardContent className="">
                 {(() => {
-                  // Get MRC data
-                  const mrcData = filteredTargets.filter(t => (t.picCrm || '').toUpperCase() === 'MRC');
-                  const mrcTotal = mrcData.length;
-                  const mrcLanjut = mrcData.filter(t => t.status === 'LANJUT' || t.status === 'DONE').length;
-                  const mrcLoss = mrcData.filter(t => t.status === 'LOSS').length;
-                  const mrcSuspend = mrcData.filter(t => t.status === 'SUSPEND').length;
-                  const mrcProses = mrcData.filter(t => t.status === 'PROSES').length;
-                  const mrcWaiting = mrcData.filter(t => t.status === 'WAITING').length;
-                  const mrcTotalAmount = mrcData.reduce((sum, t) => sum + (t.hargaKontrak || 0), 0);
-                  const mrcLanjutAmount = mrcData.filter(t => t.status === 'LANJUT' || t.status === 'DONE').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0);
-                  const targetVisits = 100; // Sesuaikan dengan target tahunan
+                  // Get MRC data from crmTargets (not filteredTargets) - shows all data regardless of filters (except PIC CRM filter)
+                  const mrcData = (crmTargets || []).filter(t => (t.picCrm || '').toUpperCase() === 'MRC');
+                const mrcTotal = mrcData.length;
+                const mrcLanjut = mrcData.filter(t => t.status === 'LANJUT' || t.status === 'DONE').length;
+                const mrcLoss = mrcData.filter(t => t.status === 'LOSS').length;
+                const mrcSuspend = mrcData.filter(t => t.status === 'SUSPEND').length;
+                const mrcProses = mrcData.filter(t => t.status === 'PROSES').length;
+                const mrcWaiting = mrcData.filter(t => t.status === 'WAITING').length;
+                const mrcTotalAmount = mrcData.reduce((sum, t) => sum + (t.hargaKontrak || 0), 0);
+                const mrcLanjutAmount = mrcData.filter(t => t.status === 'LANJUT' || t.status === 'DONE').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0);
+                const targetVisits = 100; // Sesuaikan dengan target tahunan
 
                   return (
                     <div className="flex flex-col sm:flex-row gap-4">
@@ -1348,17 +1348,17 @@ export default function CrmDataManagementPage() {
             <Card>
               <CardContent className="">
                 {(() => {
-                  // Get DHA data
-                  const dhaData = filteredTargets.filter(t => (t.picCrm || '').toUpperCase() === 'DHA');
-                  const dhaTotal = dhaData.length;
-                  const dhaLanjut = dhaData.filter(t => t.status === 'LANJUT' || t.status === 'DONE').length;
-                  const dhaLoss = dhaData.filter(t => t.status === 'LOSS').length;
-                  const dhaSuspend = dhaData.filter(t => t.status === 'SUSPEND').length;
-                  const dhaProses = dhaData.filter(t => t.status === 'PROSES').length;
-                  const dhaWaiting = dhaData.filter(t => t.status === 'WAITING').length;
-                  const dhaTotalAmount = dhaData.reduce((sum, t) => sum + (t.hargaKontrak || 0), 0);
-                  const dhaLanjutAmount = dhaData.filter(t => t.status === 'LANJUT' || t.status === 'DONE').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0);
-                  const targetVisits = 100; // Sesuaikan dengan target tahunan
+                  // Get DHA data from crmTargets (not filteredTargets) - shows all data regardless of filters (except PIC CRM filter)
+                  const dhaData = (crmTargets || []).filter(t => (t.picCrm || '').toUpperCase() === 'DHA');
+                const dhaTotal = dhaData.length;
+                const dhaLanjut = dhaData.filter(t => t.status === 'LANJUT' || t.status === 'DONE').length;
+                const dhaLoss = dhaData.filter(t => t.status === 'LOSS').length;
+                const dhaSuspend = dhaData.filter(t => t.status === 'SUSPEND').length;
+                const dhaProses = dhaData.filter(t => t.status === 'PROSES').length;
+                const dhaWaiting = dhaData.filter(t => t.status === 'WAITING').length;
+                const dhaTotalAmount = dhaData.reduce((sum, t) => sum + (t.hargaKontrak || 0), 0);
+                const dhaLanjutAmount = dhaData.filter(t => t.status === 'LANJUT' || t.status === 'DONE').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0);
+                const targetVisits = 100; // Sesuaikan dengan target tahunan
 
                   return (
                     <div className="flex flex-col sm:flex-row gap-4">
