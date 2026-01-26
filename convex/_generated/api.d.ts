@@ -17,6 +17,7 @@ import type * as notifications from "../notifications.js";
 import type * as seed from "../seed.js";
 import type * as staffTargets from "../staffTargets.js";
 import type * as targets from "../targets.js";
+import type * as uploads from "../uploads.js";
 import type * as utils_password from "../utils/password.js";
 import type * as utils_simpleHash from "../utils/simpleHash.js";
 import type * as visitHistory from "../visitHistory.js";
@@ -37,6 +38,7 @@ declare const fullApi: ApiFromModules<{
   seed: typeof seed;
   staffTargets: typeof staffTargets;
   targets: typeof targets;
+  uploads: typeof uploads;
   "utils/password": typeof utils_password;
   "utils/simpleHash": typeof utils_simpleHash;
   visitHistory: typeof visitHistory;

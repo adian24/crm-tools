@@ -13,6 +13,7 @@ import {
   IconLogout,
   IconDatabase,
   IconChartBar,
+  IconCalendarTime,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -69,6 +70,11 @@ const getNavigationItems = (role: string) => {
         icon: IconDatabase,
       },
       {
+        title: "Dashboard Kunjungan",
+        url: "/dashboard-manager/dashboard-kunjungan",
+        icon: IconCalendarTime,
+      },
+      {
         title: "CRM Data Management",
         url: "/dashboard-manager/crm-data",
         icon: IconTarget,
@@ -87,6 +93,11 @@ const getNavigationItems = (role: string) => {
       title: "Dashboard Pencapaian",
       url: "/dashboard-manager/dashboard-data",
       icon: IconDatabase,
+    },
+    {
+      title: "Dashboard Kunjungan",
+      url: "/dashboard-manager/dashboard-kunjungan",
+      icon: IconCalendarTime,
     },
     {
       title: "CRM Data Management",

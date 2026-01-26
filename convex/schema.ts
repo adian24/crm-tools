@@ -156,6 +156,8 @@ export default defineSchema({
     statusSertifikat: v.optional(v.string()), // STATUS SERTIFIKAT
     tanggalKunjungan: v.optional(v.string()), // TANGGAL KUNJUNGAN
     statusKunjungan: v.optional(v.string()), // STATUS KUNJUNGAN (VISITED, NOT YET)
+    catatanKunjungan: v.optional(v.string()), // CATATAN KUNJUNGAN
+    fotoBuktiKunjungan: v.optional(v.string()), // FOTO BUKTI KUNJUNGAN (URL gambar)
     // Audit fields (sesuai request)
     created_by: v.optional(v.id("users")), // CREATED BY - User yang membuat data
     createdAt: v.number(), // CREATED AT - Timestamp pembuatan

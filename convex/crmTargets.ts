@@ -3,6 +3,15 @@ import { mutation, query } from "./_generated/server";
 
 // === QUERIES ===
 
+// Get all CRM targets (alias for getCrmTargets)
+export const list = query({
+  args: {},
+  handler: async (ctx) => {
+    const crmTargets = await ctx.db.query("crmTargets").collect();
+    return crmTargets;
+  },
+});
+
 // Get all CRM targets
 export const getCrmTargets = query({
   args: {},
@@ -179,6 +188,8 @@ export const createCrmTarget = mutation({
     statusSertifikat: v.optional(v.string()),
     tanggalKunjungan: v.optional(v.string()),
     statusKunjungan: v.optional(v.string()),
+    catatanKunjungan: v.optional(v.string()),
+    fotoBuktiKunjungan: v.optional(v.string()),
     created_by: v.optional(v.id("users")),
   },
   handler: async (ctx, args) => {
@@ -228,6 +239,8 @@ export const updateCrmTarget = mutation({
     statusSertifikat: v.optional(v.string()),
     tanggalKunjungan: v.optional(v.string()),
     statusKunjungan: v.optional(v.string()),
+    catatanKunjungan: v.optional(v.string()),
+    fotoBuktiKunjungan: v.optional(v.string()),
     updated_by: v.optional(v.id("users")),
   },
   handler: async (ctx, args) => {
@@ -294,6 +307,8 @@ export const bulkInsertCrmTargets = mutation({
         statusSertifikat: v.optional(v.string()),
         tanggalKunjungan: v.optional(v.string()),
         statusKunjungan: v.optional(v.string()),
+        catatanKunjungan: v.optional(v.string()),
+        fotoBuktiKunjungan: v.optional(v.string()),
         created_by: v.optional(v.id("users")),
       })
     ),
