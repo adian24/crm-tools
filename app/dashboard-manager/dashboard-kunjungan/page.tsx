@@ -6,6 +6,7 @@ import { api } from "@/convex/_generated/api"
 import { Id } from "@/convex/_generated/dataModel"
 import { format, parseISO, isPast, isToday, isFuture, startOfMonth, endOfMonth } from "date-fns"
 import { id } from "date-fns/locale"
+import indonesiaData from "@/data/indonesia-provinsi-kota.json"
 
 import {
   Card,
@@ -42,6 +43,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
+import { FilterCompanySection } from "@/components/filters/FilterCompanySection"
+import { FilterPicCrmSection } from "@/components/filters/FilterPicCrmSection"
+import { FilterKunjunganSection } from "@/components/filters/FilterKunjunganSection"
 
 import { IconCalendar, IconMapPin, IconPhone, IconBuilding, IconSearch, IconFilter, IconCheck, IconX, IconClock, IconCalendarTime, IconChevronLeft, IconChevronRight } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
@@ -100,6 +104,12 @@ export default function DashboardKunjunganPage() {
   const [filterSales, setFilterSales] = React.useState<string>("all")
   const [filterStatusKunjungan, setFilterStatusKunjungan] = React.useState<string>("all")
   const [filterMonth, setFilterMonth] = React.useState<string>(format(new Date(), "yyyy-MM"))
+  const [filterFromKunjungan, setFilterFromKunjungan] = React.useState<string>("all")
+  const [filterToKunjungan, setFilterToKunjungan] = React.useState<string>("all")
+  const [filterProvinsi, setFilterProvinsi] = React.useState<string>("all")
+  const [filterKota, setFilterKota] = React.useState<string>("all")
+  const [filterCategory, setFilterCategory] = React.useState<string>("all")
+  const [filterAlasan, setFilterAlasan] = React.useState<string>("all")
   const [searchQuery, setSearchQuery] = React.useState<string>("")
   const [tableSearchQuery, setTableSearchQuery] = React.useState<string>("")
   const [currentDate, setCurrentDate] = React.useState(new Date())
@@ -133,6 +143,53 @@ export default function DashboardKunjunganPage() {
     return Array.from(companies).sort()
   }, [crmTargets])
 
+  const provinsiList = React.useMemo(() => {
+    return Object.keys(indonesiaData).sort()
+  }, [])
+
+  const kotaList = React.useMemo(() => {
+    if (filterProvinsi === "all") {
+      // Return all cities from all provinces (unique only)
+      const allKotaSet = new Set<string>()
+      Object.values(indonesiaData).forEach((prov: any) => {
+        prov.kabupaten_kota.forEach((kota: string) => {
+          allKotaSet.add(kota)
+        })
+      })
+      return Array.from(allKotaSet).sort()
+    }
+    // Return cities for selected province
+    const selectedProvData = (indonesiaData as any)[filterProvinsi]
+    return selectedProvData?.kabupaten_kota || []
+  }, [filterProvinsi])
+
+  const statusOptions = React.useMemo(() => {
+    const statuses = new Set(crmTargets.map(t => t.status).filter(Boolean))
+    return Array.from(statuses).sort()
+  }, [crmTargets])
+
+  const alasanOptions = React.useMemo(() => {
+    const alasan = new Set(crmTargets.map(t => t.alasan).filter(Boolean))
+    return Array.from(alasan).sort()
+  }, [crmTargets])
+
+  const bulanOptions = React.useMemo(() => {
+    return [
+      { value: '2025-01', label: 'Januari 2025' },
+      { value: '2025-02', label: 'Februari 2025' },
+      { value: '2025-03', label: 'Maret 2025' },
+      { value: '2025-04', label: 'April 2025' },
+      { value: '2025-05', label: 'Mei 2025' },
+      { value: '2025-06', label: 'Juni 2025' },
+      { value: '2025-07', label: 'Juli 2025' },
+      { value: '2025-08', label: 'Agustus 2025' },
+      { value: '2025-09', label: 'September 2025' },
+      { value: '2025-10', label: 'Oktober 2025' },
+      { value: '2025-11', label: 'November 2025' },
+      { value: '2025-12', label: 'Desember 2025' },
+    ]
+  }, [])
+
   // Filter data
   const filteredData = React.useMemo(() => {
     console.log('🔍 Filter Month:', filterMonth)
@@ -153,13 +210,31 @@ export default function DashboardKunjunganPage() {
         if (filterStatusKunjungan === "not_scheduled" && target.tanggalKunjungan) return false
       }
 
-      // Filter by month - ONLY if there's a tanggalKunjungan
+      // Filter by Provinsi
+      if (filterProvinsi !== "all" && target.provinsi !== filterProvinsi) return false
+
+      // Filter by Kota
+      if (filterKota !== "all" && target.kota !== filterKota) return false
+
+      // Filter by Category
+      if (filterCategory !== "all" && target.category !== filterCategory) return false
+
+      // Filter by Alasan
+      if (filterAlasan !== "all" && target.alasan !== filterAlasan) return false
+
+      // Filter by date range - using from/to kunjungan
       if (target.tanggalKunjungan) {
         const visitDate = parseISO(target.tanggalKunjungan)
         const targetMonth = format(visitDate, "yyyy-MM")
-        if (targetMonth !== filterMonth) {
-          console.log(`❌ Filtered out ${target.namaPerusahaan}: visit month ${targetMonth} != filter ${filterMonth}`)
-          return false
+
+        // If from filter is set, check if visit date is on or after from date
+        if (filterFromKunjungan !== "all") {
+          if (targetMonth < filterFromKunjungan) return false
+        }
+
+        // If to filter is set, check if visit date is on or before to date
+        if (filterToKunjungan !== "all") {
+          if (targetMonth > filterToKunjungan) return false
         }
       }
       // Don't filter out items without tanggalKunjungan unless explicitly filtering for "not_scheduled"
@@ -199,7 +274,7 @@ export default function DashboardKunjunganPage() {
       if (!b.tanggalKunjungan) return -1
       return new Date(a.tanggalKunjungan).getTime() - new Date(b.tanggalKunjungan).getTime()
     })
-  }, [crmTargets, filterPic, filterSales, filterStatusKunjungan, filterMonth, searchQuery, tableSearchQuery])
+  }, [crmTargets, filterPic, filterSales, filterStatusKunjungan, filterFromKunjungan, filterToKunjungan, filterProvinsi, filterKota, filterCategory, filterAlasan, searchQuery, tableSearchQuery])
 
   const currentMonth = currentDate.getMonth()
   const currentYear = currentDate.getFullYear()
@@ -299,19 +374,10 @@ export default function DashboardKunjunganPage() {
     console.log('📆 Filter Month:', filterMonth)
   }, [crmTargets, filteredData, displayTasks, selectedDate, filterMonth])
 
-  // Pagination
-  const totalPages = Math.ceil(displayTasks.length / itemsPerPage)
-
-  // Get paginated data
-  const paginatedTargets = displayTasks.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  )
-
   // Reset page when filters change
   React.useEffect(() => {
     setCurrentPage(1)
-  }, [filterPic, filterSales, filterStatusKunjungan, filterMonth, searchQuery, tableSearchQuery, selectedDate])
+  }, [filterPic, filterSales, filterStatusKunjungan, filterFromKunjungan, filterToKunjungan, filterProvinsi, filterKota, filterCategory, filterAlasan, searchQuery, tableSearchQuery, selectedDate])
 
   const getVisitStatusBadge = (target: CrmTarget) => {
     if (!target.tanggalKunjungan) {
@@ -353,6 +419,14 @@ export default function DashboardKunjunganPage() {
   }
 
   const [expandedFilterSections, setExpandedFilterSections] = React.useState<string[]>(['date', 'picCrm', 'company', 'jadwal']);
+  const [expandedCompanies, setExpandedCompanies] = React.useState<Set<string>>(new Set());
+  const [isMassUpdateModalOpen, setIsMassUpdateModalOpen] = React.useState(false);
+  const [selectedCompanyForUpdate, setSelectedCompanyForUpdate] = React.useState<string | null>(null);
+  const [massUpdateTanggal, setMassUpdateTanggal] = React.useState<string>("");
+  const [massUpdateStatus, setMassUpdateStatus] = React.useState<string>("");
+  const [massUpdateCatatan, setMassUpdateCatatan] = React.useState<string>("");
+  const [massUpdateFoto, setMassUpdateFoto] = React.useState<string | null>(null);
+  const [isMassUploading, setIsMassUploading] = React.useState(false);
 
   const toggleFilterSection = (section: string) => {
     setExpandedFilterSections(prev =>
@@ -361,6 +435,48 @@ export default function DashboardKunjunganPage() {
         : [...prev, section]
     );
   };
+
+  const toggleCompanyExpand = (companyName: string) => {
+    setExpandedCompanies(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(companyName)) {
+        newSet.delete(companyName);
+      } else {
+        newSet.add(companyName);
+      }
+      return newSet;
+    });
+  };
+
+  // Group data by company
+  const groupedByCompany = React.useMemo(() => {
+    const groups: Record<string, CrmTarget[]> = {};
+    displayTasks.forEach(task => {
+      const companyName = task.namaPerusahaan;
+      if (!groups[companyName]) {
+        groups[companyName] = [];
+      }
+      groups[companyName].push(task);
+    });
+    return Object.entries(groups).map(([companyName, tasks]) => ({
+      companyName,
+      tasks,
+      totalCount: tasks.length
+    }));
+  }, [displayTasks]);
+
+  // Pagination for grouped companies
+  const totalPages = Math.ceil(groupedByCompany.length / itemsPerPage);
+
+  // Get paginated grouped data
+  const paginatedGroups = groupedByCompany.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // Get total tasks for pagination info
+  const totalTasks = displayTasks.length;
+  const displayedTasks = paginatedGroups.reduce((sum, group) => sum + group.totalCount, 0);
 
   // Reset form when selected task changes
   React.useEffect(() => {
@@ -372,25 +488,129 @@ export default function DashboardKunjunganPage() {
     }
   }, [selectedTask])
 
+  // Reset city filter when province changes
+  React.useEffect(() => {
+    if (filterProvinsi !== "all") {
+      setFilterKota("all")
+    }
+  }, [filterProvinsi])
+
+  // Update calendar view when selectedDate changes
+  React.useEffect(() => {
+    if (selectedDate) {
+      setCurrentDate(selectedDate)
+    }
+  }, [selectedDate])
+
+  // Update calendar view when filterMonth changes
+  React.useEffect(() => {
+    if (filterMonth) {
+      const [year, month] = filterMonth.split('-').map(Number)
+      setCurrentDate(new Date(year, month - 1, 1))
+    }
+  }, [filterMonth])
+
+  // Compress image before upload
+  const compressImage = (file: File, maxSizeKB: number = 500): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = (event) => {
+        const img = new Image()
+        img.src = event.target?.result as string
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          let width = img.width
+          let height = img.height
+
+          // Calculate new dimensions (max 1024px)
+          const MAX_DIMENSION = 1024
+          if (width > height) {
+            if (width > MAX_DIMENSION) {
+              height *= MAX_DIMENSION / width
+              width = MAX_DIMENSION
+            }
+          } else {
+            if (height > MAX_DIMENSION) {
+              width *= MAX_DIMENSION / height
+              height = MAX_DIMENSION
+            }
+          }
+
+          canvas.width = width
+          canvas.height = height
+
+          const ctx = canvas.getContext('2d')
+          if (!ctx) {
+            reject(new Error('Failed to get canvas context'))
+            return
+          }
+
+          ctx.drawImage(img, 0, 0, width, height)
+
+          // Start with high quality
+          let quality = 0.9
+          let compressedDataUrl = canvas.toDataURL('image/jpeg', quality)
+
+          // Reduce quality until size is under limit
+          while (compressedDataUrl.length > maxSizeKB * 1024 * 1.37 && quality > 0.1) {
+            quality -= 0.1
+            compressedDataUrl = canvas.toDataURL('image/jpeg', quality)
+          }
+
+          resolve(compressedDataUrl)
+        }
+        img.onerror = (error) => reject(error)
+      }
+      reader.onerror = (error) => reject(error)
+    })
+  }
+
   // Handle file upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
+    // Check file size (max 2MB before compression)
+    if (file.size > 2 * 1024 * 1024) {
+      alert('File terlalu besar! Maksimum 2MB.')
+      return
+    }
+
     setIsUploading(true)
     try {
-      // For now, we'll use a simple approach - convert to base64 and store
-      // In production, you should use a proper file storage service
-      const reader = new FileReader()
-      reader.onloadend = async () => {
-        const base64String = reader.result as string
-        setEditFoto(base64String)
-        setIsUploading(false)
-      }
-      reader.readAsDataURL(file)
+      // Compress image to max 500KB
+      const compressedImage = await compressImage(file, 500)
+      setEditFoto(compressedImage)
+      setIsUploading(false)
     } catch (error) {
       console.error('Error uploading file:', error)
+      alert('Gagal mengupload foto. Silakan coba lagi.')
       setIsUploading(false)
+    }
+  }
+
+  // Handle mass update file upload
+  const handleMassFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Check file size (max 2MB before compression)
+    if (file.size > 2 * 1024 * 1024) {
+      alert('File terlalu besar! Maksimum 2MB.')
+      return
+    }
+
+    setIsMassUploading(true)
+    try {
+      // Compress image to max 500KB
+      const compressedImage = await compressImage(file, 500)
+      setMassUpdateFoto(compressedImage)
+      setIsMassUploading(false)
+    } catch (error) {
+      console.error('Error uploading file:', error)
+      alert('Gagal mengupload foto. Silakan coba lagi.')
+      setIsMassUploading(false)
     }
   }
 
@@ -421,6 +641,60 @@ export default function DashboardKunjunganPage() {
       console.error('Error updating kunjungan:', error)
       alert('Gagal mengupdate kunjungan. Silakan coba lagi.')
     }
+  }
+
+  // Handle mass update for all tasks under a company
+  const handleMassUpdate = async () => {
+    if (!selectedCompanyForUpdate) return
+
+    try {
+      // Find all tasks for this company
+      const companyTasks = displayTasks.filter(t => t.namaPerusahaan === selectedCompanyForUpdate)
+
+      // Update all tasks
+      const updatePromises = companyTasks.map(task =>
+        updateCrmTarget({
+          id: task._id,
+          tanggalKunjungan: massUpdateTanggal || undefined,
+          statusKunjungan: massUpdateStatus || undefined,
+          catatanKunjungan: massUpdateCatatan || undefined,
+          fotoBuktiKunjungan: massUpdateFoto || undefined,
+        })
+      )
+
+      await Promise.all(updatePromises)
+
+      // Close modal and reset form
+      setIsMassUpdateModalOpen(false)
+      setSelectedCompanyForUpdate(null)
+      setMassUpdateTanggal("")
+      setMassUpdateStatus("")
+      setMassUpdateCatatan("")
+      setMassUpdateFoto(null)
+      setIsMassUploading(false)
+
+      // Show success message
+      alert(`Kunjungan berhasil diupdate untuk ${companyTasks.length} standar!`)
+    } catch (error) {
+      console.error('Error mass updating kunjungan:', error)
+      alert('Gagal mengupdate kunjungan. Silakan coba lagi.')
+    }
+  }
+
+  // Open mass update modal
+  const openMassUpdateModal = (companyName: string) => {
+    setSelectedCompanyForUpdate(companyName)
+
+    // Get the first task to pre-fill data
+    const firstTask = displayTasks.find(t => t.namaPerusahaan === companyName)
+    if (firstTask) {
+      setMassUpdateTanggal(firstTask.tanggalKunjungan || "")
+      setMassUpdateStatus(firstTask.statusKunjungan || "")
+      setMassUpdateCatatan(firstTask.catatanKunjungan || "")
+      setMassUpdateFoto(firstTask.fotoBuktiKunjungan || null)
+    }
+
+    setIsMassUpdateModalOpen(true)
   }
 
   return (
@@ -481,19 +755,11 @@ export default function DashboardKunjunganPage() {
                 </button>
                 {expandedFilterSections.includes('picCrm') && (
                   <div className="p-3 space-y-3 border-t">
-                    <div className="space-y-1">
-                      <Select value={filterPic} onValueChange={setFilterPic}>
-                        <SelectTrigger className="w-full h-9 text-sm">
-                          <SelectValue placeholder="Semua PIC" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Semua PIC</SelectItem>
-                          {picList.map(pic => (
-                            <SelectItem key={pic} value={pic}>{pic}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <FilterPicCrmSection
+                      filterPicCrm={filterPic}
+                      setFilterPicCrm={setFilterPic}
+                      picCrmOptions={picList}
+                    />
                   </div>
                 )}
               </div>
@@ -513,36 +779,22 @@ export default function DashboardKunjunganPage() {
                 </button>
                 {expandedFilterSections.includes('company') && (
                   <div className="p-3 space-y-3 border-t">
-                    <div className="space-y-1">
-                      <Label className="text-xs">Perusahaan</Label>
-                      <Select value={searchQuery} onValueChange={(val) => {
-                        setSearchQuery(val === 'all' ? '' : val)
-                      }}>
-                        <SelectTrigger className="w-full h-9 text-sm">
-                          <SelectValue placeholder="Semua Perusahaan" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Semua Perusahaan</SelectItem>
-                          {companyList.slice(0, 50).map(company => (
-                            <SelectItem key={company} value={company}>{company}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Status</Label>
-                      <Select value={filterStatusKunjungan} onValueChange={setFilterStatusKunjungan}>
-                        <SelectTrigger className="w-full h-9 text-sm">
-                          <SelectValue placeholder="Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Semua Status</SelectItem>
-                          <SelectItem value="visited">Visited</SelectItem>
-                          <SelectItem value="not_yet">Not Yet</SelectItem>
-                          <SelectItem value="not_scheduled">Not Scheduled</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <FilterCompanySection
+                      filterStatus={filterStatusKunjungan}
+                      setFilterStatus={setFilterStatusKunjungan}
+                      filterCategory={filterCategory}
+                      setFilterCategory={setFilterCategory}
+                      filterProvinsi={filterProvinsi}
+                      setFilterProvinsi={setFilterProvinsi}
+                      filterKota={filterKota}
+                      setFilterKota={setFilterKota}
+                      filterAlasan={filterAlasan}
+                      setFilterAlasan={setFilterAlasan}
+                      statusOptions={statusOptions}
+                      provinsiOptions={provinsiList}
+                      kotaOptions={kotaList}
+                      alasanOptions={alasanOptions}
+                    />
                   </div>
                 )}
               </div>
@@ -553,7 +805,7 @@ export default function DashboardKunjunganPage() {
                   onClick={() => toggleFilterSection('jadwal')}
                   className="w-full flex items-center justify-between p-3 bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
                 >
-                  <span className="font-medium text-sm">Jadwal</span>
+                  <span className="font-medium text-sm">Jadwal Kunjungan</span>
                   {expandedFilterSections.includes('jadwal') ? (
                     <IconChevronLeft className="h-4 w-4 rotate-[-90deg]" />
                   ) : (
@@ -562,33 +814,15 @@ export default function DashboardKunjunganPage() {
                 </button>
                 {expandedFilterSections.includes('jadwal') && (
                   <div className="p-3 space-y-3 border-t">
-                    <div className="space-y-1">
-                      <Label className="text-xs">Sales</Label>
-                      <Select value={filterSales} onValueChange={setFilterSales}>
-                        <SelectTrigger className="w-full h-9 text-sm">
-                          <SelectValue placeholder="Semua Sales" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Semua Sales</SelectItem>
-                          {salesList.map(sales => (
-                            <SelectItem key={sales} value={sales}>{sales}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Search</Label>
-                      <div className="relative">
-                        <IconSearch className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="search"
-                          placeholder="Cari..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="pl-9 h-9 text-sm"
-                        />
-                      </div>
-                    </div>
+                    <FilterKunjunganSection
+                      filterFromKunjungan={filterFromKunjungan}
+                      setFilterFromKunjungan={setFilterFromKunjungan}
+                      filterToKunjungan={filterToKunjungan}
+                      setFilterToKunjungan={setFilterToKunjungan}
+                      filterStatusKunjungan={filterStatusKunjungan}
+                      setFilterStatusKunjungan={setFilterStatusKunjungan}
+                      bulanOptions={bulanOptions}
+                    />
                   </div>
                 )}
               </div>
@@ -608,22 +842,19 @@ export default function DashboardKunjunganPage() {
         </div>
 
       {/* Stats Cards - Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Total Kunjungan Card */}
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-          <CardContent className="p-6">
+          <CardContent className="p-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-blue-600">Total Kunjungan</p>
-                <p className="text-3xl font-bold text-blue-700 mt-2">
+                <p className="text-xs font-medium text-blue-600">Total Kunjungan</p>
+                <p className="text-3xl font-bold text-blue-700 mt-0.5">
                   {displayTasks.length}
                 </p>
-                <p className="text-xs text-blue-600 mt-1">
-                  {displayTasks.length} jadwal
-                </p>
               </div>
-              <div className="h-12 w-12 rounded-full bg-blue-500 flex items-center justify-center">
-                <IconCalendar className="h-6 w-6 text-white" />
+              <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                <IconCalendar className="h-4 w-4 text-white" />
               </div>
             </div>
           </CardContent>
@@ -631,19 +862,16 @@ export default function DashboardKunjunganPage() {
 
         {/* Visited Card */}
         <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-          <CardContent className="p-6">
+          <CardContent className="p-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-green-600">Sudah Dikunjungi</p>
-                <p className="text-3xl font-bold text-green-700 mt-2">
+                <p className="text-xs font-medium text-green-600">Sudah Dikunjungi</p>
+                <p className="text-3xl font-bold text-green-700 mt-0.5">
                   {displayTasks.filter(t => t.statusKunjungan === 'VISITED').length}
                 </p>
-                <p className="text-xs text-green-600 mt-1">
-                  {displayTasks.length > 0 ? Math.round((displayTasks.filter(t => t.statusKunjungan === 'VISITED').length / displayTasks.length) * 100) : 0}%
-                </p>
               </div>
-              <div className="h-12 w-12 rounded-full bg-green-500 flex items-center justify-center">
-                <IconCheck className="h-6 w-6 text-white" />
+              <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                <IconCheck className="h-4 w-4 text-white" />
               </div>
             </div>
           </CardContent>
@@ -651,43 +879,21 @@ export default function DashboardKunjunganPage() {
 
         {/* Pending Card */}
         <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
-          <CardContent className="p-6">
+          <CardContent className="p-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-orange-600">Belum Dikunjungi</p>
-                <p className="text-3xl font-bold text-orange-700 mt-2">
+                <p className="text-xs font-medium text-orange-600">Belum Dikunjungi</p>
+                <p className="text-3xl font-bold text-orange-700 mt-0.5">
                   {displayTasks.filter(t => t.statusKunjungan === 'NOT YET').length}
                 </p>
-                <p className="text-xs text-orange-600 mt-1">
-                  {displayTasks.length > 0 ? Math.round((displayTasks.filter(t => t.statusKunjungan === 'NOT YET').length / displayTasks.length) * 100) : 0}%
-                </p>
               </div>
-              <div className="h-12 w-12 rounded-full bg-orange-500 flex items-center justify-center">
-                <IconClock className="h-6 w-6 text-white" />
+              <div className="h-8 w-8 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
+                <IconClock className="h-4 w-4 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Not Scheduled Card */}
-        <Card className="bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Belum Terjadwal</p>
-                <p className="text-3xl font-bold text-gray-700 mt-2">
-                  {displayTasks.filter(t => !t.tanggalKunjungan).length}
-                </p>
-                <p className="text-xs text-gray-600 mt-1">
-                  {displayTasks.length > 0 ? Math.round((displayTasks.filter(t => !t.tanggalKunjungan).length / displayTasks.length) * 100) : 0}%
-                </p>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-gray-500 flex items-center justify-center">
-                <IconX className="h-6 w-6 text-white" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* PIC CRM Performance Cards - MRC & DHA */}
@@ -695,7 +901,7 @@ export default function DashboardKunjunganPage() {
         {/* MRC Card */}
         {(filterPic === 'all' || filterPic === 'MRC') && (
           <Card>
-            <CardContent className="">
+            <CardContent className="p-4 space-y-4">
               {(() => {
                 const mrcData = crmTargets.filter(t => (t.picCrm || '').toUpperCase() === 'MRC');
                 const mrcTotal = mrcData.length;
@@ -704,82 +910,151 @@ export default function DashboardKunjunganPage() {
                 const mrcSuspend = mrcData.filter(t => t.status === 'SUSPEND').length;
                 const mrcProses = mrcData.filter(t => t.status === 'PROSES').length;
                 const mrcWaiting = mrcData.filter(t => t.status === 'WAITING').length;
-                const mrcTotalAmount = mrcData.reduce((sum, t) => sum + (t.hargaKontrak || 0), 0);
-                const mrcLanjutAmount = mrcData.filter(t => t.status === 'LANJUT' || t.status === 'DONE').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0);
 
                 return (
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    {/* Left Side - Profile Photo */}
-                    <div className="flex-shrink-0 flex justify-center">
-                      <div className="relative">
+                  <div className="space-y-4">
+                    {/* Profile Section */}
+                    <div className="flex items-center gap-3 pb-3 border-b">
+                      <div className="relative flex-shrink-0">
                         <img
                           src="/images/mercy.jpeg"
                           onError={(e) => (e.currentTarget.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=MRC")}
-                          className="w-32 h-32 sm:w-60 sm:h-auto rounded-full object-cover border-2 border-background shadow-lg"
-                          style={{ maxHeight: '300px' }}
+                          className="w-16 h-16 rounded-full object-cover border-2 border-background shadow-lg"
                           alt="MRC"
                         />
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background"></div>
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-background"></div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-lg">MRC</p>
+                        <p className="text-xs text-muted-foreground">PIC CRM</p>
                       </div>
                     </div>
 
-                    {/* Right Side - Info & Stats */}
-                    <div className="flex-1 space-y-2">
-                      {/* Profile Info */}
-                      <div className="text-center sm:text-left">
-                        <p className="font-bold text-xl">MRC</p>
-                        <p className="text-sm text-muted-foreground">PIC CRM</p>
+                    {/* Progress Bar */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-muted-foreground">Progress Kunjungan</span>
+                        <span className="text-sm font-bold text-primary">
+                          {mrcData.filter(t => t.statusKunjungan === 'VISITED').length}/100
+                        </span>
                       </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-green-600 h-2 rounded-full transition-all duration-500"
+                          style={{
+                            width: `${Math.min((mrcData.filter(t => t.statusKunjungan === 'VISITED').length / 100) * 100, 100)}%`
+                          }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Total Kunjungan: {mrcData.filter(t => t.statusKunjungan === 'VISITED').length} visited</span>
+                        <span>{Math.round((mrcData.filter(t => t.statusKunjungan === 'VISITED').length / 100) * 100)}%</span>
+                      </div>
+                    </div>
 
-                      {/* Performance Overview */}
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">Progress Kunjungan</span>
-                          <span className="text-sm font-bold text-primary">{mrcData.filter(t => t.statusKunjungan === 'VISITED').length}/100</span>
+                    {/* Quick Stats */}
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      <div className="text-center p-2 bg-green-50 rounded-lg border border-green-200">
+                        <div className="font-bold text-green-700 text-lg">{mrcLanjut}</div>
+                        <div className="text-green-600">Lanjut</div>
+                      </div>
+                      <div className="text-center p-2 bg-red-50 rounded-lg border border-red-200">
+                        <div className="font-bold text-red-700 text-lg">{mrcLoss}</div>
+                        <div className="text-red-600">Loss</div>
+                      </div>
+                      <div className="text-center p-2 bg-orange-50 rounded-lg border border-orange-200">
+                        <div className="font-bold text-orange-700 text-lg">{mrcSuspend}</div>
+                        <div className="text-orange-600">Suspend</div>
+                      </div>
+                    </div>
+
+                    {/* Mini Calendar for MRC */}
+                    <div className="border-t pt-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-sm font-semibold">Calendar</h4>
+                        <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">
+                          {getMonthName(currentDate)}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {/* Day Headers */}
+                        <div className="grid grid-cols-7 gap-1 text-center">
+                          {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map(day => (
+                            <div key={day} className="text-xs font-bold text-muted-foreground uppercase">
+                              {day}
+                            </div>
+                          ))}
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-green-600 h-2 rounded-full transition-all duration-500"
-                            style={{ width: `${Math.min((mrcData.filter(t => t.statusKunjungan === 'VISITED').length / 100) * 100, 100)}%` }}
-                          />
-                        </div>
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <span>Total Kunjungan: {mrcData.filter(t => t.statusKunjungan === 'VISITED').length} visited</span>
-                          <span>{Math.round((mrcData.filter(t => t.statusKunjungan === 'VISITED').length / 100) * 100)}%</span>
+                        {/* Calendar Days */}
+                        <div className="grid grid-cols-7 gap-1">
+                          {calendarDays.map((day, index) => {
+                            // Filter tasks for MRC only
+                            const mrcTasks = day.tasks.filter(task => (task.picCrm || '').toUpperCase() === 'MRC');
+
+                            return (
+                              <div
+                                key={index}
+                                onClick={() => day.isCurrentMonth && setSelectedDate(day.date)}
+                                className={`
+                                  relative aspect-square p-1 rounded text-center transition-all cursor-pointer
+                                  ${day.isCurrentMonth
+                                    ? 'bg-background border border-border hover:bg-accent hover:shadow-sm'
+                                    : 'opacity-25'
+                                  }
+                                  ${day.isToday ? 'bg-primary/10 border-2 border-primary' : ''}
+                                  ${selectedDate?.toDateString() === day.date.toDateString()
+                                    ? 'bg-primary/20 border-2 border-primary shadow-md'
+                                    : ''
+                                  }
+                                `}
+                              >
+                                <div className={`text-sm font-bold mb-1 ${
+                                  day.isCurrentMonth
+                                    ? day.isToday || selectedDate?.toDateString() === day.date.toDateString()
+                                      ? 'text-primary'
+                                      : 'text-foreground'
+                                    : 'text-muted-foreground'
+                                }`}>
+                                  {day.date.getDate()}
+                                </div>
+                                {/* Task indicators */}
+                                <div className="space-y-0.5">
+                                  {mrcTasks.slice(0, 2).map((task, taskIndex) => (
+                                    <div
+                                      key={taskIndex}
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        setSelectedTask(task)
+                                        setIsEditModalOpen(true)
+                                      }}
+                                      className={`
+                                        text-[8px] px-1 py-0.5 rounded truncate cursor-pointer
+                                        ${task.statusKunjungan === 'VISITED'
+                                          ? 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-300'
+                                          : task.statusKunjungan === 'NOT YET'
+                                            ? 'bg-orange-100 text-orange-700 hover:bg-orange-200 border border-orange-300'
+                                            : 'bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-300'
+                                        }
+                                      `}
+                                      title={`${task.namaPerusahaan} - Click to edit`}
+                                    >
+                                      {task.namaPerusahaan.length > 10
+                                        ? task.namaPerusahaan.substring(0, 10) + '..'
+                                        : task.namaPerusahaan
+                                      }
+                                    </div>
+                                  ))}
+                                  {mrcTasks.length > 2 && (
+                                    <div className="text-[8px] font-medium text-center bg-primary/80 rounded text-primary-foreground">
+                                      +{mrcTasks.length - 2}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
                         </div>
                       </div>
-
-                      {/* Detailed Statistics */}
-                      <div className="space-y-1">
-                        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Performance Breakdown</div>
-                        <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 text-xs">
-                          <div className="flex justify-between items-center">
-                            <span className="text-green-600">✓ Lanjut</span>
-                            <span className="font-medium">{mrcLanjut}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-red-600">✗ Loss</span>
-                            <span className="font-medium">{mrcLoss}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-orange-600">⏸ Suspend</span>
-                            <span className="font-medium">{mrcSuspend}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-blue-600">⏸ Proses</span>
-                            <span className="font-medium">{mrcProses}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-600">⏳ Waiting</span>
-                            <span className="font-medium">{mrcWaiting}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-purple-600">📊 Visits</span>
-                            <span className="font-medium">{mrcData.filter(t => t.tanggalKunjungan).length}/{mrcTotal}</span>
-                          </div>
-                        </div>
-                      </div>
-
                     </div>
                   </div>
                 );
@@ -791,7 +1066,7 @@ export default function DashboardKunjunganPage() {
         {/* DHA Card */}
         {(filterPic === 'all' || filterPic === 'DHA') && (
           <Card>
-            <CardContent className="">
+            <CardContent className="p-4 space-y-4">
               {(() => {
                 const dhaData = crmTargets.filter(t => (t.picCrm || '').toUpperCase() === 'DHA');
                 const dhaTotal = dhaData.length;
@@ -800,82 +1075,151 @@ export default function DashboardKunjunganPage() {
                 const dhaSuspend = dhaData.filter(t => t.status === 'SUSPEND').length;
                 const dhaProses = dhaData.filter(t => t.status === 'PROSES').length;
                 const dhaWaiting = dhaData.filter(t => t.status === 'WAITING').length;
-                const dhaTotalAmount = dhaData.reduce((sum, t) => sum + (t.hargaKontrak || 0), 0);
-                const dhaLanjutAmount = dhaData.filter(t => t.status === 'LANJUT' || t.status === 'DONE').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0);
 
                 return (
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    {/* Left Side - Profile Photo */}
-                    <div className="flex-shrink-0 flex justify-center">
-                      <div className="relative">
+                  <div className="space-y-4">
+                    {/* Profile Section */}
+                    <div className="flex items-center gap-3 pb-3 border-b">
+                      <div className="relative flex-shrink-0">
                         <img
                           src="/images/dhea.jpeg"
                           onError={(e) => (e.currentTarget.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=DHA")}
-                          className="w-32 h-32 sm:w-60 sm:h-auto rounded-full object-cover border-2 border-background shadow-lg"
-                          style={{ maxHeight: '300px' }}
+                          className="w-16 h-16 rounded-full object-cover border-2 border-background shadow-lg"
                           alt="DHA"
                         />
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background"></div>
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-background"></div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-lg">DHA</p>
+                        <p className="text-xs text-muted-foreground">PIC CRM</p>
                       </div>
                     </div>
 
-                    {/* Right Side - Info & Stats */}
-                    <div className="flex-1 space-y-2">
-                      {/* Profile Info */}
-                      <div className="text-center sm:text-left">
-                        <p className="font-bold text-xl">DHA</p>
-                        <p className="text-sm text-muted-foreground">PIC CRM</p>
+                    {/* Progress Bar */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-muted-foreground">Progress Kunjungan</span>
+                        <span className="text-sm font-bold text-primary">
+                          {dhaData.filter(t => t.statusKunjungan === 'VISITED').length}/100
+                        </span>
                       </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-green-600 h-2 rounded-full transition-all duration-500"
+                          style={{
+                            width: `${Math.min((dhaData.filter(t => t.statusKunjungan === 'VISITED').length / 100) * 100, 100)}%`
+                          }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Total Kunjungan: {dhaData.filter(t => t.statusKunjungan === 'VISITED').length} visited</span>
+                        <span>{Math.round((dhaData.filter(t => t.statusKunjungan === 'VISITED').length / 100) * 100)}%</span>
+                      </div>
+                    </div>
 
-                      {/* Performance Overview */}
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">Progress Kunjungan</span>
-                          <span className="text-sm font-bold text-primary">{dhaData.filter(t => t.statusKunjungan === 'VISITED').length}/100</span>
+                    {/* Quick Stats */}
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      <div className="text-center p-2 bg-green-50 rounded-lg border border-green-200">
+                        <div className="font-bold text-green-700 text-lg">{dhaLanjut}</div>
+                        <div className="text-green-600">Lanjut</div>
+                      </div>
+                      <div className="text-center p-2 bg-red-50 rounded-lg border border-red-200">
+                        <div className="font-bold text-red-700 text-lg">{dhaLoss}</div>
+                        <div className="text-red-600">Loss</div>
+                      </div>
+                      <div className="text-center p-2 bg-orange-50 rounded-lg border border-orange-200">
+                        <div className="font-bold text-orange-700 text-lg">{dhaSuspend}</div>
+                        <div className="text-orange-600">Suspend</div>
+                      </div>
+                    </div>
+
+                    {/* Mini Calendar for DHA */}
+                    <div className="border-t pt-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-sm font-semibold">Calendar</h4>
+                        <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">
+                          {getMonthName(currentDate)}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {/* Day Headers */}
+                        <div className="grid grid-cols-7 gap-1 text-center">
+                          {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map(day => (
+                            <div key={day} className="text-xs font-bold text-muted-foreground uppercase">
+                              {day}
+                            </div>
+                          ))}
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-green-600 h-2 rounded-full transition-all duration-500"
-                            style={{ width: `${Math.min((dhaData.filter(t => t.statusKunjungan === 'VISITED').length / 100) * 100, 100)}%` }}
-                          />
-                        </div>
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <span>Total Kunjungan: {dhaData.filter(t => t.statusKunjungan === 'VISITED').length} visited</span>
-                          <span>{Math.round((dhaData.filter(t => t.statusKunjungan === 'VISITED').length / 100) * 100)}%</span>
+                        {/* Calendar Days */}
+                        <div className="grid grid-cols-7 gap-1">
+                          {calendarDays.map((day, index) => {
+                            // Filter tasks for DHA only
+                            const dhaTasks = day.tasks.filter(task => (task.picCrm || '').toUpperCase() === 'DHA');
+
+                            return (
+                              <div
+                                key={index}
+                                onClick={() => day.isCurrentMonth && setSelectedDate(day.date)}
+                                className={`
+                                  relative aspect-square p-1 rounded text-center transition-all cursor-pointer
+                                  ${day.isCurrentMonth
+                                    ? 'bg-background border border-border hover:bg-accent hover:shadow-sm'
+                                    : 'opacity-25'
+                                  }
+                                  ${day.isToday ? 'bg-primary/10 border-2 border-primary' : ''}
+                                  ${selectedDate?.toDateString() === day.date.toDateString()
+                                    ? 'bg-primary/20 border-2 border-primary shadow-md'
+                                    : ''
+                                  }
+                                `}
+                              >
+                                <div className={`text-sm font-bold mb-1 ${
+                                  day.isCurrentMonth
+                                    ? day.isToday || selectedDate?.toDateString() === day.date.toDateString()
+                                      ? 'text-primary'
+                                      : 'text-foreground'
+                                    : 'text-muted-foreground'
+                                }`}>
+                                  {day.date.getDate()}
+                                </div>
+                                {/* Task indicators */}
+                                <div className="space-y-0.5">
+                                  {dhaTasks.slice(0, 2).map((task, taskIndex) => (
+                                    <div
+                                      key={taskIndex}
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        setSelectedTask(task)
+                                        setIsEditModalOpen(true)
+                                      }}
+                                      className={`
+                                        text-[8px] px-1 py-0.5 rounded truncate cursor-pointer
+                                        ${task.statusKunjungan === 'VISITED'
+                                          ? 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-300'
+                                          : task.statusKunjungan === 'NOT YET'
+                                            ? 'bg-orange-100 text-orange-700 hover:bg-orange-200 border border-orange-300'
+                                            : 'bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-300'
+                                        }
+                                      `}
+                                      title={`${task.namaPerusahaan} - Click to edit`}
+                                    >
+                                      {task.namaPerusahaan.length > 10
+                                        ? task.namaPerusahaan.substring(0, 10) + '..'
+                                        : task.namaPerusahaan
+                                      }
+                                    </div>
+                                  ))}
+                                  {dhaTasks.length > 2 && (
+                                    <div className="text-[8px] font-medium text-center bg-primary/80 rounded text-primary-foreground">
+                                      +{dhaTasks.length - 2}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
                         </div>
                       </div>
-
-                      {/* Detailed Statistics */}
-                      <div className="space-y-1">
-                        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Performance Breakdown</div>
-                        <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 text-xs">
-                          <div className="flex justify-between items-center">
-                            <span className="text-green-600">✓ Lanjut</span>
-                            <span className="font-medium">{dhaLanjut}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-red-600">✗ Loss</span>
-                            <span className="font-medium">{dhaLoss}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-orange-600">⏸ Suspend</span>
-                            <span className="font-medium">{dhaSuspend}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-blue-600">⏸ Proses</span>
-                            <span className="font-medium">{dhaProses}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-600">⏳ Waiting</span>
-                            <span className="font-medium">{dhaWaiting}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-purple-600">📊 Visits</span>
-                            <span className="font-medium">{dhaData.filter(t => t.tanggalKunjungan).length}/{dhaTotal}</span>
-                          </div>
-                        </div>
-                      </div>
-
                     </div>
                   </div>
                 );
@@ -885,200 +1229,8 @@ export default function DashboardKunjunganPage() {
         )}
       </div>
 
-      {/* Main Content - 2 Columns: Calendar | Table */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left - Calendar View */}
-        <div className="lg:col-span-5">
-          <Card className="h-fit">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigateMonth('prev')}
-                  className="h-8 w-8 p-0"
-                >
-                  <IconChevronLeft className="h-4 w-4" />
-                </Button>
-                <CardTitle className="text-lg">
-                  {getMonthName(currentDate)}
-                </CardTitle>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigateMonth('next')}
-                  className="h-8 w-8 p-0"
-                >
-                  <IconChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {/* Day Headers */}
-                <div className="grid grid-cols-7 gap-1 text-center">
-                  {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map(day => (
-                    <div key={day} className="text-xs font-bold text-muted-foreground uppercase">
-                      {day}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Calendar Days */}
-                <div className="grid grid-cols-7 gap-1">
-                  {calendarDays.map((day, index) => (
-                    <div
-                      key={index}
-                      onClick={() => day.isCurrentMonth && setSelectedDate(day.date)}
-                      className={`
-                        relative aspect-square p-1 rounded-md text-center cursor-pointer transition-all
-                        ${day.isCurrentMonth
-                          ? 'bg-background border border-border hover:bg-accent hover:shadow-sm'
-                          : 'opacity-25'
-                        }
-                        ${day.isToday
-                          ? 'bg-primary/10 border-2 border-primary'
-                          : ''
-                        }
-                        ${selectedDate?.toDateString() === day.date.toDateString()
-                          ? 'bg-primary/20 border-2 border-primary shadow-md'
-                          : ''
-                        }
-                      `}
-                    >
-                      <div className={`text-xs font-bold mb-1 ${
-                        day.isCurrentMonth
-                          ? day.isToday || selectedDate?.toDateString() === day.date.toDateString()
-                            ? 'text-primary'
-                            : 'text-foreground'
-                          : 'text-muted-foreground'
-                      }`}>
-                        {day.date.getDate()}
-                      </div>
-
-                      {/* Task indicators - Company Names */}
-                      <div className="space-y-0.5">
-                        {day.tasks.length > 0 ? (
-                          <>
-                            {day.tasks.slice(0, 2).map((task, taskIndex) => (
-                              <div
-                                key={taskIndex}
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setSelectedTask(task)
-                                  setIsEditModalOpen(true)
-                                }}
-                                className={`
-                                  text-[8px] px-1 py-0.5 rounded truncate cursor-pointer
-                                  transition-all hover:shadow-sm
-                                  ${
-                                    task.statusKunjungan === 'VISITED'
-                                      ? 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-300'
-                                      : task.statusKunjungan === 'NOT YET'
-                                        ? 'bg-orange-100 text-orange-700 hover:bg-orange-200 border border-orange-300'
-                                        : 'bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-300'
-                                  }
-                                `}
-                                title={`${task.namaPerusahaan} - ${task.picCrm} - Click to edit`}
-                              >
-                                {task.namaPerusahaan.length > 15
-                                  ? task.namaPerusahaan.substring(0, 15) + '...'
-                                  : task.namaPerusahaan
-                                }
-                              </div>
-                            ))}
-                            {day.tasks.length > 2 && (
-                              <div
-                                className="text-[8px] font-medium text-center bg-primary/80 rounded text-primary-foreground cursor-pointer hover:bg-primary"
-                                onClick={() => setSelectedDate(day.date)}
-                                title={`${day.tasks.length} total visits - Click to see all`}
-                              >
-                                +{day.tasks.length - 2} more
-                              </div>
-                            )}
-                          </>
-                        ) : (
-                          <div className="h-3"></div>
-                        )}
-                      </div>
-
-                      {/* Today indicator */}
-                      {day.isToday && (
-                        <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Selected Date Info */}
-                {selectedDate && (
-                  <div className="mt-4 p-3 bg-primary/10 rounded-lg border border-primary/30">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <IconCalendar className="h-4 w-4 text-primary" />
-                          <p className="text-sm font-semibold text-primary">
-                            {selectedDate.toLocaleDateString('id-ID', {
-                              weekday: 'long',
-                              day: 'numeric',
-                              month: 'long',
-                              year: 'numeric'
-                            })}
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSelectedDate(null)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <IconX className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      {(() => {
-                        const year = selectedDate.getFullYear()
-                        const month = String(selectedDate.getMonth() + 1).padStart(2, '0')
-                        const day = String(selectedDate.getDate()).padStart(2, '0')
-                        const selectedDateStr = `${year}-${month}-${day}`
-                        const selectedDateTasks = filteredData.filter(task => task.tanggalKunjungan === selectedDateStr)
-                        const visitedCount = selectedDateTasks.filter(t => t.statusKunjungan === 'VISITED').length
-                        const notYetCount = selectedDateTasks.filter(t => t.statusKunjungan === 'NOT YET').length
-                        const pendingCount = selectedDateTasks.filter(t => !t.statusKunjungan).length
-
-                        return (
-                          <div className="text-xs text-muted-foreground space-y-1">
-                            <div className="flex items-center gap-3">
-                              <span>Total: {selectedDateTasks.length} kunjungan</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className="flex items-center gap-1">
-                                <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                                Visited: {visitedCount}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                                Not Yet: {notYetCount}
-                              </span>
-                              {pendingCount > 0 && (
-                                <span className="flex items-center gap-1">
-                                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                                  Pending: {pendingCount}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        )
-                      })()}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right - Data Table */}
-        <div className="lg:col-span-7">
+      {/* Main Content - Data Table */}
+      <div>
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between gap-4">
@@ -1087,12 +1239,24 @@ export default function DashboardKunjunganPage() {
                     <IconBuilding className="h-5 w-5" />
                     Data Perusahaan
                   </CardTitle>
-                  <CardDescription className="text-sm">
-                    {selectedDate
-                      ? `Kunjungan pada ${selectedDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} (${displayTasks.length} data)`
-                      : `Menampilkan ${displayTasks.length} dari ${crmTargets.length} data`
-                    }
-                  </CardDescription>
+                  <div className="flex items-center gap-2 mt-1">
+                    <CardDescription className="text-sm">
+                      {selectedDate
+                        ? `Kunjungan pada ${selectedDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} (${totalTasks} data dari ${groupedByCompany.length} perusahaan)`
+                        : `Menampilkan ${totalTasks} data dari ${crmTargets.length} data (${groupedByCompany.length} perusahaan)`
+                      }
+                    </CardDescription>
+                    {selectedDate && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedDate(null)}
+                        className="h-7 text-xs cursor-pointer background-blue-500 hover:bg-blue-600"
+                      >
+                        Tampilkan Semua
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Table Search Bar */}
@@ -1144,114 +1308,165 @@ export default function DashboardKunjunganPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedTargets.length === 0 ? (
+                    {paginatedGroups.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={29} className="text-center py-8">
                           No data found
                         </TableCell>
                       </TableRow>
                     ) : (
-                      paginatedTargets.map((target, index) => (
-                        <TableRow
-                          key={target._id}
-                          className="hover:bg-muted/50 cursor-pointer"
-                          onClick={() => {
-                            setSelectedTask(target)
-                            setIsEditModalOpen(true)
-                          }}
-                        >
-                          <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
-                          <TableCell className="font-medium">{target.namaPerusahaan}</TableCell>
-                          <TableCell>{target.bulanExpDate || '-'}</TableCell>
-                          <TableCell>{target.produk || '-'}</TableCell>
-                          <TableCell>{target.picCrm}</TableCell>
-                          <TableCell>{target.sales}</TableCell>
-                          <TableCell>{target.namaAssociate || '-'}</TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={target.status === 'PROSES' ? 'default' : target.status === 'LANJUT' ? 'default' : 'destructive'}
-                              className={
-                                target.status === 'PROSES' ? 'bg-blue-600 hover:bg-blue-700' :
-                                target.status === 'LANJUT' ? 'bg-green-600 hover:bg-green-700' :
-                                target.status === 'LOSS' ? 'bg-red-600 hover:bg-red-700' :
-                                target.status === 'SUSPEND' ? 'bg-orange-500 hover:bg-orange-600' :
-                                target.status === 'WAITING' ? 'bg-gray-500 hover:bg-gray-600' :
-                                target.status === 'DONE' ? 'bg-purple-600 hover:bg-purple-700' :
-                                'bg-gray-500 hover:bg-gray-600'
-                              }
+                      paginatedGroups.map((group, groupIndex) => {
+                        const isExpanded = expandedCompanies.has(group.companyName);
+                        const firstTask = group.tasks[0];
+
+                        return (
+                          <React.Fragment key={group.companyName}>
+                            {/* Company Row - Always Visible */}
+                            <TableRow
+                              className="hover:bg-muted/50 bg-muted/30"
                             >
-                              {target.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{target.alasan || '-'}</TableCell>
-                          <TableCell>
-                            {target.category ? (
-                              <Badge
-                                variant="outline"
-                                className={target.category === 'GOLD' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white border-yellow-500 font-semibold shadow-sm' :
-                                          target.category === 'SILVER' ? 'bg-gradient-to-r from-gray-300 to-gray-500 hover:from-gray-400 hover:to-gray-600 text-white border-gray-400 font-semibold shadow-sm' :
-                                          target.category === 'BRONZE' ? 'bg-gradient-to-r from-orange-400 to-orange-700 hover:from-orange-500 hover:to-orange-800 text-white border-orange-600 font-semibold shadow-sm' :
-                                          'bg-gray-200'}
+                              <TableCell className="font-bold">{(currentPage - 1) * itemsPerPage + groupIndex + 1}</TableCell>
+                              <TableCell className="font-bold">
+                                <div className="flex items-center justify-between">
+                                  <div
+                                    className="flex items-center gap-2 flex-1 cursor-pointer"
+                                    onClick={() => toggleCompanyExpand(group.companyName)}
+                                  >
+                                    <span className="transform transition-transform">{isExpanded ? '▼' : '▶'}</span>
+                                    <span>{group.companyName}</span>
+                                    <Badge variant="secondary" className="ml-2">
+                                      {group.totalCount} standar
+                                    </Badge>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openMassUpdateModal(group.companyName);
+                                    }}
+                                    className="h-7 text-xs bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 cursor-pointer"
+                                  >
+                                    Update Kunjungan
+                                  </Button>
+                                </div>
+                              </TableCell>
+                              <TableCell colSpan={27} className="text-muted-foreground text-sm">
+                                {group.tasks[0].provinsi && `${group.tasks[0].provinsi}${group.tasks[0].kota ? `, ${group.tasks[0].kota}` : ''} • `}
+                                {group.tasks[0].statusKunjungan && `${group.tasks[0].statusKunjungan || '-'}`}
+                              </TableCell>
+                            </TableRow>
+
+                            {/* Task Rows - Expandable */}
+                            {isExpanded && group.tasks.map((target, taskIndex) => (
+                              <TableRow
+                                key={`${target._id}-${taskIndex}`}
+                                className="hover:bg-muted/50 cursor-pointer bg-white"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedTask(target);
+                                  setIsEditModalOpen(true);
+                                }}
                               >
-                                {target.category}
-                              </Badge>
-                            ) : '-'}
-                          </TableCell>
-                          <TableCell>{target.provinsi || '-'}</TableCell>
-                          <TableCell>{target.kota || '-'}</TableCell>
-                          <TableCell className="max-w-xs truncate" title={target.alamat}>{target.alamat || '-'}</TableCell>
-                          <TableCell>{target.akreditasi || '-'}</TableCell>
-                          <TableCell>{target.eaCode || '-'}</TableCell>
-                          <TableCell>{target.std || '-'}</TableCell>
-                          <TableCell>{target.iaDate || '-'}</TableCell>
-                          <TableCell>{target.expDate || '-'}</TableCell>
-                          <TableCell>{target.tahapAudit || '-'}</TableCell>
-                          <TableCell>
-                            {target.hargaKontrak ? `Rp ${target.hargaKontrak.toLocaleString('id-ID')}` : '-'}
-                          </TableCell>
-                          <TableCell title={target.bulanTtdNotif || ''}>
-                            {target.bulanTtdNotif ? new Date(target.bulanTtdNotif).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : '-'}
-                          </TableCell>
-                          <TableCell>
-                            {target.hargaTerupdate ? `Rp ${target.hargaTerupdate.toLocaleString('id-ID')}` : '-'}
-                          </TableCell>
-                          <TableCell>
-                            {target.trimmingValue ? `Rp ${target.trimmingValue.toLocaleString('id-ID')}` : '-'}
-                          </TableCell>
-                          <TableCell>
-                            {target.lossValue ? `Rp ${target.lossValue.toLocaleString('id-ID')}` : '-'}
-                          </TableCell>
-                          <TableCell>
-                            {target.cashback ? `Rp ${target.cashback.toLocaleString('id-ID')}` : '-'}
-                          </TableCell>
-                          <TableCell>{target.terminPembayaran || '-'}</TableCell>
-                          <TableCell>{target.statusSertifikat || '-'}</TableCell>
-                          <TableCell>
-                            {target.tanggalKunjungan ? (
-                              <div className="flex items-center gap-1">
-                                <IconCalendar className="h-3 w-3 text-muted-foreground" />
-                                <span className="text-xs">
-                                  {format(parseISO(target.tanggalKunjungan), "dd MMM yyyy", { locale: id })}
-                                </span>
-                              </div>
-                            ) : (
-                              '-'
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {target.statusKunjungan ? (
-                              <Badge
-                                variant="outline"
-                                className={target.statusKunjungan === 'VISITED' ? 'bg-green-600 hover:bg-green-700 text-white border-green-600 font-semibold' :
-                                          target.statusKunjungan === 'NOT YET' ? 'bg-gray-500 hover:bg-gray-600 text-white border-gray-500' :
-                                          'bg-gray-400 hover:bg-gray-500 text-white border-gray-400'}
-                              >
-                                {target.statusKunjungan}
-                              </Badge>
-                            ) : '-'}
-                          </TableCell>
-                        </TableRow>
-                      ))
+                                <TableCell></TableCell>
+                                <TableCell className="pl-8">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-1 h-1 bg-primary rounded-full"></div>
+                                    <span className="text-xs text-muted-foreground">Standar #{taskIndex + 1}</span>
+                                  </div>
+                                </TableCell>
+                                <TableCell>{target.bulanExpDate || '-'}</TableCell>
+                                <TableCell className="font-medium">{target.produk || '-'}</TableCell>
+                                <TableCell>{target.picCrm}</TableCell>
+                                <TableCell>{target.sales}</TableCell>
+                                <TableCell>{target.namaAssociate || '-'}</TableCell>
+                                <TableCell>
+                                  <Badge
+                                    variant={target.status === 'PROSES' ? 'default' : target.status === 'LANJUT' ? 'default' : 'destructive'}
+                                    className={
+                                      target.status === 'PROSES' ? 'bg-blue-600 hover:bg-blue-700' :
+                                      target.status === 'LANJUT' ? 'bg-green-600 hover:bg-green-700' :
+                                      target.status === 'LOSS' ? 'bg-red-600 hover:bg-red-700' :
+                                      target.status === 'SUSPEND' ? 'bg-orange-500 hover:bg-orange-600' :
+                                      target.status === 'WAITING' ? 'bg-gray-500 hover:bg-gray-600' :
+                                      target.status === 'DONE' ? 'bg-purple-600 hover:bg-purple-700' :
+                                      'bg-gray-500 hover:bg-gray-600'
+                                    }
+                                  >
+                                    {target.status}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>{target.alasan || '-'}</TableCell>
+                                <TableCell>
+                                  {target.category ? (
+                                    <Badge
+                                      variant="outline"
+                                      className={target.category === 'GOLD' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white border-yellow-500 font-semibold shadow-sm' :
+                                                target.category === 'SILVER' ? 'bg-gradient-to-r from-gray-300 to-gray-500 hover:from-gray-400 hover:to-gray-600 text-white border-gray-400 font-semibold shadow-sm' :
+                                                target.category === 'BRONZE' ? 'bg-gradient-to-r from-orange-400 to-orange-700 hover:from-orange-500 hover:to-orange-800 text-white border-orange-600 font-semibold shadow-sm' :
+                                                'bg-gray-200'}
+                                    >
+                                      {target.category}
+                                    </Badge>
+                                  ) : '-'}
+                                </TableCell>
+                                <TableCell>{target.provinsi || '-'}</TableCell>
+                                <TableCell>{target.kota || '-'}</TableCell>
+                                <TableCell className="max-w-xs truncate" title={target.alamat}>{target.alamat || '-'}</TableCell>
+                                <TableCell>{target.akreditasi || '-'}</TableCell>
+                                <TableCell>{target.eaCode || '-'}</TableCell>
+                                <TableCell>{target.std || '-'}</TableCell>
+                                <TableCell>{target.iaDate || '-'}</TableCell>
+                                <TableCell>{target.expDate || '-'}</TableCell>
+                                <TableCell>{target.tahapAudit || '-'}</TableCell>
+                                <TableCell>
+                                  {target.hargaKontrak ? `Rp ${target.hargaKontrak.toLocaleString('id-ID')}` : '-'}
+                                </TableCell>
+                                <TableCell title={target.bulanTtdNotif || ''}>
+                                  {target.bulanTtdNotif ? new Date(target.bulanTtdNotif).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : '-'}
+                                </TableCell>
+                                <TableCell>
+                                  {target.hargaTerupdate ? `Rp ${target.hargaTerupdate.toLocaleString('id-ID')}` : '-'}
+                                </TableCell>
+                                <TableCell>
+                                  {target.trimmingValue ? `Rp ${target.trimmingValue.toLocaleString('id-ID')}` : '-'}
+                                </TableCell>
+                                <TableCell>
+                                  {target.lossValue ? `Rp ${target.lossValue.toLocaleString('id-ID')}` : '-'}
+                                </TableCell>
+                                <TableCell>
+                                  {target.cashback ? `Rp ${target.cashback.toLocaleString('id-ID')}` : '-'}
+                                </TableCell>
+                                <TableCell>{target.terminPembayaran || '-'}</TableCell>
+                                <TableCell>{target.statusSertifikat || '-'}</TableCell>
+                                <TableCell>
+                                  {target.tanggalKunjungan ? (
+                                    <div className="flex items-center gap-1">
+                                      <IconCalendar className="h-3 w-3 text-muted-foreground" />
+                                      <span className="text-xs">
+                                        {format(parseISO(target.tanggalKunjungan), "dd MMM yyyy", { locale: id })}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    '-'
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  {target.statusKunjungan ? (
+                                    <Badge
+                                      variant="outline"
+                                      className={target.statusKunjungan === 'VISITED' ? 'bg-green-600 hover:bg-green-700 text-white border-green-600 font-semibold' :
+                                                target.statusKunjungan === 'NOT YET' ? 'bg-gray-500 hover:bg-gray-600 text-white border-gray-500' :
+                                                'bg-gray-400 hover:bg-gray-500 text-white border-gray-400'}
+                                    >
+                                      {target.statusKunjungan}
+                                    </Badge>
+                                  ) : '-'}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </React.Fragment>
+                        );
+                      })
                     )}
                   </TableBody>
                 </Table>
@@ -1261,7 +1476,7 @@ export default function DashboardKunjunganPage() {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between px-6 py-4 border-t">
                   <div className="text-sm text-muted-foreground">
-                    Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, displayTasks.length)} of {displayTasks.length} results
+                    Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, groupedByCompany.length)} of {groupedByCompany.length} perusahaan
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -1285,7 +1500,6 @@ export default function DashboardKunjunganPage() {
               )}
             </CardContent>
           </Card>
-        </div>
       </div>
     </div>
 
@@ -1458,6 +1672,136 @@ export default function DashboardKunjunganPage() {
           </Button>
           <Button onClick={handleSave} disabled={isUploading}>
             {isUploading ? 'Menyimpan...' : 'Simpan Perubahan'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    {/* Mass Update Kunjungan Modal */}
+    <Dialog open={isMassUpdateModalOpen} onOpenChange={setIsMassUpdateModalOpen}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Update Kunjungan Massal</DialogTitle>
+          <DialogDescription>
+            Update informasi kunjungan untuk SEMUA standar under perusahaan <strong>{selectedCompanyForUpdate}</strong>
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          {/* Warning Info */}
+          <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
+            <div className="flex items-start gap-2">
+              <IconCalendar className="h-4 w-4 text-blue-600 mt-0.5" />
+              <div className="text-sm text-blue-800">
+                <p className="font-semibold">Perhatian!</p>
+                <p className="text-xs mt-1">Update ini akan diterapkan ke <strong>SEMUA</strong> standar/produk under perusahaan ini.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Company Info */}
+          <div className="bg-muted/50 p-4 rounded-lg">
+            <h3 className="font-semibold mb-2 flex items-center gap-2">
+              <IconBuilding className="h-4 w-4" />
+              Informasi Perusahaan
+            </h3>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div>
+                <span className="text-muted-foreground">Nama Perusahaan:</span>
+                <p className="font-medium">{selectedCompanyForUpdate || '-'}</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Jumlah Standar:</span>
+                <p className="font-medium">{displayTasks.filter(t => t.namaPerusahaan === selectedCompanyForUpdate).length} standar</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Visit Information */}
+          <div className="space-y-3">
+            <h3 className="font-semibold flex items-center gap-2">
+              <IconCalendar className="h-4 w-4" />
+              Detail Kunjungan
+            </h3>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="mass-update-tanggal">Tanggal Kunjungan</Label>
+                <Input
+                  id="mass-update-tanggal"
+                  type="date"
+                  value={massUpdateTanggal}
+                  onChange={(e) => setMassUpdateTanggal(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="mass-update-status">Status Kunjungan</Label>
+                <Select value={massUpdateStatus} onValueChange={setMassUpdateStatus}>
+                  <SelectTrigger id="mass-update-status">
+                    <SelectValue placeholder="Pilih status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="VISITED">Visited</SelectItem>
+                    <SelectItem value="NOT YET">Not Yet</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="mass-update-foto">Foto Bukti Kunjungan</Label>
+              <div className="space-y-2">
+                <Input
+                  id="mass-update-foto"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleMassFileUpload}
+                  disabled={isMassUploading}
+                />
+                {massUpdateFoto && (
+                  <div className="mt-2">
+                    <p className="text-xs text-muted-foreground mb-1">Preview:</p>
+                    <img
+                      src={massUpdateFoto}
+                      alt="Preview bukti kunjungan"
+                      className="max-w-xs max-h-40 object-cover rounded-lg border"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setMassUpdateFoto(null)}
+                      className="mt-1 text-xs text-red-600 hover:text-red-700"
+                    >
+                      Hapus foto
+                    </Button>
+                  </div>
+                )}
+                {isMassUploading && (
+                  <p className="text-xs text-muted-foreground">Mengupload foto...</p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="mass-update-notes">Catatan Kunjungan</Label>
+              <Textarea
+                id="mass-update-notes"
+                placeholder="Tambahkan catatan kunjungan..."
+                className="min-h-[100px]"
+                value={massUpdateCatatan}
+                onChange={(e) => setMassUpdateCatatan(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsMassUpdateModalOpen(false)}>
+            Batal
+          </Button>
+          <Button onClick={handleMassUpdate} disabled={isMassUploading} className="bg-blue-600 hover:bg-blue-700">
+            {isMassUploading ? 'Menyimpan...' : 'Update Semua Standar'}
           </Button>
         </DialogFooter>
       </DialogContent>

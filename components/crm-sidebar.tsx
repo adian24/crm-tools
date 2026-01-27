@@ -45,25 +45,15 @@ const getNavigationItems = (role: string) => {
   if (role === 'staff') {
     return [
       {
-        title: "Dashboard",
-        url: "/dashboard",
-        icon: IconActivity,
-      },
-      {
-        title: "My Targets",
-        url: "/dashboard/my-visits",
-        icon: IconCalendar,
+        title: "Dashboard Kunjungan",
+        url: "/dashboard-manager/dashboard-kunjungan",
+        icon: IconCalendarTime,
       }
     ];
   }
 
   if (role === 'manager') {
     return [
-      {
-        title: "Dashboard Manager",
-        url: "/dashboard-manager",
-        icon: IconChartBar,
-      },
       {
         title: "Dashboard Pencapaian",
         url: "/dashboard-manager/dashboard-data",
@@ -103,12 +93,7 @@ const getNavigationItems = (role: string) => {
       title: "CRM Data Management",
       url: "/dashboard-manager/crm-data",
       icon: IconTarget,
-    },
-    {
-      title: "My Visits",
-      url: "/dashboard/my-visits",
-      icon: IconCalendar,
-    },
+    }
   ];
 };
 
