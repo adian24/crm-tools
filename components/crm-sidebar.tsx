@@ -15,6 +15,7 @@ import {
   IconDatabase,
   IconChartBar,
   IconCalendarTime,
+  IconKey,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -94,6 +95,22 @@ const getNavigationItems = (role: string) => {
       title: "CRM Data Management",
       url: "/dashboard-manager/crm-data",
       icon: IconTarget,
+    },
+    {
+      title: "Settings",
+      icon: IconSettings,
+      items: [
+        {
+          title: "Users",
+          url: "/dashboard-manager/settings/users",
+          icon: IconUsers,
+        },
+        {
+          title: "Roles & Permissions",
+          url: "/dashboard-manager/settings/permissions",
+          icon: IconKey,
+        }
+      ]
     }
   ];
 };
@@ -129,13 +146,8 @@ const getSecondaryItems = (role: string) => {
     ];
   }
 
-  // Super admin gets all secondary items including settings
+  // Super admin gets all secondary items
   return [
-    {
-      title: "Settings",
-      url: "/dashboard/settings",
-      icon: IconSettings,
-    },
     {
       title: "Get Help",
       url: "#",
@@ -170,7 +182,13 @@ export function CRMSidebar({ user, ...props }: CRMSidebarProps) {
               asChild
               size="lg"
             >
-              <Link href={user.role === 'staff' ? '/dashboard' : '/dashboard-manager/dashboard-data'} className="flex items-center gap-3 group">
+              <Link href={
+                user.role === 'staff'
+                  ? '/dashboard-manager/dashboard-kunjungan'
+                  : user.role === 'manager'
+                  ? '/dashboard-manager/dashboard-data'
+                  : '/dashboard-manager/dashboard-data'
+              } className="flex items-center gap-3 group">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/20 group-hover:shadow-blue-500/40 transition-shadow duration-300 flex-shrink-0">
                   <IconActivity className="h-5 w-5" />
                 </div>

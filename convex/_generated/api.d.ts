@@ -14,6 +14,7 @@ import type * as importCrmTargets from "../importCrmTargets.js";
 import type * as initData from "../initData.js";
 import type * as migrate from "../migrate.js";
 import type * as notifications from "../notifications.js";
+import type * as roles from "../roles.js";
 import type * as seed from "../seed.js";
 import type * as staffTargets from "../staffTargets.js";
 import type * as targets from "../targets.js";
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   initData: typeof initData;
   migrate: typeof migrate;
   notifications: typeof notifications;
+  roles: typeof roles;
   seed: typeof seed;
   staffTargets: typeof staffTargets;
   targets: typeof targets;

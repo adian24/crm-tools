@@ -66,10 +66,12 @@ export default function LoginPage() {
         localStorage.setItem('crm_user', JSON.stringify(user));
 
         // Redirect ke dashboard berdasarkan role
-        if (user.role === 'manager' || user.role === 'super_admin') {
+        if (user.role === 'staff') {
+          router.push('/dashboard-manager/dashboard-kunjungan');
+        } else if (user.role === 'manager' || user.role === 'super_admin') {
           router.push('/dashboard-manager/dashboard-data');
         } else {
-          router.push('/dashboard');
+          router.push('/login');
         }
       }
     } catch (err: any) {

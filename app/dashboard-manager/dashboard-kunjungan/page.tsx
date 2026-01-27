@@ -4,7 +4,7 @@ import * as React from "react"
 import { useQuery, useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { Id } from "@/convex/_generated/dataModel"
-import { format, parseISO, isPast, isToday, isFuture, startOfMonth, endOfMonth } from "date-fns"
+import { format, parseISO, isPast, isToday, isFuture, startOfMonth, endOfMonth, isSameMonth, isSameDay } from "date-fns"
 import { id } from "date-fns/locale"
 import indonesiaData from "@/data/indonesia-provinsi-kota.json"
 
@@ -97,7 +97,46 @@ interface CalendarDay {
 }
 
 export default function DashboardKunjunganPage() {
-  const crmTargets = useQuery(api.crmTargets.list) || []
+  // Get current user from localStorage
+  const [currentUser, setCurrentUser] = React.useState<any>(null)
+
+  React.useEffect(() => {
+    try {
+      const userData = localStorage.getItem('crm_user')
+      if (userData) {
+        const parsedUser = JSON.parse(userData)
+        setCurrentUser(parsedUser)
+
+        // Auto-set filter PIC for staff
+        if (parsedUser.role === 'staff') {
+          setFilterPic(parsedUser.name)
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing user data:', error)
+    }
+  }, [])
+
+  // Query based on user role
+  const allCrmTargets = useQuery(api.crmTargets.list) || []
+
+  // Query for staff - only when we have the user's name
+  const staffCrmTargets = useQuery(
+    api.crmTargets.getCrmTargetsByPicCrm,
+    currentUser?.role === 'staff' && currentUser?.name
+      ? { picCrm: currentUser.name }
+      : undefined
+  ) || []
+
+  // Use different query based on role
+  const crmTargets = React.useMemo(() => {
+    if (!currentUser) return []
+    if (currentUser.role === 'staff') {
+      return staffCrmTargets
+    }
+    return allCrmTargets
+  }, [currentUser, allCrmTargets, staffCrmTargets])
+
   const [currentPage, setCurrentPage] = React.useState(1)
   const itemsPerPage = 10
 
@@ -803,29 +842,31 @@ export default function DashboardKunjunganPage() {
                 )}
               </div>
 
-              {/* Section PIC CRM */}
-              <div className="border rounded-lg overflow-hidden">
-                <button
-                  onClick={() => toggleFilterSection('picCrm')}
-                  className="w-full flex items-center justify-between p-3 bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
-                >
-                  <span className="font-medium text-sm">PIC CRM</span>
-                  {expandedFilterSections.includes('picCrm') ? (
-                    <IconChevronLeft className="h-4 w-4 rotate-[-90deg]" />
-                  ) : (
-                    <IconChevronRight className="h-4 w-4" />
+              {/* Section PIC CRM - Hide for staff */}
+              {currentUser?.role !== 'staff' && (
+                <div className="border rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => toggleFilterSection('picCrm')}
+                    className="w-full flex items-center justify-between p-3 bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
+                  >
+                    <span className="font-medium text-sm">PIC CRM</span>
+                    {expandedFilterSections.includes('picCrm') ? (
+                      <IconChevronLeft className="h-4 w-4 rotate-[-90deg]" />
+                    ) : (
+                      <IconChevronRight className="h-4 w-4" />
+                    )}
+                  </button>
+                  {expandedFilterSections.includes('picCrm') && (
+                    <div className="p-3 space-y-3 border-t">
+                      <FilterPicCrmSection
+                        filterPicCrm={filterPic}
+                        setFilterPicCrm={setFilterPic}
+                        picCrmOptions={picList}
+                      />
+                    </div>
                   )}
-                </button>
-                {expandedFilterSections.includes('picCrm') && (
-                  <div className="p-3 space-y-3 border-t">
-                    <FilterPicCrmSection
-                      filterPicCrm={filterPic}
-                      setFilterPicCrm={setFilterPic}
-                      picCrmOptions={picList}
-                    />
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
 
               {/* Section Company */}
               <div className="border rounded-lg overflow-hidden">
@@ -898,9 +939,19 @@ export default function DashboardKunjunganPage() {
       <div className="flex-1 min-w-0 space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard Kunjungan</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard Kunjungan</h1>
+            {currentUser?.role === 'staff' && (
+              <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-300">
+                PIC: {currentUser.name}
+              </Badge>
+            )}
+          </div>
           <p className="text-muted-foreground mt-2">
-            Monitor dan lacak jadwal kunjungan berdasarkan data CRM Targets
+            {currentUser?.role === 'staff'
+              ? `Menampilkan data kunjungan untuk PIC: ${currentUser.name}`
+              : 'Monitor dan lacak jadwal kunjungan berdasarkan data CRM Targets'
+            }
           </p>
         </div>
 
@@ -959,49 +1010,117 @@ export default function DashboardKunjunganPage() {
 
       </div>
 
-      {/* PIC CRM Performance Cards - MRC & DHA */}
+      {/* PIC CRM Performance Cards - Dynamic based on logged-in user role */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* MRC Card */}
-        {(filterPic === 'all' || filterPic === 'MRC') && (
-          <Card>
-            <CardContent className="p-4 space-y-4">
-              {(() => {
-                const mrcData = crmTargets.filter(t => (t.picCrm || '').toUpperCase() === 'MRC');
-                const mrcTotal = mrcData.length;
-                const mrcLanjut = mrcData.filter(t => t.status === 'LANJUT' || t.status === 'DONE').length;
-                const mrcLoss = mrcData.filter(t => t.status === 'LOSS').length;
-                const mrcSuspend = mrcData.filter(t => t.status === 'SUSPEND').length;
-                const mrcProses = mrcData.filter(t => t.status === 'PROSES').length;
-                const mrcWaiting = mrcData.filter(t => t.status === 'WAITING').length;
+        {(() => {
+          // Get unique PICs from crmTargets
+          const uniquePics = Array.from(new Set(crmTargets.map(t => t.picCrm))).sort();
 
-                // Get unique companies
-                const mrcCompanies = new Set(mrcData.map(t => t.namaPerusahaan));
-                const mrcTotalCompanies = mrcCompanies.size;
+          // For staff, only show their own card
+          // For manager/super_admin, show all cards (or respect filterPic)
+          const picsToShow = currentUser?.role === 'staff'
+            ? uniquePics.filter(pic => pic === currentUser.name)
+            : filterPic === 'all'
+            ? uniquePics
+            : uniquePics.filter(pic => pic === filterPic);
 
-                // Get companies with at least one visited target
-                const mrcVisitedCompanies = new Set(
-                  mrcData
-                    .filter(t => t.statusKunjungan === 'VISITED')
-                    .map(t => t.namaPerusahaan)
-                );
-                const mrcVisitedCount = mrcVisitedCompanies.size;
-                const mrcProgress = mrcTotalCompanies > 0 ? Math.round((mrcVisitedCount / mrcTotalCompanies) * 100) : 0;
+          if (picsToShow.length === 0) {
+            return (
+              <Card className="col-span-1 md:col-span-2">
+                <CardContent className="p-8 text-center text-muted-foreground">
+                  Tidak ada data PIC CRM yang dapat ditampilkan
+                </CardContent>
+              </Card>
+            );
+          }
 
-                return (
+          return picsToShow.map((picCrm) => {
+            const picData = crmTargets.filter(t => t.picCrm === picCrm);
+            const picTotal = picData.length;
+            const picLanjut = picData.filter(t => t.status === 'LANJUT' || t.status === 'DONE').length;
+            const picLoss = picData.filter(t => t.status === 'LOSS').length;
+            const picSuspend = picData.filter(t => t.status === 'SUSPEND').length;
+            const picProses = picData.filter(t => t.status === 'PROSES').length;
+            const picWaiting = picData.filter(t => t.status === 'WAITING').length;
+
+            // Get unique companies
+            const picCompanies = new Set(picData.map(t => t.namaPerusahaan));
+            const picTotalCompanies = picCompanies.size;
+
+            // Get companies with at least one visited target
+            const picVisitedCompanies = new Set(
+              picData
+                .filter(t => t.statusKunjungan === 'VISITED')
+                .map(t => t.namaPerusahaan)
+            );
+            const picVisitedCount = picVisitedCompanies.size;
+            const picProgress = picTotalCompanies > 0 ? Math.round((picVisitedCount / picTotalCompanies) * 100) : 0;
+
+            // Get calendar data for this PIC
+            const picCalendarData = calendarDays.map(day => {
+              const dayTasks = picData.filter(task => {
+                if (!task.tanggalKunjungan) return false;
+                const taskDate = parseISO(task.tanggalKunjungan);
+                return isSameMonth(taskDate, currentDate) && isSameDay(taskDate, day.date);
+              });
+
+              return {
+                ...day,
+                tasks: dayTasks
+              };
+            });
+
+            // Group tasks by company for this PIC
+            const picCompanyGroups: { [key: string]: typeof picData } = {};
+            picCalendarData.forEach(day => {
+              day.tasks.forEach(task => {
+                if (!picCompanyGroups[task.namaPerusahaan]) {
+                  picCompanyGroups[task.namaPerusahaan] = [];
+                }
+                picCompanyGroups[task.namaPerusahaan].push(task);
+              });
+            });
+
+            return (
+              <Card key={picCrm}>
+                <CardContent className="p-4 space-y-4">
                   <div className="space-y-4">
                     {/* Profile Section */}
                     <div className="flex items-center gap-3 pb-3 border-b">
                       <div className="relative flex-shrink-0">
                         <img
-                          src="/images/mercy.jpeg"
-                          onError={(e) => (e.currentTarget.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=MRC")}
+                          src={(() => {
+                            // Untuk PIC tertentu, gunakan foto spesifik
+                            const picPhotos: { [key: string]: string } = {
+                              'MRC': '/images/mercy.jpeg',
+                              'DHA': '/images/dhea.jpeg',
+                            };
+
+                            // Jika ada foto spesifik untuk PIC ini, gunakan itu (termasuk untuk staff)
+                            if (picPhotos[picCrm]) {
+                              return picPhotos[picCrm];
+                            }
+
+                            // Jika user staff dan ini card mereka, gunakan avatar mereka
+                            if (currentUser?.role === 'staff' && currentUser?.name === picCrm && currentUser?.avatar) {
+                              return currentUser.avatar;
+                            }
+
+                            // Default ke generated avatar
+                            return `https://api.dicebear.com/7.x/avataaars/svg?seed=${picCrm}`;
+                          })()}
+                          onError={(e) => {
+                            // Fallback ke generated avatar jika foto tidak ditemukan
+                            const target = e.currentTarget;
+                            target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${picCrm}`;
+                          }}
                           className="w-16 h-16 rounded-full object-cover border-2 border-background shadow-lg"
-                          alt="MRC"
+                          alt={picCrm}
                         />
                         <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-background"></div>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-lg">MRC</p>
+                        <p className="font-bold text-lg">{picCrm}</p>
                         <p className="text-xs text-muted-foreground">PIC CRM</p>
                       </div>
                     </div>
@@ -1011,40 +1130,40 @@ export default function DashboardKunjunganPage() {
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-medium text-muted-foreground">Progress Kunjungan</span>
                         <span className="text-sm font-bold text-primary">
-                          {mrcVisitedCount}/{mrcTotalCompanies}
+                          {picVisitedCount}/{picTotalCompanies}
                         </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
                           className="bg-green-600 h-2 rounded-full transition-all duration-500"
                           style={{
-                            width: `${mrcProgress}%`
+                            width: `${picProgress}%`
                           }}
                         />
                       </div>
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>Total Perusahaan: {mrcTotalCompanies}</span>
-                        <span>{mrcProgress}%</span>
+                        <span>Total Perusahaan: {picTotalCompanies}</span>
+                        <span>{picProgress}%</span>
                       </div>
                     </div>
 
                     {/* Quick Stats */}
                     <div className="grid grid-cols-3 gap-2 text-xs">
                       <div className="text-center p-2 bg-green-50 rounded-lg border border-green-200">
-                        <div className="font-bold text-green-700 text-lg">{mrcLanjut}</div>
+                        <div className="font-bold text-green-700 text-lg">{picLanjut}</div>
                         <div className="text-green-600">Lanjut</div>
                       </div>
                       <div className="text-center p-2 bg-red-50 rounded-lg border border-red-200">
-                        <div className="font-bold text-red-700 text-lg">{mrcLoss}</div>
+                        <div className="font-bold text-red-700 text-lg">{picLoss}</div>
                         <div className="text-red-600">Loss</div>
                       </div>
                       <div className="text-center p-2 bg-orange-50 rounded-lg border border-orange-200">
-                        <div className="font-bold text-orange-700 text-lg">{mrcSuspend}</div>
+                        <div className="font-bold text-orange-700 text-lg">{picSuspend}</div>
                         <div className="text-orange-600">Suspend</div>
                       </div>
                     </div>
 
-                    {/* Mini Calendar for MRC */}
+                    {/* Mini Calendar for this PIC */}
                     <div className="border-t pt-3">
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="text-sm font-semibold">Calendar</h4>
@@ -1063,14 +1182,18 @@ export default function DashboardKunjunganPage() {
                         </div>
                         {/* Calendar Days */}
                         <div className="grid grid-cols-7 gap-1">
-                          {calendarDays.map((day, index) => {
-                            // Filter tasks for MRC only and group by company
-                            const mrcTasks = day.tasks.filter(task => (task.picCrm || '').toUpperCase() === 'MRC');
+                          {picCalendarData.map((day, index) => {
+                            // Group by company name (unique companies) for this PIC
+                            const picDayTasks = picData.filter(task => {
+                              if (!task.tanggalKunjungan) return false;
+                              const taskDate = parseISO(task.tanggalKunjungan);
+                              return isSameMonth(taskDate, currentDate) && isSameDay(taskDate, day.date);
+                            });
 
                             // Group by company name (unique companies)
-                            const mrcCompanyGroups = Array.from(
+                            const picDayCompanyGroups = Array.from(
                               new Map(
-                                mrcTasks.map(task => [task.namaPerusahaan, task])
+                                picDayTasks.map(task => [task.namaPerusahaan, task])
                               ).values()
                             );
 
@@ -1102,7 +1225,7 @@ export default function DashboardKunjunganPage() {
                                 </div>
                                 {/* Task indicators - grouped by company */}
                                 <div className="space-y-0.5">
-                                  {mrcCompanyGroups.slice(0, 2).map((task, taskIndex) => (
+                                  {picDayCompanyGroups.slice(0, 2).map((task, taskIndex) => (
                                     <div
                                       key={taskIndex}
                                       onClick={(e) => {
@@ -1127,9 +1250,9 @@ export default function DashboardKunjunganPage() {
                                       }
                                     </div>
                                   ))}
-                                  {mrcCompanyGroups.length > 2 && (
+                                  {picDayCompanyGroups.length > 2 && (
                                     <div className="text-[8px] font-medium text-center bg-primary/80 rounded text-primary-foreground">
-                                      +{mrcCompanyGroups.length - 2}
+                                      +{picDayCompanyGroups.length - 2}
                                     </div>
                                   )}
                                 </div>
@@ -1140,196 +1263,11 @@ export default function DashboardKunjunganPage() {
                       </div>
                     </div>
                   </div>
-                );
-              })()}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* DHA Card */}
-        {(filterPic === 'all' || filterPic === 'DHA') && (
-          <Card>
-            <CardContent className="p-4 space-y-4">
-              {(() => {
-                const dhaData = crmTargets.filter(t => (t.picCrm || '').toUpperCase() === 'DHA');
-                const dhaTotal = dhaData.length;
-                const dhaLanjut = dhaData.filter(t => t.status === 'LANJUT' || t.status === 'DONE').length;
-                const dhaLoss = dhaData.filter(t => t.status === 'LOSS').length;
-                const dhaSuspend = dhaData.filter(t => t.status === 'SUSPEND').length;
-                const dhaProses = dhaData.filter(t => t.status === 'PROSES').length;
-                const dhaWaiting = dhaData.filter(t => t.status === 'WAITING').length;
-
-                // Get unique companies
-                const dhaCompanies = new Set(dhaData.map(t => t.namaPerusahaan));
-                const dhaTotalCompanies = dhaCompanies.size;
-
-                // Get companies with at least one visited target
-                const dhaVisitedCompanies = new Set(
-                  dhaData
-                    .filter(t => t.statusKunjungan === 'VISITED')
-                    .map(t => t.namaPerusahaan)
-                );
-                const dhaVisitedCount = dhaVisitedCompanies.size;
-                const dhaProgress = dhaTotalCompanies > 0 ? Math.round((dhaVisitedCount / dhaTotalCompanies) * 100) : 0;
-
-                return (
-                  <div className="space-y-4">
-                    {/* Profile Section */}
-                    <div className="flex items-center gap-3 pb-3 border-b">
-                      <div className="relative flex-shrink-0">
-                        <img
-                          src="/images/dhea.jpeg"
-                          onError={(e) => (e.currentTarget.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=DHA")}
-                          className="w-16 h-16 rounded-full object-cover border-2 border-background shadow-lg"
-                          alt="DHA"
-                        />
-                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-background"></div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-lg">DHA</p>
-                        <p className="text-xs text-muted-foreground">PIC CRM</p>
-                      </div>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-muted-foreground">Progress Kunjungan</span>
-                        <span className="text-sm font-bold text-primary">
-                          {dhaVisitedCount}/{dhaTotalCompanies}
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-green-600 h-2 rounded-full transition-all duration-500"
-                          style={{
-                            width: `${dhaProgress}%`
-                          }}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>Total Perusahaan: {dhaTotalCompanies}</span>
-                        <span>{dhaProgress}%</span>
-                      </div>
-                    </div>
-
-                    {/* Quick Stats */}
-                    <div className="grid grid-cols-3 gap-2 text-xs">
-                      <div className="text-center p-2 bg-green-50 rounded-lg border border-green-200">
-                        <div className="font-bold text-green-700 text-lg">{dhaLanjut}</div>
-                        <div className="text-green-600">Lanjut</div>
-                      </div>
-                      <div className="text-center p-2 bg-red-50 rounded-lg border border-red-200">
-                        <div className="font-bold text-red-700 text-lg">{dhaLoss}</div>
-                        <div className="text-red-600">Loss</div>
-                      </div>
-                      <div className="text-center p-2 bg-orange-50 rounded-lg border border-orange-200">
-                        <div className="font-bold text-orange-700 text-lg">{dhaSuspend}</div>
-                        <div className="text-orange-600">Suspend</div>
-                      </div>
-                    </div>
-
-                    {/* Mini Calendar for DHA */}
-                    <div className="border-t pt-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-sm font-semibold">Calendar</h4>
-                        <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">
-                          {getMonthName(currentDate)}
-                        </span>
-                      </div>
-                      <div className="space-y-2">
-                        {/* Day Headers */}
-                        <div className="grid grid-cols-7 gap-1 text-center">
-                          {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map(day => (
-                            <div key={day} className="text-xs font-bold text-muted-foreground uppercase">
-                              {day}
-                            </div>
-                          ))}
-                        </div>
-                        {/* Calendar Days */}
-                        <div className="grid grid-cols-7 gap-1">
-                          {calendarDays.map((day, index) => {
-                            // Filter tasks for DHA only and group by company
-                            const dhaTasks = day.tasks.filter(task => (task.picCrm || '').toUpperCase() === 'DHA');
-
-                            // Group by company name (unique companies)
-                            const dhaCompanyGroups = Array.from(
-                              new Map(
-                                dhaTasks.map(task => [task.namaPerusahaan, task])
-                              ).values()
-                            );
-
-                            return (
-                              <div
-                                key={index}
-                                onClick={() => day.isCurrentMonth && setSelectedDate(day.date)}
-                                className={`
-                                  relative aspect-square p-1 rounded text-center transition-all cursor-pointer
-                                  ${day.isCurrentMonth
-                                    ? 'bg-background border border-border hover:bg-accent hover:shadow-sm'
-                                    : 'opacity-25'
-                                  }
-                                  ${day.isToday ? 'bg-primary/10 border-2 border-primary' : ''}
-                                  ${selectedDate?.toDateString() === day.date.toDateString()
-                                    ? 'bg-primary/20 border-2 border-primary shadow-md'
-                                    : ''
-                                  }
-                                `}
-                              >
-                                <div className={`text-sm font-bold mb-1 ${
-                                  day.isCurrentMonth
-                                    ? day.isToday || selectedDate?.toDateString() === day.date.toDateString()
-                                      ? 'text-primary'
-                                      : 'text-foreground'
-                                    : 'text-muted-foreground'
-                                }`}>
-                                  {day.date.getDate()}
-                                </div>
-                                {/* Task indicators - grouped by company */}
-                                <div className="space-y-0.5">
-                                  {dhaCompanyGroups.slice(0, 2).map((task, taskIndex) => (
-                                    <div
-                                      key={taskIndex}
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        setSelectedTask(task)
-                                        setIsEditModalOpen(true)
-                                      }}
-                                      className={`
-                                        text-[8px] px-1 py-0.5 rounded truncate cursor-pointer
-                                        ${task.statusKunjungan === 'VISITED'
-                                          ? 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-300'
-                                          : task.statusKunjungan === 'NOT YET'
-                                            ? 'bg-orange-100 text-orange-700 hover:bg-orange-200 border border-orange-300'
-                                            : 'bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-300'
-                                        }
-                                      `}
-                                      title={`${task.namaPerusahaan} - Click to edit`}
-                                    >
-                                      {task.namaPerusahaan.length > 10
-                                        ? task.namaPerusahaan.substring(0, 10) + '..'
-                                        : task.namaPerusahaan
-                                      }
-                                    </div>
-                                  ))}
-                                  {dhaCompanyGroups.length > 2 && (
-                                    <div className="text-[8px] font-medium text-center bg-primary/80 rounded text-primary-foreground">
-                                      +{dhaCompanyGroups.length - 2}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
-            </CardContent>
-          </Card>
-        )}
+                </CardContent>
+              </Card>
+          );
+        });
+        })()}
       </div>
 
       {/* Main Content - Data Table */}
@@ -1924,16 +1862,18 @@ export default function DashboardKunjunganPage() {
           <span className="text-[10px] font-medium">Date</span>
         </button>
 
-        {/* PIC CRM Tab */}
-        <button
-          onClick={() => setActiveFilterSheet(activeFilterSheet === 'picCrm' ? null : 'picCrm')}
-          className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors ${
-            activeFilterSheet === 'picCrm' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
-          }`}
-        >
-          <IconFilter className="h-5 w-5 mb-1" />
-          <span className="text-[10px] font-medium">PIC</span>
-        </button>
+        {/* PIC CRM Tab - Hide for staff */}
+        {currentUser?.role !== 'staff' && (
+          <button
+            onClick={() => setActiveFilterSheet(activeFilterSheet === 'picCrm' ? null : 'picCrm')}
+            className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors ${
+              activeFilterSheet === 'picCrm' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+            }`}
+          >
+            <IconFilter className="h-5 w-5 mb-1" />
+            <span className="text-[10px] font-medium">PIC</span>
+          </button>
+        )}
 
         {/* Company Tab */}
         <button
@@ -2013,8 +1953,8 @@ export default function DashboardKunjunganPage() {
               </div>
             )}
 
-            {/* PIC CRM Filter */}
-            {activeFilterSheet === 'picCrm' && (
+            {/* PIC CRM Filter - Hide for staff */}
+            {activeFilterSheet === 'picCrm' && currentUser?.role !== 'staff' && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-sm">PIC CRM</h3>

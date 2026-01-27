@@ -118,3 +118,118 @@ export const getAllUsers = query({
     });
   },
 });
+
+// Fungsi untuk update user
+export const updateUser = mutation({
+  args: {
+    userId: v.id("users"),
+    name: v.optional(v.string()),
+    email: v.optional(v.string()),
+    password: v.optional(v.string()),
+    role: v.optional(v.union(v.literal("super_admin"), v.literal("manager"), v.literal("staff"))),
+    staffId: v.optional(v.string()),
+    isActive: v.optional(v.boolean()),
+    phone: v.optional(v.string()),
+    avatar: v.optional(v.string()),
+    targetYearly: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const { userId, ...updateData } = args;
+
+    // Cek apakah user ada
+    const user = await ctx.db.get(userId);
+    if (!user) {
+      throw new Error("User tidak ditemukan");
+    }
+
+    // Cek email uniqueness jika email diubah
+    if (updateData.email && updateData.email !== user.email) {
+      const existingUser = await ctx.db
+        .query("users")
+        .withIndex("by_email", (q) => q.eq("email", updateData.email!))
+        .first();
+
+      if (existingUser && existingUser._id !== userId) {
+        throw new Error("Email sudah digunakan oleh user lain");
+      }
+    }
+
+    // Hash password jika password diubah
+    if (updateData.password) {
+      updateData.password = simpleHash(updateData.password);
+    }
+
+    // Update user
+    await ctx.db.patch(userId, {
+      ...updateData,
+      updatedAt: Date.now(),
+    });
+
+    // Ambil user yang sudah diupdate
+    const updatedUser = await ctx.db.get(userId);
+    if (!updatedUser) {
+      throw new Error("Gagal mengambil user yang diupdate");
+    }
+
+    // Return user data tanpa password
+    const { password: _, ...userWithoutPassword } = updatedUser;
+    return userWithoutPassword;
+  },
+});
+
+// Fungsi untuk delete user
+export const deleteUser = mutation({
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const { userId } = args;
+
+    // Cek apakah user ada
+    const user = await ctx.db.get(userId);
+    if (!user) {
+      throw new Error("User tidak ditemukan");
+    }
+
+    // Hapus user (soft delete by setting isActive to false)
+    await ctx.db.patch(userId, {
+      isActive: false,
+      updatedAt: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+
+// Fungsi untuk activate/deactivate user
+export const toggleUserStatus = mutation({
+  args: {
+    userId: v.id("users"),
+    isActive: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const { userId, isActive } = args;
+
+    // Cek apakah user ada
+    const user = await ctx.db.get(userId);
+    if (!user) {
+      throw new Error("User tidak ditemukan");
+    }
+
+    // Update user status
+    await ctx.db.patch(userId, {
+      isActive,
+      updatedAt: Date.now(),
+    });
+
+    // Ambil user yang sudah diupdate
+    const updatedUser = await ctx.db.get(userId);
+    if (!updatedUser) {
+      throw new Error("Gagal mengambil user yang diupdate");
+    }
+
+    // Return user data tanpa password
+    const { password: _, ...userWithoutPassword } = updatedUser;
+    return userWithoutPassword;
+  },
+});

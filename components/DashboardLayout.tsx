@@ -34,13 +34,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         if (userData) {
           const parsedUser = JSON.parse(userData);
 
-          // Check if user has staff role (redirect manager to manager dashboard)
-          if (parsedUser.role === 'manager' || parsedUser.role === 'super_admin') {
-            router.push('/dashboard-manager');
-            return;
-          }
-
-          setUser(parsedUser);
+          // Redirect all users to dashboard-manager
+          router.push('/dashboard-manager');
+          return;
         } else {
           // Redirect to login if no user data
           router.push('/login');
