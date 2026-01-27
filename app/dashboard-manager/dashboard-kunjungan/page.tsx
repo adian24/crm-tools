@@ -12,6 +12,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -428,6 +429,28 @@ export default function DashboardKunjunganPage() {
   const [massUpdateFoto, setMassUpdateFoto] = React.useState<string | null>(null);
   const [isMassUploading, setIsMassUploading] = React.useState(false);
 
+  // Mobile filter sheet state
+  const [activeFilterSheet, setActiveFilterSheet] = React.useState<string | null>(null);
+
+  // Reset all filters
+  const resetAllFilters = () => {
+    setFilterPic("all")
+    setFilterSales("all")
+    setFilterStatusKunjungan("all")
+    setFilterMonth(format(new Date(), "yyyy-MM"))
+    setFilterFromKunjungan("all")
+    setFilterToKunjungan("all")
+    setFilterProvinsi("all")
+    setFilterKota("all")
+    setFilterCategory("all")
+    setFilterAlasan("all")
+    setSearchQuery("")
+    setTableSearchQuery("")
+    setSelectedDate(null)
+    setCurrentDate(new Date())
+    setActiveFilterSheet(null)
+  }
+
   const toggleFilterSection = (section: string) => {
     setExpandedFilterSections(prev =>
       prev.includes(section)
@@ -726,11 +749,23 @@ export default function DashboardKunjunganPage() {
         <div className="sticky top-6 space-y-4">
           {/* Filter Card */}
           <Card>
+
             <CardHeader className="pb-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
               <CardTitle className="flex items-center gap-2 text-sm">
                 <IconFilter className="h-4 w-4" />
                 Filter
               </CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={resetAllFilters}
+                className="w-full text-xs cursor-pointer background-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:border-red-300 focus:ring-red-300"
+              >
+                <IconX className="h-4 w-4 mr-1" />
+                Reset Filter
+              </Button>
+            </div>
             </CardHeader>
             <CardContent className="space-y-3">
               {/* Section Date */}
@@ -1255,13 +1290,13 @@ export default function DashboardKunjunganPage() {
       <div>
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex-1">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex-1 w-full">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <IconBuilding className="h-5 w-5" />
                     Data Perusahaan
                   </CardTitle>
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mt-1">
                     <CardDescription className="text-sm">
                       {selectedDate
                         ? `Kunjungan pada ${selectedDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} (${totalTasks} data dari ${groupedByCompany.length} perusahaan)`
@@ -1282,7 +1317,7 @@ export default function DashboardKunjunganPage() {
                 </div>
 
                 {/* Table Search Bar */}
-                <div className="relative w-80">
+                <div className="relative w-full sm:w-64 lg:w-80">
                   <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Cari perusahaan, PIC, sales..."
@@ -1828,6 +1863,194 @@ export default function DashboardKunjunganPage() {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Mobile Bottom Navigation */}
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border lg:hidden">
+      <div className="grid grid-cols-5 gap-1 p-2">
+        {/* Date Filter Tab */}
+        <button
+          onClick={() => setActiveFilterSheet(activeFilterSheet === 'date' ? null : 'date')}
+          className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors ${
+            activeFilterSheet === 'date' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+          }`}
+        >
+          <IconCalendarTime className="h-5 w-5 mb-1" />
+          <span className="text-[10px] font-medium">Date</span>
+        </button>
+
+        {/* PIC CRM Tab */}
+        <button
+          onClick={() => setActiveFilterSheet(activeFilterSheet === 'picCrm' ? null : 'picCrm')}
+          className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors ${
+            activeFilterSheet === 'picCrm' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+          }`}
+        >
+          <IconFilter className="h-5 w-5 mb-1" />
+          <span className="text-[10px] font-medium">PIC</span>
+        </button>
+
+        {/* Company Tab */}
+        <button
+          onClick={() => setActiveFilterSheet(activeFilterSheet === 'company' ? null : 'company')}
+          className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors ${
+            activeFilterSheet === 'company' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+          }`}
+        >
+          <IconBuilding className="h-5 w-5 mb-1" />
+          <span className="text-[10px] font-medium">Company</span>
+        </button>
+
+        {/* Jadwal Tab */}
+        <button
+          onClick={() => setActiveFilterSheet(activeFilterSheet === 'jadwal' ? null : 'jadwal')}
+          className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors ${
+            activeFilterSheet === 'jadwal' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+          }`}
+        >
+          <IconCalendar className="h-5 w-5 mb-1" />
+          <span className="text-[10px] font-medium">Jadwal</span>
+        </button>
+
+        {/* Reset Tab */}
+        <button
+          onClick={resetAllFilters}
+          className="flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors hover:bg-red-50 hover:text-red-600 text-red-500"
+        >
+          <IconX className="h-5 w-5 mb-1" />
+          <span className="text-[10px] font-medium">Reset</span>
+        </button>
+      </div>
+    </div>
+
+    {/* Mobile Filter Sheet Overlay */}
+    {activeFilterSheet && (
+      <>
+        {/* Backdrop */}
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setActiveFilterSheet(null)}
+        />
+
+        {/* Filter Sheet */}
+        <div className="fixed bottom-16 left-0 right-0 z-40 lg:hidden max-h-[70vh] overflow-y-auto bg-background rounded-t-2xl border-t border-border shadow-2xl animate-in slide-in-from-bottom-10">
+          {/* Handle bar */}
+          <div className="flex justify-center py-3 border-b">
+            <div className="w-12 h-1.5 bg-muted rounded-full" />
+          </div>
+
+          {/* Filter Content */}
+          <div className="p-4 space-y-4">
+            {/* Date Filter */}
+            {activeFilterSheet === 'date' && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-sm">Filter Date</h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setActiveFilterSheet(null)}
+                    className="h-8 text-xs"
+                  >
+                    <IconX className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="mobile-filter-month" className="text-xs">Bulan</Label>
+                  <Input
+                    id="mobile-filter-month"
+                    type="month"
+                    value={filterMonth}
+                    onChange={(e) => setFilterMonth(e.target.value)}
+                    className="w-full h-9 text-sm"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* PIC CRM Filter */}
+            {activeFilterSheet === 'picCrm' && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-sm">PIC CRM</h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setActiveFilterSheet(null)}
+                    className="h-8 text-xs"
+                  >
+                    <IconX className="h-4 w-4" />
+                  </Button>
+                </div>
+                <FilterPicCrmSection
+                  filterPicCrm={filterPic}
+                  setFilterPicCrm={setFilterPic}
+                  picCrmOptions={picList}
+                />
+              </div>
+            )}
+
+            {/* Company Filter */}
+            {activeFilterSheet === 'company' && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-sm">Company</h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setActiveFilterSheet(null)}
+                    className="h-8 text-xs"
+                  >
+                    <IconX className="h-4 w-4" />
+                  </Button>
+                </div>
+                <FilterCompanySection
+                  filterStatus={filterStatusKunjungan}
+                  setFilterStatus={setFilterStatusKunjungan}
+                  filterCategory={filterCategory}
+                  setFilterCategory={setFilterCategory}
+                  filterProvinsi={filterProvinsi}
+                  setFilterProvinsi={setFilterProvinsi}
+                  filterKota={filterKota}
+                  setFilterKota={setFilterKota}
+                  filterAlasan={filterAlasan}
+                  setFilterAlasan={setFilterAlasan}
+                  statusOptions={statusOptions}
+                  provinsiOptions={provinsiList}
+                  kotaOptions={kotaList}
+                  alasanOptions={alasanOptions}
+                />
+              </div>
+            )}
+
+            {/* Jadwal Filter */}
+            {activeFilterSheet === 'jadwal' && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-sm">Jadwal Kunjungan</h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setActiveFilterSheet(null)}
+                    className="h-8 text-xs"
+                  >
+                    <IconX className="h-4 w-4" />
+                  </Button>
+                </div>
+                <FilterKunjunganSection
+                  filterFromKunjungan={filterFromKunjungan}
+                  setFilterFromKunjungan={setFilterFromKunjungan}
+                  filterToKunjungan={filterToKunjungan}
+                  setFilterToKunjungan={setFilterToKunjungan}
+                  filterStatusKunjungan={filterStatusKunjungan}
+                  setFilterStatusKunjungan={setFilterStatusKunjungan}
+                  bulanOptions={bulanOptions}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </>
+    )}
     </div>
   )
 }
