@@ -31,9 +31,23 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [mounted, setMounted] = useState(false);
+  const [particles, setParticles] = useState<Array<{ id: number; left: string; top: string; animationDelay: string; animationDuration: string }>>([]);
 
   useEffect(() => {
     setMounted(true);
+    // Generate particles only on client side to avoid hydration mismatch
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+    const particleCount = isMobile ? 15 : 50;
+
+    const newParticles = Array.from({ length: particleCount }, (_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      animationDelay: `${Math.random() * 5}s`,
+      animationDuration: `${3 + Math.random() * 4}s`
+    }));
+
+    setParticles(newParticles);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,7 +67,7 @@ export default function LoginPage() {
 
         // Redirect ke dashboard berdasarkan role
         if (user.role === 'manager' || user.role === 'super_admin') {
-          router.push('/dashboard-manager');
+          router.push('/dashboard-manager/dashboard-data');
         } else {
           router.push('/dashboard');
         }
@@ -155,15 +169,15 @@ export default function LoginPage() {
 
         {/* Animated Particles - Reduced on mobile for performance */}
         <div className="absolute inset-0">
-          {[...Array(typeof window !== 'undefined' && window.innerWidth < 640 ? 15 : 50)].map((_, i) => (
+          {mounted && particles.map((particle) => (
             <div
-              key={i}
+              key={particle.id}
               className="absolute w-1 h-1 bg-white/30 rounded-full animate-pulse"
               style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 5}s`,
-                animationDuration: `${3 + Math.random() * 4}s`
+                left: particle.left,
+                top: particle.top,
+                animationDelay: particle.animationDelay,
+                animationDuration: particle.animationDuration
               }}
             />
           ))}
