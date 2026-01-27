@@ -307,12 +307,12 @@ function ChartCardCrmData({
               case 'pie':
                 // Prepare pie data - total value per month
                 const pieData = chartData
-                  .filter(item => item.value > 0)
                   .map(item => ({
                     name: item.month,
-                    value: item.value,
+                    value: item.MRC + item.DHA,
                     color: chartColor
-                  }));
+                  }))
+                  .filter(item => item.value > 0);
 
                 if (pieData.length === 0) {
                   return (
