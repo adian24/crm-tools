@@ -78,8 +78,7 @@
       "Padangpanjang",
       "Pariaman",
       "Payakumbuh",
-      "Sawahlunto",
-      "Solok"
+      "Sawahlunto"
     ]
   },
   "Riau": {
@@ -202,9 +201,7 @@
       "Serang",
       "Lebak",
       "Pandeglang",
-      "Tangerang",
       "Tangerang Selatan",
-      "Serang",
       "Cilegon"
     ]
   },
@@ -238,15 +235,9 @@
       "Sukabumi",
       "Sumedang",
       "Tasikmalaya",
-      "Bandung",
       "Banjar",
-      "Bekasi",
-      "Bogor",
       "Cimahi",
-      "Cirebon",
-      "Depok",
-      "Sukabumi",
-      "Tasikmalaya"
+      "Depok"
     ]
   },
   "Jawa Tengah": {
@@ -280,12 +271,8 @@
       "Temanggung",
       "Wonogiri",
       "Wonosobo",
-      "Magelang",
-      "Pekalongan",
       "Salatiga",
-      "Semarang",
-      "Surakarta",
-      "Tegal"
+      "Surakarta"
     ]
   },
   "DI Yogyakarta": {
@@ -329,13 +316,6 @@
       "Tuban",
       "Tulungagung",
       "Batu",
-      "Blitar",
-      "Kediri",
-      "Madiun",
-      "Malang",
-      "Mojokerto",
-      "Pasuruan",
-      "Probolinggo",
       "Surabaya"
     ]
   },
@@ -354,7 +334,6 @@
       "Sanggau",
       "Sekadau",
       "Sintang",
-      "Pontianak",
       "Singkawang"
     ]
   },
@@ -389,7 +368,6 @@
       "Tanah Bumbu",
       "Tanah Laut",
       "Tapin",
-      "Banjarbaru",
       "Banjarbaru"
     ]
   },
@@ -503,8 +481,7 @@
       "Bone Bolango",
       "Gorontalo",
       "Gorontalo Utara",
-      "Pohuwato",
-      "Gorontalo"
+      "Pohuwato"
     ]
   },
   "Sulawesi Barat": {
@@ -514,8 +491,7 @@
       "Mamuju",
       "Mamuju Tengah",
       "Mamuju Utara",
-      "Polewali Mandar",
-      "Mamuju"
+      "Polewali Mandar"
     ]
   },
   "Maluku": {
@@ -531,8 +507,7 @@
       "Seram Bagian Barat",
       "Seram Bagian Timur",
       "Tual",
-      "Ambon",
-      "Tual"
+      "Ambon"
     ]
   },
   "Maluku Utara": {
@@ -580,8 +555,7 @@
       "Tolikara",
       "Waropen",
       "Yahukimo",
-      "Yalimo",
-      "Jayapura"
+      "Yalimo"
     ]
   },
   "Papua Barat": {
@@ -595,8 +569,7 @@
       "Sorong Selatan",
       "Tambrauw",
       "Teluk Bintuni",
-      "Teluk Wondama",
-      "Sorong"
+      "Teluk Wondama"
     ]
   },
   "Papua Pegunungan": {
@@ -641,7 +614,6 @@
       "Lombok Timur",
       "Sumbawa",
       "Sumbawa Barat",
-      "Bima",
       "Mataram"
     ]
   },
@@ -650,7 +622,6 @@
       "Alor",
       "Belu",
       "Ende",
-      "Flores Timur",
       "Flores Timur",
       "Kupang",
       "Lembata",
@@ -667,8 +638,7 @@
       "Sumba Tengah",
       "Sumba Timur",
       "Timor Tengah Selatan",
-      "Timor Tengah Utara",
-      "Kupang"
+      "Timor Tengah Utara"
     ]
   }
 }

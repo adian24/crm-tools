@@ -106,10 +106,9 @@ export default function DashboardKunjunganPage() {
   // Filter states
   const [filterPic, setFilterPic] = React.useState<string>("all")
   const [filterSales, setFilterSales] = React.useState<string>("all")
+  const [filterStatusCrm, setFilterStatusCrm] = React.useState<string>("all")
   const [filterStatusKunjungan, setFilterStatusKunjungan] = React.useState<string>("all")
   const [filterMonth, setFilterMonth] = React.useState<string>(format(new Date(), "yyyy-MM"))
-  const [filterFromKunjungan, setFilterFromKunjungan] = React.useState<string>("all")
-  const [filterToKunjungan, setFilterToKunjungan] = React.useState<string>("all")
   const [filterProvinsi, setFilterProvinsi] = React.useState<string>("all")
   const [filterKota, setFilterKota] = React.useState<string>("all")
   const [filterCategory, setFilterCategory] = React.useState<string>("all")
@@ -160,7 +159,7 @@ export default function DashboardKunjunganPage() {
           allKotaSet.add(kota)
         })
       })
-      return Array.from(allKotaSet).sort()
+      return Array.from(allKotaSet).sort() as string[]
     }
     // Return cities for selected province
     const selectedProvData = (indonesiaData as any)[filterProvinsi]
@@ -177,26 +176,18 @@ export default function DashboardKunjunganPage() {
     return Array.from(alasan).sort()
   }, [crmTargets])
 
-  const bulanOptions = React.useMemo(() => {
-    return [
-      { value: '2025-01', label: 'Januari 2025' },
-      { value: '2025-02', label: 'Februari 2025' },
-      { value: '2025-03', label: 'Maret 2025' },
-      { value: '2025-04', label: 'April 2025' },
-      { value: '2025-05', label: 'Mei 2025' },
-      { value: '2025-06', label: 'Juni 2025' },
-      { value: '2025-07', label: 'Juli 2025' },
-      { value: '2025-08', label: 'Agustus 2025' },
-      { value: '2025-09', label: 'September 2025' },
-      { value: '2025-10', label: 'Oktober 2025' },
-      { value: '2025-11', label: 'November 2025' },
-      { value: '2025-12', label: 'Desember 2025' },
-    ]
-  }, [])
-
   // Filter data
   const filteredData = React.useMemo(() => {
-    
+    // Debug: Log current filter values
+    console.log('🔍 Current Filters:', {
+      filterProvinsi,
+      filterKota,
+      filterStatusKunjungan,
+      filterStatusCrm,
+      filterCategory,
+      filterAlasan
+    })
+
     return crmTargets.filter(target => {
       // Filter by PIC CRM
       if (filterPic !== "all" && target.picCrm !== filterPic) return false
@@ -204,41 +195,40 @@ export default function DashboardKunjunganPage() {
       // Filter by Sales
       if (filterSales !== "all" && target.sales !== filterSales) return false
 
+      // Filter by Status CRM
+      if (filterStatusCrm !== "all" && target.status !== filterStatusCrm) return false
+
       // Filter by Status Kunjungan
       if (filterStatusKunjungan !== "all") {
-        if (filterStatusKunjungan === "visited" && target.statusKunjungan !== "VISITED") return false
-        if (filterStatusKunjungan === "not_yet" && target.statusKunjungan !== "NOT YET") return false
-        if (filterStatusKunjungan === "not_scheduled" && target.tanggalKunjungan) return false
+        // If filter is set, only show targets that match the filter
+        if (target.statusKunjungan !== filterStatusKunjungan) return false
       }
 
-      // Filter by Provinsi
-      if (filterProvinsi !== "all" && target.provinsi !== filterProvinsi) return false
+      // Filter by Provinsi (case-insensitive and trim)
+      if (filterProvinsi !== "all") {
+        const targetProvinsi = (target.provinsi || "").trim().toLowerCase()
+        const filterProvinsiLower = filterProvinsi.trim().toLowerCase()
+        if (targetProvinsi !== filterProvinsiLower) {
+          console.log(`❌ Provinsi mismatch: "${target.provinsi}" vs "${filterProvinsi}"`)
+          return false
+        }
+      }
 
-      // Filter by Kota
-      if (filterKota !== "all" && target.kota !== filterKota) return false
+      // Filter by Kota (case-insensitive and trim)
+      if (filterKota !== "all") {
+        const targetKota = (target.kota || "").trim().toLowerCase()
+        const filterKotaLower = filterKota.trim().toLowerCase()
+        if (targetKota !== filterKotaLower) {
+          console.log(`❌ Kota mismatch: "${target.kota}" vs "${filterKota}"`)
+          return false
+        }
+      }
 
       // Filter by Category
       if (filterCategory !== "all" && target.category !== filterCategory) return false
 
       // Filter by Alasan
       if (filterAlasan !== "all" && target.alasan !== filterAlasan) return false
-
-      // Filter by date range - using from/to kunjungan
-      if (target.tanggalKunjungan) {
-        const visitDate = parseISO(target.tanggalKunjungan)
-        const targetMonth = format(visitDate, "yyyy-MM")
-
-        // If from filter is set, check if visit date is on or after from date
-        if (filterFromKunjungan !== "all") {
-          if (targetMonth < filterFromKunjungan) return false
-        }
-
-        // If to filter is set, check if visit date is on or before to date
-        if (filterToKunjungan !== "all") {
-          if (targetMonth > filterToKunjungan) return false
-        }
-      }
-      // Don't filter out items without tanggalKunjungan unless explicitly filtering for "not_scheduled"
 
       // Search query (from sidebar)
       if (searchQuery) {
@@ -275,7 +265,7 @@ export default function DashboardKunjunganPage() {
       if (!b.tanggalKunjungan) return -1
       return new Date(a.tanggalKunjungan).getTime() - new Date(b.tanggalKunjungan).getTime()
     })
-  }, [crmTargets, filterPic, filterSales, filterStatusKunjungan, filterFromKunjungan, filterToKunjungan, filterProvinsi, filterKota, filterCategory, filterAlasan, searchQuery, tableSearchQuery])
+  }, [crmTargets, filterPic, filterSales, filterStatusCrm, filterStatusKunjungan, filterProvinsi, filterKota, filterCategory, filterAlasan, searchQuery, tableSearchQuery])
 
   const currentMonth = currentDate.getMonth()
   const currentYear = currentDate.getFullYear()
@@ -378,7 +368,7 @@ export default function DashboardKunjunganPage() {
   // Reset page when filters change
   React.useEffect(() => {
     setCurrentPage(1)
-  }, [filterPic, filterSales, filterStatusKunjungan, filterFromKunjungan, filterToKunjungan, filterProvinsi, filterKota, filterCategory, filterAlasan, searchQuery, tableSearchQuery, selectedDate])
+  }, [filterPic, filterSales, filterStatusCrm, filterStatusKunjungan, filterProvinsi, filterKota, filterCategory, filterAlasan, searchQuery, tableSearchQuery, selectedDate])
 
   const getVisitStatusBadge = (target: CrmTarget) => {
     if (!target.tanggalKunjungan) {
@@ -436,10 +426,9 @@ export default function DashboardKunjunganPage() {
   const resetAllFilters = () => {
     setFilterPic("all")
     setFilterSales("all")
+    setFilterStatusCrm("all")
     setFilterStatusKunjungan("all")
     setFilterMonth(format(new Date(), "yyyy-MM"))
-    setFilterFromKunjungan("all")
-    setFilterToKunjungan("all")
     setFilterProvinsi("all")
     setFilterKota("all")
     setFilterCategory("all")
@@ -837,8 +826,8 @@ export default function DashboardKunjunganPage() {
                 {expandedFilterSections.includes('company') && (
                   <div className="p-3 space-y-3 border-t">
                     <FilterCompanySection
-                      filterStatus={filterStatusKunjungan}
-                      setFilterStatus={setFilterStatusKunjungan}
+                      filterStatus={filterStatusCrm}
+                      setFilterStatus={setFilterStatusCrm}
                       filterCategory={filterCategory}
                       setFilterCategory={setFilterCategory}
                       filterProvinsi={filterProvinsi}
@@ -862,7 +851,7 @@ export default function DashboardKunjunganPage() {
                   onClick={() => toggleFilterSection('jadwal')}
                   className="w-full flex items-center justify-between p-3 bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
                 >
-                  <span className="font-medium text-sm">Jadwal Kunjungan</span>
+                  <span className="font-medium text-sm">Status Kunjungan</span>
                   {expandedFilterSections.includes('jadwal') ? (
                     <IconChevronLeft className="h-4 w-4 rotate-[-90deg]" />
                   ) : (
@@ -872,13 +861,8 @@ export default function DashboardKunjunganPage() {
                 {expandedFilterSections.includes('jadwal') && (
                   <div className="p-3 space-y-3 border-t">
                     <FilterKunjunganSection
-                      filterFromKunjungan={filterFromKunjungan}
-                      setFilterFromKunjungan={setFilterFromKunjungan}
-                      filterToKunjungan={filterToKunjungan}
-                      setFilterToKunjungan={setFilterToKunjungan}
                       filterStatusKunjungan={filterStatusKunjungan}
                       setFilterStatusKunjungan={setFilterStatusKunjungan}
-                      bulanOptions={bulanOptions}
                     />
                   </div>
                 )}
@@ -968,6 +952,19 @@ export default function DashboardKunjunganPage() {
                 const mrcProses = mrcData.filter(t => t.status === 'PROSES').length;
                 const mrcWaiting = mrcData.filter(t => t.status === 'WAITING').length;
 
+                // Get unique companies
+                const mrcCompanies = new Set(mrcData.map(t => t.namaPerusahaan));
+                const mrcTotalCompanies = mrcCompanies.size;
+
+                // Get companies with at least one visited target
+                const mrcVisitedCompanies = new Set(
+                  mrcData
+                    .filter(t => t.statusKunjungan === 'VISITED')
+                    .map(t => t.namaPerusahaan)
+                );
+                const mrcVisitedCount = mrcVisitedCompanies.size;
+                const mrcProgress = mrcTotalCompanies > 0 ? Math.round((mrcVisitedCount / mrcTotalCompanies) * 100) : 0;
+
                 return (
                   <div className="space-y-4">
                     {/* Profile Section */}
@@ -992,20 +989,20 @@ export default function DashboardKunjunganPage() {
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-medium text-muted-foreground">Progress Kunjungan</span>
                         <span className="text-sm font-bold text-primary">
-                          {mrcData.filter(t => t.statusKunjungan === 'VISITED').length}/100
+                          {mrcVisitedCount}/{mrcTotalCompanies}
                         </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
                           className="bg-green-600 h-2 rounded-full transition-all duration-500"
                           style={{
-                            width: `${Math.min((mrcData.filter(t => t.statusKunjungan === 'VISITED').length / 100) * 100, 100)}%`
+                            width: `${mrcProgress}%`
                           }}
                         />
                       </div>
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>Total Kunjungan: {mrcData.filter(t => t.statusKunjungan === 'VISITED').length} visited</span>
-                        <span>{Math.round((mrcData.filter(t => t.statusKunjungan === 'VISITED').length / 100) * 100)}%</span>
+                        <span>Total Perusahaan: {mrcTotalCompanies}</span>
+                        <span>{mrcProgress}%</span>
                       </div>
                     </div>
 
@@ -1045,8 +1042,15 @@ export default function DashboardKunjunganPage() {
                         {/* Calendar Days */}
                         <div className="grid grid-cols-7 gap-1">
                           {calendarDays.map((day, index) => {
-                            // Filter tasks for MRC only
+                            // Filter tasks for MRC only and group by company
                             const mrcTasks = day.tasks.filter(task => (task.picCrm || '').toUpperCase() === 'MRC');
+
+                            // Group by company name (unique companies)
+                            const mrcCompanyGroups = Array.from(
+                              new Map(
+                                mrcTasks.map(task => [task.namaPerusahaan, task])
+                              ).values()
+                            );
 
                             return (
                               <div
@@ -1074,9 +1078,9 @@ export default function DashboardKunjunganPage() {
                                 }`}>
                                   {day.date.getDate()}
                                 </div>
-                                {/* Task indicators */}
+                                {/* Task indicators - grouped by company */}
                                 <div className="space-y-0.5">
-                                  {mrcTasks.slice(0, 2).map((task, taskIndex) => (
+                                  {mrcCompanyGroups.slice(0, 2).map((task, taskIndex) => (
                                     <div
                                       key={taskIndex}
                                       onClick={(e) => {
@@ -1101,9 +1105,9 @@ export default function DashboardKunjunganPage() {
                                       }
                                     </div>
                                   ))}
-                                  {mrcTasks.length > 2 && (
+                                  {mrcCompanyGroups.length > 2 && (
                                     <div className="text-[8px] font-medium text-center bg-primary/80 rounded text-primary-foreground">
-                                      +{mrcTasks.length - 2}
+                                      +{mrcCompanyGroups.length - 2}
                                     </div>
                                   )}
                                 </div>
@@ -1133,6 +1137,19 @@ export default function DashboardKunjunganPage() {
                 const dhaProses = dhaData.filter(t => t.status === 'PROSES').length;
                 const dhaWaiting = dhaData.filter(t => t.status === 'WAITING').length;
 
+                // Get unique companies
+                const dhaCompanies = new Set(dhaData.map(t => t.namaPerusahaan));
+                const dhaTotalCompanies = dhaCompanies.size;
+
+                // Get companies with at least one visited target
+                const dhaVisitedCompanies = new Set(
+                  dhaData
+                    .filter(t => t.statusKunjungan === 'VISITED')
+                    .map(t => t.namaPerusahaan)
+                );
+                const dhaVisitedCount = dhaVisitedCompanies.size;
+                const dhaProgress = dhaTotalCompanies > 0 ? Math.round((dhaVisitedCount / dhaTotalCompanies) * 100) : 0;
+
                 return (
                   <div className="space-y-4">
                     {/* Profile Section */}
@@ -1157,20 +1174,20 @@ export default function DashboardKunjunganPage() {
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-medium text-muted-foreground">Progress Kunjungan</span>
                         <span className="text-sm font-bold text-primary">
-                          {dhaData.filter(t => t.statusKunjungan === 'VISITED').length}/100
+                          {dhaVisitedCount}/{dhaTotalCompanies}
                         </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
                           className="bg-green-600 h-2 rounded-full transition-all duration-500"
                           style={{
-                            width: `${Math.min((dhaData.filter(t => t.statusKunjungan === 'VISITED').length / 100) * 100, 100)}%`
+                            width: `${dhaProgress}%`
                           }}
                         />
                       </div>
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>Total Kunjungan: {dhaData.filter(t => t.statusKunjungan === 'VISITED').length} visited</span>
-                        <span>{Math.round((dhaData.filter(t => t.statusKunjungan === 'VISITED').length / 100) * 100)}%</span>
+                        <span>Total Perusahaan: {dhaTotalCompanies}</span>
+                        <span>{dhaProgress}%</span>
                       </div>
                     </div>
 
@@ -1210,8 +1227,15 @@ export default function DashboardKunjunganPage() {
                         {/* Calendar Days */}
                         <div className="grid grid-cols-7 gap-1">
                           {calendarDays.map((day, index) => {
-                            // Filter tasks for DHA only
+                            // Filter tasks for DHA only and group by company
                             const dhaTasks = day.tasks.filter(task => (task.picCrm || '').toUpperCase() === 'DHA');
+
+                            // Group by company name (unique companies)
+                            const dhaCompanyGroups = Array.from(
+                              new Map(
+                                dhaTasks.map(task => [task.namaPerusahaan, task])
+                              ).values()
+                            );
 
                             return (
                               <div
@@ -1239,9 +1263,9 @@ export default function DashboardKunjunganPage() {
                                 }`}>
                                   {day.date.getDate()}
                                 </div>
-                                {/* Task indicators */}
+                                {/* Task indicators - grouped by company */}
                                 <div className="space-y-0.5">
-                                  {dhaTasks.slice(0, 2).map((task, taskIndex) => (
+                                  {dhaCompanyGroups.slice(0, 2).map((task, taskIndex) => (
                                     <div
                                       key={taskIndex}
                                       onClick={(e) => {
@@ -1266,9 +1290,9 @@ export default function DashboardKunjunganPage() {
                                       }
                                     </div>
                                   ))}
-                                  {dhaTasks.length > 2 && (
+                                  {dhaCompanyGroups.length > 2 && (
                                     <div className="text-[8px] font-medium text-center bg-primary/80 rounded text-primary-foreground">
-                                      +{dhaTasks.length - 2}
+                                      +{dhaCompanyGroups.length - 2}
                                     </div>
                                   )}
                                 </div>
@@ -1908,7 +1932,7 @@ export default function DashboardKunjunganPage() {
           }`}
         >
           <IconCalendar className="h-5 w-5 mb-1" />
-          <span className="text-[10px] font-medium">Jadwal</span>
+          <span className="text-[10px] font-medium">Status</span>
         </button>
 
         {/* Reset Tab */}
@@ -2004,8 +2028,8 @@ export default function DashboardKunjunganPage() {
                   </Button>
                 </div>
                 <FilterCompanySection
-                  filterStatus={filterStatusKunjungan}
-                  setFilterStatus={setFilterStatusKunjungan}
+                  filterStatus={filterStatusCrm}
+                  setFilterStatus={setFilterStatusCrm}
                   filterCategory={filterCategory}
                   setFilterCategory={setFilterCategory}
                   filterProvinsi={filterProvinsi}
@@ -2037,13 +2061,8 @@ export default function DashboardKunjunganPage() {
                   </Button>
                 </div>
                 <FilterKunjunganSection
-                  filterFromKunjungan={filterFromKunjungan}
-                  setFilterFromKunjungan={setFilterFromKunjungan}
-                  filterToKunjungan={filterToKunjungan}
-                  setFilterToKunjungan={setFilterToKunjungan}
                   filterStatusKunjungan={filterStatusKunjungan}
                   setFilterStatusKunjungan={setFilterStatusKunjungan}
-                  bulanOptions={bulanOptions}
                 />
               </div>
             )}
