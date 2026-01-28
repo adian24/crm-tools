@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
@@ -19,6 +19,11 @@ import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { getCurrentUser } from '@/lib/auth';
 import indonesiaData from '@/data/indonesia-provinsi-kota.json';
+import masterSalesData from '@/data/master-sales.json';
+import masterAssociateData from '@/data/master-associate.json';
+import masterStandarData from '@/data/master-standar.json';
+import masterEaCodeData from '@/data/master-ea-code.json';
+import masterAlasanData from '@/data/master-alasan.json';
 import { InfinityLoader } from '@/components/ui/infinity-loader';
 import { FilterSection } from '@/components/filters/FilterSection';
 import { FilterDateSection } from '@/components/filters/FilterDateSection';
@@ -27,6 +32,7 @@ import { FilterCompanySection } from '@/components/filters/FilterCompanySection'
 import { FilterPicSalesSection } from '@/components/filters/FilterPicSalesSection';
 import { FilterSertifikatSection } from '@/components/filters/FilterSertifikatSection';
 import { FilterKunjunganSection } from '@/components/filters/FilterKunjunganSection';
+import { CrmEditDialog } from '@/components/crm-edit-dialog';
 
 interface CrmTarget {
   _id: Id<"crmTargets">;
@@ -132,6 +138,38 @@ const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, staffUser
     onFieldChange(index, field, value);
   };
 
+  // Get kota options based on selected provinsi
+  const getKotaOptions = () => {
+    if (!row.provinsi) return [];
+    const selectedProv = (indonesiaData as any)[row.provinsi];
+    return selectedProv?.kabupaten_kota || [];
+  };
+
+  // Calculate trimming and loss values
+  const hargaKontrak = parseFloat(row.hargaKontrak.replace(/\./g, '').replace(',', '.')) || 0;
+  const hargaTerupdate = parseFloat(row.hargaTerupdate.replace(/\./g, '').replace(',', '.')) || 0;
+
+  const trimmingValue = hargaTerupdate > hargaKontrak ? hargaTerupdate - hargaKontrak : 0;
+  const lossValue = hargaKontrak > hargaTerupdate ? hargaKontrak - hargaTerupdate : 0;
+
+  // Format number with thousands separator for display
+  const formatNumber = (num: number) => {
+    return num > 0 ? num.toLocaleString('id-ID') : '';
+  };
+
+  // Handle harga input with formatting
+  const handleHargaChange = (field: 'hargaKontrak' | 'hargaTerupdate' | 'cashback', value: string) => {
+    // Remove all non-digit characters for storage
+    const cleanValue = value.replace(/\./g, '').replace(/,/g, '.');
+    handleChange(field, cleanValue);
+  };
+
+  // Get display value for harga fields
+  const getHargaDisplay = (value: string) => {
+    const numValue = parseFloat(value.replace(/\./g, '').replace(',', '.')) || 0;
+    return numValue > 0 ? numValue.toLocaleString('id-ID') : value;
+  };
+
   return (
     <tr className="hover:bg-muted/30">
       <td className="border border-border p-1 min-w-[80px]">
@@ -155,23 +193,33 @@ const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, staffUser
           className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
         />
       </td>
-      <td className="border border-border p-1 min-w-[100px]">
-        <input
-          type="text"
+      <td className="border border-border p-1 min-w-[150px]">
+        <select
           defaultValue={row.provinsi}
-          onChange={(e) => handleChange('provinsi', e.target.value)}
-          placeholder="Provinsi"
+          onChange={(e) => {
+            handleChange('provinsi', e.target.value);
+            handleChange('kota', ''); // Reset kota when provinsi changes
+          }}
           className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
-        />
+        >
+          <option value="">- Pilih Provinsi -</option>
+          {Object.keys(indonesiaData).sort().map(prov => (
+            <option key={prov} value={prov}>{prov}</option>
+          ))}
+        </select>
       </td>
-      <td className="border border-border p-1 min-w-[100px]">
-        <input
-          type="text"
+      <td className="border border-border p-1 min-w-[150px]">
+        <select
           defaultValue={row.kota}
           onChange={(e) => handleChange('kota', e.target.value)}
-          placeholder="Kota"
-          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
-        />
+          disabled={!row.provinsi}
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded disabled:opacity-50"
+        >
+          <option value="">- Pilih Kota -</option>
+          {getKotaOptions().map((kota: string) => (
+            <option key={kota} value={kota}>{kota}</option>
+          ))}
+        </select>
       </td>
       <td className="border border-border p-1 min-w-[150px]">
         <input
@@ -196,6 +244,18 @@ const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, staffUser
           <option value="LOSS">LOSS</option>
         </select>
       </td>
+      <td className="border border-border p-1 min-w-[150px]">
+        <select
+          defaultValue={row.alasan}
+          onChange={(e) => handleChange('alasan', e.target.value)}
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
+        >
+          <option value="">- Pilih -</option>
+          {masterAlasanData.alasan.map((item: any) => (
+            <option key={item.id} value={item.alasan}>{item.alasan}</option>
+          ))}
+        </select>
+      </td>
       <td className="border border-border p-1 min-w-[100px]">
         <select
           defaultValue={row.picCrm}
@@ -210,32 +270,52 @@ const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, staffUser
           ))}
         </select>
       </td>
-      <td className="border border-border p-1 min-w-[100px]">
-        <input
-          type="text"
+      <td className="border border-border p-1 min-w-[120px]">
+        <select
           defaultValue={row.sales}
           onChange={(e) => handleChange('sales', e.target.value)}
-          placeholder="NAC, ARH"
           className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
-        />
+        >
+          <option value="">- Pilih -</option>
+          {masterSalesData.map((sales: any) => (
+            <option key={sales.id} value={sales.nama}>{sales.nama}</option>
+          ))}
+        </select>
       </td>
-      <td className="border border-border p-1 min-w-[120px]">
-        <input
-          type="text"
+      <td className="border border-border p-1 min-w-[150px]">
+        <select
           defaultValue={row.namaAssociate}
           onChange={(e) => handleChange('namaAssociate', e.target.value)}
-          placeholder="Nama Associate"
           className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
-        />
+        >
+          <option value="">- Pilih -</option>
+          {masterAssociateData.associate.map((assoc: any) => (
+            <option key={assoc.kode} value={assoc.nama}>{assoc.nama}</option>
+          ))}
+        </select>
       </td>
       <td className="border border-border p-1 min-w-[100px]">
-        <input
-          type="text"
+        <select
           defaultValue={row.produk}
           onChange={(e) => handleChange('produk', e.target.value)}
-          placeholder="ISO, ISPO"
           className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
-        />
+        >
+          <option value="">- Pilih -</option>
+          <option value="XMS">XMS</option>
+          <option value="SUSTAIN">SUSTAIN</option>
+        </select>
+      </td>
+      <td className="border border-border p-1 min-w-[100px]">
+        <select
+          defaultValue={row.std}
+          onChange={(e) => handleChange('std', e.target.value)}
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
+        >
+          <option value="">- Pilih -</option>
+          {masterStandarData.standar.map((std: any) => (
+            <option key={std.kode} value={std.nama}>{std.nama}</option>
+          ))}
+        </select>
       </td>
       <td className="border border-border p-1 min-w-[100px]">
         <select
@@ -250,22 +330,42 @@ const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, staffUser
         </select>
       </td>
       <td className="border border-border p-1 min-w-[100px]">
-        <input
-          type="text"
+        <select
           defaultValue={row.akreditasi}
           onChange={(e) => handleChange('akreditasi', e.target.value)}
-          placeholder="KAN, NON AKRE"
           className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
-        />
+        >
+          <option value="">- Pilih -</option>
+          <option value="KAN">KAN</option>
+          <option value="NON AKRE">NON AKRE</option>
+        </select>
       </td>
       <td className="border border-border p-1 min-w-[100px]">
-        <input
-          type="text"
-          defaultValue={row.std}
-          onChange={(e) => handleChange('std', e.target.value)}
-          placeholder="SMK3, HACCP"
+        <select
+          defaultValue={row.eaCode}
+          onChange={(e) => handleChange('eaCode', e.target.value)}
           className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
-        />
+        >
+          <option value="">- Pilih -</option>
+          {masterEaCodeData.ea_code.map((ea: any) => (
+            <option key={ea.id} value={ea.ea_code}>{ea.ea_code}</option>
+          ))}
+        </select>
+      </td>
+      <td className="border border-border p-1 min-w-[100px]">
+        <select
+          defaultValue={row.tahapAudit}
+          onChange={(e) => handleChange('tahapAudit', e.target.value)}
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
+        >
+          <option value="">- Pilih -</option>
+          <option value="IA">IA</option>
+          <option value="RC">RC</option>
+          <option value="SV1">SV1</option>
+          <option value="SV2">SV2</option>
+          <option value="SV3">SV3</option>
+          <option value="SV4">SV4</option>
+        </select>
       </td>
       <td className="border border-border p-1 min-w-[100px]">
         <input
@@ -286,8 +386,8 @@ const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, staffUser
       <td className="border border-border p-1 min-w-[100px]">
         <input
           type="text"
-          defaultValue={row.hargaKontrak}
-          onChange={(e) => handleChange('hargaKontrak', e.target.value)}
+          value={getHargaDisplay(row.hargaKontrak)}
+          onChange={(e) => handleHargaChange('hargaKontrak', e.target.value)}
           placeholder="0"
           className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded text-right"
         />
@@ -303,11 +403,83 @@ const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, staffUser
       <td className="border border-border p-1 min-w-[120px]">
         <input
           type="text"
+          value={getHargaDisplay(row.hargaTerupdate)}
+          onChange={(e) => handleHargaChange('hargaTerupdate', e.target.value)}
+          placeholder="0"
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded text-right"
+        />
+      </td>
+      <td className="border border-border p-1 min-w-[100px] bg-muted/30">
+        <input
+          type="text"
+          value={formatNumber(trimmingValue)}
+          readOnly
+          placeholder="0"
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none text-right font-medium text-green-600"
+          title="Trimming: Harga Terupdate - Harga Kontrak"
+        />
+      </td>
+      <td className="border border-border p-1 min-w-[100px] bg-muted/30">
+        <input
+          type="text"
+          value={formatNumber(lossValue)}
+          readOnly
+          placeholder="0"
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none text-right font-medium text-red-600"
+          title="Loss: Harga Kontrak - Harga Terupdate"
+        />
+      </td>
+      <td className="border border-border p-1 min-w-[100px]">
+        <input
+          type="text"
+          value={getHargaDisplay(row.cashback)}
+          onChange={(e) => handleHargaChange('cashback', e.target.value)}
+          placeholder="0"
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded text-right"
+        />
+      </td>
+      <td className="border border-border p-1 min-w-[120px]">
+        <select
+          defaultValue={row.terminPembayaran}
+          onChange={(e) => handleChange('terminPembayaran', e.target.value)}
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
+        >
+          <option value="">- Pilih -</option>
+          <option value="Lunas Diawal">Lunas Diawal</option>
+          <option value="Lunas Diakhir">Lunas Diakhir</option>
+        </select>
+      </td>
+      <td className="border border-border p-1 min-w-[120px]">
+        <select
+          defaultValue={row.statusSertifikat}
+          onChange={(e) => handleChange('statusSertifikat', e.target.value)}
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
+        >
+          <option value="">- Pilih -</option>
+          <option value="Terbit">Terbit</option>
+          <option value="Belum Terbit">Belum Terbit</option>
+        </select>
+      </td>
+      <td className="border border-border p-1 min-w-[120px]">
+        <select
           defaultValue={row.bulanExpDate}
           onChange={(e) => handleChange('bulanExpDate', e.target.value)}
-          placeholder="Bulan Exp"
           className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
-        />
+        >
+          <option value="">- Pilih -</option>
+          <option value="Januari">Januari</option>
+          <option value="Februari">Februari</option>
+          <option value="Maret">Maret</option>
+          <option value="April">April</option>
+          <option value="Mei">Mei</option>
+          <option value="Juni">Juni</option>
+          <option value="Juli">Juli</option>
+          <option value="Agustus">Agustus</option>
+          <option value="September">September</option>
+          <option value="Oktober">Oktober</option>
+          <option value="November">November</option>
+          <option value="Desember">Desember</option>
+        </select>
       </td>
       <td className="border border-border p-1 min-w-[100px]">
         <input
@@ -503,6 +675,45 @@ export default function CrmDataManagementPage() {
     statusKunjungan: '',
   });
 
+  // Optimized handler for updating form data - prevents unnecessary re-renders
+  const updateFormField = useCallback((field: keyof typeof formData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  }, []);
+
+  // Optimized handler for bulk updates
+  const updateFormFields = useCallback((updates: Partial<typeof formData>) => {
+    setFormData(prev => ({ ...prev, ...updates }));
+  }, []);
+
+  // Memoized options for Edit Dialog Select dropdowns to prevent re-renders
+  const editProvinsiOptions = useMemo(() =>
+    Object.keys(indonesiaData).sort(), []
+  );
+
+  const editKotaOptions = useMemo(() =>
+    formData.provinsi ? (indonesiaData as any)[formData.provinsi]?.kabupaten_kota?.sort() || [] : []
+  , [formData.provinsi]);
+
+  const editAlasanOptions = useMemo(() =>
+    masterAlasanData.alasan.map(item => item.alasan), []
+  );
+
+  const editAssociateOptions = useMemo(() =>
+    masterAssociateData.associate.map(assoc => assoc.nama), []
+  );
+
+  const editSalesOptions = useMemo(() =>
+    masterSalesData.map(sales => sales.nama), []
+  );
+
+  const editStandarOptions = useMemo(() =>
+    masterStandarData.standar.map(std => std.nama), []
+  );
+
+  const editEaCodeOptions = useMemo(() =>
+    masterEaCodeData.ea_code.map(ea => ({ id: ea.id, code: ea.ea_code })), []
+  );
+
   // Excel-like Form state (multiple rows)
   const [excelFormData, setExcelFormData] = useState<CrmFormData[]>([{
     tahun: currentYear,
@@ -638,9 +849,16 @@ export default function CrmDataManagementPage() {
            matchesTermin && matchesKunjungan && matchesStatusKunjungan;
   }) || [];
 
+  // Sort by updatedAt (newest first), then by createdAt (newest first)
+  const sortedTargets = filteredTargets.sort((a, b) => {
+    const dateA = Math.max(a.updatedAt || 0, a.createdAt || 0);
+    const dateB = Math.max(b.updatedAt || 0, b.createdAt || 0);
+    return dateB - dateA; // Sort descending (newest first)
+  });
+
   // Pagination
-  const totalPages = Math.ceil(filteredTargets.length / itemsPerPage);
-  const paginatedTargets = filteredTargets.slice(
+  const totalPages = Math.ceil(sortedTargets.length / itemsPerPage);
+  const paginatedTargets = sortedTargets.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -942,10 +1160,21 @@ export default function CrmDataManagementPage() {
   const handleExcelFieldChange = (index: number, field: keyof CrmFormData, value: string) => {
     setExcelFormData(prevFormData => {
       const newFormData = [...prevFormData];
-      newFormData[index] = {
-        ...newFormData[index],
-        [field]: value
-      };
+      const currentRow = { ...newFormData[index], [field]: value };
+
+      // Calculate trimmingValue and lossValue when harga fields change
+      if (field === 'hargaKontrak' || field === 'hargaTerupdate') {
+        const hargaKontrak = parseFloat(currentRow.hargaKontrak.replace(/\./g, '').replace(/,/g, '.')) || 0;
+        const hargaTerupdate = parseFloat(currentRow.hargaTerupdate.replace(/\./g, '').replace(/,/g, '.')) || 0;
+
+        const trimmingValue = hargaTerupdate > hargaKontrak ? hargaTerupdate - hargaKontrak : 0;
+        const lossValue = hargaKontrak > hargaTerupdate ? hargaKontrak - hargaTerupdate : 0;
+
+        currentRow.trimmingValue = trimmingValue > 0 ? trimmingValue.toString() : '';
+        currentRow.lossValue = lossValue > 0 ? lossValue.toString() : '';
+      }
+
+      newFormData[index] = currentRow;
       return newFormData;
     });
   };
@@ -1956,7 +2185,7 @@ export default function CrmDataManagementPage() {
                 />
               </label>
             </Button>
-            <Button onClick={() => setShowExcelFormModal(true)} size="sm" disabled={isImporting || selectedIds.size > 0}>
+            <Button onClick={() => setShowExcelFormModal(true)} size="sm" disabled={isImporting || selectedIds.size > 0} className='h-7 text-xs bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 cursor-pointer'>
               <FileSpreadsheet className="h-4 w-4 mr-2" />
               Add
             </Button>
@@ -2170,294 +2399,461 @@ export default function CrmDataManagementPage() {
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-[60vw] sm:max-w-[60vw] lg:max-w-[60vw] xl:max-w-[60vw] max-h-[60vh] sm:max-h-[85vh] overflow-y-auto p-4 sm:p-6">
-          <DialogHeader>
-            <DialogTitle>Edit CRM Target</DialogTitle>
+        <DialogContent className="max-w-[90vw] sm:max-w-[85vw] lg:max-w-[90vw] max-h-[90vh] overflow-hidden flex flex-col p-0">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b">
+            <DialogTitle className="text-xl font-semibold">Edit Data CRM</DialogTitle>
             <DialogDescription>
-              Update CRM target information
+              Perbarui informasi target CRM
             </DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-3 gap-4">
-            {/* Section: Basic Info */}
-            <div className="col-span-3">
-              <h3 className="text-sm font-semibold mb-3 text-muted-foreground">Basic Information</h3>
-            </div>
-            <div className="col-span-3 sm:col-span-1 space-y-2">
-              <Label>Company Name *</Label>
-              <Input
-                value={formData.namaPerusahaan}
-                onChange={(e) => setFormData({...formData, namaPerusahaan: e.target.value})}
-              />
-            </div>
-            <div className="col-span-3 sm:col-span-1 space-y-2">
-              <Label>Status *</Label>
-              <Select value={formData.status} onValueChange={(v) => setFormData({...formData, status: v})}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="WAITING">WAITING</SelectItem>
-                  <SelectItem value="PROSES">PROSES</SelectItem>
-                  <SelectItem value="DONE">DONE</SelectItem>
-                  <SelectItem value="SUSPEND">SUSPEND</SelectItem>
-                  <SelectItem value="LOSS">LOSS</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="col-span-3 sm:col-span-1 space-y-2">
-              <Label>Category</Label>
-              <Select value={formData.category} onValueChange={(v) => setFormData({...formData, category: v})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="GOLD">GOLD</SelectItem>
-                  <SelectItem value="SILVER">SILVER</SelectItem>
-                  <SelectItem value="BRONZE">BRONZE</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
 
-            <div className="col-span-3 sm:col-span-1 space-y-2">
-              <Label>PIC CRM *</Label>
-              <Input
-                value={formData.picCrm}
-                onChange={(e) => setFormData({...formData, picCrm: e.target.value})}
-                placeholder="DHA, MRC"
-              />
-            </div>
-            <div className="col-span-3 sm:col-span-1 space-y-2">
-              <Label>Sales *</Label>
-              <Input
-                value={formData.sales}
-                onChange={(e) => setFormData({...formData, sales: e.target.value})}
-                placeholder="NAC, ARH, BSC"
-              />
-            </div>
-            <div className="col-span-3 sm:col-span-1 space-y-2">
-              <Label>Nama Associate</Label>
-              <Input
-                value={formData.namaAssociate}
-                onChange={(e) => setFormData({...formData, namaAssociate: e.target.value})}
-              />
-            </div>
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Section 1: Informasi Perusahaan */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b">
+                  <div className="w-1 h-5 bg-blue-600 rounded-full"></div>
+                  <h3 className="text-sm font-semibold text-foreground">Informasi Perusahaan</h3>
+                </div>
 
-            <div className="col-span-3 sm:col-span-1 space-y-2">
-              <Label>Tahun</Label>
-              <Input
-                value={formData.tahun}
-                onChange={(e) => setFormData({...formData, tahun: e.target.value})}
-                placeholder="2025"
-              />
-            </div>
-            <div className="col-span-3 sm:col-span-1 space-y-2">
-              <Label>Bulan Exp Date</Label>
-              <Input
-                value={formData.bulanExpDate}
-                onChange={(e) => setFormData({...formData, bulanExpDate: e.target.value})}
-              />
-            </div>
-            <div className="col-span-3 sm:col-span-1 space-y-2">
-              <Label>Produk</Label>
-              <Input
-                value={formData.produk}
-                onChange={(e) => setFormData({...formData, produk: e.target.value})}
-                placeholder="ISO, ISPO"
-              />
-            </div>
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-xs font-medium">Nama Perusahaan *</Label>
+                    <Input
+                      value={formData.namaPerusahaan}
+                      onChange={(e) => updateFormField('namaPerusahaan', e.target.value)}
+                      placeholder="Nama perusahaan"
+                      className="mt-1"
+                    />
+                  </div>
 
-            {/* Section: Location */}
-            <div className="col-span-3 mt-4">
-              <h3 className="text-sm font-semibold mb-3 text-muted-foreground">Location</h3>
-            </div>
-            <div className="col-span-3 space-y-2">
-              <Label>Address *</Label>
-              <Input
-                value={formData.alamat}
-                onChange={(e) => setFormData({...formData, alamat: e.target.value})}
-                placeholder="Full address"
-              />
-            </div>
-            <div className="col-span-3 sm:col-span-1 space-y-2">
-              <Label>Province *</Label>
-              <Input
-                value={formData.provinsi}
-                onChange={(e) => setFormData({...formData, provinsi: e.target.value})}
-                placeholder="DKI Jakarta"
-              />
-            </div>
-            <div className="col-span-3 sm:col-span-1 space-y-2">
-              <Label>City *</Label>
-              <Input
-                value={formData.kota}
-                onChange={(e) => setFormData({...formData, kota: e.target.value})}
-                placeholder="Jakarta Selatan"
-              />
-            </div>
+                  <div>
+                    <Label className="text-xs font-medium">Alamat *</Label>
+                    <Input
+                      value={formData.alamat}
+                      onChange={(e) => updateFormField('alamat', e.target.value)}
+                      placeholder="Alamat lengkap"
+                      className="mt-1"
+                    />
+                  </div>
 
-            {/* Section: Certification */}
-            <div className="col-span-3 mt-4">
-              <h3 className="text-sm font-semibold mb-3 text-muted-foreground">Certification Details</h3>
-            </div>
-            <div className="col-span-3 sm:col-span-1 space-y-2">
-              <Label>Akreditasi</Label>
-              <Input
-                value={formData.akreditasi}
-                onChange={(e) => setFormData({...formData, akreditasi: e.target.value})}
-                placeholder="KAN, NON AKRE"
-              />
-            </div>
-            <div className="col-span-3 sm:col-span-1 space-y-2">
-              <Label>EA Code</Label>
-              <Input
-                value={formData.eaCode}
-                onChange={(e) => setFormData({...formData, eaCode: e.target.value})}
-              />
-            </div>
-            <div className="col-span-3 sm:col-span-1 space-y-2">
-              <Label>STD</Label>
-              <Input
-                value={formData.std}
-                onChange={(e) => setFormData({...formData, std: e.target.value})}
-                placeholder="SMK3, HACCP"
-              />
-            </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs font-medium">Provinsi *</Label>
+                      <Select value={formData.provinsi} onValueChange={(v) => updateFormField('provinsi', v)}>
+                        <SelectTrigger className="mt-1 w-full">
+                          <SelectValue placeholder="Pilih" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {editProvinsiOptions.map((prov, idx) => (
+                            <SelectItem key={`${prov}-${idx}`} value={prov}>{prov}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-            <div className="col-span-3 sm:col-span-1 space-y-2">
-              <Label>IA Date</Label>
-              <Input
-                type="date"
-                value={formData.iaDate}
-                onChange={(e) => setFormData({...formData, iaDate: e.target.value})}
-              />
-            </div>
-            <div className="col-span-3 sm:col-span-1 space-y-2">
-              <Label>Exp Date</Label>
-              <Input
-                type="date"
-                value={formData.expDate}
-                onChange={(e) => setFormData({...formData, expDate: e.target.value})}
-              />
-            </div>
-            <div className="col-span-3 sm:col-span-1 space-y-2">
-              <Label>Tahap Audit</Label>
-              <Input
-                value={formData.tahapAudit}
-                onChange={(e) => setFormData({...formData, tahapAudit: e.target.value})}
-              />
-            </div>
+                    <div>
+                      <Label className="text-xs font-medium">Kota *</Label>
+                      <Select value={formData.kota} onValueChange={(v) => updateFormField('kota', v)} disabled={!formData.provinsi}>
+                        <SelectTrigger className="mt-1 w-full">
+                          <SelectValue placeholder="Pilih" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {editKotaOptions.map((kota: string, idx: number) => (
+                            <SelectItem key={`${kota}-${idx}`} value={kota}>{kota}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-            <div className="col-span-3 sm:col-span-1 space-y-2">
-              <Label>Status Sertifikat</Label>
-              <Input
-                value={formData.statusSertifikat}
-                onChange={(e) => setFormData({...formData, statusSertifikat: e.target.value})}
-              />
-            </div>
+              {/* Section 2: Status & PIC */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b">
+                  <div className="w-1 h-5 bg-green-600 rounded-full"></div>
+                  <h3 className="text-sm font-semibold text-foreground">Status & PIC</h3>
+                </div>
 
-            {/* Section: Financial */}
-            <div className="col-span-3 mt-4">
-              <h3 className="text-sm font-semibold mb-3 text-muted-foreground">Financial Information</h3>
-            </div>
-            <div className="col-span-3 sm:col-span-1 space-y-2">
-              <Label>Harga Kontrak</Label>
-              <Input
-                type="number"
-                value={formData.hargaKontrak}
-                onChange={(e) => setFormData({...formData, hargaKontrak: e.target.value})}
-                placeholder="10000000"
-              />
-            </div>
-            <div className="col-span-3 sm:col-span-1 space-y-2">
-              <Label>Bulan TTD Notif</Label>
-              <Input
-                type="date"
-                value={formData.bulanTtdNotif}
-                onChange={(e) => setFormData({...formData, bulanTtdNotif: e.target.value})}
-              />
-            </div>
-            <div className="col-span-3 sm:col-span-1 space-y-2">
-              <Label>Harga Terupdate</Label>
-              <Input
-                type="number"
-                value={formData.hargaTerupdate}
-                onChange={(e) => setFormData({...formData, hargaTerupdate: e.target.value})}
-                placeholder="10000000"
-              />
-            </div>
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-xs font-medium">Status</Label>
+                    <Select value={formData.status} onValueChange={(v) => updateFormField('status', v)}>
+                      <SelectTrigger className="mt-1 w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="WAITING">WAITING</SelectItem>
+                        <SelectItem value="PROSES">PROSES</SelectItem>
+                        <SelectItem value="DONE">DONE</SelectItem>
+                        <SelectItem value="SUSPEND">SUSPEND</SelectItem>
+                        <SelectItem value="LOSS">LOSS</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-            <div className="col-span-3 sm:col-span-1 space-y-2">
-              <Label>Trimming Value</Label>
-              <Input
-                type="number"
-                value={formData.trimmingValue}
-                onChange={(e) => setFormData({...formData, trimmingValue: e.target.value})}
-              />
-            </div>
-            <div className="col-span-3 sm:col-span-1 space-y-2">
-              <Label>Loss Value</Label>
-              <Input
-                type="number"
-                value={formData.lossValue}
-                onChange={(e) => setFormData({...formData, lossValue: e.target.value})}
-              />
-            </div>
-            <div className="col-span-3 sm:col-span-1 space-y-2">
-              <Label>Cashback</Label>
-              <Input
-                type="number"
-                value={formData.cashback}
-                onChange={(e) => setFormData({...formData, cashback: e.target.value})}
-              />
-            </div>
+                  <div>
+                    <Label className="text-xs font-medium">Alasan</Label>
+                    <Select value={formData.alasan} onValueChange={(v) => updateFormField('alasan', v)}>
+                      <SelectTrigger className="mt-1 w-full">
+                        <SelectValue placeholder="Pilih alasan" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {editAlasanOptions.map((alasan, idx) => (
+                          <SelectItem key={`${alasan}-${idx}`} value={alasan}>{alasan}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-            <div className="col-span-3 sm:col-span-1 space-y-2">
-              <Label>Termin Pembayaran</Label>
-              <Input
-                value={formData.terminPembayaran}
-                onChange={(e) => setFormData({...formData, terminPembayaran: e.target.value})}
-                placeholder="DP 50%, Pelunasan 50%"
-              />
-            </div>
+                  <div>
+                    <Label className="text-xs font-medium">Category</Label>
+                    <Select value={formData.category} onValueChange={(v) => updateFormField('category', v)}>
+                      <SelectTrigger className="mt-1 w-full">
+                        <SelectValue placeholder="Pilih" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="GOLD">GOLD</SelectItem>
+                        <SelectItem value="SILVER">SILVER</SelectItem>
+                        <SelectItem value="BRONZE">BRONZE</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-            {/* Section: Visit & Other */}
-            <div className="col-span-3 mt-4">
-              <h3 className="text-sm font-semibold mb-3 text-muted-foreground">Visit & Other Information</h3>
-            </div>
-            <div className="col-span-3 sm:col-span-1 space-y-2">
-              <Label>Tanggal Kunjungan</Label>
-              <Input
-                type="date"
-                value={formData.tanggalKunjungan}
-                onChange={(e) => setFormData({...formData, tanggalKunjungan: e.target.value})}
-              />
-            </div>
-            <div className="col-span-3 sm:col-span-1 space-y-2">
-              <Label>Status Kunjungan</Label>
-              <Select value={formData.statusKunjungan} onValueChange={(v) => setFormData({...formData, statusKunjungan: v})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="VISITED">VISITED</SelectItem>
-                  <SelectItem value="NOT YET">NOT YET</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                  <div>
+                    <Label className="text-xs font-medium">PIC CRM</Label>
+                    <Select value={formData.picCrm} onValueChange={(v) => updateFormField('picCrm', v)}>
+                      <SelectTrigger className="mt-1 w-full">
+                        <SelectValue placeholder="Pilih" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {staffUsers.map(user => (
+                          <SelectItem key={user._id} value={user.name}>{user.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-            <div className="col-span-3 space-y-2">
-              <Label>Alasan</Label>
-              <Textarea
-                value={formData.alasan}
-                onChange={(e) => setFormData({...formData, alasan: e.target.value})}
-                placeholder="Reason for status or other notes"
-                rows={2}
-              />
+                  <div>
+                    <Label className="text-xs font-medium">Sales</Label>
+                    <Select value={formData.sales} onValueChange={(v) => updateFormField('sales', v)}>
+                      <SelectTrigger className="mt-1 w-full">
+                        <SelectValue placeholder="Pilih" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {editSalesOptions.map((nama, idx) => (
+                          <SelectItem key={`${nama}-${idx}`} value={nama}>{nama}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs font-medium">Associate</Label>
+                    <Select value={formData.namaAssociate} onValueChange={(v) => updateFormField('namaAssociate', v)}>
+                      <SelectTrigger className="mt-1 w-full">
+                        <SelectValue placeholder="Pilih" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {editAssociateOptions.map((nama, idx) => (
+                          <SelectItem key={`${nama}-${idx}`} value={nama}>{nama}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 3: Produk & Sertifikat */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b">
+                  <div className="w-1 h-5 bg-purple-600 rounded-full"></div>
+                  <h3 className="text-sm font-semibold text-foreground">Produk & Sertifikat</h3>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs font-medium">Tahun</Label>
+                      <Select value={formData.tahun} onValueChange={(v) => updateFormField('tahun', v)}>
+                        <SelectTrigger className="mt-1 w-full">
+                          <SelectValue placeholder="Pilih" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 11 }, (_, i) => 2024 + i).map(year => (
+                            <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label className="text-xs font-medium">Bulan Exp</Label>
+                      <Select value={formData.bulanExpDate} onValueChange={(v) => updateFormField('bulanExpDate', v)}>
+                        <SelectTrigger className="mt-1 w-full">
+                          <SelectValue placeholder="Pilih" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Januari">Januari</SelectItem>
+                          <SelectItem value="Februari">Februari</SelectItem>
+                          <SelectItem value="Maret">Maret</SelectItem>
+                          <SelectItem value="April">April</SelectItem>
+                          <SelectItem value="Mei">Mei</SelectItem>
+                          <SelectItem value="Juni">Juni</SelectItem>
+                          <SelectItem value="Juli">Juli</SelectItem>
+                          <SelectItem value="Agustus">Agustus</SelectItem>
+                          <SelectItem value="September">September</SelectItem>
+                          <SelectItem value="Oktober">Oktober</SelectItem>
+                          <SelectItem value="November">November</SelectItem>
+                          <SelectItem value="Desember">Desember</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs font-medium">Produk</Label>
+                    <Select value={formData.produk} onValueChange={(v) => updateFormField('produk', v)}>
+                      <SelectTrigger className="mt-1 w-full">
+                        <SelectValue placeholder="Pilih" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="XMS">XMS</SelectItem>
+                        <SelectItem value="SUSTAIN">SUSTAIN</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs font-medium">Akreditasi</Label>
+                    <Select value={formData.akreditasi} onValueChange={(v) => updateFormField('akreditasi', v)}>
+                      <SelectTrigger className="mt-1 w-full">
+                        <SelectValue placeholder="Pilih" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="KAN">KAN</SelectItem>
+                        <SelectItem value="NON AKRE">NON AKRE</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs font-medium">Standar</Label>
+                    <Select value={formData.std} onValueChange={(v) => updateFormField('std', v)}>
+                      <SelectTrigger className="mt-1 w-full">
+                        <SelectValue placeholder="Pilih" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {editStandarOptions.map((nama, idx) => (
+                          <SelectItem key={`${nama}-${idx}`} value={nama}>{nama}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs font-medium">EA Code</Label>
+                    <Select value={formData.eaCode} onValueChange={(v) => updateFormField('eaCode', v)}>
+                      <SelectTrigger className="mt-1 w-full">
+                        <SelectValue placeholder="Pilih" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {editEaCodeOptions.map((ea) => (
+                          <SelectItem key={ea.id} value={ea.code}>{ea.code}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs font-medium">Tahap Audit</Label>
+                    <Select value={formData.tahapAudit} onValueChange={(v) => updateFormField('tahapAudit', v)}>
+                      <SelectTrigger className="mt-1 w-full">
+                        <SelectValue placeholder="Pilih" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="IA">IA</SelectItem>
+                        <SelectItem value="RC">RC</SelectItem>
+                        <SelectItem value="SV1">SV1</SelectItem>
+                        <SelectItem value="SV2">SV2</SelectItem>
+                        <SelectItem value="SV3">SV3</SelectItem>
+                        <SelectItem value="SV4">SV4</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs font-medium">Status Sertifikat</Label>
+                    <Select value={formData.statusSertifikat} onValueChange={(v) => updateFormField('statusSertifikat', v)}>
+                      <SelectTrigger className="mt-1 w-full">
+                        <SelectValue placeholder="Pilih" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Terbit">Terbit</SelectItem>
+                        <SelectItem value="Belum Terbit">Belum Terbit</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs font-medium">IA Date</Label>
+                      <Input
+                        type="date"
+                        value={formData.iaDate}
+                        onChange={(e) => updateFormField('iaDate', e.target.value)}
+                        className="mt-1"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-xs font-medium">Exp Date</Label>
+                      <Input
+                        type="date"
+                        value={formData.expDate}
+                        onChange={(e) => updateFormField('expDate', e.target.value)}
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs font-medium">Bulan TTD Notif</Label>
+                    <Input
+                      type="date"
+                      value={formData.bulanTtdNotif}
+                      onChange={(e) => updateFormField('bulanTtdNotif', e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 4: Harga & Pembayaran */}
+              <div className="space-y-4 md:col-span-2 lg:col-span-3">
+                <div className="flex items-center gap-2 pb-2 border-b">
+                  <div className="w-1 h-5 bg-orange-600 rounded-full"></div>
+                  <h3 className="text-sm font-semibold text-foreground">Harga & Pembayaran</h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <Label className="text-xs font-medium">Harga Kontrak</Label>
+                    <Input
+                      type="text"
+                      value={formData.hargaKontrak ? formData.hargaKontrak.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") : ''}
+                      onChange={(e) => updateFormField('hargaKontrak', e.target.value.replace(/\./g, ''))}
+                      placeholder="0"
+                      className="mt-1 text-right"
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-1">Format: 1.000.000</p>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs font-medium">Harga Terupdate</Label>
+                    <Input
+                      type="text"
+                      value={formData.hargaTerupdate ? formData.hargaTerupdate.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") : ''}
+                      onChange={(e) => updateFormField('hargaTerupdate', e.target.value.replace(/\./g, ''))}
+                      placeholder="0"
+                      className="mt-1 text-right"
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-1">Format: 1.000.000</p>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs font-medium">Cashback</Label>
+                    <Input
+                      type="text"
+                      value={formData.cashback ? formData.cashback.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") : ''}
+                      onChange={(e) => updateFormField('cashback', e.target.value.replace(/\./g, ''))}
+                      placeholder="0"
+                      className="mt-1 text-right"
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-1">Format: 1.000.000</p>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs font-medium">Termin Pembayaran</Label>
+                    <Select value={formData.terminPembayaran} onValueChange={(v) => updateFormField('terminPembayaran', v)}>
+                      <SelectTrigger className="mt-1 w-full">
+                        <SelectValue placeholder="Pilih" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Lunas Diawal">Lunas Diawal</SelectItem>
+                        <SelectItem value="Lunas Diakhir">Lunas Diakhir</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/50 p-4 rounded-lg">
+                  <div>
+                    <Label className="text-xs font-medium text-green-600">Trimming Value</Label>
+                    <div className="mt-1 p-3 bg-white border rounded-md">
+                      <p className="text-lg font-semibold text-green-600 text-right">
+                        {formData.trimmingValue ? parseFloat(formData.trimmingValue).toLocaleString('id-ID') : '0'}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground text-center mt-1">Harga Terupdate - Harga Kontrak</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs font-medium text-red-600">Loss Value</Label>
+                    <div className="mt-1 p-3 bg-white border rounded-md">
+                      <p className="text-lg font-semibold text-red-600 text-right">
+                        {formData.lossValue ? parseFloat(formData.lossValue).toLocaleString('id-ID') : '0'}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground text-center mt-1">Harga Kontrak - Harga Terupdate</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 5: Kunjungan */}
+              <div className="space-y-4 md:col-span-2 lg:col-span-3">
+                <div className="flex items-center gap-2 pb-2 border-b">
+                  <div className="w-1 h-5 bg-teal-600 rounded-full"></div>
+                  <h3 className="text-sm font-semibold text-foreground">Kunjungan</h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-xs font-medium">Tanggal Kunjungan</Label>
+                    <Input
+                      type="date"
+                      value={formData.tanggalKunjungan}
+                      onChange={(e) => updateFormField('tanggalKunjungan', e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-xs font-medium">Status Kunjungan</Label>
+                    <Select value={formData.statusKunjungan} onValueChange={(v) => updateFormField('statusKunjungan', v)}>
+                      <SelectTrigger className="mt-1 w-full">
+                        <SelectValue placeholder="Pilih" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="VISITED">VISITED</SelectItem>
+                        <SelectItem value="NOT YET">NOT YET</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className='cursor-pointer'>Cancel</Button>
-            <Button onClick={handleUpdate} className='cursor-pointer'>Update</Button>
+
+          <div className="flex justify-end gap-3 px-6 py-4 border-t bg-muted/30">
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className='cursor-pointer'>
+              Batal
+            </Button>
+            <Button onClick={handleUpdate} className='cursor-pointer bg-blue-600 hover:bg-blue-700'>
+              <Save className="h-4 w-4 mr-2" />
+              Simpan Perubahan
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -2543,17 +2939,26 @@ export default function CrmDataManagementPage() {
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Kota *</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[150px]">Alamat *</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Status</th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[150px]">Alasan</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">PIC CRM</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Sales</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[120px]">Associate</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Produk</th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">STD</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Category</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Akreditasi</th>
-                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">STD</th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">EA Code</th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Tahap Audit</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">IA Date</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Exp Date</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Harga Kontrak</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Bulan TTD</th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Harga Update</th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px] bg-muted/50">Trimming</th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px] bg-muted/50">Loss</th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Cashback</th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[120px]">Termin</th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[120px]">Status Sertifikat</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[120px]">Bulan Exp</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Tgl Kunjungan</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Status Kunjungan</th>

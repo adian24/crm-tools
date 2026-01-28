@@ -120,12 +120,12 @@ export default function DashboardKunjunganPage() {
   // Query based on user role
   const allCrmTargets = useQuery(api.crmTargets.list) || []
 
-  // Query for staff - only when we have the user's name
+  // Query for staff - pass picCrm only when role is staff and name exists
   const staffCrmTargets = useQuery(
     api.crmTargets.getCrmTargetsByPicCrm,
     currentUser?.role === 'staff' && currentUser?.name
       ? { picCrm: currentUser.name }
-      : undefined
+      : {}
   ) || []
 
   // Use different query based on role
@@ -1842,7 +1842,7 @@ export default function DashboardKunjunganPage() {
             Batal
           </Button>
           <Button onClick={handleMassUpdate} disabled={isMassUploading} className="bg-blue-600 hover:bg-blue-700">
-            {isMassUploading ? 'Menyimpan...' : 'Update Semua Standar'}
+            {isMassUploading ? 'Menyimpan...' : 'Simpan Perubahan'}
           </Button>
         </DialogFooter>
       </DialogContent>

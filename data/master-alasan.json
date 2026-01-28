@@ -1,0 +1,17 @@
+{
+  "alasan": [
+    { "id": 1, "alasan": "Menunggu info manajemen" },
+    { "id": 2, "alasan": "Proses ttd form request" },
+    { "id": 3, "alasan": "Proses ttd kontrak" },
+    { "id": 4, "alasan": "Tidak ada respon" },
+    { "id": 5, "alasan": "Tidak koperatif" },
+    { "id": 6, "alasan": "Bangkrut/tutup" },
+    { "id": 7, "alasan": "Tidak ada dana" },
+    { "id": 8, "alasan": "Hanya untuk tender" },
+    { "id": 9, "alasan": "Alamat tidak di temukan" },
+    { "id": 10, "alasan": "Mundur audit" },
+    { "id": 11, "alasan": "Pindah LS" },
+    { "id": 12, "alasan": "IA Reten" },
+    { "id": 13, "alasan": "Tidak sesuai standar" }
+  ]
+}

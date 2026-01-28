@@ -32,11 +32,14 @@ export const getCrmTarget = query({
 
 // Get CRM targets by PIC CRM
 export const getCrmTargetsByPicCrm = query({
-  args: { picCrm: v.string() },
+  args: { picCrm: v.optional(v.string()) },
   handler: async (ctx, args) => {
+    if (!args.picCrm) {
+      return [];
+    }
     const crmTargets = await ctx.db
       .query("crmTargets")
-      .withIndex("by_picCrm", (q) => q.eq("picCrm", args.picCrm))
+      .withIndex("by_picCrm", (q) => q.eq("picCrm", args.picCrm!))
       .collect();
     return crmTargets;
   },

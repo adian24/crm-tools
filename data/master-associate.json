@@ -1,0 +1,856 @@
+{
+  "associate": [
+    {
+      "kode": "ASS001",
+      "nama": "Direct",
+      "kategori": "Internal",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS002",
+      "nama": "OFC",
+      "kategori": "Internal",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS003",
+      "nama": "Premysis",
+      "kategori": "Consulting",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS004",
+      "nama": "Associate",
+      "kategori": "Consulting",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS005",
+      "nama": "Jeap Consulting",
+      "kategori": "Consulting",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS006",
+      "nama": "Bayu",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS007",
+      "nama": "DMS",
+      "kategori": "Consulting",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS008",
+      "nama": "Aswin",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS009",
+      "nama": "Agus",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS010",
+      "nama": "Yulius",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS011",
+      "nama": "Assosiate",
+      "kategori": "Consulting",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS012",
+      "nama": "Satria",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS013",
+      "nama": "Gatya",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS014",
+      "nama": "MBO",
+      "kategori": "Consulting",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS015",
+      "nama": "Kiki",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS016",
+      "nama": "Putri",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS017",
+      "nama": "Samsudin",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS018",
+      "nama": "Senang",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS019",
+      "nama": "Mila sistand",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS020",
+      "nama": "Sapto",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS021",
+      "nama": "Ares",
+      "kategori": "Consulting",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS022",
+      "nama": "Monica",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS023",
+      "nama": "Tiwi",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS024",
+      "nama": "Diki",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS025",
+      "nama": "Made",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS026",
+      "nama": "Kandi",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS027",
+      "nama": "Robi",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS028",
+      "nama": "Ronald",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS029",
+      "nama": "Andre",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS030",
+      "nama": "Aquator",
+      "kategori": "Consulting",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS031",
+      "nama": "Dina",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS032",
+      "nama": "Hani",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS033",
+      "nama": "Rini",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS034",
+      "nama": "Sigma Consulting (Lala)",
+      "kategori": "Consulting",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS035",
+      "nama": "Taya",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS036",
+      "nama": "Yeni",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS037",
+      "nama": "Akom",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS038",
+      "nama": "Febryan",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS039",
+      "nama": "Ibnu",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS040",
+      "nama": "Tina",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS041",
+      "nama": "Ajeng Fransiska",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS042",
+      "nama": "Denny",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS043",
+      "nama": "Dewi",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS044",
+      "nama": "Ecky",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS045",
+      "nama": "Eka",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS046",
+      "nama": "Evi/dina",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS047",
+      "nama": "Gingin",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS048",
+      "nama": "Johnson",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS049",
+      "nama": "Kokek",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS050",
+      "nama": "Micel",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS051",
+      "nama": "Misia",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS052",
+      "nama": "Nur",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS053",
+      "nama": "OSI",
+      "kategori": "Consulting",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS054",
+      "nama": "PRM",
+      "kategori": "Consulting",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS055",
+      "nama": "Rana",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS056",
+      "nama": "Reni",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS057",
+      "nama": "Sri",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS058",
+      "nama": "Sulis",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS059",
+      "nama": "Trio",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS060",
+      "nama": "Yolanda",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS061",
+      "nama": "Ajit",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS062",
+      "nama": "Dionisia",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS063",
+      "nama": "Eri",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS064",
+      "nama": "Exa",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS065",
+      "nama": "Fanny",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS066",
+      "nama": "Heru",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS067",
+      "nama": "Hipin",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS068",
+      "nama": "IMS",
+      "kategori": "Consulting",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS069",
+      "nama": "Lya",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS070",
+      "nama": "Nani",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS071",
+      "nama": "Neneng",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS072",
+      "nama": "Qualitas Sinergi",
+      "kategori": "Consulting",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS073",
+      "nama": "Sahroni",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS074",
+      "nama": "Samuel",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS075",
+      "nama": "Santo",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS076",
+      "nama": "Setiabudi",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS077",
+      "nama": "Sofia",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS078",
+      "nama": "Sukari",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS079",
+      "nama": "Surya",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS080",
+      "nama": "Teguh",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS081",
+      "nama": "Tirtasakti",
+      "kategori": "Consulting",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS082",
+      "nama": "Toni",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS083",
+      "nama": "Vico",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS084",
+      "nama": "ARES",
+      "kategori": "Consulting",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS085",
+      "nama": "Abdul Qahar",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS086",
+      "nama": "Abidin",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS087",
+      "nama": "Abraham",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS088",
+      "nama": "Afid",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS089",
+      "nama": "BAYU",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS090",
+      "nama": "Cahyo/Ecky",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS091",
+      "nama": "Christopher",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS092",
+      "nama": "Citra",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS093",
+      "nama": "Denis / Ecky",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS094",
+      "nama": "EKa",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS095",
+      "nama": "Eldo",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS096",
+      "nama": "Evi",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS097",
+      "nama": "First Mayro",
+      "kategori": "Consulting",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS098",
+      "nama": "Gema Konsultan",
+      "kategori": "Consulting",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS099",
+      "nama": "James",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS100",
+      "nama": "Karl",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS101",
+      "nama": "Lulu",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS102",
+      "nama": "Muyas",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS103",
+      "nama": "Poppy",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS104",
+      "nama": "Proxsys",
+      "kategori": "Consulting",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS105",
+      "nama": "Putra/ Eka",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS106",
+      "nama": "Rio Gatya",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS107",
+      "nama": "Saff Konsultan",
+      "kategori": "Consulting",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS108",
+      "nama": "Sidik",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS109",
+      "nama": "Tata",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS110",
+      "nama": "Taufik",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS111",
+      "nama": "Toto",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS112",
+      "nama": "Transforma",
+      "kategori": "Consulting",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS113",
+      "nama": "Yosi",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS114",
+      "nama": "Yoyo",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS115",
+      "nama": "Zul",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS116",
+      "nama": "Abdul Darda",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS117",
+      "nama": "Aditya",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS118",
+      "nama": "Afif",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS119",
+      "nama": "Alex",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS120",
+      "nama": "Amel",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS121",
+      "nama": "Amin",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS122",
+      "nama": "Andriati",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS123",
+      "nama": "Angga",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS124",
+      "nama": "Anton",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS125",
+      "nama": "Asia Konsultan",
+      "kategori": "Consulting",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS126",
+      "nama": "Ayu / Rio",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS127",
+      "nama": "Budi",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS128",
+      "nama": "Daniel",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS129",
+      "nama": "David Biz Plus",
+      "kategori": "Consulting",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS130",
+      "nama": "Desi Ayu dita (CPU)",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS131",
+      "nama": "Didit",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS132",
+      "nama": "Dircet",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS133",
+      "nama": "Dolla",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS134",
+      "nama": "Doni GMU",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS135",
+      "nama": "Erick",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS136",
+      "nama": "Erika",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS137",
+      "nama": "Fabina",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS138",
+      "nama": "Faris",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS139",
+      "nama": "Fikri",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS140",
+      "nama": "Foresta Niaga Raya",
+      "kategori": "Consulting",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS141",
+      "nama": "Gadis",
+      "kategori": "Individual",
+      "status": "Aktif"
+    },
+    {
+      "kode": "ASS142",
+      "nama": "Gemilang In",
+      "kategori": "Consulting",
+      "status": "Aktif"
+    }
+  ]
+}

@@ -80,6 +80,22 @@ function ChartCardCrmData({
   const mrcColor = 'hsl(280, 70%, 50%)'; // Purple
   const dhaColor = 'hsl(210, 80%, 50%)'; // Blue
 
+  // Colors for pie chart
+  const pieColors = [
+    'hsl(280, 70%, 50%)',   // Purple
+    'hsl(210, 80%, 50%)',   // Blue
+    'hsl(140, 60%, 50%)',   // Green
+    'hsl(30, 90%, 55%)',    // Orange
+    'hsl(340, 80%, 55%)',   // Pink
+    'hsl(180, 70%, 45%)',   // Cyan
+    'hsl(260, 70%, 55%)',   // Violet
+    'hsl(20, 85%, 60%)',    // Amber
+    'hsl(160, 60%, 45%)',   // Teal
+    'hsl(300, 70%, 55%)',   // Magenta
+    'hsl(40, 90%, 55%)',    // Yellow
+    'hsl(120, 60%, 45%)',   // Lime
+  ];
+
   // Process data for chart - group by month and separate by PIC
   const getChartData = () => {
     if (!data || data.length === 0) {
@@ -307,10 +323,10 @@ function ChartCardCrmData({
               case 'pie':
                 // Prepare pie data - total value per month
                 const pieData = chartData
-                  .map(item => ({
+                  .map((item, index) => ({
                     name: item.month,
                     value: item.MRC + item.DHA,
-                    color: chartColor
+                    color: pieColors[index % pieColors.length]
                   }))
                   .filter(item => item.value > 0);
 
@@ -341,7 +357,7 @@ function ChartCardCrmData({
                         animationDuration={800}
                       >
                         {pieData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={chartColor} />
+                          <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
                         ))}
                       </Pie>
                       <Tooltip
