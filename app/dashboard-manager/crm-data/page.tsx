@@ -152,8 +152,8 @@ const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, staffUser
   };
 
   // Calculate trimming and loss values
-  const hargaKontrak = parseFloat(row.hargaKontrak.replace(/\./g, '').replace(',', '.')) || 0;
-  const hargaTerupdate = parseFloat(row.hargaTerupdate.replace(/\./g, '').replace(',', '.')) || 0;
+  const hargaKontrak = parseFloat(row.hargaKontrak?.replace(/\./g, '').replace(',', '.') || '0') || 0;
+  const hargaTerupdate = parseFloat(row.hargaTerupdate?.replace(/\./g, '').replace(',', '.') || '0') || 0;
 
   const trimmingValue = hargaTerupdate > hargaKontrak ? hargaTerupdate - hargaKontrak : 0;
   const lossValue = hargaKontrak > hargaTerupdate ? hargaKontrak - hargaTerupdate : 0;
@@ -171,7 +171,8 @@ const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, staffUser
   };
 
   // Get display value for harga fields
-  const getHargaDisplay = (value: string) => {
+  const getHargaDisplay = (value: string | undefined) => {
+    if (!value) return '';
     const numValue = parseFloat(value.replace(/\./g, '').replace(',', '.')) || 0;
     return numValue > 0 ? numValue.toLocaleString('id-ID') : value;
   };
@@ -1008,8 +1009,8 @@ export default function CrmDataManagementPage() {
 
       // Calculate trimmingValue and lossValue when harga fields change
       if (field === 'hargaKontrak' || field === 'hargaTerupdate') {
-        const hargaKontrak = parseFloat(currentRow.hargaKontrak.replace(/\./g, '').replace(/,/g, '.')) || 0;
-        const hargaTerupdate = parseFloat(currentRow.hargaTerupdate.replace(/\./g, '').replace(/,/g, '.')) || 0;
+        const hargaKontrak = parseFloat(currentRow.hargaKontrak?.replace(/\./g, '').replace(/,/g, '.') || '0') || 0;
+        const hargaTerupdate = parseFloat(currentRow.hargaTerupdate?.replace(/\./g, '').replace(/,/g, '.') || '0') || 0;
 
         const trimmingValue = hargaTerupdate > hargaKontrak ? hargaTerupdate - hargaKontrak : 0;
         const lossValue = hargaKontrak > hargaTerupdate ? hargaKontrak - hargaTerupdate : 0;

@@ -603,7 +603,7 @@ function ChartCardKuadranMonthly({
                             return (
                               <div className="bg-background border rounded-lg shadow-lg p-2">
                                 <p className="font-semibold text-sm">{payload[0].name}</p>
-                                <p className="text-sm">Rp {payload[0].value.toLocaleString('id-ID')}</p>
+                                <p className="text-sm">Rp {(payload[0].value || 0).toLocaleString('id-ID')}</p>
                               </div>
                             );
                           }
