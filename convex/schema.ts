@@ -133,14 +133,17 @@ export default defineSchema({
     picCrm: v.string(), // PIC CRM (DHA, MRC)
     sales: v.string(), // SALES (NAC, ARH, BSC, dll)
     namaAssociate: v.string(), // NAMA ASSOSIATE
+    directOrAssociate: v.optional(v.string()), // DIRECT OR ASSOCIATE
     namaPerusahaan: v.string(), // NAMA PERUSAHAAN
     status: v.string(), // STATUS (WAITING, PROSES, SUSPEND, LOSS, DONE)
     alasan: v.optional(v.string()), // ALASAN
     category: v.optional(v.string()), // CATEGORY (GOLD, SILVER, BRONZE)
+    kuadran: v.optional(v.string()), // KUADRAN
     provinsi: v.string(), // PROVINSI
     kota: v.string(), // KOTA
     alamat: v.string(), // ALAMAT lengkap
     akreditasi: v.optional(v.string()), // AKREDITASI (KAN, NON AKRE)
+    catAkre: v.optional(v.string()), // CAT AKRE
     eaCode: v.optional(v.string()), // EA CODE
     std: v.optional(v.string()), // STD (SMK3, HACCP, dll)
     iaDate: v.optional(v.string()), // IA DATE

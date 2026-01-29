@@ -33,14 +33,17 @@ interface CrmTarget {
   picCrm: string;
   sales: string;
   namaAssociate: string;
+  directOrAssociate?: string;
   namaPerusahaan: string;
   status: string;
   alasan?: string;
   category?: string;
+  kuadran?: string;
   provinsi: string;
   kota: string;
   alamat: string;
   akreditasi?: string;
+  catAkre?: string;
   eaCode?: string;
   std?: string;
   iaDate?: string;
@@ -79,14 +82,17 @@ interface FormData {
   picCrm: string;
   sales: string;
   namaAssociate: string;
+  directOrAssociate: string;
   namaPerusahaan: string;
   status: string;
   alasan: string;
   category: string;
+  kuadran: string;
   provinsi: string;
   kota: string;
   alamat: string;
   akreditasi: string;
+  catAkre: string;
   eaCode: string;
   std: string;
   iaDate: string;
@@ -115,14 +121,17 @@ const EditCrmDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSu
     picCrm: '',
     sales: '',
     namaAssociate: '',
+    directOrAssociate: '',
     namaPerusahaan: '',
     status: '',
     alasan: '',
     category: '',
+    kuadran: '',
     provinsi: '',
     kota: '',
     alamat: '',
     akreditasi: '',
+    catAkre: '',
     eaCode: '',
     std: '',
     iaDate: '',
@@ -155,14 +164,17 @@ const EditCrmDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSu
         picCrm: target.picCrm,
         sales: target.sales,
         namaAssociate: target.namaAssociate,
+        directOrAssociate: target.directOrAssociate || '',
         namaPerusahaan: target.namaPerusahaan,
         status: target.status,
         alasan: target.alasan || '',
         category: target.category || '',
+        kuadran: target.kuadran || '',
         provinsi: target.provinsi,
         kota: target.kota,
         alamat: target.alamat,
         akreditasi: target.akreditasi || '',
+        catAkre: target.catAkre || '',
         eaCode: target.eaCode || '',
         std: target.std || '',
         iaDate: target.iaDate || '',
@@ -249,14 +261,17 @@ const EditCrmDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSu
         picCrm: formData.picCrm,
         sales: formData.sales,
         namaAssociate: formData.namaAssociate,
+        directOrAssociate: formData.directOrAssociate || undefined,
         namaPerusahaan: formData.namaPerusahaan,
         status: formData.status,
         alasan: formData.alasan || undefined,
         category: formData.category || undefined,
+        kuadran: formData.kuadran || undefined,
         provinsi: formData.provinsi,
         kota: formData.kota,
         alamat: formData.alamat,
         akreditasi: formData.akreditasi || undefined,
+        catAkre: formData.catAkre || undefined,
         eaCode: formData.eaCode || undefined,
         std: formData.std || undefined,
         iaDate: formData.iaDate || undefined,
@@ -465,6 +480,21 @@ const EditCrmDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSu
                         </SelectContent>
                       </Select>
                     </div>
+
+                    <div className="space-y-1">
+                      <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Kuadran</Label>
+                      <Select value={formData.kuadran || undefined} onValueChange={(value) => updateFormField('kuadran', value)}>
+                        <SelectTrigger className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500 h-9 text-sm">
+                          <SelectValue placeholder="Pilih" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Q1">Q1</SelectItem>
+                          <SelectItem value="Q2">Q2</SelectItem>
+                          <SelectItem value="Q3">Q3</SelectItem>
+                          <SelectItem value="Q4">Q4</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   <div className="space-y-1">
@@ -521,6 +551,19 @@ const EditCrmDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSu
                         {associateOptions.map((assoc) => (
                           <SelectItem key={assoc} value={assoc}>{assoc}</SelectItem>
                         ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Direct/Associate</Label>
+                    <Select value={formData.directOrAssociate || undefined} onValueChange={(value) => updateFormField('directOrAssociate', value)}>
+                      <SelectTrigger className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500 h-9 text-sm">
+                        <SelectValue placeholder="Pilih" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="DIRECT">DIRECT</SelectItem>
+                        <SelectItem value="ASSOCIATE">ASSOCIATE</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -607,18 +650,32 @@ const EditCrmDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSu
                     </div>
 
                     <div className="space-y-1">
-                      <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Standar</Label>
-                      <Select value={formData.std || undefined} onValueChange={(value) => updateFormField('std', value)}>
+                      <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Cat Akre</Label>
+                      <Select value={formData.catAkre || undefined} onValueChange={(value) => updateFormField('catAkre', value)}>
                         <SelectTrigger className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-purple-500 h-9 text-sm">
                           <SelectValue placeholder="Pilih" />
                         </SelectTrigger>
                         <SelectContent>
-                          {standarOptions.map((std) => (
-                            <SelectItem key={std} value={std}>{std}</SelectItem>
-                          ))}
+                          <SelectItem value="UTAMA">UTAMA</SelectItem>
+                          <SelectItem value="MAJOR">MAJOR</SelectItem>
+                          <SelectItem value="KECIL">KECIL</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Standar</Label>
+                    <Select value={formData.std || undefined} onValueChange={(value) => updateFormField('std', value)}>
+                      <SelectTrigger className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-purple-500 h-9 text-sm">
+                        <SelectValue placeholder="Pilih" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {standarOptions.map((std) => (
+                          <SelectItem key={std} value={std}>{std}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">

@@ -42,14 +42,17 @@ interface CrmTarget {
   picCrm: string;
   sales: string;
   namaAssociate: string;
+  directOrAssociate?: string;
   namaPerusahaan: string;
   status: string;
   alasan?: string;
   category?: string;
+  kuadran?: string;
   provinsi: string;
   kota: string;
   alamat: string;
   akreditasi?: string;
+  catAkre?: string;
   eaCode?: string;
   std?: string;
   iaDate?: string;
@@ -77,14 +80,17 @@ interface CrmFormData {
   picCrm: string;
   sales: string;
   namaAssociate: string;
+  directOrAssociate: string;
   namaPerusahaan: string;
   status: string;
   alasan: string;
   category: string;
+  kuadran: string;
   provinsi: string;
   kota: string;
   alamat: string;
   akreditasi: string;
+  catAkre: string;
   eaCode: string;
   std: string;
   iaDate: string;
@@ -296,6 +302,17 @@ const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, staffUser
       </td>
       <td className="border border-border p-1 min-w-[100px]">
         <select
+          defaultValue={row.directOrAssociate}
+          onChange={(e) => handleChange('directOrAssociate', e.target.value)}
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
+        >
+          <option value="">- Pilih -</option>
+          <option value="DIRECT">DIRECT</option>
+          <option value="ASSOCIATE">ASSOCIATE</option>
+        </select>
+      </td>
+      <td className="border border-border p-1 min-w-[100px]">
+        <select
           defaultValue={row.produk}
           onChange={(e) => handleChange('produk', e.target.value)}
           className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
@@ -331,6 +348,19 @@ const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, staffUser
       </td>
       <td className="border border-border p-1 min-w-[100px]">
         <select
+          defaultValue={row.kuadran}
+          onChange={(e) => handleChange('kuadran', e.target.value)}
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
+        >
+          <option value="">- Pilih -</option>
+          <option value="K1">K1</option>
+          <option value="K2">K2</option>
+          <option value="K3">K3</option>
+          <option value="K4">K4</option>
+        </select>
+      </td>
+      <td className="border border-border p-1 min-w-[100px]">
+        <select
           defaultValue={row.akreditasi}
           onChange={(e) => handleChange('akreditasi', e.target.value)}
           className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
@@ -338,6 +368,18 @@ const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, staffUser
           <option value="">- Pilih -</option>
           <option value="KAN">KAN</option>
           <option value="NON AKRE">NON AKRE</option>
+        </select>
+      </td>
+      <td className="border border-border p-1 min-w-[100px]">
+        <select
+          defaultValue={row.catAkre}
+          onChange={(e) => handleChange('catAkre', e.target.value)}
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
+        >
+          <option value="">- Pilih -</option>
+          <option value="KAN">KAN</option>
+          <option value="NON AKRE">NON AKRE</option>
+          <option value="INTERNASIONAL">INTERNASIONAL</option>
         </select>
       </td>
       <td className="border border-border p-1 min-w-[100px]">
@@ -650,14 +692,17 @@ export default function CrmDataManagementPage() {
     picCrm: '',
     sales: '',
     namaAssociate: '',
+    directOrAssociate: '',
     namaPerusahaan: '',
     status: '',
     alasan: '',
     category: '',
+    kuadran: '',
     provinsi: '',
     kota: '',
     alamat: '',
     akreditasi: '',
+    catAkre: '',
     eaCode: '',
     std: '',
     iaDate: '',
@@ -986,14 +1031,17 @@ export default function CrmDataManagementPage() {
       picCrm: '',
       sales: '',
       namaAssociate: '',
+      directOrAssociate: '',
       namaPerusahaan: '',
       status: '',
       alasan: '',
       category: '',
+      kuadran: '',
       provinsi: '',
       kota: '',
       alamat: '',
       akreditasi: '',
+      catAkre: '',
       eaCode: '',
       std: '',
       iaDate: '',
@@ -1061,14 +1109,17 @@ export default function CrmDataManagementPage() {
             picCrm: row.picCrm,
             sales: row.sales,
             namaAssociate: row.namaAssociate,
+            directOrAssociate: row.directOrAssociate || undefined,
             namaPerusahaan: row.namaPerusahaan,
             status: row.status || 'WAITING',
             alasan: row.alasan || undefined,
             category: row.category || undefined,
+            kuadran: row.kuadran || undefined,
             provinsi: row.provinsi,
             kota: row.kota,
             alamat: row.alamat,
             akreditasi: row.akreditasi || undefined,
+            catAkre: row.catAkre || undefined,
             eaCode: row.eaCode || undefined,
             std: row.std || undefined,
             iaDate: row.iaDate || undefined,
@@ -1103,14 +1154,17 @@ export default function CrmDataManagementPage() {
         picCrm: '',
         sales: '',
         namaAssociate: '',
+        directOrAssociate: '',
         namaPerusahaan: '',
         status: '',
         alasan: '',
         category: '',
+        kuadran: '',
         provinsi: '',
         kota: '',
         alamat: '',
         akreditasi: '',
+        catAkre: '',
         eaCode: '',
         std: '',
         iaDate: '',
@@ -1226,14 +1280,17 @@ export default function CrmDataManagementPage() {
             picCrm: obj['picCrm'] || obj['PIC CRM'] || '',
             sales: obj['sales'] || obj['SALES'] || '',
             namaAssociate: obj['namaAssociate'] || obj['NAMA ASSOSIATE'] || '',
+            directOrAssociate: obj['directOrAssociate'] || obj['DIRECT OR ASSOCIATE'] || undefined,
             namaPerusahaan: obj['namaPerusahaan'] || obj['NAMA PERUSAHAAN'] || '',
             status: obj['status'] || obj['STATUS'] || '',
             alasan: obj['alasan'] || obj['ALASAN'] || undefined,
             category: obj['category'] || obj['CATEGORY'] || undefined,
+            kuadran: obj['kuadran'] || obj['KUADRAN'] || undefined,
             provinsi: obj['provinsi'] || obj['PROVINSI'] || '',
             kota: obj['kota'] || obj['KOTA'] || '',
             alamat: obj['alamat'] || obj['ALAMAT'] || '',
             akreditasi: obj['akreditasi'] || obj['AKREDITASI'] || undefined,
+            catAkre: obj['catAkre'] || obj['CAT AKRE'] || undefined,
             eaCode: obj['eaCode'] || obj['EA CODE'] || undefined,
             std: obj['std'] || obj['STD'] || undefined,
             iaDate: parseDate(obj['iaDate'] || obj['IA DATE']),
@@ -1519,14 +1576,17 @@ export default function CrmDataManagementPage() {
       'PIC CRM',
       'SALES',
       'NAMA ASSOSIATE',
+      'DIRECT OR ASSOCIATE',
       'NAMA PERUSAHAAN',
       'STATUS',
       'ALASAN',
       'CATEGORY',
+      'KUADRAN',
       'PROVINSI',
       'KOTA',
       'ALAMAT',
       'AKREDITASI',
+      'CAT AKRE',
       'EA CODE',
       'STD',
       'IA DATE',
@@ -1554,14 +1614,17 @@ export default function CrmDataManagementPage() {
         target.picCrm || '',
         target.sales || '',
         target.namaAssociate || '',
+        target.directOrAssociate || '',
         target.namaPerusahaan,
         target.status || '',
         target.alasan || '',
         target.category || '',
+        target.kuadran || '',
         target.provinsi || '',
         target.kota || '',
         target.alamat || '',
         target.akreditasi || '',
+        target.catAkre || '',
         target.eaCode || '',
         target.std || '',
         target.iaDate || '',
@@ -1591,14 +1654,17 @@ export default function CrmDataManagementPage() {
       { wch: 10 }, // PIC CRM
       { wch: 10 }, // SALES
       { wch: 15 }, // NAMA ASSOSIATE
+      { wch: 18 }, // DIRECT OR ASSOCIATE
       { wch: 40 }, // NAMA PERUSAHAAN
       { wch: 12 }, // STATUS
       { wch: 30 }, // ALASAN
       { wch: 10 }, // CATEGORY
+      { wch: 10 }, // KUADRAN
       { wch: 15 }, // PROVINSI
       { wch: 20 }, // KOTA
       { wch: 50 }, // ALAMAT
       { wch: 12 }, // AKREDITASI
+      { wch: 10 }, // CAT AKRE
       { wch: 10 }, // EA CODE
       { wch: 10 }, // STD
       { wch: 12 }, // IA DATE
@@ -2009,13 +2075,16 @@ export default function CrmDataManagementPage() {
                     <TableHead>PIC CRM</TableHead>
                     <TableHead>Sales</TableHead>
                     <TableHead>Nama Associate</TableHead>
+                    <TableHead>Direct/Assoc</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Alasan</TableHead>
                     <TableHead>Category</TableHead>
+                    <TableHead>Kuadran</TableHead>
                     <TableHead>Provinsi</TableHead>
                     <TableHead>Kota</TableHead>
                     <TableHead>Alamat</TableHead>
                     <TableHead>Akreditasi</TableHead>
+                    <TableHead>Cat Akre</TableHead>
                     <TableHead>EA Code</TableHead>
                     <TableHead>STD</TableHead>
                     <TableHead>IA Date</TableHead>
@@ -2036,7 +2105,7 @@ export default function CrmDataManagementPage() {
                 <TableBody>
                   {paginatedTargets.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={31} className="text-center py-8">
+                      <TableCell colSpan={34} className="text-center py-8">
                         No data found
                       </TableCell>
                     </TableRow>
@@ -2065,6 +2134,7 @@ export default function CrmDataManagementPage() {
                         <TableCell>{target.picCrm}</TableCell>
                         <TableCell>{target.sales}</TableCell>
                         <TableCell>{target.namaAssociate || '-'}</TableCell>
+                        <TableCell>{target.directOrAssociate || '-'}</TableCell>
                         <TableCell>
                           <Badge
                             variant={getStatusBadgeVariant(target.status)}
@@ -2084,10 +2154,12 @@ export default function CrmDataManagementPage() {
                             </Badge>
                           ) : '-'}
                         </TableCell>
+                        <TableCell>{target.kuadran || '-'}</TableCell>
                         <TableCell>{target.provinsi || '-'}</TableCell>
                         <TableCell>{target.kota || '-'}</TableCell>
                         <TableCell className="max-w-xs truncate" title={target.alamat}>{target.alamat || '-'}</TableCell>
                         <TableCell>{target.akreditasi || '-'}</TableCell>
+                        <TableCell>{target.catAkre || '-'}</TableCell>
                         <TableCell>{target.eaCode || '-'}</TableCell>
                         <TableCell>{target.std || '-'}</TableCell>
                         <TableCell>{target.iaDate || '-'}</TableCell>
@@ -2258,10 +2330,13 @@ export default function CrmDataManagementPage() {
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">PIC CRM</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Sales</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[120px]">Associate</th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Direct/Assoc</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Produk</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">STD</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Category</th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Kuadran</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Akreditasi</th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Cat Akre</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">EA Code</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Tahap Audit</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">IA Date</th>
