@@ -17,7 +17,9 @@ import masterSalesData from '@/data/master-sales.json';
 import { ChartCardCrmData } from '@/components/chart-card-crm-data';
 import { ChartCardPencapaianMonthly } from '@/components/chart-card-pencapaian-monthly'
 import { ChartCardKuadranMonthly } from '@/components/chart-card-kuadran-monthly';
+import { ChartCardAssociateMonthly } from '@/components/chart-card-associate-monthly';
 import { InfinityLoader } from '@/components/ui/infinity-loader';
+import { AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip, Legend, LabelList } from 'recharts';
 import {
   FilterSection,
   FilterDateSection,
@@ -92,6 +94,8 @@ export default function CrmDataManagementPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [selectedChartType, setSelectedChartType] = useState<string>('area');
+  const [selectedAssociateChartType, setSelectedAssociateChartType] = useState<string>('area');
+  const [selectedTopAssociateChartType, setSelectedTopAssociateChartType] = useState<string>('bar');
   const [activeFilterSheet, setActiveFilterSheet] = useState<string | null>(null);
 
   // Comprehensive Filters
@@ -2379,6 +2383,383 @@ export default function CrmDataManagementPage() {
                       })()}
                       chartType={selectedChartType}
                     />
+                  </div>
+                </div>
+              );
+            })()}
+          </CardContent>
+        </Card>
+
+        {/* Associate Category Analytics - Monthly Trend */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Associate Category Analytics - Monthly Trend
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  Distribusi Direct vs Associate per bulan (Januari - Desember)
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              // Filter data that has directOrAssociate field
+              const dataWithAssociate = (filteredTargets || []).filter(t => t.directOrAssociate);
+
+              return (
+                <div className="space-y-6">
+                  {/* Summary Cards per Associate Type */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {['Direct', 'Associate'].map(assocType => {
+                      const assocTotal = dataWithAssociate
+                        .filter(t => t.directOrAssociate === assocType)
+                        .reduce((sum, t) => sum + (t.hargaKontrak || 0), 0);
+                      const assocCount = dataWithAssociate.filter(t => t.directOrAssociate === assocType).length;
+
+                      // Calculate unique companies per associate type
+                      const assocCompanies = new Set(
+                        dataWithAssociate
+                          .filter(t => t.directOrAssociate === assocType)
+                          .map(t => t.namaPerusahaan)
+                      );
+                      const assocCompanyCount = assocCompanies.size;
+
+                      const colors = assocType === 'Direct'
+                        ? { color: '#3B82F6', bg: 'bg-blue-50', border: 'border-blue-500', gradient: 'from-blue-500 to-blue-600' }
+                        : { color: '#10B981', bg: 'bg-green-50', border: 'border-green-500', gradient: 'from-green-500 to-green-600' };
+
+                      const grandTotal = dataWithAssociate.reduce((sum, t) => sum + (t.hargaKontrak || 0), 0);
+                      const percentage = grandTotal > 0 ? Math.round((assocTotal / grandTotal) * 100) : 0;
+
+                      return (
+                        <div key={assocType} className={`bg-gradient-to-br ${colors.bg} rounded-lg border ${colors.border} p-4`}>
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="text-lg font-bold" style={{ color: colors.color }}>{assocType}</h4>
+                            <div className={`h-8 w-8 rounded-full bg-gradient-to-r ${colors.gradient} flex items-center justify-center`}>
+                              <span className="text-white text-xs font-bold">{percentage}%</span>
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-sm font-semibold" style={{ color: colors.color }}>
+                              Rp {assocTotal.toLocaleString('id-ID')}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {assocCount} Sertifikat . {assocCompanyCount} Perusahaan
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Chart - Monthly Trend by Associate Type */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold">Trend Direct vs Associate Per Bulan</h3>
+                      <Select value={selectedAssociateChartType} onValueChange={setSelectedAssociateChartType}>
+                        <SelectTrigger className="w-32 h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="area">Area</SelectItem>
+                          <SelectItem value="bar">Bar</SelectItem>
+                          <SelectItem value="line">Line</SelectItem>
+                          <SelectItem value="pie">Pie</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Chart Visualization */}
+                    <ChartCardAssociateMonthly
+                      title={`Distribusi Direct vs Associate Per Bulan${filterStatus !== 'all' ? ` - ${filterStatus.toUpperCase()}` : ''}`}
+                      data={dataWithAssociate}
+                      chartType={selectedAssociateChartType}
+                    />
+                  </div>
+
+                  {/* Top 10 Associates */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold">Top 10 Associate</h3>
+                      <Select value={selectedTopAssociateChartType} onValueChange={setSelectedTopAssociateChartType}>
+                        <SelectTrigger className="w-32 h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="area">Area</SelectItem>
+                          <SelectItem value="bar">Bar</SelectItem>
+                          <SelectItem value="line">Line</SelectItem>
+                          <SelectItem value="pie">Pie</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Calculate Top 10 Associates */}
+                    <div className="relative overflow-hidden rounded-xl border border-purple-200/50 shadow-lg bg-gradient-to-br from-purple-50/50 to-blue-50/30 p-6">
+                      {/* Futuristic background overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/15 via-violet-400/10 to-transparent opacity-80 pointer-events-none rounded-xl"></div>
+                      <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/5 via-transparent to-blue-500/5 pointer-events-none rounded-xl"></div>
+
+                      <div className="relative z-10">
+                    {(() => {
+                      // Group by namaAssociate and get totals
+                      const associateTotals: { [key: string]: { total: number; count: number; companies: Set<string> } } = {};
+
+                      dataWithAssociate.forEach(target => {
+                        const associate = target.namaAssociate || 'Unknown';
+                        const amount = target.hargaKontrak || 0;
+                        const company = target.namaPerusahaan;
+
+                        if (!associateTotals[associate]) {
+                          associateTotals[associate] = {
+                            total: 0,
+                            count: 0,
+                            companies: new Set()
+                          };
+                        }
+
+                        associateTotals[associate].total += amount;
+                        associateTotals[associate].count += 1;
+                        if (company) {
+                          associateTotals[associate].companies.add(company);
+                        }
+                      });
+
+                      // Sort and get top 10
+                      const top10Associates = Object.entries(associateTotals)
+                        .map(([name, data]) => ({
+                          name,
+                          total: data.total,
+                          count: data.count,
+                          companyCount: data.companies.size
+                        }))
+                        .sort((a, b) => b.total - a.total)
+                        .slice(0, 10);
+
+                      // Generate colors for top 10 - Purple gradient
+                      const top10Colors = [
+                        '#8B5CF6', // Purple 500
+                        '#7C3AED', // Violet 600
+                        '#6D28D9', // Violet 700
+                        '#A78BFA', // Violet 400
+                        '#8B5CF6', // Purple 500
+                        '#7C3AED', // Violet 600
+                        '#6D28D9', // Violet 700
+                        '#A78BFA', // Violet 400
+                        '#8B5CF6', // Purple 500
+                        '#7C3AED', // Violet 600
+                      ];
+
+                      const hasData = top10Associates.length > 0;
+
+                      if (!hasData) {
+                        return (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <p>Tidak ada data associate</p>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div className="h-[400px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            {(() => {
+                              switch (selectedTopAssociateChartType) {
+                                case 'bar':
+                                  return (
+                                    <BarChart data={top10Associates} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+                                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                                      <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: 600 }} className="fill-foreground" />
+                                      <YAxis tick={{ fontSize: 9 }} className="fill-muted-foreground" width={60} />
+                                      <Tooltip
+                                        content={({ active, payload }) => {
+                                          if (active && payload && payload.length) {
+                                            const data = payload[0].payload;
+                                            return (
+                                              <div className="bg-background border rounded-lg shadow-lg p-2">
+                                                <p className="font-semibold text-sm mb-1">{data.name}</p>
+                                                <p className="text-xs text-muted-foreground">{data.count} Sertifikat . {data.companyCount} Perusahaan</p>
+                                                <p className="text-sm font-bold">Rp {data.total.toLocaleString('id-ID')}</p>
+                                              </div>
+                                            );
+                                          }
+                                          return null;
+                                        }}
+                                      />
+                                      <Bar dataKey="total" radius={[4, 4, 0, 0]}>
+                                        {top10Associates.map((assoc, index) => (
+                                          <Cell key={`cell-${index}`} fill={top10Colors[index]} />
+                                        ))}
+                                        <LabelList
+                                          dataKey="total"
+                                          position="top"
+                                          fontSize={10}
+                                          fontWeight="bold"
+                                          formatter={(value: number) => {
+                                            if (value >= 1000000000) return (value / 1000000000).toFixed(1) + 'M';
+                                            else if (value >= 1000000) return (value / 1000000).toFixed(1) + 'Jt';
+                                            else return (value / 1000).toFixed(0) + 'rb';
+                                          }}
+                                        />
+                                      </Bar>
+                                    </BarChart>
+                                  );
+
+                                case 'line':
+                                  return (
+                                    <LineChart data={top10Associates} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+                                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                                      <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: 600 }} className="fill-foreground" />
+                                      <YAxis tick={{ fontSize: 9 }} className="fill-muted-foreground" width={60} />
+                                      <Tooltip
+                                        content={({ active, payload }) => {
+                                          if (active && payload && payload.length) {
+                                            const data = payload[0].payload;
+                                            return (
+                                              <div className="bg-background border rounded-lg shadow-lg p-2">
+                                                <p className="font-semibold text-sm mb-1">{data.name}</p>
+                                                <p className="text-xs text-muted-foreground">{data.count} Sertifikat . {data.companyCount} Perusahaan</p>
+                                                <p className="text-sm font-bold">Rp {data.total.toLocaleString('id-ID')}</p>
+                                              </div>
+                                            );
+                                          }
+                                          return null;
+                                        }}
+                                      />
+                                      <Line
+                                        type="monotone"
+                                        dataKey="total"
+                                        stroke="#3B82F6"
+                                        strokeWidth={3}
+                                        dot={{ fill: '#3B82F6', strokeWidth: 2, r: 6 }}
+                                        activeDot={{ r: 8 }}
+                                      >
+                                        <LabelList
+                                          dataKey="total"
+                                          position="top"
+                                          fontSize={10}
+                                          fontWeight="bold"
+                                          fill="#3B82F6"
+                                          formatter={(value: number) => {
+                                            if (value >= 1000000000) return (value / 1000000000).toFixed(1) + 'M';
+                                            else if (value >= 1000000) return (value / 1000000).toFixed(1) + 'Jt';
+                                            else return (value / 1000).toFixed(0) + 'rb';
+                                          }}
+                                        />
+                                      </Line>
+                                    </LineChart>
+                                  );
+
+                                case 'pie':
+                                  const pieData = top10Associates.map((assoc, index) => ({
+                                    name: assoc.name,
+                                    value: assoc.total,
+                                    count: assoc.count,
+                                    companyCount: assoc.companyCount,
+                                    color: top10Colors[index]
+                                  }));
+
+                                  return (
+                                    <PieChart width={400} height={400}>
+                                      <Pie
+                                        data={pieData}
+                                        cx="50%"
+                                        cy="50%"
+                                        labelLine={true}
+                                        label={(entry) => {
+                                          const value = entry.value;
+                                          let label = '';
+                                          if (value >= 1000000000) label = (value / 1000000000).toFixed(1) + 'M';
+                                          else if (value >= 1000000) label = (value / 1000000).toFixed(1) + 'Jt';
+                                          else label = (value / 1000).toFixed(0) + 'rb';
+                                          return `${entry.name}`;
+                                        }}
+                                        outerRadius={120}
+                                        dataKey="value"
+                                      >
+                                        {pieData.map((entry, index) => (
+                                          <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                      </Pie>
+                                      <Tooltip
+                                        content={({ active, payload }) => {
+                                          if (active && payload && payload.length) {
+                                            const data = payload[0].payload;
+                                            return (
+                                              <div className="bg-background border rounded-lg shadow-lg p-2">
+                                                <p className="font-semibold text-sm mb-1">{data.name}</p>
+                                                <p className="text-xs text-muted-foreground">{data.count} Sertifikat . {data.companyCount} Perusahaan</p>
+                                                <p className="text-sm font-bold">Rp {data.value.toLocaleString('id-ID')}</p>
+                                              </div>
+                                            );
+                                          }
+                                          return null;
+                                        }}
+                                      />
+                                    </PieChart>
+                                  );
+
+                                default: // area
+                                  return (
+                                    <AreaChart data={top10Associates} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+                                      <defs>
+                                        <linearGradient id="colorTopAssociate" x1="0" y1="0" x2="0" y2="1">
+                                          <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8}/>
+                                          <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0.1}/>
+                                        </linearGradient>
+                                      </defs>
+                                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                                      <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: 600 }} className="fill-foreground" />
+                                      <YAxis tick={{ fontSize: 9 }} className="fill-muted-foreground" width={60} />
+                                      <Tooltip
+                                        content={({ active, payload }) => {
+                                          if (active && payload && payload.length) {
+                                            const data = payload[0].payload;
+                                            return (
+                                              <div className="bg-background border rounded-lg shadow-lg p-2">
+                                                <p className="font-semibold text-sm mb-1">{data.name}</p>
+                                                <p className="text-xs text-muted-foreground">{data.count} Sertifikat . {data.companyCount} Perusahaan</p>
+                                                <p className="text-sm font-bold">Rp {data.total.toLocaleString('id-ID')}</p>
+                                              </div>
+                                            );
+                                          }
+                                          return null;
+                                        }}
+                                      />
+                                      <Area
+                                        type="monotone"
+                                        dataKey="total"
+                                        stroke="#3B82F6"
+                                        strokeWidth={2}
+                                        fill="url(#colorTopAssociate)"
+                                      >
+                                        <LabelList
+                                          dataKey="total"
+                                          position="top"
+                                          fontSize={10}
+                                          fontWeight="bold"
+                                          fill="#3B82F6"
+                                          formatter={(value: number) => {
+                                            if (value >= 1000000000) return (value / 1000000000).toFixed(1) + 'M';
+                                            else if (value >= 1000000) return (value / 1000000).toFixed(1) + 'Jt';
+                                            else return (value / 1000).toFixed(0) + 'rb';
+                                          }}
+                                        />
+                                      </Area>
+                                    </AreaChart>
+                                  );
+                              }
+                            })()}
+                          </ResponsiveContainer>
+                        </div>
+                      );
+                    })()}
+                      </div>
+                    </div>
                   </div>
                 </div>
               );
