@@ -8,8 +8,10 @@ interface FilterSertifikatSectionProps {
   setFilterStandar: (value: string) => void;
   filterAkreditasi: string;
   setFilterAkreditasi: (value: string) => void;
-  filterStatusSertifikat: string;
-  setFilterStatusSertifikat: (value: string) => void;
+  filterStatusSertifikatTerbit: string;
+  setFilterStatusSertifikatTerbit: (value: string) => void;
+  filterStatus: string;
+  setFilterStatus: (value: string) => void;
   standarOptions: string[];
 }
 
@@ -18,12 +20,66 @@ export function FilterSertifikatSection({
   setFilterStandar,
   filterAkreditasi,
   setFilterAkreditasi,
-  filterStatusSertifikat,
-  setFilterStatusSertifikat,
+  filterStatusSertifikatTerbit,
+  setFilterStatusSertifikatTerbit,
+  filterStatus,
+  setFilterStatus,
   standarOptions,
 }: FilterSertifikatSectionProps) {
   return (
     <>
+      {/* Status */}
+      <div>
+        <Label className="mb-1.5 block text-xs">Status</Label>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant={filterStatus === 'all' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilterStatus('all')}
+            className={`flex items-center gap-1 text-xs h-8 px-2 cursor-pointer ${
+              filterStatus === 'all' ? 'bg-primary text-primary-foreground border-primary' : ''
+            }`}
+          >
+            All
+          </Button>
+          {['DONE', 'PROSES', 'LOSS', 'SUSPEND', 'WAITING'].map((status) => {
+            let statusColor = '';
+            switch (status) {
+              case 'DONE':
+                statusColor = 'bg-green-100 hover:bg-green-200 text-green-700 border-green-300';
+                break;
+              case 'PROSES':
+                statusColor = 'bg-blue-100 hover:bg-blue-200 text-blue-700 border-blue-300';
+                break;
+              case 'LOSS':
+                statusColor = 'bg-red-100 hover:bg-red-200 text-red-700 border-red-300';
+                break;
+              case 'SUSPEND':
+                statusColor = 'bg-orange-100 hover:bg-orange-200 text-orange-700 border-orange-300';
+                break;
+              case 'WAITING':
+                statusColor = 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300';
+                break;
+            }
+
+            return (
+              <Button
+                key={status}
+                size="sm"
+                onClick={() => setFilterStatus(status)}
+                className={`flex items-center gap-1 text-xs h-8 px-2 border cursor-pointer ${
+                  filterStatus === status
+                    ? 'bg-black hover:bg-gray-800 text-white border-black'
+                    : statusColor
+                }`}
+              >
+                {status}
+              </Button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Standar */}
       <div>
         <Label className="mb-1.5 block text-xs">Standar</Label>
@@ -75,14 +131,14 @@ export function FilterSertifikatSection({
 
       {/* Status Sertifikat */}
       <div>
-        <Label className="mb-1.5 block text-xs">Status Sertifikat</Label>
+        <Label className="mb-1.5 block text-xs">Status Sertifikat Terbit</Label>
         <div className="flex flex-wrap gap-2">
           <Button
-            variant={filterStatusSertifikat === 'all' ? 'default' : 'outline'}
+            variant={filterStatusSertifikatTerbit === 'all' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setFilterStatusSertifikat('all')}
+            onClick={() => setFilterStatusSertifikatTerbit('all')}
             className={`flex items-center gap-1 text-xs h-8 px-2 cursor-pointer ${
-              filterStatusSertifikat === 'all' ? 'bg-primary text-primary-foreground border-primary' : ''
+              filterStatusSertifikatTerbit === 'all' ? 'bg-primary text-primary-foreground border-primary' : ''
             }`}
           >
             All
@@ -91,9 +147,9 @@ export function FilterSertifikatSection({
             <Button
               key={status}
               size="sm"
-              onClick={() => setFilterStatusSertifikat(status)}
+              onClick={() => setFilterStatusSertifikatTerbit(status)}
               className={`flex items-center gap-1 text-xs h-8 px-2 border cursor-pointer ${
-                filterStatusSertifikat === status
+                filterStatusSertifikatTerbit === status
                   ? 'bg-black hover:bg-gray-800 text-white border-black'
                   : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300'
               }`}

@@ -625,7 +625,8 @@ export default function CrmDataManagementPage() {
     { value: '12', label: 'Desember' },
   ];
   const alasanOptions = [...new Set(crmTargets?.map(t => t.alasan).filter(Boolean) || [])].sort() as string[];
-  const standarOptions = [...new Set(crmTargets?.map(t => t.std).filter(Boolean) || [])].sort() as string[];
+  // Get standar options from master-standar.json
+  const standarOptions = masterStandarData.standar.map((s: any) => s.kode).sort();
 
   // Get provinsi options from Indonesia data
   const provinsiOptions = Object.keys(indonesiaData).sort();
@@ -1826,19 +1827,11 @@ export default function CrmDataManagementPage() {
                   setFilterStandar={setFilterStandar}
                   filterAkreditasi={filterAkreditasi}
                   setFilterAkreditasi={setFilterAkreditasi}
-                  filterEaCode={filterEaCode}
-                  setFilterEaCode={setFilterEaCode}
-                  filterTahapAudit={filterTahapAudit}
-                  setFilterTahapAudit={setFilterTahapAudit}
-                  filterFromBulanTTD={filterFromBulanTTD}
-                  setFilterFromBulanTTD={setFilterFromBulanTTD}
-                  filterToBulanTTD={filterToBulanTTD}
-                  setFilterToBulanTTD={setFilterToBulanTTD}
-                  filterStatusSertifikat={filterStatusSertifikat}
-                  setFilterStatusSertifikat={setFilterStatusSertifikat}
+                  filterStatusSertifikatTerbit={filterStatusSertifikat}
+                  setFilterStatusSertifikatTerbit={setFilterStatusSertifikat}
+                  filterStatus={filterStatus}
+                  setFilterStatus={setFilterStatus}
                   standarOptions={standarOptions}
-                  tahapanAuditOptions={tahapanAuditOptions}
-                  bulanOptions={bulanOptions}
                 />
               </FilterSection>
 

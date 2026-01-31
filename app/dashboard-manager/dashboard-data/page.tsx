@@ -122,7 +122,7 @@ export default function CrmDataManagementPage() {
   const [filterTahapAudit, setFilterTahapAudit] = useState<string>('all');
   const [filterFromBulanTTD, setFilterFromBulanTTD] = useState<string>('1');
   const [filterToBulanTTD, setFilterToBulanTTD] = useState<string>('12');
-  const [filterStatusSertifikat, setFilterStatusSertifikat] = useState<string>('Terbit');
+  const [filterStatusSertifikatTerbit, setFilterStatusSertifikatTerbit] = useState<string>('Terbit');
   const [filterTermin, setFilterTermin] = useState<string>('all');
   const [filterTipeProduk, setFilterTipeProduk] = useState<string>('all');
   const [filterKategoriProduk, setFilterKategoriProduk] = useState<KategoriProduk>('SEMUA');
@@ -164,7 +164,8 @@ export default function CrmDataManagementPage() {
     { value: '12', label: 'Desember' },
   ];
   const alasanOptions = [...new Set(crmTargets?.map(t => t.alasan).filter(Boolean) || [])].sort() as string[];
-  const standarOptions = [...new Set(crmTargets?.map(t => t.std).filter(Boolean) || [])].sort() as string[];
+  // Get standar options from master-standar.json
+  const standarOptions = masterStandarData.standar.map((s: any) => s.kode).sort();
 
   // Get unique produk values for Tipe Produk filter
   const produkOptions = [...new Set(crmTargets?.map(t => t.produk).filter(Boolean) || [])].sort() as string[];
@@ -217,7 +218,7 @@ export default function CrmDataManagementPage() {
     setFilterTahapAudit('all');
     setFilterFromBulanTTD('1');
     setFilterToBulanTTD('12');
-    setFilterStatusSertifikat('Terbit');
+    setFilterStatusSertifikatTerbit('Terbit');
     setFilterTermin('all');
     setFilterTipeProduk('all');
     setFilterKategoriProduk('SEMUA');
@@ -297,7 +298,7 @@ export default function CrmDataManagementPage() {
     const matchesAkreditasi = filterAkreditasi === 'all' || target.akreditasi === filterAkreditasi;
     const matchesEaCode = filterEaCode === '' || (target.eaCode || '').toLowerCase().includes(filterEaCode.toLowerCase());
     const matchesTahapAudit = filterTahapAudit === 'all' || target.tahapAudit === filterTahapAudit;
-    const matchesStatusSertifikat = filterStatusSertifikat === 'all' || (target.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
+    const matchesStatusSertifikat = filterStatusSertifikatTerbit === 'all' || (target.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
     const matchesTermin = filterTermin === 'all' || target.terminPembayaran === filterTermin;
 
     // Tipe Produk filter
@@ -398,7 +399,7 @@ export default function CrmDataManagementPage() {
     filterTahapAudit,
     filterFromBulanTTD,
     filterToBulanTTD,
-    filterStatusSertifikat,
+    filterStatusSertifikatTerbit,
     filterTermin,
     filterTipeProduk,
     filterKategoriProduk,
@@ -718,8 +719,10 @@ export default function CrmDataManagementPage() {
                   setFilterStandar={setFilterStandar}
                   filterAkreditasi={filterAkreditasi}
                   setFilterAkreditasi={setFilterAkreditasi}
-                  filterStatusSertifikat={filterStatusSertifikat}
-                  setFilterStatusSertifikat={setFilterStatusSertifikat}
+                  filterStatusSertifikatTerbit={filterStatusSertifikatTerbit}
+                  setFilterStatusSertifikatTerbit={setFilterStatusSertifikatTerbit}
+                  filterStatus={filterStatus}
+                  setFilterStatus={setFilterStatus}
                   standarOptions={standarOptions}
                 />
               </FilterSection>
@@ -1099,9 +1102,9 @@ export default function CrmDataManagementPage() {
                           <Label className="mb-1.5 block text-xs">Status Sertifikat</Label>
                           <div className="grid grid-cols-2 gap-2">
                             <button
-                              onClick={() => setFilterStatusSertifikat('all')}
+                              onClick={() => setFilterStatusSertifikatTerbit('all')}
                               className={`py-2 px-3 rounded-lg text-xs font-medium ${
-                                filterStatusSertifikat === 'all'
+                                filterStatusSertifikatTerbit === 'all'
                                   ? 'bg-primary text-primary-foreground'
                                   : 'bg-muted hover:bg-muted/80'
                               }`}
@@ -1111,9 +1114,39 @@ export default function CrmDataManagementPage() {
                             {['Terbit', 'Belum Terbit'].map((status) => (
                               <button
                                 key={status}
-                                onClick={() => setFilterStatusSertifikat(status)}
+                                onClick={() => setFilterStatusSertifikatTerbit(status)}
                                 className={`py-2 px-3 rounded-lg text-xs font-medium ${
-                                  filterStatusSertifikat === status
+                                  filterStatusSertifikatTerbit === status
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-muted hover:bg-muted/80'
+                                }`}
+                              >
+                                {status}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Status */}
+                        <div>
+                          <Label className="mb-1.5 block text-xs">Status</Label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              onClick={() => setFilterStatus('all')}
+                              className={`py-2 px-3 rounded-lg text-xs font-medium ${
+                                filterStatus === 'all'
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-muted hover:bg-muted/80'
+                              }`}
+                            >
+                              All
+                            </button>
+                            {['DONE', 'PROSES', 'LOSS', 'SUSPEND', 'WAITING'].map((status) => (
+                              <button
+                                key={status}
+                                onClick={() => setFilterStatus(status)}
+                                className={`py-2 px-3 rounded-lg text-xs font-medium ${
+                                  filterStatus === status
                                     ? 'bg-primary text-primary-foreground'
                                     : 'bg-muted hover:bg-muted/80'
                                 }`}
@@ -1439,12 +1472,12 @@ export default function CrmDataManagementPage() {
               )}
 
               {/* Status Sertifikat */}
-              {filterStatusSertifikat !== 'all' && (
+              {filterStatusSertifikatTerbit !== 'all' && (
                 <Badge variant="secondary" className="gap-1">
-                  <span className="font-semibold">Sertifikat:</span> {filterStatusSertifikat}
+                  <span className="font-semibold">Sertifikat:</span> {filterStatusSertifikatTerbit}
                   <X
                     className="h-3 w-3 cursor-pointer hover:text-destructive"
-                    onClick={() => setFilterStatusSertifikat('all')}
+                    onClick={() => setFilterStatusSertifikatTerbit('all')}
                   />
                 </Badge>
               )}
@@ -1481,7 +1514,7 @@ export default function CrmDataManagementPage() {
                 filterAkreditasi !== 'all' ||
                 filterEaCode !== '' ||
                 filterTahapAudit !== 'all' ||
-                filterStatusSertifikat !== 'all' ||
+                filterStatusSertifikatTerbit !== 'all' ||
                 filterTermin !== 'all' ||
                 filterTipeProduk !== 'all' ||
                 searchTerm !== '') && (
@@ -1544,7 +1577,7 @@ export default function CrmDataManagementPage() {
               const lossContracts = Math.round(allData
                 .filter(t => {
                   const matchesStatus = t.status === 'LOSS';
-                  const matchesSertifikat = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
+                  const matchesSertifikat = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
                   const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
                   return matchesStatus && matchesSertifikat && matchesTahun;
                 })
@@ -1552,7 +1585,7 @@ export default function CrmDataManagementPage() {
               const suspendContracts = Math.round(allData
                 .filter(t => {
                   const matchesStatus = t.status === 'SUSPEND';
-                  const matchesSertifikat = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
+                  const matchesSertifikat = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
                   const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
                   return matchesStatus && matchesSertifikat && matchesTahun;
                 })
@@ -1560,7 +1593,7 @@ export default function CrmDataManagementPage() {
               const prosesContracts = Math.round(allData
                 .filter(t => {
                   const matchesStatus = t.status === 'PROSES';
-                  const matchesSertifikat = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
+                  const matchesSertifikat = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
                   const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
                   return matchesStatus && matchesSertifikat && matchesTahun;
                 })
@@ -1568,7 +1601,7 @@ export default function CrmDataManagementPage() {
               const waitingContracts = Math.round(allData
                 .filter(t => {
                   const matchesStatus = t.status === 'WAITING';
-                  const matchesSertifikat = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
+                  const matchesSertifikat = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
                   const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
                   return matchesStatus && matchesSertifikat && matchesTahun;
                 })
@@ -1576,14 +1609,14 @@ export default function CrmDataManagementPage() {
 
               // Calculate Total Nilai Kontrak based on:
               // 1. hargaKontrak
-              // 2. statusSertifikat (based on filterStatusSertifikat)
+              // 2. statusSertifikat (based on filterStatusSertifikatTerbit)
               // 3. tahun (year filter)
               // 4. kategori produk - already filtered in allData
               const totalNilaiKontrak = Math.round(
                 allData
                   .filter(t => {
                     // Filter by statusSertifikat
-                    const matchesStatus = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
+                    const matchesStatus = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
                     // Filter by tahun
                     const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
                     return matchesStatus && matchesTahun;
@@ -1592,12 +1625,12 @@ export default function CrmDataManagementPage() {
               );
 
               // Calculate lanjutContracts based on filtered data (kategori produk & tahun)
-              // Filter: Status DONE, Sertifikat (based on filterStatusSertifikat), Ada bulanTtdNotif, Tahun dari bulanTtdNotif sesuai filterTahun
+              // Filter: Status DONE, Sertifikat (based on filterStatusSertifikatTerbit), Ada bulanTtdNotif, Tahun dari bulanTtdNotif sesuai filterTahun
               const filteredLanjutContracts = Math.round(
                 allData
                   .filter(t => {
                     const isDone = t.status === 'DONE';
-                    const isSertifikatMatch = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
+                    const isSertifikatMatch = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
                     const hasBulanTtdNotif = t.bulanTtdNotif && t.bulanTtdNotif !== '';
 
                     // Check tahun dari bulanTtdNotif
@@ -1772,8 +1805,8 @@ export default function CrmDataManagementPage() {
                         {filterStatus !== 'all' && filterStatus !== 'DONE' && (
                           <span className="ml-2">• Filter: {filterStatus}</span>
                         )}
-                        {filterStatusSertifikat !== 'all' && (
-                          <span className="ml-2">• Sertifikat: {filterStatusSertifikat}</span>
+                        {filterStatusSertifikatTerbit !== 'all' && (
+                          <span className="ml-2">• Sertifikat: {filterStatusSertifikatTerbit}</span>
                         )}
                         {filterKategoriProduk !== 'SEMUA' && (
                           <span className="ml-2">• Kategori: {filterKategoriProduk}</span>
@@ -1803,7 +1836,7 @@ export default function CrmDataManagementPage() {
                         <span className="text-[9px] sm:text-[10px] text-green-600">
                           {allData.filter(t => {
                             const isDone = t.status === 'DONE';
-                            const isSertifikatMatch = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
+                            const isSertifikatMatch = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
                             const hasBulanTtdNotif = t.bulanTtdNotif && t.bulanTtdNotif !== '';
                             let matchesTahunTtdNotif = false;
                             if (hasBulanTtdNotif) {
@@ -1834,7 +1867,7 @@ export default function CrmDataManagementPage() {
                         <span className="text-[9px] sm:text-[10px] text-blue-600">
                           {allData.filter(t => {
                             const matchesStatus = t.status === 'PROSES';
-                            const matchesSertifikat = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
+                            const matchesSertifikat = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
                             const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
                             return matchesStatus && matchesSertifikat && matchesTahun;
                           }).length} Sertifikat  (base on EXP)
@@ -1855,7 +1888,7 @@ export default function CrmDataManagementPage() {
                         <span className="text-[9px] sm:text-[10px] text-orange-600">
                           {allData.filter(t => {
                             const matchesStatus = t.status === 'SUSPEND';
-                            const matchesSertifikat = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
+                            const matchesSertifikat = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
                             const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
                             return matchesStatus && matchesSertifikat && matchesTahun;
                           }).length} Sertifikat  (base on EXP)
@@ -1876,7 +1909,7 @@ export default function CrmDataManagementPage() {
                         <span className="text-[9px] sm:text-[10px] text-red-600">
                           {allData.filter(t => {
                             const matchesStatus = t.status === 'LOSS';
-                            const matchesSertifikat = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
+                            const matchesSertifikat = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
                             const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
                             return matchesStatus && matchesSertifikat && matchesTahun;
                           }).length} Sertifikat  (base on EXP)
@@ -1897,7 +1930,7 @@ export default function CrmDataManagementPage() {
                         <span className="text-[9px] sm:text-[10px] text-gray-600">
                           {allData.filter(t => {
                             const matchesStatus = t.status === 'WAITING';
-                            const matchesSertifikat = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
+                            const matchesSertifikat = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
                             const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
                             return matchesStatus && matchesSertifikat && matchesTahun;
                           }).length} Sertifikat  (base on EXP)
@@ -1959,7 +1992,7 @@ export default function CrmDataManagementPage() {
               // Get data for TARGET - same filter as totalNilaiKontrak (use crmTargets, not filteredTargets)
               const targetData = (crmTargets || []).filter(t => {
                 const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
-                const matchesStatus = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
+                const matchesStatus = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
                 return matchesTahun && matchesStatus;
               });
 
@@ -2448,7 +2481,7 @@ export default function CrmDataManagementPage() {
               // Filter data by tahun from bulanTtdNotif, status DONE, statusSertifikat, and directOrAssociate field
               const dataWithAssociate = (crmTargets || []).filter(t => {
                 const isDone = t.status === 'DONE';
-                const isSertifikatMatch = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
+                const isSertifikatMatch = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
                 const hasBulanTtdNotif = t.bulanTtdNotif && t.bulanTtdNotif !== '';
                 const hasAssociate = t.directOrAssociate;
 
@@ -2865,7 +2898,7 @@ export default function CrmDataManagementPage() {
 
                   // Filter data for Sales Performance Analytics - based on bulanTtdNotif, tahun, sertifikat filter, and status DONE
                   const dataWithSalesTtdNotif = (crmTargets || []).filter(t => {
-                    const matchesStatus = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
+                    const matchesStatus = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
                     const matchesDoneStatus = t.status === 'DONE';
 
                     // Parse bulanTtdNotif to get month and year
@@ -3157,7 +3190,7 @@ export default function CrmDataManagementPage() {
                   // Filter data: HANYA filter tahun dan statusSertifikat dari ALL data (tanpa filter lain)
                   const dataForTahapan = (crmTargets || []).filter(t => {
                     const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
-                    const matchesStatus = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
+                    const matchesStatus = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
                     return matchesTahun && matchesStatus;
                   });
 
