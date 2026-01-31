@@ -9,6 +9,10 @@ interface FilterDateSectionProps {
   setFilterFromBulanExp: (value: string) => void;
   filterToBulanExp: string;
   setFilterToBulanExp: (value: string) => void;
+  filterFromBulanTTD?: string;
+  setFilterFromBulanTTD?: (value: string) => void;
+  filterToBulanTTD?: string;
+  setFilterToBulanTTD?: (value: string) => void;
   tahunOptions: string[];
   bulanOptions: Array<{ value: string; label: string }>;
 }
@@ -20,6 +24,10 @@ export function FilterDateSection({
   setFilterFromBulanExp,
   filterToBulanExp,
   setFilterToBulanExp,
+  filterFromBulanTTD,
+  setFilterFromBulanTTD,
+  filterToBulanTTD,
+  setFilterToBulanTTD,
   tahunOptions,
   bulanOptions,
 }: FilterDateSectionProps) {
@@ -64,6 +72,42 @@ export function FilterDateSection({
         <div>
           <Label className="mb-1.5 block text-xs">To Bulan Exp</Label>
           <Select value={filterToBulanExp} onValueChange={setFilterToBulanExp}>
+            <SelectTrigger className="w-full h-8">
+              <SelectValue placeholder="To" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              {bulanOptions.map((bulan) => (
+                <SelectItem key={bulan.value} value={bulan.value}>
+                  {bulan.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* From/To Bulan TTD Notif */}
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <Label className="mb-1.5 block text-xs">From TTD Notif</Label>
+          <Select value={filterFromBulanTTD || 'all'} onValueChange={setFilterFromBulanTTD || (() => {})}>
+            <SelectTrigger className="w-full h-8">
+              <SelectValue placeholder="From" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              {bulanOptions.map((bulan) => (
+                <SelectItem key={bulan.value} value={bulan.value}>
+                  {bulan.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="mb-1.5 block text-xs">To TTD Notif</Label>
+          <Select value={filterToBulanTTD || 'all'} onValueChange={setFilterToBulanTTD || (() => {})}>
             <SelectTrigger className="w-full h-8">
               <SelectValue placeholder="To" />
             </SelectTrigger>

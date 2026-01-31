@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Area, AreaChart, Bar, BarChart, Line, LineChart, CartesianGrid, XAxis, YAxis, LabelList, Tooltip } from "recharts"
+import { Area, AreaChart, Bar, BarChart, Line, LineChart, CartesianGrid, XAxis, YAxis, LabelList, Tooltip, Legend } from "recharts"
 
 import {
   Card,
@@ -20,14 +20,28 @@ import {
 export const description = "Pencapaian Analytics Monthly Chart"
 
 const chartConfig = {
+  Target: {
+    label: "Target",
+    color: "hsl(210, 80%, 50%)",  // Blue
+  },
   Pencapaian: {
     label: "Pencapaian",
+    color: "hsl(142, 76%, 36%)",  // Green
   },
 } satisfies ChartConfig
 
 // Custom Tooltip Content
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
+    // Calculate percentage if both target and pencapaian are present
+    const targetEntry = payload.find((p: any) => p.name === 'Target');
+    const pencapaianEntry = payload.find((p: any) => p.name === 'Pencapaian');
+
+    let percentage = null;
+    if (targetEntry && pencapaianEntry && targetEntry.value > 0) {
+      percentage = ((pencapaianEntry.value / targetEntry.value) * 100).toFixed(1);
+    }
+
     return (
       <div className="bg-background border rounded-lg shadow-lg p-2 sm:p-3">
         <p className="font-semibold text-xs sm:text-sm mb-1">{label}</p>
@@ -41,6 +55,13 @@ const CustomTooltip = ({ active, payload, label }: any) => {
             <span className="font-bold">Rp {entry.value.toLocaleString('id-ID')}</span>
           </div>
         ))}
+        {percentage && (
+          <div className="mt-2 pt-2 border-t text-xs sm:text-sm">
+            <span className="font-bold text-green-600 dark:text-green-400">
+              Pencapaian: {percentage}%
+            </span>
+          </div>
+        )}
       </div>
     );
   }
@@ -79,19 +100,19 @@ function ChartCardPencapaianMonthly({
 
   const chartColor = getStatusColorValue();
 
-  // Process data for chart - group by month and COMBINE MRC + DHA
+  // Process data for chart - group by month and separate Target vs Pencapaian
   const getChartData = () => {
     if (!data || data.length === 0) {
-      return monthNames.map(month => ({ month, value: 0 }));
+      return monthNames.map(month => ({ month, target: 0, pencapaian: 0 }));
     }
 
     // Initialize data for all months
-    const monthlyData: { [key: string]: number } = {};
+    const monthlyData: { [key: string]: { target: number; pencapaian: number } } = {};
     monthNames.forEach(month => {
-      monthlyData[month] = 0;
+      monthlyData[month] = { target: 0, pencapaian: 0 };
     });
 
-    // Group by month and COMBINE all MRC and DHA values
+    // Group by month and separate Target vs Pencapaian
     data.forEach(item => {
       // Extract month from bulanExpDate
       let monthIndex = 0;
@@ -114,18 +135,31 @@ function ChartCardPencapaianMonthly({
 
       const monthName = monthNames[monthIndex];
 
-      // Add hargaKontrak to the corresponding month (COMBINED MRC + DHA)
-      if (!monthlyData[monthName]) {
-        monthlyData[monthName] = 0;
+      // Check if this is Target or Pencapaian based on picCrm or sales field
+      const isTarget = item.picCrm === 'Target' || item.sales === 'Target' || item.status === 'TARGET';
+      const isPencapaian = item.picCrm === 'Pencapaian' || item.sales === 'Pencapaian' || item.status === 'PENCAPAIAN';
+
+      // Add to corresponding series
+      if (isTarget) {
+        monthlyData[monthName].target += item.hargaKontrak || 0;
+      } else if (isPencapaian) {
+        monthlyData[monthName].pencapaian += item.hargaKontrak || 0;
       }
-      monthlyData[monthName] += item.hargaKontrak || 0;
     });
 
-    // Convert to array
-    const chartData = monthNames.map(month => ({
-      month,
-      value: monthlyData[month]
-    }));
+    // Convert to array with percentage
+    const chartData = monthNames.map(month => {
+      const target = monthlyData[month].target;
+      const pencapaian = monthlyData[month].pencapaian;
+      const percentage = target > 0 ? ((pencapaian / target) * 100).toFixed(1) : '0.0';
+
+      return {
+        month,
+        target,
+        pencapaian,
+        percentage
+      };
+    });
 
     return chartData;
   };
@@ -148,7 +182,12 @@ function ChartCardPencapaianMonthly({
     return 'bg-gradient-to-br from-green-500/20 via-green-400/10 to-transparent';
   };
 
-  const hasData = chartData.length > 0 && chartData.some(item => item.value > 0);
+  const hasData = chartData.length > 0 && chartData.some(item => item.target > 0 || item.pencapaian > 0);
+
+  // Calculate totals and percentage
+  const totalTarget = chartData.reduce((sum, item) => sum + item.target, 0);
+  const totalPencapaian = chartData.reduce((sum, item) => sum + item.pencapaian, 0);
+  const achievementPercentage = totalTarget > 0 ? Math.round((totalPencapaian / totalTarget) * 100) : 0;
 
   return (
     <Card className="@container/card relative overflow-hidden">
@@ -158,8 +197,13 @@ function ChartCardPencapaianMonthly({
 
       <CardHeader className="relative z-10 pb-2">
         <CardTitle className="text-sm font-semibold text-center">{title}</CardTitle>
-        <CardDescription className="text-sm text-center font-semibold text-black/70">
-          Total: {data.length} data | Rp {chartData.reduce((sum, item) => sum + item.value, 0).toLocaleString('id-ID')}
+        <CardDescription className="text-xs sm:text-sm text-center space-y-1">
+          <div className="font-semibold text-black/70">
+            Target: Rp {totalTarget.toLocaleString('id-ID')} | Pencapaian: Rp {totalPencapaian.toLocaleString('id-ID')}
+          </div>
+          <div className={`text-lg sm:text-xl font-extrabold ${parseFloat(achievementPercentage) >= 90 ? 'text-green-600' : parseFloat(achievementPercentage) >= 70 ? 'text-yellow-600' : 'text-red-600'}`}>
+            {achievementPercentage}%
+          </div>
         </CardDescription>
       </CardHeader>
 
@@ -206,16 +250,43 @@ function ChartCardPencapaianMonthly({
                       cursor={true}
                       content={<CustomTooltip />}
                     />
-                    <Bar dataKey="value" fill={chartColor} radius={[4, 4, 0, 0]}>
+                    <Legend />
+                    <Bar dataKey="target" fill="hsl(210, 80%, 50%)" radius={[4, 4, 0, 0]} name="Target">
                       <LabelList
-                        dataKey="value"
+                        dataKey="target"
                         position="top"
-                        fontSize={isFullWidth ? 12 : 9}
+                        fontSize={isFullWidth ? 13 : 8}
                         fontWeight="bold"
                         className="hidden sm:inline"
-                        fill={chartColor}
+                        fill="hsl(210, 80%, 50%)"
                         formatter={(value: number) => {
                           if (value === 0) return '';
+                          // Format in millions
+                          if (value >= 1000000000) {
+                            return `${(value / 1000000000).toFixed(1)}M`;
+                          } else if (value >= 1000000) {
+                            return `${(value / 1000000).toFixed(0)}Jt`;
+                          }
+                          return value.toLocaleString('id-ID');
+                        }}
+                      />
+                    </Bar>
+                    <Bar dataKey="pencapaian" fill="hsl(142, 76%, 36%)" radius={[4, 4, 0, 0]} name="Pencapaian">
+                      <LabelList
+                        dataKey="pencapaian"
+                        position="top"
+                        fontSize={isFullWidth ? 13 : 8}
+                        fontWeight="bold"
+                        className="hidden sm:inline"
+                        fill="hsl(142, 76%, 36%)"
+                        formatter={(value: number) => {
+                          if (value === 0) return '';
+                          // Format in millions
+                          if (value >= 1000000000) {
+                            return `${(value / 1000000000).toFixed(1)}M`;
+                          } else if (value >= 1000000) {
+                            return `${(value / 1000000).toFixed(0)}Jt`;
+                          }
                           return value.toLocaleString('id-ID');
                         }}
                       />
@@ -249,23 +320,57 @@ function ChartCardPencapaianMonthly({
                       cursor={true}
                       content={<CustomTooltip />}
                     />
+                    <Legend />
                     <Line
                       type="monotone"
-                      dataKey="value"
-                      stroke={chartColor}
+                      dataKey="target"
+                      stroke="hsl(210, 80%, 50%)"
                       strokeWidth={2}
-                      dot={{ fill: chartColor, strokeWidth: 1.5, r: 4 }}
+                      dot={{ fill: "hsl(210, 80%, 50%)", strokeWidth: 1.5, r: 4 }}
                       activeDot={{ r: 6 }}
+                      name="Target"
                     >
                       <LabelList
-                        dataKey="value"
+                        dataKey="target"
                         position="top"
-                        fontSize={isFullWidth ? 12 : 9}
+                        fontSize={isFullWidth ? 13 : 8}
                         fontWeight="bold"
                         className="hidden sm:inline"
-                        fill={chartColor}
+                        fill="hsl(210, 80%, 50%)"
                         formatter={(value: number) => {
                           if (value === 0) return '';
+                          if (value >= 1000000000) {
+                            return `${(value / 1000000000).toFixed(1)}M`;
+                          } else if (value >= 1000000) {
+                            return `${(value / 1000000).toFixed(0)}Jt`;
+                          }
+                          return value.toLocaleString('id-ID');
+                        }}
+                      />
+                    </Line>
+                    <Line
+                      type="monotone"
+                      dataKey="pencapaian"
+                      stroke="hsl(142, 76%, 36%)"
+                      strokeWidth={2}
+                      dot={{ fill: "hsl(142, 76%, 36%)", strokeWidth: 1.5, r: 4 }}
+                      activeDot={{ r: 6 }}
+                      name="Pencapaian"
+                    >
+                      <LabelList
+                        dataKey="pencapaian"
+                        position="top"
+                        fontSize={isFullWidth ? 13 : 8}
+                        fontWeight="bold"
+                        className="hidden sm:inline"
+                        fill="hsl(142, 76%, 36%)"
+                        formatter={(value: number) => {
+                          if (value === 0) return '';
+                          if (value >= 1000000000) {
+                            return `${(value / 1000000000).toFixed(1)}M`;
+                          } else if (value >= 1000000) {
+                            return `${(value / 1000000).toFixed(0)}Jt`;
+                          }
                           return value.toLocaleString('id-ID');
                         }}
                       />
@@ -277,9 +382,13 @@ function ChartCardPencapaianMonthly({
                 return (
                   <AreaChart data={chartData} margin={{ top: 20, right: 20, left: 10, bottom: 40 }}>
                     <defs>
-                      <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={chartColor} stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor={chartColor} stopOpacity={0.2}/>
+                      <linearGradient id="colorTarget" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(210, 80%, 50%)" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="hsl(210, 80%, 50%)" stopOpacity={0.2}/>
+                      </linearGradient>
+                      <linearGradient id="colorPencapaian" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.2}/>
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -305,22 +414,55 @@ function ChartCardPencapaianMonthly({
                       cursor={true}
                       content={<CustomTooltip />}
                     />
+                    <Legend />
                     <Area
                       type="monotone"
-                      dataKey="value"
-                      stroke={chartColor}
+                      dataKey="target"
+                      stroke="hsl(210, 80%, 50%)"
                       strokeWidth={2}
-                      fill="url(#colorValue)"
+                      fill="url(#colorTarget)"
+                      name="Target"
                     >
                       <LabelList
-                        dataKey="value"
+                        dataKey="target"
                         position="top"
-                        fontSize={isFullWidth ? 12 : 9}
+                        fontSize={isFullWidth ? 13 : 8}
                         fontWeight="bold"
                         className="hidden sm:inline"
-                        fill={chartColor}
+                        fill="hsl(210, 80%, 50%)"
                         formatter={(value: number) => {
                           if (value === 0) return '';
+                          if (value >= 1000000000) {
+                            return `${(value / 1000000000).toFixed(1)}M`;
+                          } else if (value >= 1000000) {
+                            return `${(value / 1000000).toFixed(0)}Jt`;
+                          }
+                          return value.toLocaleString('id-ID');
+                        }}
+                      />
+                    </Area>
+                    <Area
+                      type="monotone"
+                      dataKey="pencapaian"
+                      stroke="hsl(142, 76%, 36%)"
+                      strokeWidth={2}
+                      fill="url(#colorPencapaian)"
+                      name="Pencapaian"
+                    >
+                      <LabelList
+                        dataKey="pencapaian"
+                        position="top"
+                        fontSize={isFullWidth ? 13 : 8}
+                        fontWeight="bold"
+                        className="hidden sm:inline"
+                        fill="hsl(142, 76%, 36%)"
+                        formatter={(value: number) => {
+                          if (value === 0) return '';
+                          if (value >= 1000000000) {
+                            return `${(value / 1000000000).toFixed(1)}M`;
+                          } else if (value >= 1000000) {
+                            return `${(value / 1000000).toFixed(0)}Jt`;
+                          }
                           return value.toLocaleString('id-ID');
                         }}
                       />
@@ -331,13 +473,7 @@ function ChartCardPencapaianMonthly({
           })()}
         </ChartContainer>
 
-        {/* Chart Legend */}
-        <div className="flex items-center justify-center space-x-4 mt-3 p-2 bg-muted/20 rounded-lg">
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3" style={{ backgroundColor: chartColor }}></div>
-            <span className="text-xs font-medium">Pencapaian</span>
-          </div>
-        </div>
+        
       </CardContent>
     </Card>
   );

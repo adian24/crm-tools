@@ -1,7 +1,6 @@
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface FilterSertifikatSectionProps {
@@ -11,19 +10,9 @@ interface FilterSertifikatSectionProps {
   setFilterStandar: (value: string) => void;
   filterAkreditasi: string;
   setFilterAkreditasi: (value: string) => void;
-  filterEaCode: string;
-  setFilterEaCode: (value: string) => void;
-  filterTahapAudit: string;
-  setFilterTahapAudit: (value: string) => void;
-  filterFromBulanTTD: string;
-  setFilterFromBulanTTD: (value: string) => void;
-  filterToBulanTTD: string;
-  setFilterToBulanTTD: (value: string) => void;
   filterStatusSertifikat: string;
   setFilterStatusSertifikat: (value: string) => void;
   standarOptions: string[];
-  tahapanAuditOptions: string[];
-  bulanOptions: Array<{ value: string; label: string }>;
 }
 
 export function FilterSertifikatSection({
@@ -33,19 +22,9 @@ export function FilterSertifikatSection({
   setFilterStandar,
   filterAkreditasi,
   setFilterAkreditasi,
-  filterEaCode,
-  setFilterEaCode,
-  filterTahapAudit,
-  setFilterTahapAudit,
-  filterFromBulanTTD,
-  setFilterFromBulanTTD,
-  filterToBulanTTD,
-  setFilterToBulanTTD,
   filterStatusSertifikat,
   setFilterStatusSertifikat,
   standarOptions,
-  tahapanAuditOptions,
-  bulanOptions,
 }: FilterSertifikatSectionProps) {
   return (
     <>
@@ -136,71 +115,6 @@ export function FilterSertifikatSection({
               {akreditasi}
             </Button>
           ))}
-        </div>
-      </div>
-
-      {/* EA CODE */}
-      <div>
-        <Label className="mb-1.5 block text-xs">EA CODE</Label>
-        <Input
-          placeholder="Search EA Code..."
-          value={filterEaCode}
-          onChange={(e) => setFilterEaCode(e.target.value)}
-          className="h-8"
-        />
-      </div>
-
-      {/* Tahapan Audit */}
-      <div>
-        <Label className="mb-1.5 block text-xs">Tahapan Audit</Label>
-        <Select value={filterTahapAudit} onValueChange={setFilterTahapAudit}>
-          <SelectTrigger className="w-full h-8 text-xs">
-            <SelectValue placeholder="All Tahapan" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Tahapan</SelectItem>
-            {tahapanAuditOptions.map((tahap) => (
-              <SelectItem key={tahap} value={tahap}>
-                {tahap}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* From/To Bulan TTD */}
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <Label className="mb-1.5 block text-xs">From Bulan TTD</Label>
-          <Select value={filterFromBulanTTD} onValueChange={setFilterFromBulanTTD}>
-            <SelectTrigger className="w-full h-8">
-              <SelectValue placeholder="From" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              {bulanOptions.map((bulan) => (
-                <SelectItem key={bulan.value} value={bulan.value}>
-                  {bulan.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label className="mb-1.5 block text-xs">To Bulan TTD</Label>
-          <Select value={filterToBulanTTD} onValueChange={setFilterToBulanTTD}>
-            <SelectTrigger className="w-full h-8">
-              <SelectValue placeholder="To" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              {bulanOptions.map((bulan) => (
-                <SelectItem key={bulan.value} value={bulan.value}>
-                  {bulan.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
       </div>
 

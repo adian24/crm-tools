@@ -113,9 +113,9 @@ export default function CrmDataManagementPage() {
   const [filterAkreditasi, setFilterAkreditasi] = useState<string>('all');
   const [filterEaCode, setFilterEaCode] = useState<string>('');
   const [filterTahapAudit, setFilterTahapAudit] = useState<string>('all');
-  const [filterFromBulanTTD, setFilterFromBulanTTD] = useState<string>('all');
-  const [filterToBulanTTD, setFilterToBulanTTD] = useState<string>('all');
-  const [filterStatusSertifikat, setFilterStatusSertifikat] = useState<string>('all');
+  const [filterFromBulanTTD, setFilterFromBulanTTD] = useState<string>('1');
+  const [filterToBulanTTD, setFilterToBulanTTD] = useState<string>('12');
+  const [filterStatusSertifikat, setFilterStatusSertifikat] = useState<string>('Terbit');
   const [filterTermin, setFilterTermin] = useState<string>('all');
   const [filterTipeProduk, setFilterTipeProduk] = useState<string>('all');
   const [filterPicSales, setFilterPicSales] = useState<string>('all');
@@ -207,9 +207,9 @@ export default function CrmDataManagementPage() {
     setFilterAkreditasi('all');
     setFilterEaCode('');
     setFilterTahapAudit('all');
-    setFilterFromBulanTTD('all');
-    setFilterToBulanTTD('all');
-    setFilterStatusSertifikat('all');
+    setFilterFromBulanTTD('1');
+    setFilterToBulanTTD('12');
+    setFilterStatusSertifikat('Terbit');
     setFilterTermin('all');
     setFilterTipeProduk('all');
     setFilterPicSales('all');
@@ -234,7 +234,10 @@ export default function CrmDataManagementPage() {
     const matchesTahun = filterTahun === 'all' || target.tahun === filterTahun;
 
     let matchesBulanExp = true;
-    if (filterFromBulanExp !== 'all' || filterToBulanExp !== 'all') {
+    // Skip Bulan EXP filter for DONE status (DONE uses bulanTtdNotif instead)
+    const isNotDoneStatus = target.status !== 'DONE';
+
+    if (isNotDoneStatus && (filterFromBulanExp !== 'all' || filterToBulanExp !== 'all')) {
       // Mapping bulan nama ke angka
       const bulanNameToNum: { [key: string]: number } = {
         'januari': 1, 'februari': 2, 'maret': 3, 'april': 4, 'mei': 5, 'juni': 6,
@@ -263,6 +266,7 @@ export default function CrmDataManagementPage() {
 
       matchesBulanExp = bulanExpNum > 0 && bulanExpNum >= fromMonth && bulanExpNum <= toMonth;
     }
+    // DONE status always passes Bulan EXP filter
 
     // Details section filters
     const matchesPicCrm = filterPicCrm === 'all' || target.picCrm === filterPicCrm;
@@ -284,7 +288,7 @@ export default function CrmDataManagementPage() {
     const matchesAkreditasi = filterAkreditasi === 'all' || target.akreditasi === filterAkreditasi;
     const matchesEaCode = filterEaCode === '' || (target.eaCode || '').toLowerCase().includes(filterEaCode.toLowerCase());
     const matchesTahapAudit = filterTahapAudit === 'all' || target.tahapAudit === filterTahapAudit;
-    const matchesStatusSertifikat = filterStatusSertifikat === 'all' || target.statusSertifikat === filterStatusSertifikat;
+    const matchesStatusSertifikat = filterStatusSertifikat === 'all' || (target.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
     const matchesTermin = filterTermin === 'all' || target.terminPembayaran === filterTermin;
 
     // Tipe Produk filter
@@ -299,17 +303,38 @@ export default function CrmDataManagementPage() {
     }
 
     let matchesBulanTTD = true;
-    if (filterFromBulanTTD !== 'all' || filterToBulanTTD !== 'all') {
+    // Only apply bulan TTD Notif filter for DONE status
+    const isDoneStatus = target.status === 'DONE';
+
+    if (isDoneStatus) {
       const ttdDate = target.bulanTtdNotif;
       if (ttdDate) {
-        const ttdMonth = new Date(ttdDate).getMonth() + 1;
-        const fromMonth = filterFromBulanTTD !== 'all' ? parseInt(filterFromBulanTTD) : 1;
-        const toMonth = filterToBulanTTD !== 'all' ? parseInt(filterToBulanTTD) : 12;
-        matchesBulanTTD = ttdMonth >= fromMonth && ttdMonth <= toMonth;
+        // Data has bulanTtdNotif, check if year and month match the filter
+        const dateObj = new Date(ttdDate);
+        const ttdYear = dateObj.getFullYear();
+        const ttdMonth = dateObj.getMonth() + 1;
+
+        // Check year match
+        const yearMatches = filterTahun === 'all' || ttdYear.toString() === filterTahun;
+
+        if (yearMatches) {
+          // Year matches, now check month filter
+          if (filterFromBulanTTD !== 'all' || filterToBulanTTD !== 'all') {
+            const fromMonth = filterFromBulanTTD !== 'all' ? parseInt(filterFromBulanTTD) : 1;
+            const toMonth = filterToBulanTTD !== 'all' ? parseInt(filterToBulanTTD) : 12;
+            matchesBulanTTD = ttdMonth >= fromMonth && ttdMonth <= toMonth;
+          }
+          // If filter is 'all', include all data with bulanTtdNotif (year already matched)
+        } else {
+          // Year doesn't match
+          matchesBulanTTD = false;
+        }
       } else {
+        // DONE status without bulanTtdNotif should be excluded
         matchesBulanTTD = false;
       }
     }
+    // PROSES, SUSPEND, LOSS, WAITING status always pass bulan TTD Notif filter
 
     // Jadwal Kunjungan section filters
     let matchesKunjungan = true;
@@ -517,24 +542,6 @@ export default function CrmDataManagementPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {/* Section Date */}
-              <FilterSection
-                title="Filter Date"
-                isExpanded={expandedFilterSections.includes('date')}
-                onToggle={() => toggleFilterSection('date')}
-              >
-                <FilterDateSection
-                  filterTahun={filterTahun}
-                  setFilterTahun={setFilterTahun}
-                  filterFromBulanExp={filterFromBulanExp}
-                  setFilterFromBulanExp={setFilterFromBulanExp}
-                  filterToBulanExp={filterToBulanExp}
-                  setFilterToBulanExp={setFilterToBulanExp}
-                  tahunOptions={tahunOptions}
-                  bulanOptions={bulanOptions}
-                />
-              </FilterSection>
-
               {/* Section Details - PIC CRM */}
               <FilterSection
                 title="Filter PIC CRM"
@@ -548,6 +555,47 @@ export default function CrmDataManagementPage() {
                 />
               </FilterSection>
 
+              {/* Section Date */}
+              <FilterSection
+                title="Filter Date"
+                isExpanded={expandedFilterSections.includes('date')}
+                onToggle={() => toggleFilterSection('date')}
+              >
+                <FilterDateSection
+                  filterTahun={filterTahun}
+                  setFilterTahun={setFilterTahun}
+                  filterFromBulanExp={filterFromBulanExp}
+                  setFilterFromBulanExp={setFilterFromBulanExp}
+                  filterToBulanExp={filterToBulanExp}
+                  setFilterToBulanExp={setFilterToBulanExp}
+                  filterFromBulanTTD={filterFromBulanTTD}
+                  setFilterFromBulanTTD={setFilterFromBulanTTD}
+                  filterToBulanTTD={filterToBulanTTD}
+                  setFilterToBulanTTD={setFilterToBulanTTD}
+                  tahunOptions={tahunOptions}
+                  bulanOptions={bulanOptions}
+                />
+              </FilterSection>
+
+              {/* Section Sertifikat */}
+              <FilterSection
+                title="Filter Sertifikat"
+                isExpanded={expandedFilterSections.includes('sertifikat')}
+                onToggle={() => toggleFilterSection('sertifikat')}
+              >
+                <FilterSertifikatSection
+                  filterTipeProduk={filterTipeProduk}
+                  setFilterTipeProduk={setFilterTipeProduk}
+                  filterStandar={filterStandar}
+                  setFilterStandar={setFilterStandar}
+                  filterAkreditasi={filterAkreditasi}
+                  setFilterAkreditasi={setFilterAkreditasi}
+                  filterStatusSertifikat={filterStatusSertifikat}
+                  setFilterStatusSertifikat={setFilterStatusSertifikat}
+                  standarOptions={standarOptions}
+                />
+              </FilterSection>
+              
               {/* Section Company - Status, Category, Provinsi, Kota, Alasan */}
               <FilterSection
                 title="Filter Company"
@@ -585,34 +633,7 @@ export default function CrmDataManagementPage() {
                 />
               </FilterSection>
 
-              {/* Section Sertifikat */}
-              <FilterSection
-                title="Filter Sertifikat"
-                isExpanded={expandedFilterSections.includes('sertifikat')}
-                onToggle={() => toggleFilterSection('sertifikat')}
-              >
-                <FilterSertifikatSection
-                  filterTipeProduk={filterTipeProduk}
-                  setFilterTipeProduk={setFilterTipeProduk}
-                  filterStandar={filterStandar}
-                  setFilterStandar={setFilterStandar}
-                  filterAkreditasi={filterAkreditasi}
-                  setFilterAkreditasi={setFilterAkreditasi}
-                  filterEaCode={filterEaCode}
-                  setFilterEaCode={setFilterEaCode}
-                  filterTahapAudit={filterTahapAudit}
-                  setFilterTahapAudit={setFilterTahapAudit}
-                  filterFromBulanTTD={filterFromBulanTTD}
-                  setFilterFromBulanTTD={setFilterFromBulanTTD}
-                  filterToBulanTTD={filterToBulanTTD}
-                  setFilterToBulanTTD={setFilterToBulanTTD}
-                  filterStatusSertifikat={filterStatusSertifikat}
-                  setFilterStatusSertifikat={setFilterStatusSertifikat}
-                  standarOptions={standarOptions}
-                  tahapanAuditOptions={tahapanAuditOptions}
-                  bulanOptions={bulanOptions}
-                />
-              </FilterSection>
+              
 
               {/* Section Jadwal Kunjungan */}
               <FilterSection
@@ -1494,17 +1515,16 @@ export default function CrmDataManagementPage() {
               )}
 
               {/* Bulan TTD Range */}
-              {(filterFromBulanTTD !== 'all' || filterToBulanTTD !== 'all') && (
+              {(filterFromBulanTTD !== '1' || filterToBulanTTD !== '12') && (
                 <Badge variant="secondary" className="gap-1">
                   <span className="font-semibold">Bulan TTD:</span>
-                  {filterFromBulanTTD !== 'all' ? bulanOptions.find(b => b.value === filterFromBulanTTD)?.label : 'All'}
-                  {filterFromBulanTTD !== 'all' && filterToBulanTTD !== 'all' ? ' - ' : ''}
-                  {filterToBulanTTD !== 'all' ? bulanOptions.find(b => b.value === filterToBulanTTD)?.label : ''}
+                  {bulanOptions.find(b => b.value === filterFromBulanTTD)?.label}
+                  {filterFromBulanTTD !== filterToBulanTTD ? ` - ${bulanOptions.find(b => b.value === filterToBulanTTD)?.label}` : ''}
                   <X
                     className="h-3 w-3 cursor-pointer hover:text-destructive"
                     onClick={() => {
-                      setFilterFromBulanTTD('all');
-                      setFilterToBulanTTD('all');
+                      setFilterFromBulanTTD('1');
+                      setFilterToBulanTTD('12');
                     }}
                   />
                 </Badge>
@@ -1782,48 +1802,64 @@ export default function CrmDataManagementPage() {
                 .filter(t => t.status === 'WAITING')
                 .reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
 
-              // Calculate percentage based on filtered data (90% of total)
-              const achievementPercentage = totalFilteredContracts > 0
-                ? Math.round((lanjutContracts / (totalFilteredContracts * 0.9)) * 100)
+              // Calculate Total Nilai Kontrak based on:
+              // 1. hargaKontrak
+              // 2. statusSertifikat = "Terbit" (always fixed)
+              // 3. tahun (year filter)
+              const totalNilaiKontrak = Math.round(
+                allData
+                  .filter(t => {
+                    // Filter by tahun
+                    const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
+                    // Filter by statusSertifikat = "Terbit"
+                    const matchesStatus = (t.statusSertifikat || '').trim().toLowerCase() === 'terbit';
+                    return matchesTahun && matchesStatus;
+                  })
+                  .reduce((sum, t) => sum + (t.hargaKontrak || 0), 0)
+              );
+
+              // Calculate percentage based on Total Nilai Kontrak (Terbit)
+              const achievementPercentage = totalNilaiKontrak > 0
+                ? Math.round((lanjutContracts / (totalNilaiKontrak * 0.9)) * 100)
                 : 0;
 
               // Determine which progress bar to show based on status filter
               const getProgressConfig = () => {
-                // Percentage is ALWAYS calculated from total ALL contracts (not filtered)
+                // Percentage is calculated from Total Nilai Kontrak (Terbit)
                 if (filterStatus === 'DONE' || filterStatus === 'all') {
                   return {
                     label: 'Pencapaian Kontrak Lanjut / Done',
                     value: lanjutContracts,
                     color: 'green',
-                    percentage: totalAllContracts > 0 ? Math.round((lanjutContracts / (totalAllContracts * 0.9)) * 100) : 0
+                    percentage: totalNilaiKontrak > 0 ? Math.round((lanjutContracts / (totalNilaiKontrak * 0.9)) * 100) : 0
                   };
                 } else if (filterStatus === 'LOSS') {
                   return {
                     label: 'Pencapaian Kontrak Loss',
                     value: lossContracts,
                     color: 'red',
-                    percentage: totalAllContracts > 0 ? Math.round((lossContracts / totalAllContracts) * 100) : 0
+                    percentage: totalNilaiKontrak > 0 ? Math.round((lossContracts / totalNilaiKontrak) * 100) : 0
                   };
                 } else if (filterStatus === 'SUSPEND') {
                   return {
                     label: 'Pencapaian Kontrak Suspend',
                     value: suspendContracts,
                     color: 'orange',
-                    percentage: totalAllContracts > 0 ? Math.round((suspendContracts / totalAllContracts) * 100) : 0
+                    percentage: totalNilaiKontrak > 0 ? Math.round((suspendContracts / totalNilaiKontrak) * 100) : 0
                   };
                 } else if (filterStatus === 'PROSES') {
                   return {
                     label: 'Pencapaian Kontrak Proses',
                     value: prosesContracts,
                     color: 'blue',
-                    percentage: totalAllContracts > 0 ? Math.round((prosesContracts / totalAllContracts) * 100) : 0
+                    percentage: totalNilaiKontrak > 0 ? Math.round((prosesContracts / totalNilaiKontrak) * 100) : 0
                   };
                 } else if (filterStatus === 'WAITING') {
                   return {
                     label: 'Pencapaian Kontrak Waiting',
                     value: waitingContracts,
                     color: 'gray',
-                    percentage: totalAllContracts > 0 ? Math.round((waitingContracts / totalAllContracts) * 100) : 0
+                    percentage: totalNilaiKontrak > 0 ? Math.round((waitingContracts / totalNilaiKontrak) * 100) : 0
                   };
                 } else {
                   // Default: show DONE
@@ -1831,7 +1867,7 @@ export default function CrmDataManagementPage() {
                     label: 'Pencapaian Kontrak Done',
                     value: lanjutContracts,
                     color: 'green',
-                    percentage: totalAllContracts > 0 ? Math.round((lanjutContracts / totalAllContracts) * 100) : 0
+                    percentage: totalNilaiKontrak > 0 ? Math.round((lanjutContracts / totalNilaiKontrak) * 100) : 0
                   };
                 }
               };
@@ -1899,10 +1935,12 @@ export default function CrmDataManagementPage() {
                         </div>
                       </div>
 
-                      {/* Total Nilai Kontrak - Tanpa Card */}
+                      {/* Total Nilai Kontrak - Filtered by Status Sertifikat = Terbit */}
                       <div className="text-right">
-                        <p className="text-3xl font-bold text-primary">Rp {Math.round(totalAllContracts * 0.9).toLocaleString('id-ID')}</p>
-                        <p className="text-sm text-muted-foreground">Total Nilai Kontrak</p>
+                        <p className="text-3xl font-bold text-primary">Rp {Math.round(totalNilaiKontrak * 0.9).toLocaleString('id-ID')}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Total Nilai Kontrak
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -1927,7 +1965,7 @@ export default function CrmDataManagementPage() {
                     </div>
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>
-                        Rp {progressConfig.value.toLocaleString('id-ID')} dari Rp {Math.round(totalAllContracts * 0.9).toLocaleString('id-ID')} (Total Semua Kontrak)
+                        Rp {progressConfig.value.toLocaleString('id-ID')} dari Rp {Math.round(totalNilaiKontrak * 0.9).toLocaleString('id-ID')} (Total Nilai Kontrak)
                         {filterStatus !== 'all' && filterStatus !== 'DONE' && (
                           <span className="ml-2">• Filter: {filterStatus}</span>
                         )}
@@ -1943,7 +1981,7 @@ export default function CrmDataManagementPage() {
                       {/* Left - Percentage Circle */}
                       <div className="flex-shrink-0">
                         <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-green-500 flex items-center justify-center">
-                          <span className="text-white text-xs sm:text-sm font-bold">{totalAllContracts > 0 ? Math.round((lanjutContracts / (totalAllContracts * 0.9)) * 100) : 0}%</span>
+                          <span className="text-white text-xs sm:text-sm font-bold">{totalNilaiKontrak > 0 ? Math.round((lanjutContracts / (totalNilaiKontrak * 0.9)) * 100) : 0}%</span>
                         </div>
                       </div>
                       {/* Right - Info */}
@@ -1951,7 +1989,7 @@ export default function CrmDataManagementPage() {
                         <span className="text-[10px] sm:text-xs text-green-600 font-medium">DONE</span>
                         <div className="text-xs sm:text-sm font-bold text-green-700 truncate">Rp {Math.round(lanjutContracts).toLocaleString('id-ID')}</div>
                         <span className="text-[9px] sm:text-[10px] text-green-600">
-                          {filteredData.filter(t => t.status === 'DONE').length} Sertifikat
+                          {filteredData.filter(t => t.status === 'DONE').length} Sertifikat (base on TTD NOTIF)
                         </span>
                       </div>
                     </div>
@@ -1960,14 +1998,14 @@ export default function CrmDataManagementPage() {
                     <div className="flex flex-row items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-blue-50 rounded-lg border border-blue-200">
                       <div className="flex-shrink-0">
                         <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-blue-500 flex items-center justify-center">
-                          <span className="text-white text-xs sm:text-sm font-bold">{totalAllContracts > 0 ? Math.round((prosesContracts / totalAllContracts) * 100) : 0}%</span>
+                          <span className="text-white text-xs sm:text-sm font-bold">{totalNilaiKontrak > 0 ? Math.round((prosesContracts / totalNilaiKontrak) * 100) : 0}%</span>
                         </div>
                       </div>
                       <div className="flex-1 min-w-0 text-left">
                         <span className="text-[10px] sm:text-xs text-blue-600 font-medium">PROSES</span>
                         <div className="text-xs sm:text-sm font-bold text-blue-700 truncate">Rp {Math.round(prosesContracts).toLocaleString('id-ID')}</div>
                         <span className="text-[9px] sm:text-[10px] text-blue-600">
-                          {filteredData.filter(t => t.status === 'PROSES').length} Sertifikat
+                          {filteredData.filter(t => t.status === 'PROSES').length} Sertifikat  (base on EXP)
                         </span>
                       </div>
                     </div>
@@ -1976,14 +2014,14 @@ export default function CrmDataManagementPage() {
                     <div className="flex flex-row items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-orange-50 rounded-lg border border-orange-200">
                       <div className="flex-shrink-0">
                         <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-orange-500 flex items-center justify-center">
-                          <span className="text-white text-xs sm:text-sm font-bold">{totalAllContracts > 0 ? Math.round((suspendContracts / totalAllContracts) * 100) : 0}%</span>
+                          <span className="text-white text-xs sm:text-sm font-bold">{totalNilaiKontrak > 0 ? Math.round((suspendContracts / totalNilaiKontrak) * 100) : 0}%</span>
                         </div>
                       </div>
                       <div className="flex-1 min-w-0 text-left">
                         <span className="text-[10px] sm:text-xs text-orange-600 font-medium">SUSPEND</span>
                         <div className="text-xs sm:text-sm font-bold text-orange-700 truncate">Rp {Math.round(suspendContracts).toLocaleString('id-ID')}</div>
                         <span className="text-[9px] sm:text-[10px] text-orange-600">
-                          {filteredData.filter(t => t.status === 'SUSPEND').length} Sertifikat
+                          {filteredData.filter(t => t.status === 'SUSPEND').length} Sertifikat  (base on EXP)
                         </span>
                       </div>
                     </div>
@@ -1992,14 +2030,14 @@ export default function CrmDataManagementPage() {
                     <div className="flex flex-row items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-red-50 rounded-lg border border-red-200">
                       <div className="flex-shrink-0">
                         <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-red-500 flex items-center justify-center">
-                          <span className="text-white text-xs sm:text-sm font-bold">{totalAllContracts > 0 ? Math.round((lossContracts / totalAllContracts) * 100) : 0}%</span>
+                          <span className="text-white text-xs sm:text-sm font-bold">{totalNilaiKontrak > 0 ? Math.round((lossContracts / totalNilaiKontrak) * 100) : 0}%</span>
                         </div>
                       </div>
                       <div className="flex-1 min-w-0 text-left">
                         <span className="text-[10px] sm:text-xs text-red-600 font-medium">LOSS</span>
                         <div className="text-xs sm:text-sm font-bold text-red-700 truncate">Rp {Math.round(lossContracts).toLocaleString('id-ID')}</div>
                         <span className="text-[9px] sm:text-[10px] text-red-600">
-                          {filteredData.filter(t => t.status === 'LOSS').length} Sertifikat
+                          {filteredData.filter(t => t.status === 'LOSS').length} Sertifikat  (base on EXP)
                         </span>
                       </div>
                     </div>
@@ -2008,14 +2046,14 @@ export default function CrmDataManagementPage() {
                     <div className="flex flex-row items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-200">
                       <div className="flex-shrink-0">
                         <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-gray-500 flex items-center justify-center">
-                          <span className="text-white text-xs sm:text-sm font-bold">{totalAllContracts > 0 ? Math.round((waitingContracts / totalAllContracts) * 100) : 0}%</span>
+                          <span className="text-white text-xs sm:text-sm font-bold">{totalNilaiKontrak > 0 ? Math.round((waitingContracts / totalNilaiKontrak) * 100) : 0}%</span>
                         </div>
                       </div>
                       <div className="flex-1 min-w-0 text-left">
                         <span className="text-[10px] sm:text-xs text-gray-600 font-medium">WAITING</span>
                         <div className="text-xs sm:text-sm font-bold text-gray-700 truncate">Rp {Math.round(waitingContracts).toLocaleString('id-ID')}</div>
                         <span className="text-[9px] sm:text-[10px] text-gray-600">
-                          {filteredData.filter(t => t.status === 'WAITING').length} Sertifikat
+                          {filteredData.filter(t => t.status === 'WAITING').length} Sertifikat  (base on EXP)
                         </span>
                       </div>
                     </div>
@@ -2033,10 +2071,10 @@ export default function CrmDataManagementPage() {
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5" />
-                  Pencapaian Analytics (Per Bulan)
+                  Breakdown Target VS Pencapaian (Per Bulan)
                 </CardTitle>
                 <CardDescription className="mt-1">
-                  Visualisasi data berdasarkan total harga kontrak per bulan {filterStatus !== 'all' && `- Status: ${filterStatus.toUpperCase()}`}
+                  Analitycs {filterStatus !== 'all' && `- Status: ${filterStatus.toUpperCase()}`}
                 </CardDescription>
               </div>
               <Select value={selectedChartType} onValueChange={setSelectedChartType}>
@@ -2067,50 +2105,107 @@ export default function CrmDataManagementPage() {
                 });
               }
 
-              // Group by bulanExpDate and calculate totals
-              const monthlyData: { [key: string]: { total: number; count: number } } = {};
+              // Group by month for TARGET (from bulanExpDate + hargaKontrak)
+              // IMPORTANT: Target should match totalNilaiKontrak calculation (tahun + statusSertifikat = "Terbit")
+              const monthlyTargetData: { [key: string]: { total: number; count: number } } = {};
 
-              filteredByStatus.forEach(target => {
-                const bulan = target.bulanExpDate || 'Unknown';
-                // Use hargaTerupdate for DONE, PROSES, SUSPEND, LOSS; use hargaKontrak for WAITING
-                const useHargaTerupdate = ['DONE', 'PROSES', 'SUSPEND', 'LOSS'].includes(target.status || '');
-                const amount = useHargaTerupdate ? (target.hargaTerupdate || 0) : (target.hargaKontrak || 0);
+              // Get data for TARGET - same filter as totalNilaiKontrak (use crmTargets, not filteredTargets)
+              const targetData = (crmTargets || []).filter(t => {
+                const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
+                const matchesStatus = (t.statusSertifikat || '').trim().toLowerCase() === 'terbit';
+                return matchesTahun && matchesStatus;
+              });
 
-                if (!monthlyData[bulan]) {
-                  monthlyData[bulan] = {
+              targetData.forEach(target => {
+                // Extract month from bulanExpDate
+                let bulan = 'Unknown';
+                if (target.bulanExpDate) {
+                  // Try YYYY-MM-DD format first
+                  const dateMatch = target.bulanExpDate.match(/^(\d{4})-(\d{2})/);
+                  if (dateMatch) {
+                    const monthNum = parseInt(dateMatch[2]);
+                    bulan = monthNum.toString();
+                  } else {
+                    // Try month name format (Januari, Februari, etc)
+                    const monthMap: { [key: string]: string } = {
+                      'januari': '1', 'jan': '1', 'februari': '2', 'feb': '2', 'maret': '3', 'mar': '3',
+                      'april': '4', 'apr': '4', 'mei': '5', 'may': '5', 'juni': '6', 'jun': '6',
+                      'juli': '7', 'jul': '7', 'agustus': '8', 'aug': '8', 'september': '9', 'sep': '9',
+                      'oktober': '10', 'oct': '10', 'november': '11', 'nov': '11', 'desember': '12', 'dec': '12'
+                    };
+                    const mapped = monthMap[target.bulanExpDate.toLowerCase()];
+                    if (mapped) {
+                      bulan = mapped;
+                    }
+                  }
+                }
+
+                // Use hargaKontrak for TARGET
+                const amount = target.hargaKontrak || 0;
+
+                if (!monthlyTargetData[bulan]) {
+                  monthlyTargetData[bulan] = {
                     total: 0,
                     count: 0
                   };
                 }
 
-                monthlyData[bulan].total += amount;
-                monthlyData[bulan].count += 1;
+                monthlyTargetData[bulan].total += amount;
+                monthlyTargetData[bulan].count += 1;
               });
 
-              // Debug: Log monthly data
-              console.log('📊 Monthly Data:', Object.keys(monthlyData));
-              console.log('📊 Monthly Details:', monthlyData);
+              // Group by month for PENCAPAIAN (from bulanTtdNotif + hargaTerupdate)
+              const monthlyPencapaianData: { [key: string]: { total: number; count: number } } = {};
 
-              // Convert to array and sort by month
-              const bulanOrder: { [key: string]: number } = {
-                'januari': 1, 'februari': 2, 'maret': 3, 'april': 4, 'mei': 5, 'juni': 6,
-                'juli': 7, 'agustus': 8, 'september': 9, 'oktober': 10, 'november': 11, 'desember': 12,
-                '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6,
-                '7': 7, '8': 8, '9': 9, '10': 10, '11': 11, '12': 12
-              };
+              filteredByStatus.forEach(target => {
+                // Extract month from bulanTtdNotif (format: YYYY-MM-DD)
+                let bulan = 'Unknown';
+                if (target.bulanTtdNotif) {
+                  const dateMatch = target.bulanTtdNotif.match(/^(\d{4})-(\d{2})/);
+                  if (dateMatch) {
+                    const monthNum = parseInt(dateMatch[2]);
+                    bulan = monthNum.toString();
+                  }
+                }
 
-              const sortedMonthlyData = Object.entries(monthlyData)
-                .filter(([bulan]) => bulan.toLowerCase() !== 'unknown')
-                .sort(([a], [b]) => {
-                  const orderA = bulanOrder[a.toLowerCase()] || 999;
-                  const orderB = bulanOrder[b.toLowerCase()] || 999;
+                // Use hargaTerupdate for PENCAPAIAN
+                const amount = target.hargaTerupdate || 0;
+
+                if (!monthlyPencapaianData[bulan]) {
+                  monthlyPencapaianData[bulan] = {
+                    total: 0,
+                    count: 0
+                  };
+                }
+
+                monthlyPencapaianData[bulan].total += amount;
+                monthlyPencapaianData[bulan].count += 1;
+              });
+
+              // Get all unique months from both datasets
+              const allMonths = new Set([
+                ...Object.keys(monthlyTargetData),
+                ...Object.keys(monthlyPencapaianData)
+              ]);
+
+              // Convert to array and sort by month number
+              const sortedMonths = Array.from(allMonths)
+                .filter(bulan => bulan !== 'Unknown')
+                .sort((a, b) => {
+                  const orderA = parseInt(a) || 999;
+                  const orderB = parseInt(b) || 999;
                   return orderA - orderB;
                 });
 
-              // Calculate grand total using hargaTerupdate for DONE, PROSES, SUSPEND, LOSS; hargaKontrak for WAITING
-              const grandTotal = Math.round(filteredByStatus.reduce((sum, t) => {
-                const useHargaTerupdate = ['DONE', 'PROSES', 'SUSPEND', 'LOSS'].includes(t.status || '');
-                return sum + (useHargaTerupdate ? (t.hargaTerupdate || 0) : (t.hargaKontrak || 0));
+              // Calculate grand totals
+              // Target: from data with same filter as totalNilaiKontrak (tahun + statusSertifikat = "Terbit")
+              const grandTotalTarget = Math.round(targetData.reduce((sum, t) => {
+                return sum + (t.hargaKontrak || 0);
+              }, 0));
+
+              // Pencapaian: from filtered data (by status)
+              const grandTotalPencapaian = Math.round(filteredByStatus.reduce((sum, t) => {
+                return sum + (t.hargaTerupdate || 0);
               }, 0));
 
               // Calculate total unique companies from filtered by status data
@@ -2136,30 +2231,72 @@ export default function CrmDataManagementPage() {
 
               const statusColor = getStatusColor();
 
-              // Create aggregated data array for chart (one data point per month with total value)
-              const chartData = sortedMonthlyData.map(([bulan, data]) => ({
-                bulanExpDate: bulan,
-                hargaKontrak: data.total,
-                namaPerusahaan: `Total ${bulan}`,
-                picCrm: 'All',
-                sales: 'All',
-                status: filterStatus !== 'all' ? filterStatus.toUpperCase() : 'ALL',
-                bulanTtdNotif: undefined,
-                category: undefined,
-                provinsi: undefined,
-                kota: undefined,
-                alamat: undefined,
-                akreditasi: undefined,
-                eaCode: undefined,
-                std: undefined,
-                iaDate: undefined,
-                expDate: undefined,
-                tahapAudit: undefined,
-                _id: '' as any,
-                tahun: filterTahun !== 'all' ? filterTahun : undefined,
-                createdAt: 0,
-                updatedAt: 0
-              }));
+              // Month name mapping
+              const monthNames: { [key: string]: string } = {
+                '1': 'Januari', '2': 'Februari', '3': 'Maret', '4': 'April',
+                '5': 'Mei', '6': 'Juni', '7': 'Juli', '8': 'Agustus',
+                '9': 'September', '10': 'Oktober', '11': 'November', '12': 'Desember'
+              };
+
+              // Create chart data with 2 series: Target and Pencapaian
+              const chartData: any[] = [];
+
+              sortedMonths.forEach(bulan => {
+                const monthName = monthNames[bulan] || bulan;
+                // IMPORTANT: Use bulan (number like '1', '2') to get data from monthlyTargetData, not monthName
+                const targetValue = monthlyTargetData[bulan]?.total || 0;
+                const pencapaianValue = monthlyPencapaianData[bulan]?.total || 0;
+
+                // Add Target data point - Use 90% for consistency with Total Target card
+                chartData.push({
+                  bulanExpDate: monthName, // Display name
+                  hargaKontrak: Math.round(targetValue * 0.9), // 90% from total
+                  namaPerusahaan: `Target ${monthName}`,
+                  picCrm: 'Target',
+                  sales: 'Target',
+                  status: 'TARGET',
+                  bulanTtdNotif: undefined,
+                  category: undefined,
+                  provinsi: undefined,
+                  kota: undefined,
+                  alamat: undefined,
+                  akreditasi: undefined,
+                  eaCode: undefined,
+                  std: undefined,
+                  iaDate: undefined,
+                  expDate: undefined,
+                  tahapAudit: undefined,
+                  _id: '' as any,
+                  tahun: filterTahun !== 'all' ? filterTahun : undefined,
+                  createdAt: 0,
+                  updatedAt: 0
+                });
+
+                // Add Pencapaian data point
+                chartData.push({
+                  bulanExpDate: monthName, // Display name
+                  hargaKontrak: pencapaianValue,
+                  namaPerusahaan: `Pencapaian ${monthName}`,
+                  picCrm: 'Pencapaian',
+                  sales: 'Pencapaian',
+                  status: 'PENCAPAIAN',
+                  bulanTtdNotif: undefined,
+                  category: undefined,
+                  provinsi: undefined,
+                  kota: undefined,
+                  alamat: undefined,
+                  akreditasi: undefined,
+                  eaCode: undefined,
+                  std: undefined,
+                  iaDate: undefined,
+                  expDate: undefined,
+                  tahapAudit: undefined,
+                  _id: '' as any,
+                  tahun: filterTahun !== 'all' ? filterTahun : undefined,
+                  createdAt: 0,
+                  updatedAt: 0
+                });
+              });
 
               // Color classes - MATCHES Total Target progress bar colors
               const colorClasses: { [key: string]: { bg: string; border: string; text: string; textLight: string; bgBadge: string; textBadge: string; bgFooter: string; borderFooter: string; textFooter: string } } = {
@@ -2224,28 +2361,40 @@ export default function CrmDataManagementPage() {
 
               return (
                 <div className="space-y-6">
-                  {/* Summary Card */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Summary Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-                    <div className="p-4 bg-white rounded-lg border border-gray-200">
-                      <p className="text-sm text-gray-600 font-medium">Rata-rata per Bulan</p>
-                      <p className="text-2xl font-bold text-gray-700 mt-1">
-                        Rp {sortedMonthlyData.length > 0 ? Math.round(grandTotal / sortedMonthlyData.length).toLocaleString('id-ID') : '0'}
+                    {/* Target Card */}
+                    <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+                      <p className="text-sm text-blue-600 font-medium">Total Target</p>
+                      <p className="text-2xl font-bold text-blue-700 mt-1">
+                        Rp {Math.round(grandTotalTarget * 0.9).toLocaleString('id-ID')}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">{sortedMonthlyData.length} bulan aktif</p>
+                      <p className="text-xs text-blue-600 mt-1">( 90% dari total Rp {Math.round(grandTotalTarget).toLocaleString('id-ID')} )</p>
                     </div>
+
+                    {/* Pencapaian Card */}
+                    <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
+                      <p className="text-sm text-green-600 font-medium">Total Pencapaian</p>
+                      <p className="text-2xl font-bold text-green-700 mt-1">
+                        Rp {grandTotalPencapaian.toLocaleString('id-ID')}
+                      </p>
+                      <p className="text-xs text-green-600 mt-1">Dari hargaTerupdate</p>
+                    </div>
+
+                    {/* Companies Card */}
                     <div className="p-4 bg-white rounded-lg border border-gray-200">
                       <p className="text-sm text-gray-600 font-medium">Total Perusahaan</p>
                       <p className="text-2xl font-bold text-primary mt-1">
                         {totalFilteredCompanies}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">Perusahaan unique</p>
+                      <p className="text-xs text-gray-500 mt-1">Perusahaan</p>
                     </div>
                   </div>
 
-                  {/* Chart - Dynamic color based on status - MATCHES Total Target progress bar */}
+                  {/* Chart - Target vs Pencapaian */}
                   <ChartCardPencapaianMonthly
-                    title={`Pencapaian Per Bulan${filterStatus !== 'all' ? ` - ${filterStatus.toUpperCase()}` : ''}`}
+                    title={`Target vs Pencapaian Per Bulan${filterStatus !== 'all' ? ` - ${filterStatus.toUpperCase()}` : ''}`}
                     data={chartData}
                     statusColor={statusColor}
                     chartType={selectedChartType}
@@ -2268,7 +2417,7 @@ export default function CrmDataManagementPage() {
                   Kuadran Analytics - Monthly Trend
                 </CardTitle>
                 <CardDescription className="mt-1">
-                  Distribusi kuadran per bulan (Januari - Desember)
+                  Distribusi kuadran per bulan berdasarkan bulan TTD Notif (hargaTerupdate)
                 </CardDescription>
               </div>
             </div>
@@ -2278,13 +2427,22 @@ export default function CrmDataManagementPage() {
               // Filter data that has kuadran field
               const dataWithKuadran = (filteredTargets || []).filter(t => t.kuadran);
 
-              // Group by Bulan and Kuadran
+              // Group by Bulan TTD Notif and Kuadran
               const monthlyKuadranData: { [key: string]: { [key: string]: { total: number; count: number } } } = {};
 
               dataWithKuadran.forEach(target => {
-                const bulan = target.bulanExpDate || 'Unknown';
+                // Extract month from bulanTtdNotif (format: YYYY-MM-DD)
+                let bulan = 'Unknown';
+                if (target.bulanTtdNotif) {
+                  const dateMatch = target.bulanTtdNotif.match(/^(\d{4})-(\d{2})/);
+                  if (dateMatch) {
+                    const monthNum = parseInt(dateMatch[2]);
+                    bulan = monthNum.toString();
+                  }
+                }
+
                 const kuadran = target.kuadran || 'Unknown';
-                const amount = target.hargaKontrak || 0;
+                const amount = target.hargaTerupdate || 0;
 
                 if (!monthlyKuadranData[bulan]) {
                   monthlyKuadranData[bulan] = {};
@@ -2300,25 +2458,25 @@ export default function CrmDataManagementPage() {
                 monthlyKuadranData[bulan][kuadran].count += 1;
               });
 
-              // Define month order
-              const bulanOrder: { [key: string]: number } = {
-                'januari': 1, 'februari': 2, 'maret': 3, 'april': 4, 'mei': 5, 'juni': 6,
-                'juli': 7, 'agustus': 8, 'september': 9, 'oktober': 10, 'november': 11, 'desember': 12,
-                '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6,
-                '7': 7, '8': 8, '9': 9, '10': 10, '11': 11, '12': 12
-              };
-
-              // Sort months
+              // Sort months by month number
               const sortedMonths = Object.keys(monthlyKuadranData)
-                .filter(bulan => bulan.toLowerCase() !== 'unknown')
+                .filter(bulan => bulan !== 'Unknown')
                 .sort((a, b) => {
-                  const orderA = bulanOrder[a.toLowerCase()] || 999;
-                  const orderB = bulanOrder[b.toLowerCase()] || 999;
+                  const orderA = parseInt(a) || 999;
+                  const orderB = parseInt(b) || 999;
                   return orderA - orderB;
                 });
 
               // Define kuadran order and colors
               const kuadranOrder = ['K1', 'K2', 'K3', 'K4'];
+
+              // Month name mapping
+              const monthNames: { [key: string]: string } = {
+                '1': 'Januari', '2': 'Februari', '3': 'Maret', '4': 'April',
+                '5': 'Mei', '6': 'Juni', '7': 'Juli', '8': 'Agustus',
+                '9': 'September', '10': 'Oktober', '11': 'November', '12': 'Desember'
+              };
+
               const kuadranColors: { [key: string]: { color: string; bg: string; border: string; gradient: string } } = {
                 'K1': {
                   color: '#3B82F6', // Blue
@@ -2417,11 +2575,12 @@ export default function CrmDataManagementPage() {
                         // Flatten data for chart: create one data point per month per kuadran
                         const chartData: any[] = [];
                         sortedMonths.forEach(bulan => {
+                          const monthName = monthNames[bulan] || bulan;
                           kuadranOrder.forEach(kuadran => {
                             const data = monthlyKuadranData[bulan]?.[kuadran];
                             if (data && data.total > 0) {
                               chartData.push({
-                                bulanExpDate: bulan,
+                                bulanExpDate: monthName,
                                 hargaKontrak: data.total,
                                 namaPerusahaan: `${kuadran}`,
                                 picCrm: kuadran, // Used to identify kuadran in chart
@@ -3348,8 +3507,8 @@ export default function CrmDataManagementPage() {
             <Card>
               <CardContent className="">
                 {(() => {
-                  // Get MRC data from crmTargets (not filteredTargets) - shows all data regardless of filters (except PIC CRM filter)
-                  const mrcData = (crmTargets || []).filter(t => (t.picCrm || '').toUpperCase() === 'MRC');
+                  // Get MRC data from filteredTargets - applies all filters including Bulan TTD Notif
+                  const mrcData = (filteredTargets || []).filter(t => (t.picCrm || '').toUpperCase() === 'MRC');
                   const mrcTotal = mrcData.length;
                   const mrcLanjut = mrcData.filter(t => t.status === 'DONE').length;
                   const mrcLoss = mrcData.filter(t => t.status === 'LOSS').length;
@@ -3468,8 +3627,8 @@ export default function CrmDataManagementPage() {
             <Card>
               <CardContent className="">
                 {(() => {
-                  // Get DHA data from crmTargets (not filteredTargets) - shows all data regardless of filters (except PIC CRM filter)
-                  const dhaData = (crmTargets || []).filter(t => (t.picCrm || '').toUpperCase() === 'DHA');
+                  // Get DHA data from filteredTargets - applies all filters including Bulan TTD Notif
+                  const dhaData = (filteredTargets || []).filter(t => (t.picCrm || '').toUpperCase() === 'DHA');
                 const dhaTotal = dhaData.length;
                 const dhaLanjut = dhaData.filter(t => t.status === 'DONE').length;
                 const dhaLoss = dhaData.filter(t => t.status === 'LOSS').length;
