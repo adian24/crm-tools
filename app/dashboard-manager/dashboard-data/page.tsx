@@ -2690,12 +2690,26 @@ export default function CrmDataManagementPage() {
           </CardHeader>
           <CardContent>
             {(() => {
-              // Filter data by tahun, statusSertifikat, and directOrAssociate field
+              // Filter data by tahun from bulanTtdNotif, status DONE, statusSertifikat, and directOrAssociate field
               const dataWithAssociate = (crmTargets || []).filter(t => {
-                const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
-                const matchesStatus = (t.statusSertifikat || '').trim().toLowerCase() === 'terbit';
+                const isDone = t.status === 'DONE';
+                const isSertifikatTerbit = (t.statusSertifikat || '').trim().toLowerCase() === 'terbit';
+                const hasBulanTtdNotif = t.bulanTtdNotif && t.bulanTtdNotif !== '';
                 const hasAssociate = t.directOrAssociate;
-                return matchesTahun && matchesStatus && hasAssociate;
+
+                // Check tahun dari bulanTtdNotif
+                let matchesTahun = false;
+                if (hasBulanTtdNotif) {
+                  if (filterTahun === 'all') {
+                    matchesTahun = true;
+                  } else {
+                    const ttdDate = new Date(t.bulanTtdNotif);
+                    const ttdYear = ttdDate.getFullYear();
+                    matchesTahun = ttdYear.toString() === filterTahun;
+                  }
+                }
+
+                return isDone && isSertifikatTerbit && hasBulanTtdNotif && hasAssociate && matchesTahun;
               });
 
               return (

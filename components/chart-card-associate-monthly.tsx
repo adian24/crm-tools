@@ -84,23 +84,16 @@ function ChartCardAssociateMonthly({
 
     // Group by month and associate type
     data.forEach(item => {
-      // Extract month from bulanExpDate
+      // Extract month from bulanTtdNotif
       let monthIndex = 0;
-      const bulanExp = item.bulanExpDate || '';
+      const ttdNotif = item.bulanTtdNotif || '';
 
-      // Try to parse as number first (1-12)
-      const bulanNum = parseInt(bulanExp);
-      if (!isNaN(bulanNum) && bulanNum >= 1 && bulanNum <= 12) {
-        monthIndex = bulanNum - 1;
-      } else {
-        // Try to parse as month name
-        const monthMap: { [key: string]: number } = {
-          'januari': 0, 'jan': 0, 'februari': 1, 'feb': 1, 'maret': 2, 'mar': 2,
-          'april': 3, 'apr': 3, 'mei': 4, 'may': 4, 'juni': 5, 'jun': 5,
-          'juli': 6, 'jul': 6, 'agustus': 7, 'aug': 7, 'september': 8, 'sep': 8,
-          'oktober': 9, 'oct': 9, 'november': 10, 'nov': 10, 'desember': 11, 'dec': 11
-        };
-        monthIndex = monthMap[bulanExp.toLowerCase()] || 0;
+      // Parse date from bulanTtdNotif (format: YYYY-MM-DD)
+      if (ttdNotif && ttdNotif.includes('-')) {
+        const date = new Date(ttdNotif);
+        if (!isNaN(date.getTime())) {
+          monthIndex = date.getMonth(); // getMonth() returns 0-11
+        }
       }
 
       const monthName = monthNames[monthIndex];
