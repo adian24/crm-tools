@@ -106,9 +106,9 @@ function ChartCardAssociateMonthly({
       const monthName = monthNames[monthIndex];
       const associateType = item.directOrAssociate || 'Direct'; // Use directOrAssociate field
 
-      // Add hargaKontrak to the corresponding month and associate type
+      // Add hargaTerupdate to the corresponding month and associate type
       if (monthlyData[monthName] && associateType in monthlyData[monthName]) {
-        monthlyData[monthName][associateType as keyof typeof monthlyData[typeof monthName]] += item.hargaKontrak || 0;
+        monthlyData[monthName][associateType as keyof typeof monthlyData[typeof monthName]] += item.hargaTerupdate || 0;
       }
     });
 

@@ -2417,7 +2417,7 @@ export default function CrmDataManagementPage() {
                   Kuadran Analytics - Monthly Trend
                 </CardTitle>
                 <CardDescription className="mt-1">
-                  Distribusi kuadran per bulan berdasarkan bulan TTD Notif (hargaTerupdate)
+                  Distribusi kuadran per bulan berdasarkan bulan EXP ( hargaTerupdate )
                 </CardDescription>
               </div>
             </div>
@@ -2554,7 +2554,7 @@ export default function CrmDataManagementPage() {
                   {/* Chart - Monthly Trend by Kuadran */}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold">Trend Kuadran Per Bulan</h3>
+                      <h3 className="text-lg font-semibold">Chart Kuadran</h3>
                       <Select value={selectedChartType} onValueChange={setSelectedChartType}>
                         <SelectTrigger className="w-32 h-8">
                           <SelectValue />
@@ -2570,41 +2570,8 @@ export default function CrmDataManagementPage() {
 
                     {/* Chart Visualization */}
                     <ChartCardKuadranMonthly
-                      title={`Distribusi Kuadran Per Bulan${filterStatus !== 'all' ? ` - ${filterStatus.toUpperCase()}` : ''}`}
-                      data={(() => {
-                        // Flatten data for chart: create one data point per month per kuadran
-                        const chartData: any[] = [];
-                        sortedMonths.forEach(bulan => {
-                          const monthName = monthNames[bulan] || bulan;
-                          kuadranOrder.forEach(kuadran => {
-                            const data = monthlyKuadranData[bulan]?.[kuadran];
-                            if (data && data.total > 0) {
-                              chartData.push({
-                                bulanExpDate: monthName,
-                                hargaKontrak: data.total,
-                                namaPerusahaan: `${kuadran}`,
-                                picCrm: kuadran, // Used to identify kuadran in chart
-                                sales: kuadran,
-                                status: 'ALL',
-                                provinsi: undefined,
-                                kota: undefined,
-                                alamat: undefined,
-                                akreditasi: undefined,
-                                eaCode: undefined,
-                                std: undefined,
-                                iaDate: undefined,
-                                expDate: undefined,
-                                tahapAudit: undefined,
-                                _id: '' as any,
-                                tahun: filterTahun !== 'all' ? filterTahun : undefined,
-                                createdAt: 0,
-                                updatedAt: 0
-                              });
-                            }
-                          });
-                        });
-                        return chartData;
-                      })()}
+                      title={`Distribusi Kuadran ${filterStatus !== 'all' ? ` - ${filterStatus.toUpperCase()}` : ''}`}
+                      data={dataWithKuadran}
                       chartType={selectedChartType}
                     />
                   </div>
@@ -2631,8 +2598,13 @@ export default function CrmDataManagementPage() {
           </CardHeader>
           <CardContent>
             {(() => {
-              // Filter data that has directOrAssociate field
-              const dataWithAssociate = (filteredTargets || []).filter(t => t.directOrAssociate);
+              // Filter data by tahun, statusSertifikat, and directOrAssociate field
+              const dataWithAssociate = (crmTargets || []).filter(t => {
+                const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
+                const matchesStatus = (t.statusSertifikat || '').trim().toLowerCase() === 'terbit';
+                const hasAssociate = t.directOrAssociate;
+                return matchesTahun && matchesStatus && hasAssociate;
+              });
 
               return (
                 <div className="space-y-6">
@@ -2641,7 +2613,7 @@ export default function CrmDataManagementPage() {
                     {['Direct', 'Associate'].map(assocType => {
                       const assocTotal = dataWithAssociate
                         .filter(t => t.directOrAssociate === assocType)
-                        .reduce((sum, t) => sum + (t.hargaKontrak || 0), 0);
+                        .reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0);
                       const assocCount = dataWithAssociate.filter(t => t.directOrAssociate === assocType).length;
 
                       // Calculate unique companies per associate type
@@ -2656,7 +2628,7 @@ export default function CrmDataManagementPage() {
                         ? { color: '#3B82F6', bg: 'bg-blue-50', border: 'border-blue-500', gradient: 'from-blue-500 to-blue-600' }
                         : { color: '#10B981', bg: 'bg-green-50', border: 'border-green-500', gradient: 'from-green-500 to-green-600' };
 
-                      const grandTotal = dataWithAssociate.reduce((sum, t) => sum + (t.hargaKontrak || 0), 0);
+                      const grandTotal = dataWithAssociate.reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0);
                       const percentage = grandTotal > 0 ? Math.round((assocTotal / grandTotal) * 100) : 0;
 
                       return (
@@ -2699,7 +2671,7 @@ export default function CrmDataManagementPage() {
 
                     {/* Chart Visualization */}
                     <ChartCardAssociateMonthly
-                      title={`Distribusi Direct vs Associate Per Bulan${filterStatus !== 'all' ? ` - ${filterStatus.toUpperCase()}` : ''}`}
+                      title={`Distribusi Direct vs Associate Per Bulan${filterTahun !== 'all' ? ` - ${filterTahun}` : ''}`}
                       data={dataWithAssociate}
                       chartType={selectedAssociateChartType}
                     />
@@ -2735,7 +2707,7 @@ export default function CrmDataManagementPage() {
 
                       dataWithAssociate.forEach(target => {
                         const associate = target.namaAssociate || 'Unknown';
-                        const amount = target.hargaKontrak || 0;
+                        const amount = target.hargaTerupdate || 0;
                         const company = target.namaPerusahaan;
 
                         if (!associateTotals[associate]) {
