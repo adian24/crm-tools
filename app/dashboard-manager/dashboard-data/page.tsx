@@ -18,6 +18,7 @@ import { ChartCardCrmData } from '@/components/chart-card-crm-data';
 import { ChartCardPencapaianMonthly } from '@/components/chart-card-pencapaian-monthly'
 import { ChartCardKuadranMonthly } from '@/components/chart-card-kuadran-monthly';
 import { ChartCardAssociateMonthly } from '@/components/chart-card-associate-monthly';
+import { ChartCardStandarDistribution } from '@/components/chart-card-standar-distribution';
 import { InfinityLoader } from '@/components/ui/infinity-loader';
 import { DashboardSkeleton } from '@/components/dashboard-skeleton';
 import { AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip, Legend, LabelList } from 'recharts';
@@ -97,6 +98,7 @@ export default function CrmDataManagementPage() {
   const [selectedChartType, setSelectedChartType] = useState<string>('area');
   const [selectedAssociateChartType, setSelectedAssociateChartType] = useState<string>('area');
   const [selectedTopAssociateChartType, setSelectedTopAssociateChartType] = useState<string>('bar');
+  const [selectedStandarChartType, setSelectedStandarChartType] = useState<string>('bar');
   const [activeFilterSheet, setActiveFilterSheet] = useState<string | null>(null);
 
   // Comprehensive Filters
@@ -3646,6 +3648,80 @@ export default function CrmDataManagementPage() {
                 })()}
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Standar Distribution Analytics */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Chart Standar
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  Distribusi standar berdasarkan jumlah sertifikat
+                </CardDescription>
+              </div>
+              <Select value={selectedStandarChartType} onValueChange={setSelectedStandarChartType}>
+                <SelectTrigger className="w-32 h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="area">Area</SelectItem>
+                  <SelectItem value="bar">Bar</SelectItem>
+                  <SelectItem value="line">Line</SelectItem>
+                  <SelectItem value="pie">Pie</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              // Filter data: HANYA filter tahun dari ALL data (tanpa filter statusSertifikat)
+              const dataForStandar = (crmTargets || []).filter(t => {
+                const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
+                return matchesTahun;
+              });
+
+              // Group by std and get counts
+              const standarTotals: { [key: string]: { count: number; companies: Set<string> } } = {};
+
+              dataForStandar.forEach(target => {
+                const std = target.std || 'Unknown';
+                const company = target.namaPerusahaan;
+
+                if (!standarTotals[std]) {
+                  standarTotals[std] = {
+                    count: 0,
+                    companies: new Set()
+                  };
+                }
+
+                standarTotals[std].count += 1;
+                if (company) {
+                  standarTotals[std].companies.add(company);
+                }
+              });
+
+              // Sort and get all standar
+              const allStandar = Object.entries(standarTotals)
+                .map(([std, data]) => ({
+                  std,
+                  count: data.count,
+                  companyCount: data.companies.size
+                }))
+                .sort((a, b) => b.count - a.count);
+
+              return (
+                <ChartCardStandarDistribution
+                  title="Distribusi Standar"
+                  data={allStandar}
+                  chartType={selectedStandarChartType}
+                />
+              );
+            })()}
           </CardContent>
         </Card>
 
