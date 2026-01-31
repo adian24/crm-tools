@@ -1401,11 +1401,12 @@ export default function CrmDataManagementPage() {
     if (!isNaN(excelDate) && excelDate > 0) {
       // Excel epoch starts at 1900-01-01, but Excel incorrectly treats 1900 as a leap year
       // So we subtract 2 days to get the correct date
-      const excelEpoch = new Date(1900, 0, 1);
-      const date = new Date(excelEpoch.getTime() + (excelDate - 2) * 24 * 60 * 60 * 1000);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
+      // USE UTC to avoid timezone issues
+      const excelEpoch = Date.UTC(1900, 0, 1);
+      const date = new Date(excelEpoch + (excelDate - 2) * 24 * 60 * 60 * 1000);
+      const year = date.getUTCFullYear();  // ✅ Use UTC methods
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(date.getUTCDate()).padStart(2, '0');
       return `${year}-${month}-${day}`;
     }
 

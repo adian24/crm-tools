@@ -90,7 +90,7 @@ const normalizeKota = (str: string): string => {
 
 export default function CrmDataManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('DONE');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPicCrm, setFilterPicCrm] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -198,7 +198,7 @@ export default function CrmDataManagementPage() {
     setFilterFromBulanExp('1');
     setFilterToBulanExp('12');
     setFilterPicCrm('all');
-    setFilterStatus('DONE');
+    setFilterStatus('all');
     setFilterAlasan('all');
     setFilterCategory('all');
     setFilterProvinsi('all');
@@ -403,6 +403,100 @@ export default function CrmDataManagementPage() {
     [...new Set(crmTargets?.map(t => t.picCrm) || [])].sort(),
     [crmTargets]
   );
+
+  // Calculate lanjutContracts with useMemo for performance
+  // Filter: Status DONE, Sertifikat Terbit, Ada bulanTtdNotif, Tahun dari bulanTtdNotif sesuai filter
+  const lanjutContracts = useMemo(() => {
+    if (!crmTargets) return 0;
+
+    // DEBUG: Group all DONE data
+    const allDoneData = crmTargets.filter(t => t.status === 'DONE');
+
+    console.log('=== DEBUG lanjutContracts ===');
+    console.log(`Filter Tahun: ${filterTahun}`);
+    console.log(`Total SEMUA data DONE: ${allDoneData.length}`);
+
+    // Group 1: DONE yang TIDAK punya bulanTtdNotif
+    const noBulanTtd = allDoneData.filter(t => !t.bulanTtdNotif || t.bulanTtdNotif === '');
+    const totalNoBulanTtd = Math.round(noBulanTtd.reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
+    console.log(`\n1. DONE TANPA bulanTtdNotif: ${noBulanTtd.length} data`);
+    console.log(`   Total: Rp ${totalNoBulanTtd.toLocaleString('id-ID')}`);
+    if (noBulanTtd.length > 0) {
+      console.log('   Contoh data:', noBulanTtd.slice(0, 3).map(t => ({
+        nama: t.namaPerusahaan,
+        sertifikat: t.statusSertifikat,
+        hargaTerupdate: t.hargaTerupdate
+      })));
+    }
+
+    // Group 2: DONE dengan bulanTtdNotif tapi statusSertifikat BUKAN "Terbit"
+    const withBulanTtdNotTerbit = allDoneData.filter(t => {
+      const hasBulanTtdNotif = t.bulanTtdNotif && t.bulanTtdNotif !== '';
+      const isSertifikatTerbit = (t.statusSertifikat || '').trim().toLowerCase() === 'terbit';
+      return hasBulanTtdNotif && !isSertifikatTerbit;
+    });
+    const totalNotTerbit = Math.round(withBulanTtdNotTerbit.reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
+    console.log(`\n2. DONE dengan bulanTtdNotif tapi statusSertifikat BUKAN "Terbit": ${withBulanTtdNotTerbit.length} data`);
+    console.log(`   Total: Rp ${totalNotTerbit.toLocaleString('id-ID')}`);
+    if (withBulanTtdNotTerbit.length > 0) {
+      console.log('   Contoh data:', withBulanTtdNotTerbit.slice(0, 3).map(t => ({
+        nama: t.namaPerusahaan,
+        sertifikat: t.statusSertifikat,
+        ttdNotif: t.bulanTtdNotif,
+        hargaTerupdate: t.hargaTerupdate
+      })));
+    }
+
+    // Group 3: DONE dengan bulanTtdNotif, statusSertifikat "Terbit", tapi TAHUN TIDAK SESUAI
+    const wrongYear = allDoneData.filter(t => {
+      const hasBulanTtdNotif = t.bulanTtdNotif && t.bulanTtdNotif !== '';
+      const isSertifikatTerbit = (t.statusSertifikat || '').trim().toLowerCase() === 'terbit';
+      if (filterTahun !== 'all' && hasBulanTtdNotif && isSertifikatTerbit) {
+        const ttdDate = new Date(t.bulanTtdNotif);
+        const ttdYear = ttdDate.getFullYear();
+        return ttdYear.toString() !== filterTahun;
+      }
+      return false;
+    });
+    const totalWrongYear = Math.round(wrongYear.reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
+    console.log(`\n3. DONE dengan bulanTtdNotif, Sertifikat "Terbit", tapi TAHUN TIDAK SESUAI: ${wrongYear.length} data`);
+    console.log(`   Total: Rp ${totalWrongYear.toLocaleString('id-ID')}`);
+    if (wrongYear.length > 0) {
+      console.log('   Contoh data:', wrongYear.slice(0, 3).map(t => ({
+        nama: t.namaPerusahaan,
+        ttdNotif: t.bulanTtdNotif,
+        tahunTTD: new Date(t.bulanTtdNotif).getFullYear(),
+        hargaTerupdate: t.hargaTerupdate
+      })));
+    }
+
+    // Group 4: YANG LOLOS FILTER (Done, Terbit, Ada bulanTtdNotif, Tahun sesuai)
+    const doneDataWithTerbit = crmTargets.filter(t => {
+      const isDone = t.status === 'DONE';
+      const isSertifikatTerbit = (t.statusSertifikat || '').trim().toLowerCase() === 'terbit';
+      const hasBulanTtdNotif = t.bulanTtdNotif && t.bulanTtdNotif !== '';
+
+      // Check tahun dari bulanTtdNotif
+      let matchesTahun = false;
+      if (hasBulanTtdNotif) {
+        if (filterTahun === 'all') {
+          matchesTahun = true;
+        } else {
+          const ttdDate = new Date(t.bulanTtdNotif);
+          const ttdYear = ttdDate.getFullYear();
+          matchesTahun = ttdYear.toString() === filterTahun;
+        }
+      }
+
+      return isDone && isSertifikatTerbit && hasBulanTtdNotif && matchesTahun;
+    });
+    const total = Math.round(doneDataWithTerbit.reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
+    console.log(`\n4. YANG LOLOS FILTER (Done + Terbit + Ada TTD + Tahun sesuai): ${doneDataWithTerbit.length} data`);
+    console.log(`   Total: Rp ${total.toLocaleString('id-ID')}`);
+    console.log('========================\n');
+
+    return total;
+  }, [crmTargets, filterTahun]);
 
   // Helper function to get status badge variant
   const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
@@ -1786,9 +1880,7 @@ export default function CrmDataManagementPage() {
               const totalFilteredCompanies = filteredCompanies.size;
 
               const totalFilteredContracts = Math.round(filteredData.reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
-              const lanjutContracts = Math.round(filteredData
-                .filter(t => t.status === 'DONE')
-                .reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
+
               const lossContracts = Math.round(filteredData
                 .filter(t => t.status === 'LOSS')
                 .reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
@@ -2973,7 +3065,7 @@ export default function CrmDataManagementPage() {
                   Sales Performance Analytics - By Sales Person
                 </CardTitle>
                 <CardDescription className="mt-1">
-                  Performa semua sales berdasarkan bulan TTD Notif (filter status & sertifikat terbit)
+                  Performa semua sales berdasarkan bulan TTD Notif (status DONE & sertifikat terbit)
                 </CardDescription>
               </div>
               <Select value={selectedTopAssociateChartType} onValueChange={setSelectedTopAssociateChartType}>
@@ -3002,10 +3094,10 @@ export default function CrmDataManagementPage() {
                     salesLookupMap[sales.nama] = `${sales.nama} ${sales.nama_lengkap}`;
                   });
 
-                  // Filter data for Sales Performance Analytics - based on bulanTtdNotif, tahun, sertifikat terbit, and status filter
+                  // Filter data for Sales Performance Analytics - based on bulanTtdNotif, tahun, sertifikat terbit, and status DONE
                   const dataWithSalesTtdNotif = (crmTargets || []).filter(t => {
                     const matchesStatus = (t.statusSertifikat || '').trim().toLowerCase() === 'terbit';
-                    const matchesStatusFilter = filterStatus === 'all' || t.status === filterStatus;
+                    const matchesDoneStatus = t.status === 'DONE';
 
                     // Parse bulanTtdNotif to get month and year
                     let ttdMonth = 0;
@@ -3039,7 +3131,7 @@ export default function CrmDataManagementPage() {
                       matchesBulanTtdNotif = false;
                     }
 
-                    return matchesStatus && matchesStatusFilter && matchesTahun && matchesBulanTtdNotif;
+                    return matchesStatus && matchesDoneStatus && matchesTahun && matchesBulanTtdNotif;
                   });
 
                   // Group by sales and get totals
