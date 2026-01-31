@@ -4,8 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface FilterSertifikatSectionProps {
-  filterTipeProduk: string;
-  setFilterTipeProduk: (value: string) => void;
   filterStandar: string;
   setFilterStandar: (value: string) => void;
   filterAkreditasi: string;
@@ -16,8 +14,6 @@ interface FilterSertifikatSectionProps {
 }
 
 export function FilterSertifikatSection({
-  filterTipeProduk,
-  setFilterTipeProduk,
   filterStandar,
   setFilterStandar,
   filterAkreditasi,
@@ -28,47 +24,6 @@ export function FilterSertifikatSection({
 }: FilterSertifikatSectionProps) {
   return (
     <>
-      {/* Tipe Produk */}
-      <div>
-        <Label className="mb-1.5 block text-xs">Tipe Produk</Label>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant={filterTipeProduk === 'all' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setFilterTipeProduk('all')}
-            className={`flex items-center gap-1 text-xs h-8 px-2 cursor-pointer ${
-              filterTipeProduk === 'all' ? 'bg-primary text-primary-foreground border-primary' : ''
-            }`}
-          >
-            All
-          </Button>
-          {['XMS', 'SUSTAIN'].map((tipe) => {
-            let tipeColor = '';
-            switch (tipe) {
-              case 'XMS':
-                tipeColor = 'bg-blue-100 hover:bg-blue-200 text-blue-700 border-blue-300';
-                break;
-              case 'SUSTAIN':
-                tipeColor = 'bg-green-100 hover:bg-green-200 text-green-700 border-green-300';
-                break;
-            }
-
-            return (
-              <Button
-                key={tipe}
-                size="sm"
-                onClick={() => setFilterTipeProduk(tipe)}
-                className={`flex items-center gap-1 text-xs h-8 px-2 border cursor-pointer ${
-                  filterTipeProduk === tipe ? 'bg-black hover:bg-gray-800 text-white border-black' : tipeColor
-                }`}
-              >
-                {tipe}
-              </Button>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Standar */}
       <div>
         <Label className="mb-1.5 block text-xs">Standar</Label>

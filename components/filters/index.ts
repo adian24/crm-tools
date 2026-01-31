@@ -3,6 +3,7 @@ export { FilterDateSection } from './FilterDateSection';
 export { FilterPicCrmSection } from './FilterPicCrmSection';
 export { FilterCompanySection } from './FilterCompanySection';
 export { FilterPicSalesSection } from './FilterPicSalesSection';
+export { FilterKategoriProdukSection, KategoriProduk } from './FilterKategoriProdukSection';
 export { FilterSertifikatSection } from './FilterSertifikatSection';
 export { FilterPembayaranSection } from './FilterPembayaranSection';
 export { FilterKunjunganSection } from './FilterKunjunganSection';

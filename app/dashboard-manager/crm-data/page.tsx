@@ -1822,8 +1822,6 @@ export default function CrmDataManagementPage() {
                 onToggle={() => toggleFilterSection('sertifikat')}
               >
                 <FilterSertifikatSection
-                  filterTipeProduk={filterTipeProduk}
-                  setFilterTipeProduk={setFilterTipeProduk}
                   filterStandar={filterStandar}
                   setFilterStandar={setFilterStandar}
                   filterAkreditasi={filterAkreditasi}

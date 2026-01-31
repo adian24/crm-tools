@@ -31,11 +31,10 @@ import {
   FilterSection,
   FilterDateSection,
   FilterPicCrmSection,
-  FilterCompanySection,
-  FilterPicSalesSection,
+  FilterKategoriProdukSection,
+  KategoriProduk,
   FilterSertifikatSection,
   FilterPembayaranSection,
-  FilterKunjunganSection,
 } from '@/components/filters';
 
 interface CrmTarget {
@@ -108,7 +107,7 @@ export default function CrmDataManagementPage() {
   const [activeFilterSheet, setActiveFilterSheet] = useState<string | null>(null);
 
   // Comprehensive Filters
-  const [expandedFilterSections, setExpandedFilterSections] = useState<string[]>(['date', 'details', 'picSales', 'sertifikat', 'pembayaran', 'jadwal']);
+  const [expandedFilterSections, setExpandedFilterSections] = useState<string[]>(['kategoriProduk', 'date', 'sertifikat', 'pembayaran']);
   const currentYear = new Date().getFullYear().toString();
   const [filterTahun, setFilterTahun] = useState<string>(currentYear);
   const [filterFromBulanExp, setFilterFromBulanExp] = useState<string>('1');
@@ -126,6 +125,7 @@ export default function CrmDataManagementPage() {
   const [filterStatusSertifikat, setFilterStatusSertifikat] = useState<string>('Terbit');
   const [filterTermin, setFilterTermin] = useState<string>('all');
   const [filterTipeProduk, setFilterTipeProduk] = useState<string>('all');
+  const [filterKategoriProduk, setFilterKategoriProduk] = useState<KategoriProduk>('SEMUA');
   const [filterPicSales, setFilterPicSales] = useState<string>('all');
   const [filterFromKunjungan, setFilterFromKunjungan] = useState<string>('all');
   const [filterToKunjungan, setFilterToKunjungan] = useState<string>('all');
@@ -220,6 +220,7 @@ export default function CrmDataManagementPage() {
     setFilterStatusSertifikat('Terbit');
     setFilterTermin('all');
     setFilterTipeProduk('all');
+    setFilterKategoriProduk('SEMUA');
     setFilterPicSales('all');
     setFilterFromKunjungan('all');
     setFilterToKunjungan('all');
@@ -310,6 +311,19 @@ export default function CrmDataManagementPage() {
       }
     }
 
+    // Kategori Produk filter - filter based on kategori_produk from master-standar.json
+    let matchesKategoriProduk = true;
+    if (filterKategoriProduk !== 'SEMUA') {
+      const stdCode = (target.std || '').trim();
+      const standar = masterStandarData.standar.find((s: any) => s.kode === stdCode);
+      if (standar) {
+        matchesKategoriProduk = standar.kategori_produk === filterKategoriProduk;
+      } else {
+        // If std not found in master, exclude it
+        matchesKategoriProduk = false;
+      }
+    }
+
     let matchesBulanTTD = true;
     // Only apply bulan TTD Notif filter for DONE status
     const isDoneStatus = target.status === 'DONE';
@@ -363,7 +377,7 @@ export default function CrmDataManagementPage() {
            matchesPicSales && matchesStatus && matchesAlasan && matchesCategory && matchesProvinsi &&
            matchesKota && matchesStandar && matchesAkreditasi && matchesEaCode &&
            matchesTahapAudit && matchesBulanTTD && matchesStatusSertifikat &&
-           matchesTermin && matchesTipeProduk && matchesKunjungan && matchesStatusKunjungan;
+           matchesTermin && matchesTipeProduk && matchesKategoriProduk && matchesKunjungan && matchesStatusKunjungan;
     });
   }, [
     crmTargets,
@@ -387,6 +401,7 @@ export default function CrmDataManagementPage() {
     filterStatusSertifikat,
     filterTermin,
     filterTipeProduk,
+    filterKategoriProduk,
     filterFromKunjungan,
     filterToKunjungan,
     filterStatusKunjungan
@@ -644,6 +659,19 @@ export default function CrmDataManagementPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              
+              {/* Section Kategori Produk */}
+              <FilterSection
+                title="Filter Kategori Produk"
+                isExpanded={expandedFilterSections.includes('kategoriProduk')}
+                onToggle={() => toggleFilterSection('kategoriProduk')}
+              >
+                <FilterKategoriProdukSection
+                  selectedKategori={filterKategoriProduk}
+                  onKategoriChange={setFilterKategoriProduk}
+                />
+              </FilterSection>
+              
               {/* Section Details - PIC CRM */}
               <FilterSection
                 title="Filter PIC CRM"
@@ -686,8 +714,6 @@ export default function CrmDataManagementPage() {
                 onToggle={() => toggleFilterSection('sertifikat')}
               >
                 <FilterSertifikatSection
-                  filterTipeProduk={filterTipeProduk}
-                  setFilterTipeProduk={setFilterTipeProduk}
                   filterStandar={filterStandar}
                   setFilterStandar={setFilterStandar}
                   filterAkreditasi={filterAkreditasi}
@@ -695,62 +721,6 @@ export default function CrmDataManagementPage() {
                   filterStatusSertifikat={filterStatusSertifikat}
                   setFilterStatusSertifikat={setFilterStatusSertifikat}
                   standarOptions={standarOptions}
-                />
-              </FilterSection>
-              
-              {/* Section Company - Status, Category, Provinsi, Kota, Alasan */}
-              <FilterSection
-                title="Filter Company"
-                isExpanded={expandedFilterSections.includes('lokasi')}
-                onToggle={() => toggleFilterSection('lokasi')}
-              >
-                <FilterCompanySection
-                  filterStatus={filterStatus}
-                  setFilterStatus={setFilterStatus}
-                  filterCategory={filterCategory}
-                  setFilterCategory={setFilterCategory}
-                  filterProvinsi={filterProvinsi}
-                  setFilterProvinsi={setFilterProvinsi}
-                  filterKota={filterKota}
-                  setFilterKota={setFilterKota}
-                  filterAlasan={filterAlasan}
-                  setFilterAlasan={setFilterAlasan}
-                  statusOptions={uniqueStatuses}
-                  provinsiOptions={provinsiOptions}
-                  kotaOptions={kotaOptions}
-                  alasanOptions={alasanOptions}
-                />
-              </FilterSection>
-
-              {/* Section PIC Sales */}
-              <FilterSection
-                title="Filter PIC Sales"
-                isExpanded={expandedFilterSections.includes('picSales')}
-                onToggle={() => toggleFilterSection('picSales')}
-              >
-                <FilterPicSalesSection
-                  filterPicSales={filterPicSales}
-                  setFilterPicSales={setFilterPicSales}
-                  salesOptions={salesOptions}
-                />
-              </FilterSection>
-
-              
-
-              {/* Section Jadwal Kunjungan */}
-              <FilterSection
-                title="Filter Jadwal Kunjungan"
-                isExpanded={expandedFilterSections.includes('jadwal')}
-                onToggle={() => toggleFilterSection('jadwal')}
-              >
-                <FilterKunjunganSection
-                  filterFromKunjungan={filterFromKunjungan}
-                  setFilterFromKunjungan={setFilterFromKunjungan}
-                  filterToKunjungan={filterToKunjungan}
-                  setFilterToKunjungan={setFilterToKunjungan}
-                  filterStatusKunjungan={filterStatusKunjungan}
-                  setFilterStatusKunjungan={setFilterStatusKunjungan}
-                  bulanOptions={bulanOptions}
                 />
               </FilterSection>
             </CardContent>
@@ -1029,202 +999,7 @@ export default function CrmDataManagementPage() {
               {/* More Filters Sheet - Complete with Sections */}
               {activeFilterSheet === 'more' && (
                 <div className="space-y-3">
-                  {/* PIC Sales Section */}
-                  <div className="border rounded-lg overflow-hidden mx-4 mt-4">
-                    <button
-                      onClick={() => {
-                        const newSections = expandedFilterSections.includes('picSales')
-                          ? expandedFilterSections.filter(s => s !== 'picSales')
-                          : [...expandedFilterSections, 'picSales'];
-                        setExpandedFilterSections(newSections);
-                      }}
-                      className="w-full flex items-center justify-between p-3 bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
-                    >
-                      <span className="font-medium text-xs">Filter PIC Sales</span>
-                      {expandedFilterSections.includes('picSales') ? (
-                        <ChevronDown className="h-4 w-4" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" />
-                      )}
-                    </button>
-                    {expandedFilterSections.includes('picSales') && (
-                      <div className="p-3 border-t">
-                        <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
-                          <button
-                            onClick={() => setFilterPicSales('all')}
-                            className={`py-2 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-1 ${
-                              filterPicSales === 'all'
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted hover:bg-muted/80'
-                            }`}
-                          >
-                            <Users className="h-3 w-3" />
-                            All Sales
-                          </button>
-                          {salesOptions.slice(0, 20).map((sales) => (
-                            <button
-                              key={sales}
-                              onClick={() => setFilterPicSales(sales)}
-                              className={`py-2 px-2 rounded-lg text-xs font-medium flex items-center gap-1 ${
-                                filterPicSales === sales
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'bg-muted hover:bg-muted/80'
-                              }`}
-                            >
-                              <div className="w-3 h-3 rounded-full bg-gradient-to-r from-orange-500 to-red-500 flex-shrink-0"></div>
-                              <span className="truncate">{sales}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Details Section */}
-                  <div className="border rounded-lg overflow-hidden mx-4">
-                    <button
-                      onClick={() => {
-                        const newSections = expandedFilterSections.includes('details')
-                          ? expandedFilterSections.filter(s => s !== 'details')
-                          : [...expandedFilterSections, 'details'];
-                        setExpandedFilterSections(newSections);
-                      }}
-                      className="w-full flex items-center justify-between p-3 bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
-                    >
-                      <span className="font-medium text-xs">Filter Details</span>
-                      {expandedFilterSections.includes('details') ? (
-                        <ChevronDown className="h-4 w-4" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" />
-                      )}
-                    </button>
-                    {expandedFilterSections.includes('details') && (
-                      <div className="p-3 space-y-3 border-t">
-                        {/* Alasan */}
-                        <div>
-                          <Label className="mb-1.5 block text-xs">Alasan</Label>
-                          <Select value={filterAlasan} onValueChange={setFilterAlasan}>
-                            <SelectTrigger className="w-full h-9 text-xs">
-                              <SelectValue placeholder="All Alasan" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">All Alasan</SelectItem>
-                              {alasanOptions.map((alasan) => (
-                                <SelectItem key={alasan} value={alasan}>{alasan}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {/* Category */}
-                        <div>
-                          <Label className="mb-1.5 block text-xs">Category</Label>
-                          <div className="grid grid-cols-2 gap-2">
-                            <button
-                              onClick={() => setFilterCategory('all')}
-                              className={`py-2 px-3 rounded-lg text-xs font-medium ${
-                                filterCategory === 'all'
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'bg-muted hover:bg-muted/80'
-                              }`}
-                            >
-                              All
-                            </button>
-                            {['GOLD', 'SILVER', 'BRONZE'].map((category) => {
-                              let categoryColor = '';
-                              switch (category) {
-                                case 'GOLD':
-                                  categoryColor = 'bg-yellow-100 hover:bg-yellow-200 text-yellow-800';
-                                  break;
-                                case 'SILVER':
-                                  categoryColor = 'bg-gray-100 hover:bg-gray-200 text-gray-800';
-                                  break;
-                                case 'BRONZE':
-                                  categoryColor = 'bg-orange-100 hover:bg-orange-200 text-orange-800';
-                                  break;
-                              }
-                              return (
-                                <button
-                                  key={category}
-                                  onClick={() => setFilterCategory(category)}
-                                  className={`py-2 px-3 rounded-lg text-xs font-medium ${
-                                    filterCategory === category
-                                      ? 'bg-primary text-primary-foreground'
-                                      : categoryColor
-                                  }`}
-                                >
-                                  {category}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Lokasi Section */}
-                  <div className="border rounded-lg overflow-hidden mx-4">
-                    <button
-                      onClick={() => {
-                        const newSections = expandedFilterSections.includes('lokasi')
-                          ? expandedFilterSections.filter(s => s !== 'lokasi')
-                          : [...expandedFilterSections, 'lokasi'];
-                        setExpandedFilterSections(newSections);
-                      }}
-                      className="w-full flex items-center justify-between p-3 bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
-                    >
-                      <span className="font-medium text-xs">Filter Lokasi</span>
-                      {expandedFilterSections.includes('lokasi') ? (
-                        <ChevronDown className="h-4 w-4" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" />
-                      )}
-                    </button>
-                    {expandedFilterSections.includes('lokasi') && (
-                      <div className="p-3 space-y-3 border-t">
-                        {/* Provinsi */}
-                        <div>
-                          <Label className="mb-1.5 block text-xs">Provinsi</Label>
-                          <Select
-                            value={filterProvinsi}
-                            onValueChange={(val) => {
-                              setFilterProvinsi(val);
-                              setFilterKota('all');
-                            }}
-                          >
-                            <SelectTrigger className="w-full h-9 text-xs">
-                              <SelectValue placeholder="All Provinsi" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">All Provinsi</SelectItem>
-                              {provinsiOptions.slice(0, 30).map((provinsi) => (
-                                <SelectItem key={provinsi} value={provinsi}>{provinsi}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {/* Kota */}
-                        {filterProvinsi !== 'all' && (
-                          <div>
-                            <Label className="mb-1.5 block text-xs">Kota</Label>
-                            <Select value={filterKota} onValueChange={setFilterKota}>
-                              <SelectTrigger className="w-full h-9 text-xs">
-                                <SelectValue placeholder="All Kota" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">All Kota</SelectItem>
-                                {kotaOptions.map((kota) => (
-                                  <SelectItem key={kota} value={kota}>{kota}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  {/* Sertifikat Section */}
 
                   {/* Sertifikat Section */}
                   <div className="border rounded-lg overflow-hidden mx-4">
@@ -1437,105 +1212,6 @@ export default function CrmDataManagementPage() {
                                   }`}
                                 >
                                   {tipe}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Jadwal Kunjungan Section */}
-                  <div className="border rounded-lg overflow-hidden mx-4 mb-4">
-                    <button
-                      onClick={() => {
-                        const newSections = expandedFilterSections.includes('jadwal')
-                          ? expandedFilterSections.filter(s => s !== 'jadwal')
-                          : [...expandedFilterSections, 'jadwal'];
-                        setExpandedFilterSections(newSections);
-                      }}
-                      className="w-full flex items-center justify-between p-3 bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
-                    >
-                      <span className="font-medium text-xs">Filter Jadwal Kunjungan</span>
-                      {expandedFilterSections.includes('jadwal') ? (
-                        <ChevronDown className="h-4 w-4" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" />
-                      )}
-                    </button>
-                    {expandedFilterSections.includes('jadwal') && (
-                      <div className="p-3 space-y-3 border-t">
-                        {/* Jadwal Kunjungan */}
-                        <div>
-                          <Label className="mb-1.5 block text-xs">Jadwal Kunjungan</Label>
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <Label className="mb-1 block text-[10px] text-muted-foreground">From</Label>
-                              <Select value={filterFromKunjungan} onValueChange={setFilterFromKunjungan}>
-                                <SelectTrigger className="w-full h-9 text-xs">
-                                  <SelectValue placeholder="From" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="all">All</SelectItem>
-                                  {bulanOptions.map(bulan => (
-                                    <SelectItem key={bulan.value} value={bulan.value}>{bulan.label}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div>
-                              <Label className="mb-1 block text-[10px] text-muted-foreground">To</Label>
-                              <Select value={filterToKunjungan} onValueChange={setFilterToKunjungan}>
-                                <SelectTrigger className="w-full h-9 text-xs">
-                                  <SelectValue placeholder="To" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="all">All</SelectItem>
-                                  {bulanOptions.map(bulan => (
-                                    <SelectItem key={bulan.value} value={bulan.value}>{bulan.label}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Status Kunjungan */}
-                        <div>
-                          <Label className="mb-1.5 block text-xs">Status Kunjungan</Label>
-                          <div className="grid grid-cols-2 gap-2">
-                            <button
-                              onClick={() => setFilterStatusKunjungan('all')}
-                              className={`py-2 px-3 rounded-lg text-xs font-medium ${
-                                filterStatusKunjungan === 'all'
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'bg-muted hover:bg-muted/80'
-                              }`}
-                            >
-                              All
-                            </button>
-                            {['VISITED', 'NOT YET'].map((status) => {
-                              let statusColor = '';
-                              switch (status) {
-                                case 'VISITED':
-                                  statusColor = 'bg-green-100 hover:bg-green-200 text-green-700';
-                                  break;
-                                case 'NOT YET':
-                                  statusColor = 'bg-gray-200 hover:bg-gray-300 text-gray-700';
-                                  break;
-                              }
-                              return (
-                                <button
-                                  key={status}
-                                  onClick={() => setFilterStatusKunjungan(status)}
-                                  className={`py-2 px-3 rounded-lg text-xs font-medium ${
-                                    filterStatusKunjungan === status
-                                      ? 'bg-primary text-primary-foreground'
-                                      : statusColor
-                                  }`}
-                                >
-                                  {status}
                                 </button>
                               );
                             })}
@@ -1795,48 +1471,12 @@ export default function CrmDataManagementPage() {
                 </Badge>
               )}
 
-              {/* Jadwal Kunjungan Range */}
-              {(filterFromKunjungan !== 'all' || filterToKunjungan !== 'all') && (
-                <Badge variant="secondary" className="gap-1">
-                  <span className="font-semibold">Kunjungan:</span>
-                  {filterFromKunjungan !== 'all' ? bulanOptions.find(b => b.value === filterFromKunjungan)?.label : 'All'}
-                  {filterFromKunjungan !== 'all' && filterToKunjungan !== 'all' ? ' - ' : ''}
-                  {filterToKunjungan !== 'all' ? bulanOptions.find(b => b.value === filterToKunjungan)?.label : ''}
-                  <X
-                    className="h-3 w-3 cursor-pointer hover:text-destructive"
-                    onClick={() => {
-                      setFilterFromKunjungan('all');
-                      setFilterToKunjungan('all');
-                    }}
-                  />
-                </Badge>
-              )}
-
-              {/* Status Kunjungan */}
-              {filterStatusKunjungan !== 'all' && (
-                <Badge
-                  variant="secondary"
-                  className={`${getStatusKunjunganBadgeStyle(filterStatusKunjungan)} gap-1`}
-                >
-                  <span className="font-semibold">Status Kunjungan:</span> {filterStatusKunjungan}
-                  <X
-                    className="h-3 w-3 cursor-pointer hover:text-white"
-                    onClick={() => setFilterStatusKunjungan('all')}
-                  />
-                </Badge>
-              )}
-
               {/* Reset All Filters Button */}
               {(filterTahun !== 'all' ||
                 filterFromBulanExp !== 'all' || filterToBulanExp !== 'all' ||
                 filterFromBulanTTD !== 'all' || filterToBulanTTD !== 'all' ||
                 filterStatus !== 'all' ||
                 filterPicCrm !== 'all' ||
-                filterPicSales !== 'all' ||
-                filterAlasan !== 'all' ||
-                filterCategory !== 'all' ||
-                filterProvinsi !== 'all' ||
-                filterKota !== 'all' ||
                 filterStandar !== 'all' ||
                 filterAkreditasi !== 'all' ||
                 filterEaCode !== '' ||
@@ -1844,8 +1484,6 @@ export default function CrmDataManagementPage() {
                 filterStatusSertifikat !== 'all' ||
                 filterTermin !== 'all' ||
                 filterTipeProduk !== 'all' ||
-                filterFromKunjungan !== 'all' || filterToKunjungan !== 'all' ||
-                filterStatusKunjungan !== 'all' ||
                 searchTerm !== '') && (
                 <Button
                   variant="outline"
@@ -1864,8 +1502,20 @@ export default function CrmDataManagementPage() {
         <Card>
           <CardContent className="px-6">
             {(() => {
-              // Calculate TOTAL from ALL data (without filters) - this stays constant
-              const allData = (crmTargets || []);
+              // Calculate TOTAL with filter kategori produk
+              // Tidak filter by tahun di sini, karena setiap status punya field tanggal yang berbeda
+              let filteredByKategori = (crmTargets || []);
+
+              // Filter by kategori produk
+              if (filterKategoriProduk !== 'SEMUA') {
+                filteredByKategori = filteredByKategori.filter(t => {
+                  const stdCode = (t.std || '').trim();
+                  const standar = masterStandarData.standar.find((s: any) => s.kode === stdCode);
+                  return standar && standar.kategori_produk === filterKategoriProduk;
+                });
+              }
+
+              const allData = filteredByKategori;
 
               const totalAllContracts = Math.round(allData.reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
 
@@ -1889,49 +1539,98 @@ export default function CrmDataManagementPage() {
 
               const totalFilteredContracts = Math.round(filteredData.reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
 
-              const lossContracts = Math.round(filteredData
-                .filter(t => t.status === 'LOSS')
+              // Calculate contracts by status with filter tahun
+              // PROSES, SUSPEND, LOSS, WAITING menggunakan field t.tahun
+              const lossContracts = Math.round(allData
+                .filter(t => {
+                  const matchesStatus = t.status === 'LOSS';
+                  const matchesSertifikat = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
+                  const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
+                  return matchesStatus && matchesSertifikat && matchesTahun;
+                })
                 .reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
-              const suspendContracts = Math.round(filteredData
-                .filter(t => t.status === 'SUSPEND')
+              const suspendContracts = Math.round(allData
+                .filter(t => {
+                  const matchesStatus = t.status === 'SUSPEND';
+                  const matchesSertifikat = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
+                  const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
+                  return matchesStatus && matchesSertifikat && matchesTahun;
+                })
                 .reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
-              const prosesContracts = Math.round(filteredData
-                .filter(t => t.status === 'PROSES')
+              const prosesContracts = Math.round(allData
+                .filter(t => {
+                  const matchesStatus = t.status === 'PROSES';
+                  const matchesSertifikat = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
+                  const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
+                  return matchesStatus && matchesSertifikat && matchesTahun;
+                })
                 .reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
-              const waitingContracts = Math.round(filteredData
-                .filter(t => t.status === 'WAITING')
+              const waitingContracts = Math.round(allData
+                .filter(t => {
+                  const matchesStatus = t.status === 'WAITING';
+                  const matchesSertifikat = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
+                  const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
+                  return matchesStatus && matchesSertifikat && matchesTahun;
+                })
                 .reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
 
               // Calculate Total Nilai Kontrak based on:
               // 1. hargaKontrak
-              // 2. statusSertifikat = "Terbit" (always fixed)
+              // 2. statusSertifikat (based on filterStatusSertifikat)
               // 3. tahun (year filter)
+              // 4. kategori produk - already filtered in allData
               const totalNilaiKontrak = Math.round(
                 allData
                   .filter(t => {
+                    // Filter by statusSertifikat
+                    const matchesStatus = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
                     // Filter by tahun
                     const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
-                    // Filter by statusSertifikat = "Terbit"
-                    const matchesStatus = (t.statusSertifikat || '').trim().toLowerCase() === 'terbit';
-                    return matchesTahun && matchesStatus;
+                    return matchesStatus && matchesTahun;
                   })
                   .reduce((sum, t) => sum + (t.hargaKontrak || 0), 0)
               );
 
-              // Calculate percentage based on Total Nilai Kontrak (Terbit)
+              // Calculate lanjutContracts based on filtered data (kategori produk & tahun)
+              // Filter: Status DONE, Sertifikat (based on filterStatusSertifikat), Ada bulanTtdNotif, Tahun dari bulanTtdNotif sesuai filterTahun
+              const filteredLanjutContracts = Math.round(
+                allData
+                  .filter(t => {
+                    const isDone = t.status === 'DONE';
+                    const isSertifikatMatch = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
+                    const hasBulanTtdNotif = t.bulanTtdNotif && t.bulanTtdNotif !== '';
+
+                    // Check tahun dari bulanTtdNotif
+                    let matchesTahunTtdNotif = false;
+                    if (hasBulanTtdNotif) {
+                      if (filterTahun === 'all') {
+                        matchesTahunTtdNotif = true;
+                      } else {
+                        const ttdDate = new Date(t.bulanTtdNotif);
+                        const ttdYear = ttdDate.getFullYear();
+                        matchesTahunTtdNotif = ttdYear.toString() === filterTahun;
+                      }
+                    }
+
+                    return isDone && isSertifikatMatch && hasBulanTtdNotif && matchesTahunTtdNotif;
+                  })
+                  .reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0)
+              );
+
+              // Calculate percentage based on Total Nilai Kontrak (filtered by statusSertifikat)
               const achievementPercentage = totalNilaiKontrak > 0
-                ? Math.round((lanjutContracts / (totalNilaiKontrak * 0.9)) * 100)
+                ? Math.round((filteredLanjutContracts / (totalNilaiKontrak * 0.9)) * 100)
                 : 0;
 
               // Determine which progress bar to show based on status filter
               const getProgressConfig = () => {
-                // Percentage is calculated from Total Nilai Kontrak (Terbit)
+                // Percentage is calculated from Total Nilai Kontrak (filtered by statusSertifikat)
                 if (filterStatus === 'DONE' || filterStatus === 'all') {
                   return {
                     label: 'Pencapaian Kontrak Lanjut / Done',
-                    value: lanjutContracts,
+                    value: filteredLanjutContracts,
                     color: 'green',
-                    percentage: totalNilaiKontrak > 0 ? Math.round((lanjutContracts / (totalNilaiKontrak * 0.9)) * 100) : 0
+                    percentage: totalNilaiKontrak > 0 ? Math.round((filteredLanjutContracts / (totalNilaiKontrak * 0.9)) * 100) : 0
                   };
                 } else if (filterStatus === 'LOSS') {
                   return {
@@ -1965,9 +1664,9 @@ export default function CrmDataManagementPage() {
                   // Default: show DONE
                   return {
                     label: 'Pencapaian Kontrak Done',
-                    value: lanjutContracts,
+                    value: filteredLanjutContracts,
                     color: 'green',
-                    percentage: totalNilaiKontrak > 0 ? Math.round((lanjutContracts / totalNilaiKontrak) * 100) : 0
+                    percentage: totalNilaiKontrak > 0 ? Math.round((filteredLanjutContracts / totalNilaiKontrak) * 100) : 0
                   };
                 }
               };
@@ -2007,7 +1706,11 @@ export default function CrmDataManagementPage() {
                       </div>
                       <div>
                         <h3 className="text-lg font-bold">Total Target ( Contract Base )</h3>
-                        <p className="text-sm text-muted-foreground">Combined MRC & DHA (All Data)</p>
+                        <p className="text-sm text-muted-foreground">
+                          Combined MRC & DHA
+                          {filterKategoriProduk !== 'SEMUA' && ` (${filterKategoriProduk})`}
+                          {filterTahun !== 'all' && ` - ${filterTahun}`}
+                        </p>
                       </div>
                     </div>
                     <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
@@ -2035,7 +1738,7 @@ export default function CrmDataManagementPage() {
                         </div>
                       </div>
 
-                      {/* Total Nilai Kontrak - Filtered by Status Sertifikat = Terbit */}
+                      {/* Total Nilai Kontrak - Filtered by Status Sertifikat */}
                       <div className="text-right">
                         <p className="text-3xl font-bold text-primary">Rp {Math.round(totalNilaiKontrak * 0.9).toLocaleString('id-ID')}</p>
                         <p className="text-sm text-muted-foreground">
@@ -2069,6 +1772,15 @@ export default function CrmDataManagementPage() {
                         {filterStatus !== 'all' && filterStatus !== 'DONE' && (
                           <span className="ml-2">• Filter: {filterStatus}</span>
                         )}
+                        {filterStatusSertifikat !== 'all' && (
+                          <span className="ml-2">• Sertifikat: {filterStatusSertifikat}</span>
+                        )}
+                        {filterKategoriProduk !== 'SEMUA' && (
+                          <span className="ml-2">• Kategori: {filterKategoriProduk}</span>
+                        )}
+                        {filterTahun !== 'all' && (
+                          <span className="ml-2">• Tahun: {filterTahun}</span>
+                        )}
                         {/* <span className="ml-2">• {totalFilteredCompanies} dari {totalAllCompanies} Perusahaan</span> */}
                       </span>
                     </div>
@@ -2081,15 +1793,30 @@ export default function CrmDataManagementPage() {
                       {/* Left - Percentage Circle */}
                       <div className="flex-shrink-0">
                         <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-green-500 flex items-center justify-center">
-                          <span className="text-white text-xs sm:text-sm font-bold">{totalNilaiKontrak > 0 ? Math.round((lanjutContracts / (totalNilaiKontrak * 0.9)) * 100) : 0}%</span>
+                          <span className="text-white text-xs sm:text-sm font-bold">{totalNilaiKontrak > 0 ? Math.round((filteredLanjutContracts / (totalNilaiKontrak * 0.9)) * 100) : 0}%</span>
                         </div>
                       </div>
                       {/* Right - Info */}
                       <div className="flex-1 min-w-0 text-left">
                         <span className="text-[10px] sm:text-xs text-green-600 font-medium">DONE</span>
-                        <div className="text-xs sm:text-sm font-bold text-green-700 truncate">Rp {Math.round(lanjutContracts).toLocaleString('id-ID')}</div>
+                        <div className="text-xs sm:text-sm font-bold text-green-700 truncate">Rp {Math.round(filteredLanjutContracts).toLocaleString('id-ID')}</div>
                         <span className="text-[9px] sm:text-[10px] text-green-600">
-                          {filteredData.filter(t => t.status === 'DONE').length} Sertifikat (base on TTD NOTIF)
+                          {allData.filter(t => {
+                            const isDone = t.status === 'DONE';
+                            const isSertifikatMatch = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
+                            const hasBulanTtdNotif = t.bulanTtdNotif && t.bulanTtdNotif !== '';
+                            let matchesTahunTtdNotif = false;
+                            if (hasBulanTtdNotif) {
+                              if (filterTahun === 'all') {
+                                matchesTahunTtdNotif = true;
+                              } else {
+                                const ttdDate = new Date(t.bulanTtdNotif);
+                                const ttdYear = ttdDate.getFullYear();
+                                matchesTahunTtdNotif = ttdYear.toString() === filterTahun;
+                              }
+                            }
+                            return isDone && isSertifikatMatch && hasBulanTtdNotif && matchesTahunTtdNotif;
+                          }).length} Sertifikat (base on TTD NOTIF)
                         </span>
                       </div>
                     </div>
@@ -2105,7 +1832,12 @@ export default function CrmDataManagementPage() {
                         <span className="text-[10px] sm:text-xs text-blue-600 font-medium">PROSES</span>
                         <div className="text-xs sm:text-sm font-bold text-blue-700 truncate">Rp {Math.round(prosesContracts).toLocaleString('id-ID')}</div>
                         <span className="text-[9px] sm:text-[10px] text-blue-600">
-                          {filteredData.filter(t => t.status === 'PROSES').length} Sertifikat  (base on EXP)
+                          {allData.filter(t => {
+                            const matchesStatus = t.status === 'PROSES';
+                            const matchesSertifikat = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
+                            const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
+                            return matchesStatus && matchesSertifikat && matchesTahun;
+                          }).length} Sertifikat  (base on EXP)
                         </span>
                       </div>
                     </div>
@@ -2121,7 +1853,12 @@ export default function CrmDataManagementPage() {
                         <span className="text-[10px] sm:text-xs text-orange-600 font-medium">SUSPEND</span>
                         <div className="text-xs sm:text-sm font-bold text-orange-700 truncate">Rp {Math.round(suspendContracts).toLocaleString('id-ID')}</div>
                         <span className="text-[9px] sm:text-[10px] text-orange-600">
-                          {filteredData.filter(t => t.status === 'SUSPEND').length} Sertifikat  (base on EXP)
+                          {allData.filter(t => {
+                            const matchesStatus = t.status === 'SUSPEND';
+                            const matchesSertifikat = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
+                            const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
+                            return matchesStatus && matchesSertifikat && matchesTahun;
+                          }).length} Sertifikat  (base on EXP)
                         </span>
                       </div>
                     </div>
@@ -2137,7 +1874,12 @@ export default function CrmDataManagementPage() {
                         <span className="text-[10px] sm:text-xs text-red-600 font-medium">LOSS</span>
                         <div className="text-xs sm:text-sm font-bold text-red-700 truncate">Rp {Math.round(lossContracts).toLocaleString('id-ID')}</div>
                         <span className="text-[9px] sm:text-[10px] text-red-600">
-                          {filteredData.filter(t => t.status === 'LOSS').length} Sertifikat  (base on EXP)
+                          {allData.filter(t => {
+                            const matchesStatus = t.status === 'LOSS';
+                            const matchesSertifikat = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
+                            const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
+                            return matchesStatus && matchesSertifikat && matchesTahun;
+                          }).length} Sertifikat  (base on EXP)
                         </span>
                       </div>
                     </div>
@@ -2153,7 +1895,12 @@ export default function CrmDataManagementPage() {
                         <span className="text-[10px] sm:text-xs text-gray-600 font-medium">WAITING</span>
                         <div className="text-xs sm:text-sm font-bold text-gray-700 truncate">Rp {Math.round(waitingContracts).toLocaleString('id-ID')}</div>
                         <span className="text-[9px] sm:text-[10px] text-gray-600">
-                          {filteredData.filter(t => t.status === 'WAITING').length} Sertifikat  (base on EXP)
+                          {allData.filter(t => {
+                            const matchesStatus = t.status === 'WAITING';
+                            const matchesSertifikat = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
+                            const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
+                            return matchesStatus && matchesSertifikat && matchesTahun;
+                          }).length} Sertifikat  (base on EXP)
                         </span>
                       </div>
                     </div>
@@ -2206,13 +1953,13 @@ export default function CrmDataManagementPage() {
               }
 
               // Group by month for TARGET (from bulanExpDate + hargaKontrak)
-              // IMPORTANT: Target should match totalNilaiKontrak calculation (tahun + statusSertifikat = "Terbit")
+              // IMPORTANT: Target should match totalNilaiKontrak calculation (tahun + statusSertifikat filter)
               const monthlyTargetData: { [key: string]: { total: number; count: number } } = {};
 
               // Get data for TARGET - same filter as totalNilaiKontrak (use crmTargets, not filteredTargets)
               const targetData = (crmTargets || []).filter(t => {
                 const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
-                const matchesStatus = (t.statusSertifikat || '').trim().toLowerCase() === 'terbit';
+                const matchesStatus = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
                 return matchesTahun && matchesStatus;
               });
 
@@ -2298,7 +2045,7 @@ export default function CrmDataManagementPage() {
                 });
 
               // Calculate grand totals
-              // Target: from data with same filter as totalNilaiKontrak (tahun + statusSertifikat = "Terbit")
+              // Target: from data with same filter as totalNilaiKontrak (tahun + statusSertifikat filter)
               const grandTotalTarget = Math.round(targetData.reduce((sum, t) => {
                 return sum + (t.hargaKontrak || 0);
               }, 0));
@@ -2701,7 +2448,7 @@ export default function CrmDataManagementPage() {
               // Filter data by tahun from bulanTtdNotif, status DONE, statusSertifikat, and directOrAssociate field
               const dataWithAssociate = (crmTargets || []).filter(t => {
                 const isDone = t.status === 'DONE';
-                const isSertifikatTerbit = (t.statusSertifikat || '').trim().toLowerCase() === 'terbit';
+                const isSertifikatMatch = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
                 const hasBulanTtdNotif = t.bulanTtdNotif && t.bulanTtdNotif !== '';
                 const hasAssociate = t.directOrAssociate;
 
@@ -2717,7 +2464,7 @@ export default function CrmDataManagementPage() {
                   }
                 }
 
-                return isDone && isSertifikatTerbit && hasBulanTtdNotif && hasAssociate && matchesTahun;
+                return isDone && isSertifikatMatch && hasBulanTtdNotif && hasAssociate && matchesTahun;
               });
 
               return (
@@ -3116,9 +2863,9 @@ export default function CrmDataManagementPage() {
                     salesLookupMap[sales.nama] = `${sales.nama} ${sales.nama_lengkap}`;
                   });
 
-                  // Filter data for Sales Performance Analytics - based on bulanTtdNotif, tahun, sertifikat terbit, and status DONE
+                  // Filter data for Sales Performance Analytics - based on bulanTtdNotif, tahun, sertifikat filter, and status DONE
                   const dataWithSalesTtdNotif = (crmTargets || []).filter(t => {
-                    const matchesStatus = (t.statusSertifikat || '').trim().toLowerCase() === 'terbit';
+                    const matchesStatus = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
                     const matchesDoneStatus = t.status === 'DONE';
 
                     // Parse bulanTtdNotif to get month and year
@@ -3410,7 +3157,7 @@ export default function CrmDataManagementPage() {
                   // Filter data: HANYA filter tahun dan statusSertifikat dari ALL data (tanpa filter lain)
                   const dataForTahapan = (crmTargets || []).filter(t => {
                     const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
-                    const matchesStatus = (t.statusSertifikat || '').trim().toLowerCase() === 'terbit';
+                    const matchesStatus = filterStatusSertifikat === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikat.toLowerCase();
                     return matchesTahun && matchesStatus;
                   });
 
