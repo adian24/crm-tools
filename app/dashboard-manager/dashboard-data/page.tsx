@@ -90,7 +90,7 @@ const normalizeKota = (str: string): string => {
 
 export default function CrmDataManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('DONE');
   const [filterPicCrm, setFilterPicCrm] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -198,7 +198,7 @@ export default function CrmDataManagementPage() {
     setFilterFromBulanExp('1');
     setFilterToBulanExp('12');
     setFilterPicCrm('all');
-    setFilterStatus('all');
+    setFilterStatus('DONE');
     setFilterAlasan('all');
     setFilterCategory('all');
     setFilterProvinsi('all');
@@ -2973,7 +2973,7 @@ export default function CrmDataManagementPage() {
                   Sales Performance Analytics - By Sales Person
                 </CardTitle>
                 <CardDescription className="mt-1">
-                  Performa semua sales berdasarkan bulan TTD Notif (status DONE & sertifikat terbit)
+                  Performa semua sales berdasarkan bulan TTD Notif (filter status & sertifikat terbit)
                 </CardDescription>
               </div>
               <Select value={selectedTopAssociateChartType} onValueChange={setSelectedTopAssociateChartType}>
@@ -3002,10 +3002,10 @@ export default function CrmDataManagementPage() {
                     salesLookupMap[sales.nama] = `${sales.nama} ${sales.nama_lengkap}`;
                   });
 
-                  // Filter data for Sales Performance Analytics - based on bulanTtdNotif, tahun, sertifikat terbit, and status DONE
+                  // Filter data for Sales Performance Analytics - based on bulanTtdNotif, tahun, sertifikat terbit, and status filter
                   const dataWithSalesTtdNotif = (crmTargets || []).filter(t => {
                     const matchesStatus = (t.statusSertifikat || '').trim().toLowerCase() === 'terbit';
-                    const matchesDoneStatus = t.status === 'DONE';
+                    const matchesStatusFilter = filterStatus === 'all' || t.status === filterStatus;
 
                     // Parse bulanTtdNotif to get month and year
                     let ttdMonth = 0;
@@ -3039,7 +3039,7 @@ export default function CrmDataManagementPage() {
                       matchesBulanTtdNotif = false;
                     }
 
-                    return matchesStatus && matchesDoneStatus && matchesTahun && matchesBulanTtdNotif;
+                    return matchesStatus && matchesStatusFilter && matchesTahun && matchesBulanTtdNotif;
                   });
 
                   // Group by sales and get totals

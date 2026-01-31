@@ -42,16 +42,6 @@ export function FilterCompanySection({
       <div>
         <Label className="mb-1.5 block text-xs">Status</Label>
         <div className="flex flex-wrap gap-2">
-          <Button
-            variant={filterStatus === 'all' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setFilterStatus('all')}
-            className={`flex items-center gap-1 text-xs h-8 px-2 cursor-pointer ${
-              filterStatus === 'all' ? 'bg-primary text-primary-foreground border-primary' : ''
-            }`}
-          >
-            All Status
-          </Button>
           {statusOptions.map((status) => {
             const statusUpper = status?.toUpperCase() || '';
             let statusColor = '';
