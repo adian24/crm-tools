@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Search, Filter, BarChart3, ChevronDown, ChevronRight, Users, X } from 'lucide-react';
 import indonesiaData from '@/data/indonesia-provinsi-kota.json';
 import masterSalesData from '@/data/master-sales.json';
+import masterStandarData from '@/data/master-standar.json';
 import { ChartCardCrmData } from '@/components/chart-card-crm-data';
 import { ChartCardPencapaianMonthly } from '@/components/chart-card-pencapaian-monthly'
 import { ChartCardKuadranMonthly } from '@/components/chart-card-kuadran-monthly';
@@ -3685,23 +3686,32 @@ export default function CrmDataManagementPage() {
                 return matchesTahun;
               });
 
-              // Group by std and get counts
+              // Get list of valid codes from master standar
+              const validStandarCodes = new Set(masterStandarData.standar.map((s: any) => s.kode));
+
+              // Group by std and get counts - HANYA yang ada di master standar
               const standarTotals: { [key: string]: { count: number; companies: Set<string> } } = {};
 
               dataForStandar.forEach(target => {
-                const std = target.std || 'Unknown';
+                const stdCode = target.std;
+
+                // Skip jika tidak ada std atau tidak ada di master standar
+                if (!stdCode || !validStandarCodes.has(stdCode)) {
+                  return;
+                }
+
                 const company = target.namaPerusahaan;
 
-                if (!standarTotals[std]) {
-                  standarTotals[std] = {
+                if (!standarTotals[stdCode]) {
+                  standarTotals[stdCode] = {
                     count: 0,
                     companies: new Set()
                   };
                 }
 
-                standarTotals[std].count += 1;
+                standarTotals[stdCode].count += 1;
                 if (company) {
-                  standarTotals[std].companies.add(company);
+                  standarTotals[stdCode].companies.add(company);
                 }
               });
 
