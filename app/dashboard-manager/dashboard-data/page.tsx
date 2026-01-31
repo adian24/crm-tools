@@ -16,12 +16,14 @@ import indonesiaData from '@/data/indonesia-provinsi-kota.json';
 import masterSalesData from '@/data/master-sales.json';
 import masterStandarData from '@/data/master-standar.json';
 import masterEaCodeData from '@/data/master-ea-code.json';
+import masterAlasanData from '@/data/master-alasan.json';
 import { ChartCardCrmData } from '@/components/chart-card-crm-data';
 import { ChartCardPencapaianMonthly } from '@/components/chart-card-pencapaian-monthly'
 import { ChartCardKuadranMonthly } from '@/components/chart-card-kuadran-monthly';
 import { ChartCardAssociateMonthly } from '@/components/chart-card-associate-monthly';
 import { ChartCardStandarDistribution } from '@/components/chart-card-standar-distribution';
 import { ChartCardEaCodeDistribution } from '@/components/chart-card-ea-code-distribution';
+import { ChartCardParetoAlasan } from '@/components/chart-card-pareto-alasan';
 import { InfinityLoader } from '@/components/ui/infinity-loader';
 import { DashboardSkeleton } from '@/components/dashboard-skeleton';
 import { AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip, Legend, LabelList } from 'recharts';
@@ -3858,6 +3860,83 @@ export default function CrmDataManagementPage() {
                   title="Distribusi EA Code"
                   data={allEaCodes}
                   chartType={selectedEaCodeChartType}
+                />
+              );
+            })()}
+          </CardContent>
+        </Card>
+
+        {/* Pareto Chart - Alasan Distribution */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Pareto Chart - Alasan
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  Analisis 80/20 alasan berdasarkan jumlah
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              // Filter data: HANYA filter tahun dari ALL data (tanpa filter statusSertifikat)
+              const dataForAlasan = (crmTargets || []).filter(t => {
+                const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
+                return matchesTahun;
+              });
+
+              // Get list of valid alasan from master
+              const validAlasans = new Set(
+                masterAlasanData.alasan.map((a: any) => a.alasan.trim())
+              );
+
+              // Group by alasan and get counts
+              const alasanTotals: { [key: string]: { count: number; companies: Set<string> } } = {};
+
+              dataForAlasan.forEach(target => {
+                const rawAlasan = target.alasan;
+
+                if (!rawAlasan) {
+                  return;
+                }
+
+                // Normalize alasan dari data
+                const normalizedAlasan = rawAlasan.trim();
+
+                // Skip jika tidak ada di master alasan
+                if (!validAlasans.has(normalizedAlasan)) {
+                  return;
+                }
+
+                if (!alasanTotals[normalizedAlasan]) {
+                  alasanTotals[normalizedAlasan] = {
+                    count: 0,
+                    companies: new Set()
+                  };
+                }
+
+                alasanTotals[normalizedAlasan].count += 1;
+              });
+
+              // Ambil SEMUA alasan dari master dan isi dengan 0 jika tidak ada data
+              const allAlasans = masterAlasanData.alasan.map((a: any) => {
+                const alasan = a.alasan.trim();
+                const existingData = alasanTotals[alasan];
+
+                return {
+                  alasan,
+                  count: existingData ? existingData.count : 0
+                };
+              }).sort((a, b) => b.count - a.count);
+
+              return (
+                <ChartCardParetoAlasan
+                  title="Pareto Chart - Alasan"
+                  data={allAlasans}
                 />
               );
             })()}
