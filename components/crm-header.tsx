@@ -56,19 +56,19 @@ export function CRMHeader({ user, onThemeToggle, isDarkMode }: CRMHeaderProps) {
   const userAvatar = isDiara ? '/images/diara.jpeg' : user.avatar
 
   return (
-    <header className={`sticky top-0 z-50 w-full rounded-xl border border-border shadow-md ${isDarkMode ? 'bg-background' : 'bg-white'}`}>
+    <header className={`sticky top-0 z-50 w-full rounded-xl border border-purple-100 shadow-lg ${isDarkMode ? 'bg-gradient-to-r from-purple-900 via-purple-800 to-indigo-900 border-purple-700' : 'bg-gradient-to-r from-purple-400 via-purple-100 to-white border-purple-100'}`}>
       <div className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
         <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
-          <SidebarTrigger className="-ml-1 hover:bg-gray-100 cursor-pointer" />
+          <SidebarTrigger className={`-ml-1 hover:bg-white/20 cursor-pointer ${isDarkMode ? 'text-white' : 'text-purple-900'}`} />
 
           <div className="flex items-center gap-3 ml-2 lg:ml-0">
             <div className="hidden sm:block">
-              <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">Dashboard</h1>
-              <p className="text-sm text-muted-foreground/90 font-medium">Business Intelligence Platform</p>
+              <h1 className={`text-lg font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-purple-900'}`}>Dashboard</h1>
+              <p className={`text-sm font-medium ${isDarkMode ? 'text-purple-200' : 'text-purple-700'}`}>Business Intelligence Platform</p>
             </div>
           </div>
 
-          <Separator orientation="vertical" className="h-6 hidden sm:block" />
+          <Separator orientation="vertical" className={`h-6 hidden sm:block ${isDarkMode ? 'bg-white/20' : 'bg-gradient-to-b from-purple-400/50 to-purple-200/50'}`} />
 
           <div className="ml-auto flex items-center gap-2">
             

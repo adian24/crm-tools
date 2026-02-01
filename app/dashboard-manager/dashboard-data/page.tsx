@@ -615,7 +615,7 @@ export default function CrmDataManagementPage() {
   }
 
   return (
-    <div className="min-h-screen lg:bg-gray-50/50">
+    <div className="min-h-screen">
 
       {/* MAIN CONTAINER - Left-aligned for better space utilization */}
       <div className="w-full lg:px-6 lg:pl-6 lg:pr-12">
