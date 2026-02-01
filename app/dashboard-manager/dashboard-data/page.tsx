@@ -1447,6 +1447,16 @@ export default function CrmDataManagementPage() {
 
               const allData = filteredByKategori;
 
+              // Filter by kategori produk dan tahun saja untuk Total Sertifikat & Perusahaan cards
+              let filteredByKategoriDanTahun = filteredByKategori;
+              if (filterTahun !== 'all') {
+                filteredByKategoriDanTahun = filteredByKategori.filter(t => t.tahun === filterTahun);
+              }
+
+              // Total Sertifikat & Perusahaan (hanya filter by kategori dan tahun)
+              const totalSertifikat = filteredByKategoriDanTahun.length;
+              const totalPerusahaan = new Set(filteredByKategoriDanTahun.map(t => t.namaPerusahaan)).size;
+
               const totalAllContracts = Math.round(allData.reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
 
               // Calculate total amount by status from hargaTerupdate (except WAITING uses hargaKontrak)
@@ -1642,7 +1652,7 @@ export default function CrmDataManagementPage() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-[9px] lg:text-[10px] text-green-600 font-bold leading-tight">Total Sertifikat</p>
-                          <p className="text-base lg:text-lg font-bold text-green-700 leading-tight truncate">{filteredTargets.length}</p>
+                          <p className="text-base lg:text-lg font-bold text-green-700 leading-tight truncate">{totalSertifikat}</p>
                         </div>
                       </div>
 
@@ -1653,7 +1663,7 @@ export default function CrmDataManagementPage() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-[9px] lg:text-[10px] text-orange-600 font-bold leading-tight">Total Perusahaan</p>
-                          <p className="text-base lg:text-lg font-bold text-orange-700 leading-tight truncate">{totalFilteredCompanies}</p>
+                          <p className="text-base lg:text-lg font-bold text-orange-700 leading-tight truncate">{totalPerusahaan}</p>
                         </div>
                       </div>
 
