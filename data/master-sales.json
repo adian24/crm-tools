@@ -3,84 +3,98 @@
     "id": 1,
     "kode": "001",
     "nama": "AJT",
-    "nama_lengkap": "( Ajit )"
+    "nama_lengkap": "( Ajit )",
+    "photo": "/images/sales/AJT.png"
   },
   {
     "id": 2,
     "kode": "002",
     "nama": "ARH",
-    "nama_lengkap": "( Angga )"
+    "nama_lengkap": "( Angga )",
+    "photo": "/images/sales/ARH.jpeg"
   },
   {
     "id": 3,
     "kode": "003",
     "nama": "BSC",
-    "nama_lengkap": "( BSC )"
+    "nama_lengkap": "( BSC )",
+    "photo": "/images/sales/BSC.png"
   },
   {
     "id": 4,
     "kode": "004",
     "nama": "CLN",
-    "nama_lengkap": "( Celine )"
+    "nama_lengkap": "( Celine )",
+    "photo": "/images/sales/CLN.png"
   },
   {
     "id": 5,
     "kode": "005",
     "nama": "CRM",
-    "nama_lengkap": "( CRM )"
+    "nama_lengkap": "( CRM )",
+    "photo": "/images/sales/CRM.png"
   },
   {
     "id": 6,
     "kode": "006",
     "nama": "DKI",
-    "nama_lengkap": "( Diki )"
+    "nama_lengkap": "( Diki )",
+    "photo": "/images/sales/DKI.png"
   },
   {
     "id": 7,
     "kode": "007",
     "nama": "EVS",
-    "nama_lengkap": "( Eva )"
+    "nama_lengkap": "( Eva )",
+    "photo": "/images/sales/EVS.png"
   },
   {
     "id": 8,
     "kode": "008",
     "nama": "JSF",
-    "nama_lengkap": "( Josef )"
+    "nama_lengkap": "( Josef )",
+    "photo": "/images/sales/JSF.jpeg"
   },
   {
     "id": 9,
     "kode": "009",
     "nama": "KRL",
-    "nama_lengkap": "( Karl )"
+    "nama_lengkap": "( Karl )",
+    "photo": "/images/sales/KRL.png"
   },
   {
     "id": 10,
     "kode": "010",
     "nama": "NAC",
-    "nama_lengkap": "( Nungky )"
+    "nama_lengkap": "( Nungky )",
+    "photo": "/images/sales/NAC.jpeg"
   },
   {
     "id": 11,
     "kode": "011",
     "nama": "OFC",
-    "nama_lengkap": "( Office )"
+    "nama_lengkap": "( Office )",
+    "photo": "/images/sales/OFC.png"
   },
   {
     "id": 12,
     "kode": "012",
     "nama": "PRM",
-    "nama_lengkap": "( PRM )"
+    "nama_lengkap": "( PRM )",
+    "photo": "/images/sales/PRM.jpg"
   },
   {
     "id": 13,
     "kode": "013",
     "nama": "SRY",
-    "nama_lengkap": "( Surya )"
+    "nama_lengkap": "( Surya )",
+    "photo": "/images/sales/SRY.png"
   },
   {
     "id": 14,
     "kode": "014",
     "nama": "TRA",
-    "nama_lengkap": "( Tiara )"
+    "nama_lengkap": "( Tiara )",
+    "photo": "/images/sales/TRA.png"
   }
 ]

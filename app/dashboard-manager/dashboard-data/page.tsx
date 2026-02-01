@@ -3003,31 +3003,34 @@ export default function CrmDataManagementPage() {
                     }
                   });
 
-                  // Sort all sales (not just top 10)
-                  const allSales = Object.entries(salesTotals)
-                    .map(([name, data]) => ({
-                      name,
-                      displayName: salesLookupMap[name] || name,
-                      total: data.total,
-                      count: data.count,
-                      companyCount: data.companies.size
-                    }))
-                    .sort((a, b) => b.total - a.total);
+                  // Create chart data from ALL sales in master-sales.json
+                  const allSales = masterSalesData.map((sales: any) => {
+                    const salesData = salesTotals[sales.nama];
+                    const photoUrl = sales.photo || '';
+                    return {
+                      name: sales.nama,
+                      displayName: `${sales.nama} ${sales.nama_lengkap}`,
+                      photo: photoUrl,
+                      total: salesData ? salesData.total : 0,
+                      count: salesData ? salesData.count : 0,
+                      companyCount: salesData ? salesData.companies.size : 0
+                    };
+                  }).sort((a, b) => b.total - a.total); // Sort by total descending
+
+                  console.log('allSales data:', allSales.slice(0, 3));
+
+                  // Preload all images
+                  allSales.forEach((sales) => {
+                    if (sales.photo) {
+                      const img = new Image();
+                      img.src = sales.photo;
+                    }
+                  });
 
                   // Generate colors for all sales - Orange tua solid
                   const generateSalesColors = (index: number) => {
                     return '#C2410C'; // Orange 700 (orange tua) - same color for all
                   };
-
-                  const hasData = allSales.length > 0;
-
-                  if (!hasData) {
-                    return (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <p>Tidak ada data sales</p>
-                      </div>
-                    );
-                  }
 
                   return (
                     <div className="overflow-x-auto overflow-y-hidden pb-2">
@@ -3038,7 +3041,7 @@ export default function CrmDataManagementPage() {
                               switch (selectedTopAssociateChartType) {
                                 case 'bar':
                                   return (
-                                    <BarChart data={allSales} margin={{ top: 20, right: 30, left: -50, bottom: 60 }}>
+                                    <BarChart data={allSales} margin={{ top: 120, right: 30, left: -50, bottom: -10 }}>
                                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                                       <XAxis
                                         dataKey="displayName"
@@ -3083,12 +3086,95 @@ export default function CrmDataManagementPage() {
                                         <LabelList
                                           dataKey="total"
                                           position="top"
-                                          fontSize={13}
-                                          fontWeight="bold"
-                                          formatter={(value: number) => {
-                                            if (value >= 1000000000) return (value / 1000000000).toFixed(1) + 'M';
-                                            else if (value >= 1000000) return (value / 1000000).toFixed(1) + 'Jt';
-                                            else return (value / 1000).toFixed(0) + 'rb';
+                                          content={(props: any) => {
+                                            const { x, y, value, index } = props;
+                                            const salesData = allSales[index];
+                                            const salesName = salesData?.name || '';
+                                            const salesPhoto = salesData?.photo || '';
+                                            const salesDisplayName = salesData?.displayName || '';
+
+                                            const formattedValue = value >= 1000000000
+                                              ? (value / 1000000000).toFixed(1) + 'M'
+                                              : value >= 1000000
+                                              ? (value / 1000000).toFixed(1) + 'Jt'
+                                              : (value / 1000).toFixed(0) + 'rb';
+
+                                            const initial = salesName ? salesName.charAt(0) : '?';
+
+                                            console.log('Rendering label for:', salesName, 'Photo:', salesPhoto, 'Has photo:', !!salesPhoto, 'Index:', index);
+
+                                            return (
+                                              <g transform={`translate(${x}, ${y})`}>
+                                                <foreignObject
+                                                  x={0}
+                                                  y={-100}
+                                                  width={70}
+                                                  height={110}
+                                                  requiredExtensions="http://www.w3.org/1999/xhtml"
+                                                >
+                                                  <div xmlns="http://www.w3.org/1999/xhtml">
+                                                    <div
+                                                      style={{
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        alignItems: 'center',
+                                                        gap: '8px',
+                                                        padding: '5px',
+                                                      }}
+                                                    >
+                                                      {salesPhoto ? (
+                                                        <img
+                                                          src={salesPhoto}
+                                                          alt={salesDisplayName}
+                                                          width={70}
+                                                          height={70}
+                                                          loading="eager"
+                                                          crossOrigin="anonymous"
+                                                          style={{
+                                                            borderRadius: '50%',
+                                                            objectFit: 'cover',
+                                                            border: '2px solid #F97316',
+                                                            boxShadow: '0 2px 8px rgba(249, 115, 22, 0.3)',
+                                                            display: 'block',
+                                                            backgroundColor: '#f0f0f0',
+                                                          }}
+                                                        />
+                                                      ) : (
+                                                        <div
+                                                          style={{
+                                                            width: '50px',
+                                                            height: '50px',
+                                                            borderRadius: '50%',
+                                                            backgroundColor: '#F97316',
+                                                            border: '2px solid #F97316',
+                                                            boxShadow: '0 2px 8px rgba(249, 115, 22, 0.3)',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            fontSize: '20px',
+                                                            fontWeight: 'bold',
+                                                            color: 'white',
+                                                          }}
+                                                        >
+                                                          {initial}
+                                                        </div>
+                                                      )}
+                                                      <div
+                                                        style={{
+                                                          fontSize: '12px',
+                                                          fontWeight: 'bold',
+                                                          color: '#F97316',
+                                                          textAlign: 'center',
+                                                          whiteSpace: 'nowrap',
+                                                        }}
+                                                      >
+                                                        {formattedValue}
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                </foreignObject>
+                                              </g>
+                                            );
                                           }}
                                         />
                                       </Bar>
