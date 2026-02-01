@@ -715,28 +715,28 @@ export default function CrmDataManagementPage() {
 
       {/* MOBILE FILTERS - Bottom Tab Bar */}
       <div className="lg:hidden">
-        {/* Bottom Tab Bar - Purple Theme */}
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-purple-600 via-purple-500 to-indigo-600 backdrop-blur-md border-t border-purple-400 shadow-[0_-4px_12px_rgba(147,51,234,0.3)] lg:hidden safe-area-bottom">
+        {/* Bottom Tab Bar - Aesthetic Purple Gradient Theme */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-purple-400 via-purple-300 to-purple-200 backdrop-blur-lg border-t border-purple-400/50 shadow-[0_-4px_12px_rgba(168,85,247,0.25)] lg:hidden safe-area-bottom">
           <div className="flex items-stretch justify-around h-14">
             {/* Kategori Produk */}
             <button
               onClick={() => setActiveFilterSheet(activeFilterSheet === 'kategoriProduk' ? null : 'kategoriProduk')}
               className={`flex flex-col items-center justify-center py-1 px-1 min-w-0 flex-1 relative transition-all duration-200 ${
                 activeFilterSheet === 'kategoriProduk'
-                  ? 'text-white bg-white/20 backdrop-blur-sm'
-                  : 'text-white/90 hover:bg-white/10'
+                  ? 'text-white bg-white/25 backdrop-blur-sm'
+                  : 'text-purple-900 hover:bg-white/15'
               }`}
             >
               <div className="relative">
                 <BarChart3 className={`h-4 w-4 transition-transform duration-200 ${
-                  activeFilterSheet === 'kategoriProduk' ? 'scale-110 text-white' : 'text-white/80'
+                  activeFilterSheet === 'kategoriProduk' ? 'scale-110 text-white' : 'text-purple-800'
                 }`} />
                 {filterKategoriProduk !== 'SEMUA' && (
-                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-white rounded-full border-2 border-purple-600 animate-pulse"></span>
+                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-white rounded-full border-2 border-purple-500 animate-pulse"></span>
                 )}
               </div>
               <span className={`text-[10px] font-medium leading-tight mt-0.5 ${
-                activeFilterSheet === 'kategoriProduk' ? 'text-white' : 'text-white/90'
+                activeFilterSheet === 'kategoriProduk' ? 'text-white' : 'text-purple-900'
               }`}>Kategori</span>
             </button>
 
@@ -745,20 +745,20 @@ export default function CrmDataManagementPage() {
               onClick={() => setActiveFilterSheet(activeFilterSheet === 'picCrm' ? null : 'picCrm')}
               className={`flex flex-col items-center justify-center py-1 px-1 min-w-0 flex-1 relative transition-all duration-200 ${
                 activeFilterSheet === 'picCrm'
-                  ? 'text-white bg-white/20 backdrop-blur-sm'
-                  : 'text-white/90 hover:bg-white/10'
+                  ? 'text-white bg-white/25 backdrop-blur-sm'
+                  : 'text-purple-900 hover:bg-white/15'
               }`}
             >
               <div className="relative">
                 <Users className={`h-4 w-4 transition-transform duration-200 ${
-                  activeFilterSheet === 'picCrm' ? 'scale-110 text-white' : 'text-white/80'
+                  activeFilterSheet === 'picCrm' ? 'scale-110 text-white' : 'text-purple-800'
                 }`} />
                 {filterPicCrm !== 'all' && (
-                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-white rounded-full border-2 border-purple-600 animate-pulse"></span>
+                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-white rounded-full border-2 border-purple-500 animate-pulse"></span>
                 )}
               </div>
               <span className={`text-[10px] font-medium leading-tight mt-0.5 ${
-                activeFilterSheet === 'picCrm' ? 'text-white' : 'text-white/90'
+                activeFilterSheet === 'picCrm' ? 'text-white' : 'text-purple-900'
               }`}>PIC</span>
             </button>
 
@@ -767,20 +767,20 @@ export default function CrmDataManagementPage() {
               onClick={() => setActiveFilterSheet(activeFilterSheet === 'date' ? null : 'date')}
               className={`flex flex-col items-center justify-center py-1 px-1 min-w-0 flex-1 relative transition-all duration-200 ${
                 activeFilterSheet === 'date'
-                  ? 'text-white bg-white/20 backdrop-blur-sm'
-                  : 'text-white/90 hover:bg-white/10'
+                  ? 'text-white bg-white/25 backdrop-blur-sm'
+                  : 'text-purple-900 hover:bg-white/15'
               }`}
             >
               <div className="relative">
                 <Filter className={`h-4 w-4 transition-transform duration-200 ${
-                  activeFilterSheet === 'date' ? 'scale-110 text-white' : 'text-white/80'
+                  activeFilterSheet === 'date' ? 'scale-110 text-white' : 'text-purple-800'
                 }`} />
                 {(filterTahun !== 'all' || filterFromBulanExp !== 'all' || filterToBulanExp !== 'all' || filterFromBulanTTD !== '1' || filterToBulanTTD !== '12') && (
-                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-white rounded-full border-2 border-purple-600 animate-pulse"></span>
+                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-white rounded-full border-2 border-purple-500 animate-pulse"></span>
                 )}
               </div>
               <span className={`text-[10px] font-medium leading-tight mt-0.5 ${
-                activeFilterSheet === 'date' ? 'text-white' : 'text-white/90'
+                activeFilterSheet === 'date' ? 'text-white' : 'text-purple-900'
               }`}>Date</span>
             </button>
 
@@ -789,20 +789,20 @@ export default function CrmDataManagementPage() {
               onClick={() => setActiveFilterSheet(activeFilterSheet === 'sertifikat' ? null : 'sertifikat')}
               className={`flex flex-col items-center justify-center py-1 px-1 min-w-0 flex-1 relative transition-all duration-200 ${
                 activeFilterSheet === 'sertifikat'
-                  ? 'text-white bg-white/20 backdrop-blur-sm'
-                  : 'text-white/90 hover:bg-white/10'
+                  ? 'text-white bg-white/25 backdrop-blur-sm'
+                  : 'text-purple-900 hover:bg-white/15'
               }`}
             >
               <div className="relative">
                 <SlidersHorizontal className={`h-4 w-4 transition-transform duration-200 ${
-                  activeFilterSheet === 'sertifikat' ? 'scale-110 text-white' : 'text-white/80'
+                  activeFilterSheet === 'sertifikat' ? 'scale-110 text-white' : 'text-purple-800'
                 }`} />
                 {(filterStandar !== 'all' || filterAkreditasi !== 'all' || filterStatusSertifikatTerbit !== 'all' || filterStatus !== 'all') && (
-                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-white rounded-full border-2 border-purple-600 animate-pulse"></span>
+                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-white rounded-full border-2 border-purple-500 animate-pulse"></span>
                 )}
               </div>
               <span className={`text-[10px] font-medium leading-tight mt-0.5 ${
-                activeFilterSheet === 'sertifikat' ? 'text-white' : 'text-white/90'
+                activeFilterSheet === 'sertifikat' ? 'text-white' : 'text-purple-900'
               }`}>Sertifikat</span>
             </button>
 
@@ -812,10 +812,10 @@ export default function CrmDataManagementPage() {
                 resetAllFilters();
                 setActiveFilterSheet(null);
               }}
-              className="flex flex-col items-center justify-center py-1 px-1 min-w-0 flex-1 text-white hover:bg-white/20 transition-colors"
+              className="flex flex-col items-center justify-center py-1 px-1 min-w-0 flex-1 text-purple-900 hover:bg-white/15 transition-colors"
             >
-              <RotateCcw className="h-4 w-4" />
-              <span className="text-[10px] font-medium leading-tight mt-0.5">Reset</span>
+              <RotateCcw className="h-4 w-4 text-purple-800" />
+              <span className="text-[10px] font-medium leading-tight mt-0.5 text-purple-900">Reset</span>
             </button>
           </div>
         </div>
