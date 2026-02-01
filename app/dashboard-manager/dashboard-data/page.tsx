@@ -1441,19 +1441,8 @@ export default function CrmDataManagementPage() {
               <Card>
                 <CardContent className="p-3">
                   {(() => {
-                    // Get allData with kategori produk filter (same as Total Target)
-                    let filteredByKategori = (crmTargets || []);
-                    if (filterKategoriProduk !== 'SEMUA') {
-                      filteredByKategori = filteredByKategori.filter(t => {
-                        const stdCode = (t.std || '').trim();
-                        const standar = masterStandarData.standar.find((s: any) => s.kode === stdCode);
-                        return standar && standar.kategori_produk === filterKategoriProduk;
-                      });
-                    }
-                    const allData = filteredByKategori;
-
-                    // Filter MRC data from allData (not filteredTargets)
-                    const mrcData = allData.filter(t => (t.picCrm || '').toUpperCase() === 'MRC');
+                    // Use filteredTargets which already has all filters applied
+                    const mrcData = (filteredTargets || []).filter(t => (t.picCrm || '').toUpperCase() === 'MRC');
                     const mrcTotal = mrcData.length;
 
                     // Total Nilai Kontrak: sertifikat match + hargaKontrak + tahun
@@ -1520,7 +1509,10 @@ export default function CrmDataManagementPage() {
                     const mrcSuspendAmount = Math.round(mrcData.filter(t => t.status === 'SUSPEND').reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
                     const mrcWaiting = mrcData.filter(t => t.status === 'WAITING').length;
                     const mrcWaitingAmount = Math.round(mrcData.filter(t => t.status === 'WAITING').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
-                    const mrcVisits = mrcData.filter(t => t.tanggalKunjungan).length;
+
+                    // Calculate visits - mrcData already has all filters from filteredTargets
+                    const mrcVisitsTarget = mrcData.length / 2;
+                    const mrcVisits = mrcData.filter(t => (t.statusKunjungan || '').trim().toUpperCase() === 'VISITED').length;
 
                     return (
                       <div className="space-y-3">
@@ -1599,17 +1591,17 @@ export default function CrmDataManagementPage() {
                         <div className="space-y-1 pt-2 border-t">
                           <div className="flex items-center justify-between text-[10px]">
                             <span className="text-purple-600 font-semibold">TARGET VISITS</span>
-                            <span className="font-bold">{mrcVisits}/{mrcTotal}</span>
+                            <span className="font-bold">{mrcVisits}/{mrcVisitsTarget}</span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-3 relative">
                             <div
                               className="bg-gradient-to-r from-purple-500 to-purple-600 h-3 rounded-full transition-all duration-500 flex items-center justify-center"
-                              style={{ width: `${mrcTotal > 0 ? Math.min((mrcVisits / mrcTotal) * 100, 100) : 0}%` }}
+                              style={{ width: `${mrcVisitsTarget > 0 ? Math.min((mrcVisits / mrcVisitsTarget) * 100, 100) : 0}%` }}
                             >
                             </div>
                             <div className="absolute inset-0 flex items-center justify-center">
-                              <span className={`text-[11px] font-bold ${mrcTotal > 0 && mrcVisits > 0 ? 'text-black' : 'text-gray-500'}`}>
-                                {mrcTotal > 0 && mrcVisits > 0 ? Math.round((mrcVisits / mrcTotal) * 100) : 0}%
+                              <span className={`text-[11px] font-bold ${mrcVisitsTarget > 0 && mrcVisits > 0 ? 'text-black' : 'text-gray-500'}`}>
+                                {mrcVisitsTarget > 0 && mrcVisits > 0 ? Math.round((mrcVisits / mrcVisitsTarget) * 100) : 0}%
                               </span>
                             </div>
                           </div>
@@ -1628,20 +1620,9 @@ export default function CrmDataManagementPage() {
               <Card>
                 <CardContent className="p-3">
                   {(() => {
-                    // Get allData with kategori produk filter (same as Total Target)
-                    let filteredByKategori = (crmTargets || []);
-                    if (filterKategoriProduk !== 'SEMUA') {
-                      filteredByKategori = filteredByKategori.filter(t => {
-                        const stdCode = (t.std || '').trim();
-                        const standar = masterStandarData.standar.find((s: any) => s.kode === stdCode);
-                        return standar && standar.kategori_produk === filterKategoriProduk;
-                      });
-                    }
-                    const allData = filteredByKategori;
-
-                    // Filter DHA data from allData (not filteredTargets)
-                    const dhaData = allData.filter(t => (t.picCrm || '').toUpperCase() === 'DHA');
-                    const dhaTotal = dhaData.length;
+                    // Use filteredTargets which already has all filters applied
+                    const dhaData = (filteredTargets || []).filter(t => (t.picCrm || '').toUpperCase() === 'DHA');
+                    const dhaTotal = dhaData.length /2;
 
                     // Total Nilai Kontrak: sertifikat match + hargaKontrak + tahun
                     const dhaTotalAmount = Math.round(
@@ -1707,7 +1688,10 @@ export default function CrmDataManagementPage() {
                     const dhaSuspendAmount = Math.round(dhaData.filter(t => t.status === 'SUSPEND').reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
                     const dhaWaiting = dhaData.filter(t => t.status === 'WAITING').length;
                     const dhaWaitingAmount = Math.round(dhaData.filter(t => t.status === 'WAITING').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
-                    const dhaVisits = dhaData.filter(t => t.tanggalKunjungan).length;
+
+                    // Calculate visits - dhaData already has all filters from filteredTargets
+                    const dhaVisitsTarget = dhaData.length /2;
+                    const dhaVisits = dhaData.filter(t => (t.statusKunjungan || '').trim().toUpperCase() === 'VISITED').length;
 
                     return (
                       <div className="space-y-3">
@@ -1786,17 +1770,17 @@ export default function CrmDataManagementPage() {
                         <div className="space-y-1 pt-2 border-t">
                           <div className="flex items-center justify-between text-[10px]">
                             <span className="text-purple-600 font-semibold">TARGET VISITS</span>
-                            <span className="font-bold">{dhaVisits}/{dhaTotal}</span>
+                            <span className="font-bold">{dhaVisits}/{dhaVisitsTarget}</span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-3 relative">
                             <div
                               className="bg-gradient-to-r from-purple-500 to-purple-600 h-3 rounded-full transition-all duration-500 flex items-center justify-center"
-                              style={{ width: `${dhaTotal > 0 ? Math.min((dhaVisits / dhaTotal) * 100, 100) : 0}%` }}
+                              style={{ width: `${dhaVisitsTarget > 0 ? Math.min((dhaVisits / dhaVisitsTarget) * 100, 100) : 0}%` }}
                             >
                             </div>
                             <div className="absolute inset-0 flex items-center justify-center">
-                              <span className={`text-[11px] font-bold ${dhaTotal > 0 && dhaVisits > 0 ? 'text-black' : 'text-gray-500'}`}>
-                                {dhaTotal > 0 && dhaVisits > 0 ? Math.round((dhaVisits / dhaTotal) * 100) : 0}%
+                              <span className={`text-[11px] font-bold ${dhaVisitsTarget > 0 && dhaVisits > 0 ? 'text-black' : 'text-gray-500'}`}>
+                                {dhaVisitsTarget > 0 && dhaVisits > 0 ? Math.round((dhaVisits / dhaVisitsTarget) * 100) : 0}%
                               </span>
                             </div>
                           </div>
@@ -1901,6 +1885,7 @@ export default function CrmDataManagementPage() {
               // 2. statusSertifikat (based on filterStatusSertifikatTerbit)
               // 3. tahun (year filter)
               // 4. kategori produk - already filtered in allData
+              // 5. picCrm (based on filterPicCrm)
               const totalNilaiKontrak = Math.round(
                 allData
                   .filter(t => {
@@ -1908,7 +1893,9 @@ export default function CrmDataManagementPage() {
                     const matchesStatus = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
                     // Filter by tahun
                     const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
-                    return matchesStatus && matchesTahun;
+                    // Filter by picCrm
+                    const matchesPicCrm = filterPicCrm === 'all' || (t.picCrm || '').toUpperCase() === filterPicCrm.toUpperCase();
+                    return matchesStatus && matchesTahun && matchesPicCrm;
                   })
                   .reduce((sum, t) => sum + (t.hargaKontrak || 0), 0)
               );
@@ -4475,427 +4462,6 @@ export default function CrmDataManagementPage() {
           </CardContent>
         </Card>
 
-        {/* Disclaimer - Pencapaian PIC CRM Contract Base */}
-        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-800 font-medium text-center">
-            ⚠️ <strong>Disclaimer:</strong> Dibawah ini adalah pencapaian berdasarkan PIC CRM ( Contract Base )
-          </p>
-        </div>
-
-        {/* Staff Performance Cards - MRC & DHA */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* MRC Card - Only show when filterPicCrm is 'all' or 'MRC' */}
-          {(filterPicCrm === 'all' || filterPicCrm === 'MRC') && (
-            <Card>
-              <CardContent className="">
-                {(() => {
-                  // Get MRC data from filteredTargets - applies all filters including Bulan TTD Notif
-                  const mrcData = (filteredTargets || []).filter(t => (t.picCrm || '').toUpperCase() === 'MRC');
-                  const mrcTotal = mrcData.length;
-                  const mrcLanjut = mrcData.filter(t => t.status === 'DONE').length;
-                  const mrcLoss = mrcData.filter(t => t.status === 'LOSS').length;
-                  const mrcSuspend = mrcData.filter(t => t.status === 'SUSPEND').length;
-                  const mrcProses = mrcData.filter(t => t.status === 'PROSES').length;
-                  const mrcWaiting = mrcData.filter(t => t.status === 'WAITING').length;
-                  const mrcTotalAmount = Math.round(mrcData.reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
-
-                  // Calculate total by status from hargaTerupdate (except WAITING uses hargaKontrak)
-                  // DONE amount: filter with bulanTtdNotif requirement + tahun (same as Total Target logic)
-                  const mrcDoneAmount = Math.round(
-                    mrcData
-                      .filter(t => {
-                        const isDone = t.status === 'DONE';
-                        const isSertifikatMatch = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
-                        const hasBulanTtdNotif = t.bulanTtdNotif && t.bulanTtdNotif !== '';
-                        const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
-
-                        // Filter tahun dari bulanTtdNotif
-                        let matchesTahunTtdNotif = false;
-                        if (hasBulanTtdNotif) {
-                          if (filterTahun === 'all') {
-                            matchesTahunTtdNotif = true;
-                          } else {
-                            const ttdDate = new Date(t.bulanTtdNotif!);
-                            const ttdYear = ttdDate.getFullYear();
-                            matchesTahunTtdNotif = ttdYear.toString() === filterTahun;
-                          }
-                        }
-
-                        return isDone && isSertifikatMatch && hasBulanTtdNotif && matchesTahun && matchesTahunTtdNotif;
-                      })
-                      .reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0)
-                  );
-                  const mrcProsesAmount = Math.round(mrcData.filter(t => t.status === 'PROSES').reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
-                  const mrcSuspendAmount = Math.round(mrcData.filter(t => t.status === 'SUSPEND').reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
-                  const mrcLossAmount = Math.round(mrcData.filter(t => t.status === 'LOSS').reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
-                  const mrcWaitingAmount = Math.round(mrcData.filter(t => t.status === 'WAITING').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
-                  const mrcLanjutAmount = mrcDoneAmount; // Use same value as doneAmount
-                  const targetVisits = 100; // Sesuaikan dengan target tahunan
-
-                  return (
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      {/* Left Side - Profile Photo */}
-                      <div className="flex-shrink-0 flex justify-center">
-                        <div className="relative">
-                          <img
-                            src="/images/mercy.jpeg"
-                            onError={(e) => (e.currentTarget.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=MRC")}
-                            className="w-32 h-32 sm:w-60 sm:h-auto rounded-full object-cover border-2 border-background shadow-lg"
-                            style={{ maxHeight: '300px' }}
-                            alt="MRC"
-                          />
-                          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background"></div>
-                        </div>
-                      </div>
-
-                      {/* Right Side - Info & Stats */}
-                      <div className="flex-1 space-y-2">
-                        {/* Profile Info */}
-                        <div className="text-center sm:text-left">
-                          <p className="font-bold text-xl">MRC</p>
-                          <p className="text-sm text-muted-foreground">PIC CRM</p>
-                        </div>
-
-                        {/* Performance Overview */}
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-muted-foreground">Total Nilai Kontrak</span>
-                            <span className="text-sm font-bold text-primary">Rp {Math.round(mrcTotalAmount * 0.9).toLocaleString('id-ID')}</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div
-                              className="bg-green-600 h-2 rounded-full transition-all duration-500"
-                              style={{ width: `${mrcTotalAmount > 0 ? Math.min((mrcLanjutAmount / mrcTotalAmount) * 100, 100) : 0}%` }}
-                            />
-                          </div>
-                          <div className="flex items-center justify-between text-xs text-muted-foreground">
-                            <span>Kontrak Lanjut: Rp {mrcLanjutAmount.toLocaleString('id-ID')}</span>
-                            <span>{mrcTotalAmount > 0 ? Math.round((mrcLanjutAmount / mrcTotalAmount) * 100) : 0}%</span>
-                          </div>
-                        </div>
-
-                        {/* Detailed Statistics */}
-                        <div className="space-y-1">
-                          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Performance Breakdown</div>
-                          <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 text-xs">
-                            <div className="flex justify-between items-center">
-                              <span className="text-green-600">✓ Lanjut</span>
-                              <div className="text-right">
-                                <div className="font-medium">{mrcLanjut}</div>
-                                <div className="text-[9px] text-green-600">Rp {mrcDoneAmount.toLocaleString('id-ID')}</div>
-                              </div>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-red-600">✗ Loss</span>
-                              <div className="text-right">
-                                <div className="font-medium">{mrcLoss}</div>
-                                <div className="text-[9px] text-red-600">Rp {mrcLossAmount.toLocaleString('id-ID')}</div>
-                              </div>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-orange-600">⏸ Suspend</span>
-                              <div className="text-right">
-                                <div className="font-medium">{mrcSuspend}</div>
-                                <div className="text-[9px] text-orange-600">Rp {mrcSuspendAmount.toLocaleString('id-ID')}</div>
-                              </div>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-blue-600">⏸ Proses</span>
-                              <div className="text-right">
-                                <div className="font-medium">{mrcProses}</div>
-                                <div className="text-[9px] text-blue-600">Rp {mrcProsesAmount.toLocaleString('id-ID')}</div>
-                              </div>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-gray-600">⏳ Waiting</span>
-                              <div className="text-right">
-                                <div className="font-medium">{mrcWaiting}</div>
-                                <div className="text-[9px] text-gray-600">Rp {mrcWaitingAmount.toLocaleString('id-ID')}</div>
-                              </div>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-purple-600">📊 Visits</span>
-                              <span className="font-medium">{mrcData.filter(t => t.tanggalKunjungan).length}/{mrcTotal}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                      </div>
-                    </div>
-                  );
-                })()}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* DHA Card - Only show when filterPicCrm is 'all' or 'DHA' */}
-          {(filterPicCrm === 'all' || filterPicCrm === 'DHA') && (
-            <Card>
-              <CardContent className="">
-                {(() => {
-                  // Get DHA data from filteredTargets - applies all filters including Bulan TTD Notif
-                  const dhaData = (filteredTargets || []).filter(t => (t.picCrm || '').toUpperCase() === 'DHA');
-                const dhaTotal = dhaData.length;
-                const dhaLanjut = dhaData.filter(t => t.status === 'DONE').length;
-                const dhaLoss = dhaData.filter(t => t.status === 'LOSS').length;
-                const dhaSuspend = dhaData.filter(t => t.status === 'SUSPEND').length;
-                const dhaProses = dhaData.filter(t => t.status === 'PROSES').length;
-                const dhaWaiting = dhaData.filter(t => t.status === 'WAITING').length;
-                const dhaTotalAmount = Math.round(dhaData.reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
-
-                // Calculate total by status from hargaTerupdate (except WAITING uses hargaKontrak)
-                // DONE amount: filter with bulanTtdNotif requirement + tahun (same as Total Target logic)
-                const dhaDoneAmount = Math.round(
-                  dhaData
-                    .filter(t => {
-                      const isDone = t.status === 'DONE';
-                      const isSertifikatMatch = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
-                      const hasBulanTtdNotif = t.bulanTtdNotif && t.bulanTtdNotif !== '';
-                      const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
-
-                      // Filter tahun dari bulanTtdNotif
-                      let matchesTahunTtdNotif = false;
-                      if (hasBulanTtdNotif) {
-                        if (filterTahun === 'all') {
-                          matchesTahunTtdNotif = true;
-                        } else {
-                          const ttdDate = new Date(t.bulanTtdNotif!);
-                          const ttdYear = ttdDate.getFullYear();
-                          matchesTahunTtdNotif = ttdYear.toString() === filterTahun;
-                        }
-                      }
-
-                      return isDone && isSertifikatMatch && hasBulanTtdNotif && matchesTahun && matchesTahunTtdNotif;
-                    })
-                    .reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0)
-                );
-                const dhaProsesAmount = Math.round(dhaData.filter(t => t.status === 'PROSES').reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
-                const dhaSuspendAmount = Math.round(dhaData.filter(t => t.status === 'SUSPEND').reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
-                const dhaLossAmount = Math.round(dhaData.filter(t => t.status === 'LOSS').reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
-                const dhaWaitingAmount = Math.round(dhaData.filter(t => t.status === 'WAITING').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
-                const dhaLanjutAmount = dhaDoneAmount; // Use same value as doneAmount
-                const targetVisits = 100; // Sesuaikan dengan target tahunan
-
-                  return (
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      {/* Left Side - Profile Photo */}
-                      <div className="flex-shrink-0 flex justify-center">
-                        <div className="relative">
-                          <img
-                            src="/images/dhea.jpeg"
-                            onError={(e) => (e.currentTarget.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=DHA")}
-                            className="w-32 h-32 sm:w-60 sm:h-auto rounded-full object-cover border-2 border-background shadow-lg"
-                            style={{ maxHeight: '300px' }}
-                            alt="DHA"
-                          />
-                          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background"></div>
-                        </div>
-                      </div>
-
-                      {/* Right Side - Info & Stats */}
-                      <div className="flex-1 space-y-2">
-                        {/* Profile Info */}
-                        <div className="text-center sm:text-left">
-                          <p className="font-bold text-xl">DHA</p>
-                          <p className="text-sm text-muted-foreground">PIC CRM</p>
-                        </div>
-
-                        {/* Performance Overview */}
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-muted-foreground">Total Nilai Kontrak</span>
-                            <span className="text-sm font-bold text-primary">Rp {Math.round(dhaTotalAmount * 0.9).toLocaleString('id-ID')}</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div
-                              className="bg-green-600 h-2 rounded-full transition-all duration-500"
-                              style={{ width: `${dhaTotalAmount > 0 ? Math.min((dhaLanjutAmount / dhaTotalAmount) * 100, 100) : 0}%` }}
-                            />
-                          </div>
-                          <div className="flex items-center justify-between text-xs text-muted-foreground">
-                            <span>Kontrak Lanjut: Rp {dhaLanjutAmount.toLocaleString('id-ID')}</span>
-                            <span>{dhaTotalAmount > 0 ? Math.round((dhaLanjutAmount / dhaTotalAmount) * 100) : 0}%</span>
-                          </div>
-                        </div>
-
-                        {/* Detailed Statistics */}
-                        <div className="space-y-1">
-                          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Performance Breakdown</div>
-                          <div className="grid grid-cols-2 sm:grid-cols-2 gap-2 text-xs">
-                            <div className="flex justify-between items-center">
-                              <span className="text-green-600">✓ Lanjut</span>
-                              <div className="text-right">
-                                <div className="font-medium">{dhaLanjut}</div>
-                                <div className="text-[9px] text-green-600">Rp {dhaDoneAmount.toLocaleString('id-ID')}</div>
-                              </div>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-red-600">✗ Loss</span>
-                              <div className="text-right">
-                                <div className="font-medium">{dhaLoss}</div>
-                                <div className="text-[9px] text-red-600">Rp {dhaLossAmount.toLocaleString('id-ID')}</div>
-                              </div>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-orange-600">⏸ Suspend</span>
-                              <div className="text-right">
-                                <div className="font-medium">{dhaSuspend}</div>
-                                <div className="text-[9px] text-orange-600">Rp {dhaSuspendAmount.toLocaleString('id-ID')}</div>
-                              </div>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-blue-600">⏸ Proses</span>
-                              <div className="text-right">
-                                <div className="font-medium">{dhaProses}</div>
-                                <div className="text-[9px] text-blue-600">Rp {dhaProsesAmount.toLocaleString('id-ID')}</div>
-                              </div>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-gray-600">⏳ Waiting</span>
-                              <div className="text-right">
-                                <div className="font-medium">{dhaWaiting}</div>
-                                <div className="text-[9px] text-gray-600">Rp {dhaWaitingAmount.toLocaleString('id-ID')}</div>
-                              </div>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-purple-600">📊 Visits</span>
-                              <span className="font-medium">{dhaData.filter(t => t.tanggalKunjungan).length}/{dhaTotal}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                      </div>
-                    </div>
-                  );
-                })()}
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Charts Section - Lanjut, Loss, Suspend, Proses, Waiting */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-xl font-bold flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                CRM Status Analytics (Contract Base)
-              </h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                {filterStatus === 'all'
-                  ? 'Visualisasi data berdasarkan harga kontrak dengan semua status'
-                  : `Visualisasi data berdasarkan harga kontrak dengan status ${filterStatus?.toUpperCase()}`}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Chart Type:</span>
-              <Select value={selectedChartType} onValueChange={setSelectedChartType}>
-                <SelectTrigger className="w-32 h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="area">Area</SelectItem>
-                  <SelectItem value="bar">Bar</SelectItem>
-                  <SelectItem value="line">Line</SelectItem>
-                  <SelectItem value="pie">Pie</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Show all 5 charts when filterStatus is 'all', otherwise show only selected status chart */}
-          {filterStatus === 'all' ? (
-            <div className="space-y-4">
-              {/* First row: DONE, LOSS, SUSPEND */}
-              <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-3">
-                {/* Lanjut Chart */}
-                <ChartCardCrmData
-                  title="Status - DONE"
-                  data={filteredTargets.filter(t => t.status === 'DONE')}
-                  statusColor="green"
-                  chartType={selectedChartType}
-                  filterTahun={filterTahun}
-                  filterPicCrm={filterPicCrm}
-                  filterProvinsi={filterProvinsi}
-                  filterKota={filterKota}
-                />
-
-                {/* Loss Chart */}
-                <ChartCardCrmData
-                  title="Status - LOSS"
-                  data={filteredTargets.filter(t => t.status === 'LOSS')}
-                  statusColor="red"
-                  chartType={selectedChartType}
-                  filterTahun={filterTahun}
-                  filterPicCrm={filterPicCrm}
-                  filterProvinsi={filterProvinsi}
-                  filterKota={filterKota}
-                />
-
-                {/* Suspend Chart */}
-                <ChartCardCrmData
-                  title="Status - SUSPEND"
-                  data={filteredTargets.filter(t => t.status === 'SUSPEND')}
-                  statusColor="orange"
-                  chartType={selectedChartType}
-                  filterTahun={filterTahun}
-                  filterPicCrm={filterPicCrm}
-                  filterProvinsi={filterProvinsi}
-                  filterKota={filterKota}
-                />
-              </div>
-
-              {/* Second row: PROSES, WAITING */}
-              <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
-                {/* Proses Chart */}
-                <ChartCardCrmData
-                  title="Status - PROSES"
-                  data={filteredTargets.filter(t => t.status === 'PROSES')}
-                  statusColor="blue"
-                  chartType={selectedChartType}
-                  filterTahun={filterTahun}
-                  filterPicCrm={filterPicCrm}
-                  filterProvinsi={filterProvinsi}
-                  filterKota={filterKota}
-                />
-
-                {/* Waiting Chart */}
-                <ChartCardCrmData
-                  title="Status - WAITING"
-                  data={filteredTargets.filter(t => t.status === 'WAITING')}
-                  statusColor="gray"
-                  chartType={selectedChartType}
-                  filterTahun={filterTahun}
-                  filterPicCrm={filterPicCrm}
-                  filterProvinsi={filterProvinsi}
-                  filterKota={filterKota}
-                />
-              </div>
-            </div>
-          ) : (
-            /* Show only selected status chart with full width */
-            <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">
-              <ChartCardCrmData
-                title={`Status - ${filterStatus?.toUpperCase()}`}
-                data={filteredTargets.filter(t => {
-                  const statusUpper = filterStatus?.toUpperCase() || '';
-                  return t.status === statusUpper;
-                })}
-                statusColor={
-                  filterStatus?.toUpperCase() === 'DONE' ? 'green' :
-                  filterStatus?.toUpperCase() === 'LOSS' ? 'red' :
-                  filterStatus?.toUpperCase() === 'SUSPEND' ? 'orange' : 'blue'
-                }
-                chartType={selectedChartType}
-                filterTahun={filterTahun}
-                filterPicCrm={filterPicCrm}
-                filterProvinsi={filterProvinsi}
-                filterKota={filterKota}
-                isFullWidth={true}
-              />
-            </div>
-          )}
-        </div>
 
         {/* Table */}
         <Card>
