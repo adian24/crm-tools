@@ -133,11 +133,13 @@ function ChartCardAssociateMonthly({
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="px-2 pt-2 relative z-10">
-        <ChartContainer
-          config={chartConfig}
-          className="aspect-auto h-[250px] sm:h-[280px] md:h-[320px] w-full"
-        >
+      <CardContent className="px-0 pt-2 relative z-10">
+        <div className="overflow-x-auto overflow-y-hidden pb-2">
+          <ChartContainer
+            config={chartConfig}
+            className="aspect-auto h-[250px] sm:h-[280px] md:h-[320px] w-full pl-0"
+            style={{ minWidth: `${chartData.length * 60}px` }}
+          >
           {(() => {
             if (!hasData) {
               return (
@@ -152,7 +154,7 @@ function ChartCardAssociateMonthly({
             switch (chartType) {
               case 'bar':
                 return (
-                  <BarChart data={chartData} margin={{ top: 20, right: 20, left: 10, bottom: 40 }}>
+                  <BarChart data={chartData} margin={{ top: 20, right: 20, left: -10, bottom: 40 }}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis
                       dataKey="month"
@@ -171,6 +173,15 @@ function ChartCardAssociateMonthly({
                       className="fill-muted-foreground"
                       domain={[0, 'dataMax']}
                       width={60}
+                      tickFormatter={(value: number) => {
+                        // Format for mobile: M untuk miliar, Jt untuk juta
+                        if (value >= 1000000000) {
+                          return `${(value / 1000000000).toFixed(1)}M`;
+                        } else if (value >= 1000000) {
+                          return `${(value / 1000000).toFixed(0)}Jt`;
+                        }
+                        return value >= 1000 ? `${(value / 1000).toFixed(0)}K` : value.toString();
+                      }}
                     />
                     <ChartTooltip
                       cursor={true}
@@ -220,7 +231,7 @@ function ChartCardAssociateMonthly({
 
               case 'line':
                 return (
-                  <LineChart data={chartData} margin={{ top: 20, right: 20, left: 10, bottom: 40 }}>
+                  <LineChart data={chartData} margin={{ top: 20, right: 20, left: -10, bottom: 40 }}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis
                       dataKey="month"
@@ -239,6 +250,15 @@ function ChartCardAssociateMonthly({
                       className="fill-muted-foreground"
                       domain={[0, 'dataMax']}
                       width={60}
+                      tickFormatter={(value: number) => {
+                        // Format for mobile: M untuk miliar, Jt untuk juta
+                        if (value >= 1000000000) {
+                          return `${(value / 1000000000).toFixed(1)}M`;
+                        } else if (value >= 1000000) {
+                          return `${(value / 1000000).toFixed(0)}Jt`;
+                        }
+                        return value >= 1000 ? `${(value / 1000).toFixed(0)}K` : value.toString();
+                      }}
                     />
                     <ChartTooltip
                       cursor={true}
@@ -362,7 +382,7 @@ function ChartCardAssociateMonthly({
 
               default: // area chart
                 return (
-                  <AreaChart data={chartData} margin={{ top: 20, right: 20, left: 10, bottom: 40 }}>
+                  <AreaChart data={chartData} margin={{ top: 20, right: 20, left: -10, bottom: 40 }}>
                     <defs>
                       <linearGradient id="colorDirect" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={associateColors.Direct} stopOpacity={0.8}/>
@@ -391,6 +411,15 @@ function ChartCardAssociateMonthly({
                       className="fill-muted-foreground"
                       domain={[0, 'dataMax']}
                       width={60}
+                      tickFormatter={(value: number) => {
+                        // Format for mobile: M untuk miliar, Jt untuk juta
+                        if (value >= 1000000000) {
+                          return `${(value / 1000000000).toFixed(1)}M`;
+                        } else if (value >= 1000000) {
+                          return `${(value / 1000000).toFixed(0)}Jt`;
+                        }
+                        return value >= 1000 ? `${(value / 1000).toFixed(0)}K` : value.toString();
+                      }}
                     />
                     <ChartTooltip
                       cursor={true}
@@ -452,6 +481,7 @@ function ChartCardAssociateMonthly({
             }
           })()}
         </ChartContainer>
+        </div>
       </CardContent>
     </Card>
   );

@@ -195,23 +195,25 @@ function ChartCardPencapaianMonthly({
       <div className={`absolute inset-0 ${getBackgroundGradient()} opacity-60`}></div>
       <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/5 via-transparent to-purple-500/5"></div>
 
-      <CardHeader className="relative z-10 pb-1 sm:pb-2">
-        <CardTitle className="text-[10px] sm:text-xs font-semibold text-center">{title}</CardTitle>
-        <CardDescription className="text-[9px] sm:text-[10px] text-center space-y-0.5 sm:space-y-1">
-          <div className="font-medium text-black/70 text-[8px] sm:text-[9px]">
+      <CardHeader className="relative z-10 pb-1 sm:pb-2 lg:pb-3">
+        <CardTitle className="text-[10px] sm:text-xs lg:text-sm font-semibold text-center">{title}</CardTitle>
+        <CardDescription className="text-[9px] sm:text-[10px] lg:text-xs text-center space-y-0.5 sm:space-y-1">
+          <div className="font-medium text-black/70 text-[8px] sm:text-[9px] lg:text-xs">
             Target: Rp {totalTarget.toLocaleString('id-ID')} | Pencapaian: Rp {totalPencapaian.toLocaleString('id-ID')}
           </div>
-          <div className={`text-sm sm:text-xl font-extrabold ${achievementPercentage >= 90 ? 'text-green-600' : achievementPercentage >= 70 ? 'text-yellow-600' : 'text-red-600'}`}>
+          <div className={`text-sm sm:text-xl lg:text-2xl font-extrabold ${achievementPercentage >= 90 ? 'text-green-600' : achievementPercentage >= 70 ? 'text-yellow-600' : 'text-red-600'}`}>
             {achievementPercentage}%
           </div>
         </CardDescription>
       </CardHeader>
 
       <CardContent className="px-0.5 sm:px-2 pt-0.5 sm:pt-2 relative z-10">
-        <ChartContainer
-          config={chartConfig}
-          className="aspect-auto h-[160px] sm:h-[220px] md:h-[250px] w-full"
-        >
+        <div className="overflow-x-auto overflow-y-hidden pb-2">
+          <ChartContainer
+            config={chartConfig}
+            className="aspect-auto h-[160px] sm:h-[220px] md:h-[250px] w-full"
+            style={{ minWidth: `${chartData.length * 60}px` }}
+          >
           {(() => {
             if (!hasData) {
               return (
@@ -245,6 +247,15 @@ function ChartCardPencapaianMonthly({
                       className="fill-muted-foreground"
                       domain={[0, 'dataMax']}
                       width={45}
+                      tickFormatter={(value: number) => {
+                        // Format for mobile: M untuk miliar, Jt untuk juta
+                        if (value >= 1000000000) {
+                          return `${(value / 1000000000).toFixed(1)}M`;
+                        } else if (value >= 1000000) {
+                          return `${(value / 1000000).toFixed(0)}Jt`;
+                        }
+                        return value >= 1000 ? `${(value / 1000).toFixed(0)}K` : value.toString();
+                      }}
                     />
                     <ChartTooltip
                       cursor={true}
@@ -315,6 +326,15 @@ function ChartCardPencapaianMonthly({
                       className="fill-muted-foreground"
                       domain={[0, 'dataMax']}
                       width={45}
+                      tickFormatter={(value: number) => {
+                        // Format for mobile: M untuk miliar, Jt untuk juta
+                        if (value >= 1000000000) {
+                          return `${(value / 1000000000).toFixed(1)}M`;
+                        } else if (value >= 1000000) {
+                          return `${(value / 1000000).toFixed(0)}Jt`;
+                        }
+                        return value >= 1000 ? `${(value / 1000).toFixed(0)}K` : value.toString();
+                      }}
                     />
                     <ChartTooltip
                       cursor={true}
@@ -409,6 +429,15 @@ function ChartCardPencapaianMonthly({
                       className="fill-muted-foreground"
                       domain={[0, 'dataMax']}
                       width={45}
+                      tickFormatter={(value: number) => {
+                        // Format for mobile: M untuk miliar, Jt untuk juta
+                        if (value >= 1000000000) {
+                          return `${(value / 1000000000).toFixed(1)}M`;
+                        } else if (value >= 1000000) {
+                          return `${(value / 1000000).toFixed(0)}Jt`;
+                        }
+                        return value >= 1000 ? `${(value / 1000).toFixed(0)}K` : value.toString();
+                      }}
                     />
                     <ChartTooltip
                       cursor={true}
@@ -472,8 +501,9 @@ function ChartCardPencapaianMonthly({
             }
           })()}
         </ChartContainer>
+        </div>
 
-        
+
       </CardContent>
     </Card>
   );

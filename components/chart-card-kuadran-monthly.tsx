@@ -138,10 +138,12 @@ function ChartCardKuadranMonthly({
       </CardHeader>
 
       <CardContent className="px-2 pt-2 relative z-10">
-        <ChartContainer
-          config={chartConfig}
-          className="aspect-auto h-[250px] sm:h-[280px] md:h-[320px] w-full"
-        >
+        <div className="overflow-x-auto overflow-y-hidden pb-2">
+          <ChartContainer
+            config={chartConfig}
+            className="aspect-auto h-[250px] sm:h-[280px] md:h-[320px] w-full"
+            style={{ minWidth: `${chartData.length * 80}px` }}
+          >
           {(() => {
             if (!hasData) {
               return (
@@ -513,6 +515,7 @@ function ChartCardKuadranMonthly({
             }
           })()}
         </ChartContainer>
+        </div>
       </CardContent>
     </Card>
   );

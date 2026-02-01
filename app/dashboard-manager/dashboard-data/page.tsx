@@ -600,10 +600,10 @@ export default function CrmDataManagementPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background lg:bg-gray-50/50">
+    <div className="min-h-screen lg:bg-gray-50/50">
 
-      {/* MAIN CONTAINER - Centered with max-width for desktop */}
-      <div className="mx-auto w-full lg:px-6">
+      {/* MAIN CONTAINER - Left-aligned for better space utilization */}
+      <div className="w-full lg:px-6 lg:pl-6 lg:pr-12">
         {/* MAIN CONTENT WRAPPER - Mobile-first with max-width */}
         <div className="lg:flex lg:flex-row gap-6 py-2 lg:py-8 pb-20 lg:pb-8">
       {/* LEFT SIDEBAR - FILTERS */}
@@ -1297,6 +1297,7 @@ export default function CrmDataManagementPage() {
 
       {/* MAIN CONTENT - Mobile-first container */}
       <div className="flex-1 min-w-0 w-full max-w-full overflow-x-hidden space-y-2 sm:space-y-4">
+        <div className="w-full max-w-[1800px]">
         {/* Loading State - Show Skeleton */}
         {(crmTargets === undefined || crmTargets === null) && (
           <DashboardSkeleton />
@@ -1996,24 +1997,14 @@ export default function CrmDataManagementPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-1">
+                  <BarChart3 className="h-3 w-5" />
                   Breakdown Target VS Pencapaian (Per Bulan)
                 </CardTitle>
                 <CardDescription className="mt-1">
                   Analitycs {filterStatus !== 'all' && `- Status: ${filterStatus.toUpperCase()}`}
                 </CardDescription>
               </div>
-              <Select value={selectedChartType} onValueChange={setSelectedChartType}>
-                <SelectTrigger className="w-32 h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="area">Area</SelectItem>
-                  <SelectItem value="bar">Bar</SelectItem>
-                  <SelectItem value="line">Line</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </CardHeader>
           <CardContent>
@@ -2289,7 +2280,7 @@ export default function CrmDataManagementPage() {
               return (
                 <div className="space-y-3 sm:space-y-6">
                   {/* Summary Cards - Compact for mobile, Large for desktop */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
 
                     {/* Target Card */}
                     <div className="p-2.5 sm:p-5 bg-gradient-to-br from-blue-50 to-blue-100/80 rounded-lg border border-blue-200 shadow-sm">
@@ -2317,9 +2308,46 @@ export default function CrmDataManagementPage() {
                       </p>
                       <p className="text-[10px] sm:text-xs text-gray-500 mt-1">Perusahaan</p>
                     </div>
+
+                    {/* Rata-rata Pencapaian Card */}
+                    <div className="p-2.5 sm:p-5 bg-gradient-to-br from-purple-50 to-indigo-100/80 rounded-lg border border-purple-200 shadow-sm">
+                      <p className="text-xs sm:text-sm text-purple-600 font-semibold">Rata-rata Pencapaian</p>
+                      <p className="text-base sm:text-2xl lg:text-3xl font-bold text-purple-700 mt-1 sm:mt-2 leading-tight">
+                        Rp {
+                          (() => {
+                            // Hitung jumlah bulan yang punya data pencapaian
+                            const monthsWithPencapaian = Object.keys(monthlyPencapaianData).filter(key => key !== 'Unknown');
+                            const jumlahBulan = monthsWithPencapaian.length || 1;
+                            return Math.round(grandTotalPencapaian / jumlahBulan).toLocaleString('id-ID');
+                          })()
+                        }
+                      </p>
+                      <p className="text-[10px] sm:text-xs text-purple-600 mt-1">
+                        Per Bulan ({
+                          (() => {
+                            const monthsWithPencapaian = Object.keys(monthlyPencapaianData).filter(key => key !== 'Unknown');
+                            return `${monthsWithPencapaian.length} bulan dengan data`;
+                          })()
+                        })
+                      </p>
+                    </div>
                   </div>
 
                   {/* Chart - Target vs Pencapaian */}
+                  <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold">Chart Kuadran</h3>
+                      <Select value={selectedChartType} onValueChange={setSelectedChartType}>
+                        <SelectTrigger className="w-32 h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="area">Area</SelectItem>
+                          <SelectItem value="bar">Bar</SelectItem>
+                          <SelectItem value="line">Line</SelectItem>
+                          <SelectItem value="pie">Pie</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   <ChartCardPencapaianMonthly
                     title={`Target vs Pencapaian Per Bulan${filterStatus !== 'all' ? ` - ${filterStatus.toUpperCase()}` : ''}`}
                     data={chartData}
@@ -2518,7 +2546,7 @@ export default function CrmDataManagementPage() {
                   Associate Category Analytics - Monthly Trend
                 </CardTitle>
                 <CardDescription className="mt-1">
-                  Distribusi Direct vs Associate per bulan (Januari - Desember)
+                  Chart Direct vs Associate per bulan (Januari - Desember)
                 </CardDescription>
               </div>
             </div>
@@ -2702,16 +2730,30 @@ export default function CrmDataManagementPage() {
                       }
 
                       return (
-                        <div className="h-[400px]">
-                          <ResponsiveContainer width="100%" height="100%">
+                        <div className="overflow-x-auto overflow-y-hidden pb-2">
+                          <div style={{ minWidth: `${top10Associates.length * 80}px` }}>
+                            <div className="h-[400px]">
+                              <ResponsiveContainer width="100%" height="100%">
                             {(() => {
                               switch (selectedTopAssociateChartType) {
                                 case 'bar':
                                   return (
-                                    <BarChart data={top10Associates} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+                                    <BarChart data={top10Associates} margin={{ top: 20, right: 30, left: -30, bottom: 40 }}>
                                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                                       <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: 600 }} className="fill-foreground" />
-                                      <YAxis tick={{ fontSize: 9 }} className="fill-muted-foreground" width={60} />
+                                      <YAxis
+                                        tick={{ fontSize: 9 }}
+                                        className="fill-muted-foreground"
+                                        width={60}
+                                        tickFormatter={(value: number) => {
+                                          if (value >= 1000000000) {
+                                            return `${(value / 1000000000).toFixed(1)}M`;
+                                          } else if (value >= 1000000) {
+                                            return `${(value / 1000000).toFixed(0)}Jt`;
+                                          }
+                                          return value >= 1000 ? `${(value / 1000).toFixed(0)}K` : value.toString();
+                                        }}
+                                      />
                                       <Tooltip
                                         content={({ active, payload }) => {
                                           if (active && payload && payload.length) {
@@ -2748,10 +2790,22 @@ export default function CrmDataManagementPage() {
 
                                 case 'line':
                                   return (
-                                    <LineChart data={top10Associates} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+                                    <LineChart data={top10Associates} margin={{ top: 20, right: 30, left: -30, bottom: 40 }}>
                                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                                       <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: 600 }} className="fill-foreground" />
-                                      <YAxis tick={{ fontSize: 9 }} className="fill-muted-foreground" width={60} />
+                                      <YAxis
+                                        tick={{ fontSize: 9 }}
+                                        className="fill-muted-foreground"
+                                        width={60}
+                                        tickFormatter={(value: number) => {
+                                          if (value >= 1000000000) {
+                                            return `${(value / 1000000000).toFixed(1)}M`;
+                                          } else if (value >= 1000000) {
+                                            return `${(value / 1000000).toFixed(0)}Jt`;
+                                          }
+                                          return value >= 1000 ? `${(value / 1000).toFixed(0)}K` : value.toString();
+                                        }}
+                                      />
                                       <Tooltip
                                         content={({ active, payload }) => {
                                           if (active && payload && payload.length) {
@@ -2842,7 +2896,7 @@ export default function CrmDataManagementPage() {
 
                                 default: // area
                                   return (
-                                    <AreaChart data={top10Associates} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+                                    <AreaChart data={top10Associates} margin={{ top: 20, right: 30, left: -30, bottom: 40 }}>
                                       <defs>
                                         <linearGradient id="colorTopAssociate" x1="0" y1="0" x2="0" y2="1">
                                           <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8}/>
@@ -2851,7 +2905,19 @@ export default function CrmDataManagementPage() {
                                       </defs>
                                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                                       <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: 600 }} className="fill-foreground" />
-                                      <YAxis tick={{ fontSize: 9 }} className="fill-muted-foreground" width={60} />
+                                      <YAxis
+                                        tick={{ fontSize: 9 }}
+                                        className="fill-muted-foreground"
+                                        width={60}
+                                        tickFormatter={(value: number) => {
+                                          if (value >= 1000000000) {
+                                            return `${(value / 1000000000).toFixed(1)}M`;
+                                          } else if (value >= 1000000) {
+                                            return `${(value / 1000000).toFixed(0)}Jt`;
+                                          }
+                                          return value >= 1000 ? `${(value / 1000).toFixed(0)}K` : value.toString();
+                                        }}
+                                      />
                                       <Tooltip
                                         content={({ active, payload }) => {
                                           if (active && payload && payload.length) {
@@ -2892,6 +2958,8 @@ export default function CrmDataManagementPage() {
                               }
                             })()}
                           </ResponsiveContainer>
+                        </div>
+                          </div>
                         </div>
                       );
                     })()}
@@ -3033,60 +3101,74 @@ export default function CrmDataManagementPage() {
                   }
 
                   return (
-                    <div className="h-[400px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        {(() => {
-                          switch (selectedTopAssociateChartType) {
-                            case 'bar':
-                              return (
-                                <BarChart data={allSales} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                                  <XAxis
-                                    dataKey="displayName"
-                                    tick={{ fontSize: 11, fontWeight: 600 }}
-                                    className="fill-foreground"
-                                    angle={-45}
-                                    textAnchor="end"
-                                    height={80}
-                                  />
-                                  <YAxis tick={{ fontSize: 9 }} className="fill-muted-foreground" width={80} />
-                                  <Tooltip
-                                    content={({ active, payload }) => {
-                                      if (active && payload && payload.length) {
-                                        const data = payload[0].payload;
-                                        return (
-                                          <div className="bg-background border rounded-lg shadow-lg p-2">
-                                            <p className="font-semibold text-sm mb-1">{data.displayName}</p>
-                                            <p className="text-xs text-muted-foreground">{data.count} Sertifikat . {data.companyCount} Perusahaan</p>
-                                            <p className="text-sm font-bold">Rp {data.total.toLocaleString('id-ID')}</p>
-                                          </div>
-                                        );
-                                      }
-                                      return null;
-                                    }}
-                                  />
-                                  <Bar dataKey="total" radius={[4, 4, 0, 0]}>
-                                    {allSales.map((sales, index) => (
-                                      <Cell key={`cell-${index}`} fill={generateSalesColors(index)} />
-                                    ))}
-                                    <LabelList
-                                      dataKey="total"
-                                      position="top"
-                                      fontSize={13}
-                                      fontWeight="bold"
-                                      formatter={(value: number) => {
-                                        if (value >= 1000000000) return (value / 1000000000).toFixed(1) + 'M';
-                                        else if (value >= 1000000) return (value / 1000000).toFixed(1) + 'Jt';
-                                        else return (value / 1000).toFixed(0) + 'rb';
-                                      }}
-                                    />
-                                  </Bar>
-                                </BarChart>
-                              );
+                    <div className="overflow-x-auto overflow-y-hidden pb-2">
+                      <div style={{ minWidth: `${allSales.length * 80}px` }}>
+                        <div className="h-[400px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            {(() => {
+                              switch (selectedTopAssociateChartType) {
+                                case 'bar':
+                                  return (
+                                    <BarChart data={allSales} margin={{ top: 20, right: 30, left: -50, bottom: 60 }}>
+                                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                                      <XAxis
+                                        dataKey="displayName"
+                                        tick={{ fontSize: 11, fontWeight: 600 }}
+                                        className="fill-foreground"
+                                        angle={-45}
+                                        textAnchor="end"
+                                        height={80}
+                                      />
+                                      <YAxis
+                                        tick={{ fontSize: 9 }}
+                                        className="fill-muted-foreground"
+                                        width={80}
+                                        tickFormatter={(value: number) => {
+                                          if (value >= 1000000000) {
+                                            return `${(value / 1000000000).toFixed(1)}M`;
+                                          } else if (value >= 1000000) {
+                                            return `${(value / 1000000).toFixed(0)}Jt`;
+                                          }
+                                          return value >= 1000 ? `${(value / 1000).toFixed(0)}K` : value.toString();
+                                        }}
+                                      />
+                                      <Tooltip
+                                        content={({ active, payload }) => {
+                                          if (active && payload && payload.length) {
+                                            const data = payload[0].payload;
+                                            return (
+                                              <div className="bg-background border rounded-lg shadow-lg p-2">
+                                                <p className="font-semibold text-sm mb-1">{data.displayName}</p>
+                                                <p className="text-xs text-muted-foreground">{data.count} Sertifikat . {data.companyCount} Perusahaan</p>
+                                                <p className="text-sm font-bold">Rp {data.total.toLocaleString('id-ID')}</p>
+                                              </div>
+                                            );
+                                          }
+                                          return null;
+                                        }}
+                                      />
+                                      <Bar dataKey="total" radius={[4, 4, 0, 0]}>
+                                        {allSales.map((sales, index) => (
+                                          <Cell key={`cell-${index}`} fill={generateSalesColors(index)} />
+                                        ))}
+                                        <LabelList
+                                          dataKey="total"
+                                          position="top"
+                                          fontSize={13}
+                                          fontWeight="bold"
+                                          formatter={(value: number) => {
+                                            if (value >= 1000000000) return (value / 1000000000).toFixed(1) + 'M';
+                                            else if (value >= 1000000) return (value / 1000000).toFixed(1) + 'Jt';
+                                            else return (value / 1000).toFixed(0) + 'rb';
+                                          }}
+                                        />
+                                      </Bar>
+                                    </BarChart>
+                                  );
 
                             case 'line':
                               return (
-                                <LineChart data={allSales} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                                <LineChart data={allSales} margin={{ top: 20, right: 30, left: -50, bottom: 60 }}>
                                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                                   <XAxis
                                     dataKey="displayName"
@@ -3096,7 +3178,19 @@ export default function CrmDataManagementPage() {
                                     textAnchor="end"
                                     height={80}
                                   />
-                                  <YAxis tick={{ fontSize: 9 }} className="fill-muted-foreground" width={80} />
+                                  <YAxis
+                                    tick={{ fontSize: 9 }}
+                                    className="fill-muted-foreground"
+                                    width={80}
+                                    tickFormatter={(value: number) => {
+                                      if (value >= 1000000000) {
+                                        return `${(value / 1000000000).toFixed(1)}M`;
+                                      } else if (value >= 1000000) {
+                                        return `${(value / 1000000).toFixed(0)}Jt`;
+                                      }
+                                      return value >= 1000 ? `${(value / 1000).toFixed(0)}K` : value.toString();
+                                    }}
+                                  />
                                   <Tooltip
                                     content={({ active, payload }) => {
                                       if (active && payload && payload.length) {
@@ -3186,10 +3280,12 @@ export default function CrmDataManagementPage() {
                               );
 
                             default:
-                              return <BarChart data={allSales} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="displayName" /><YAxis /><Bar dataKey="total" fill="#C2410C" /></BarChart>;
+                              return <BarChart data={allSales} margin={{ top: 20, right: 30, left: -50, bottom: 60 }}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="displayName" /><YAxis /><Bar dataKey="total" fill="#C2410C" /></BarChart>;
                           }
                         })()}
                       </ResponsiveContainer>
+                    </div>
+                      </div>
                     </div>
                   );
                 })()}
@@ -3297,13 +3393,15 @@ export default function CrmDataManagementPage() {
                   }
 
                   return (
-                    <div className="h-[400px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        {(() => {
-                          switch (selectedTopAssociateChartType) {
-                            case 'bar':
-                              return (
-                                <BarChart data={allTahapan} layout="vertical" margin={{ top: 5, right: 120, left:0, bottom: 5 }}>
+                    <div className="overflow-x-auto overflow-y-hidden pb-2">
+                      <div style={{ minWidth: `${allTahapan.length * 120}px` }}>
+                        <div className="h-[400px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            {(() => {
+                              switch (selectedTopAssociateChartType) {
+                                case 'bar':
+                                  return (
+                                    <BarChart data={allTahapan} layout="vertical" margin={{ top: 5, right: 130, left:-25, bottom: 5 }}>
                                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                                   <XAxis type="number" tick={{ fontSize: 11 }} className="fill-muted-foreground" />
                                   <YAxis
@@ -3375,7 +3473,7 @@ export default function CrmDataManagementPage() {
 
                             case 'line':
                               return (
-                                <LineChart data={allTahapan} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                                <LineChart data={allTahapan} margin={{ top: 20, right: 30, left: -50, bottom: 60 }}>
                                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                                   <XAxis
                                     dataKey="displayName"
@@ -3472,10 +3570,12 @@ export default function CrmDataManagementPage() {
                               );
 
                             default:
-                              return <BarChart data={allTahapan} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="displayName" /><YAxis /><Bar dataKey="total" fill="#0D9488" /></BarChart>;
+                              return <BarChart data={allTahapan} margin={{ top: 20, right: 30, left: -50, bottom: 60 }}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="displayName" /><YAxis /><Bar dataKey="total" fill="#0D9488" /></BarChart>;
                           }
                         })()}
                       </ResponsiveContainer>
+                    </div>
+                      </div>
                     </div>
                   );
                 })()}
@@ -4324,6 +4424,7 @@ export default function CrmDataManagementPage() {
         </>
         )}
       </div>
+        </div>
       </div>
       </div>
     </div>

@@ -83,10 +83,12 @@ function ChartCardParetoAlasan({
       </CardHeader>
 
       <CardContent className="px-2 pt-2 relative z-10">
-        <ChartContainer
-          config={chartConfig}
-          className="aspect-auto h-[350px] sm:h-[400px] w-full"
-        >
+        <div className="overflow-x-auto overflow-y-hidden pb-2">
+          <ChartContainer
+            config={chartConfig}
+            className="aspect-auto h-[350px] sm:h-[400px] w-full"
+            style={{ minWidth: `${chartData.length * 100}px` }}
+          >
           {!hasData ? (
             <div className="h-full w-full flex items-center justify-center">
               <div className="text-center">
@@ -174,6 +176,7 @@ function ChartCardParetoAlasan({
             </ResponsiveContainer>
           )}
         </ChartContainer>
+        </div>
       </CardContent>
     </Card>
   );
