@@ -715,47 +715,29 @@ export default function CrmDataManagementPage() {
 
       {/* MOBILE FILTERS - Bottom Tab Bar */}
       <div className="lg:hidden">
-        {/* Bottom Tab Bar - Compact and Clean */}
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border/50 shadow-[0_-2px_8px_rgba(0,0,0,0.08)] lg:hidden safe-area-bottom">
+        {/* Bottom Tab Bar - Purple Theme */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-purple-600 via-purple-500 to-indigo-600 backdrop-blur-md border-t border-purple-400 shadow-[0_-4px_12px_rgba(147,51,234,0.3)] lg:hidden safe-area-bottom">
           <div className="flex items-stretch justify-around h-14">
-            {/* Date Filter */}
+            {/* Kategori Produk */}
             <button
-              onClick={() => setActiveFilterSheet(activeFilterSheet === 'date' ? null : 'date')}
+              onClick={() => setActiveFilterSheet(activeFilterSheet === 'kategoriProduk' ? null : 'kategoriProduk')}
               className={`flex flex-col items-center justify-center py-1 px-1 min-w-0 flex-1 relative transition-all duration-200 ${
-                activeFilterSheet === 'date'
-                  ? 'text-primary bg-primary/5'
-                  : 'text-muted-foreground hover:bg-muted/50'
-              }`}
-            >
-              <div className="relative">
-                <Filter className={`h-4 w-4 transition-transform duration-200 ${
-                  activeFilterSheet === 'date' ? 'scale-110' : ''
-                }`} />
-                {(filterTahun !== 'all' || filterFromBulanExp !== 'all' || filterToBulanExp !== 'all') && (
-                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-red-500 rounded-full border-2 border-background"></span>
-                )}
-              </div>
-              <span className="text-[10px] font-medium leading-tight mt-0.5">Date</span>
-            </button>
-
-            {/* Status */}
-            <button
-              onClick={() => setActiveFilterSheet(activeFilterSheet === 'status' ? null : 'status')}
-              className={`flex flex-col items-center justify-center py-1 px-1 min-w-0 flex-1 relative transition-all duration-200 ${
-                activeFilterSheet === 'status'
-                  ? 'text-primary bg-primary/5'
-                  : 'text-muted-foreground hover:bg-muted/50'
+                activeFilterSheet === 'kategoriProduk'
+                  ? 'text-white bg-white/20 backdrop-blur-sm'
+                  : 'text-white/90 hover:bg-white/10'
               }`}
             >
               <div className="relative">
                 <BarChart3 className={`h-4 w-4 transition-transform duration-200 ${
-                  activeFilterSheet === 'status' ? 'scale-110' : ''
+                  activeFilterSheet === 'kategoriProduk' ? 'scale-110 text-white' : 'text-white/80'
                 }`} />
-                {filterStatus !== 'all' && (
-                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-red-500 rounded-full border-2 border-background"></span>
+                {filterKategoriProduk !== 'SEMUA' && (
+                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-white rounded-full border-2 border-purple-600 animate-pulse"></span>
                 )}
               </div>
-              <span className="text-[10px] font-medium leading-tight mt-0.5">Status</span>
+              <span className={`text-[10px] font-medium leading-tight mt-0.5 ${
+                activeFilterSheet === 'kategoriProduk' ? 'text-white' : 'text-white/90'
+              }`}>Kategori</span>
             </button>
 
             {/* PIC CRM */}
@@ -763,39 +745,65 @@ export default function CrmDataManagementPage() {
               onClick={() => setActiveFilterSheet(activeFilterSheet === 'picCrm' ? null : 'picCrm')}
               className={`flex flex-col items-center justify-center py-1 px-1 min-w-0 flex-1 relative transition-all duration-200 ${
                 activeFilterSheet === 'picCrm'
-                  ? 'text-primary bg-primary/5'
-                  : 'text-muted-foreground hover:bg-muted/50'
+                  ? 'text-white bg-white/20 backdrop-blur-sm'
+                  : 'text-white/90 hover:bg-white/10'
               }`}
             >
               <div className="relative">
                 <Users className={`h-4 w-4 transition-transform duration-200 ${
-                  activeFilterSheet === 'picCrm' ? 'scale-110' : ''
+                  activeFilterSheet === 'picCrm' ? 'scale-110 text-white' : 'text-white/80'
                 }`} />
                 {filterPicCrm !== 'all' && (
-                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-red-500 rounded-full border-2 border-background"></span>
+                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-white rounded-full border-2 border-purple-600 animate-pulse"></span>
                 )}
               </div>
-              <span className="text-[10px] font-medium leading-tight mt-0.5">PIC</span>
+              <span className={`text-[10px] font-medium leading-tight mt-0.5 ${
+                activeFilterSheet === 'picCrm' ? 'text-white' : 'text-white/90'
+              }`}>PIC</span>
             </button>
 
-            {/* More Filters */}
+            {/* Date Filter */}
             <button
-              onClick={() => setActiveFilterSheet(activeFilterSheet === 'more' ? null : 'more')}
+              onClick={() => setActiveFilterSheet(activeFilterSheet === 'date' ? null : 'date')}
               className={`flex flex-col items-center justify-center py-1 px-1 min-w-0 flex-1 relative transition-all duration-200 ${
-                activeFilterSheet === 'more'
-                  ? 'text-primary bg-primary/5'
-                  : 'text-muted-foreground hover:bg-muted/50'
+                activeFilterSheet === 'date'
+                  ? 'text-white bg-white/20 backdrop-blur-sm'
+                  : 'text-white/90 hover:bg-white/10'
+              }`}
+            >
+              <div className="relative">
+                <Filter className={`h-4 w-4 transition-transform duration-200 ${
+                  activeFilterSheet === 'date' ? 'scale-110 text-white' : 'text-white/80'
+                }`} />
+                {(filterTahun !== 'all' || filterFromBulanExp !== 'all' || filterToBulanExp !== 'all' || filterFromBulanTTD !== '1' || filterToBulanTTD !== '12') && (
+                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-white rounded-full border-2 border-purple-600 animate-pulse"></span>
+                )}
+              </div>
+              <span className={`text-[10px] font-medium leading-tight mt-0.5 ${
+                activeFilterSheet === 'date' ? 'text-white' : 'text-white/90'
+              }`}>Date</span>
+            </button>
+
+            {/* Sertifikat Filters */}
+            <button
+              onClick={() => setActiveFilterSheet(activeFilterSheet === 'sertifikat' ? null : 'sertifikat')}
+              className={`flex flex-col items-center justify-center py-1 px-1 min-w-0 flex-1 relative transition-all duration-200 ${
+                activeFilterSheet === 'sertifikat'
+                  ? 'text-white bg-white/20 backdrop-blur-sm'
+                  : 'text-white/90 hover:bg-white/10'
               }`}
             >
               <div className="relative">
                 <SlidersHorizontal className={`h-4 w-4 transition-transform duration-200 ${
-                  activeFilterSheet === 'more' ? 'scale-110' : ''
+                  activeFilterSheet === 'sertifikat' ? 'scale-110 text-white' : 'text-white/80'
                 }`} />
-                {(filterStandar !== 'all' || filterAkreditasi !== 'all' || filterStatusSertifikatTerbit !== 'all' || filterKategoriProduk !== 'SEMUA') && (
-                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-red-500 rounded-full border-2 border-background"></span>
+                {(filterStandar !== 'all' || filterAkreditasi !== 'all' || filterStatusSertifikatTerbit !== 'all' || filterStatus !== 'all') && (
+                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-white rounded-full border-2 border-purple-600 animate-pulse"></span>
                 )}
               </div>
-              <span className="text-[10px] font-medium leading-tight mt-0.5">Filter</span>
+              <span className={`text-[10px] font-medium leading-tight mt-0.5 ${
+                activeFilterSheet === 'sertifikat' ? 'text-white' : 'text-white/90'
+              }`}>Sertifikat</span>
             </button>
 
             {/* Reset */}
@@ -804,7 +812,7 @@ export default function CrmDataManagementPage() {
                 resetAllFilters();
                 setActiveFilterSheet(null);
               }}
-              className="flex flex-col items-center justify-center py-1 px-1 min-w-0 flex-1 text-red-600 hover:bg-red-50 transition-colors"
+              className="flex flex-col items-center justify-center py-1 px-1 min-w-0 flex-1 text-white hover:bg-white/20 transition-colors"
             >
               <RotateCcw className="h-4 w-4" />
               <span className="text-[10px] font-medium leading-tight mt-0.5">Reset</span>
@@ -831,9 +839,9 @@ export default function CrmDataManagementPage() {
                 <div className="flex items-center justify-between px-3 pb-2">
                   <h2 className="text-sm font-semibold">
                     {activeFilterSheet === 'date' && 'Date Filters'}
-                    {activeFilterSheet === 'status' && 'Status Filters'}
+                    {activeFilterSheet === 'kategoriProduk' && 'Kategori Produk Filters'}
                     {activeFilterSheet === 'picCrm' && 'PIC CRM Filters'}
-                    {activeFilterSheet === 'more' && 'More Filters'}
+                    {activeFilterSheet === 'sertifikat' && 'Sertifikat Filters'}
                   </h2>
                   <button
                     onClick={() => setActiveFilterSheet(null)}
@@ -846,6 +854,37 @@ export default function CrmDataManagementPage() {
 
               {/* Scrollable Content */}
               <div className="overflow-y-auto max-h-[calc(75vh-60px)] pb-safe-bottom">
+
+              {/* Kategori Produk Sheet - Sesuai dengan FilterKategoriProdukSection di desktop */}
+              {activeFilterSheet === 'kategoriProduk' && (
+                <div className="p-4 space-y-3">
+                  <div>
+                    <Label className="mb-2 block text-sm font-semibold">Kategori Produk</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { value: 'SEMUA', label: 'Semua', color: 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300' },
+                        { value: 'ISO', label: 'ISO', color: 'bg-blue-100 hover:bg-blue-200 text-blue-700 border-blue-300' },
+                        { value: 'SUSTAIN', label: 'SUSTAIN', color: 'bg-green-100 hover:bg-green-200 text-green-700 border-green-300' },
+                      ].map((kategori) => (
+                        <button
+                          key={kategori.value}
+                          onClick={() => {
+                            setFilterKategoriProduk(kategori.value as KategoriProduk);
+                            setActiveFilterSheet(null);
+                          }}
+                          className={`py-2 px-4 rounded-lg text-sm font-medium border-2 transition-all ${
+                            filterKategoriProduk === kategori.value
+                              ? 'bg-black hover:bg-gray-800 text-white border-black'
+                              : kategori.color
+                          }`}
+                        >
+                          {kategori.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Date Filter Sheet */}
               {activeFilterSheet === 'date' && (
@@ -947,64 +986,6 @@ export default function CrmDataManagementPage() {
                 </div>
               )}
 
-              {/* Status Sheet */}
-              {activeFilterSheet === 'status' && (
-                <div className="p-4 space-y-2">
-                  <h3 className="text-sm font-semibold mb-3">Filter by Status</h3>
-                  <button
-                    onClick={() => { setFilterStatus('all'); setActiveFilterSheet(null); }}
-                    className={`w-full text-left py-3 px-4 rounded-lg font-medium text-sm ${
-                      filterStatus === 'all'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted hover:bg-muted/80'
-                    }`}
-                  >
-                    All Status
-                  </button>
-                  {uniqueStatuses.map((status) => {
-                    const statusUpper = status?.toUpperCase() || '';
-                    let statusColor = '';
-
-                    switch (statusUpper) {
-                      case 'PROSES':
-                        statusColor = 'bg-blue-100 hover:bg-blue-200 text-blue-700';
-                        break;
-                      case 'LANJUT':
-                        statusColor = 'bg-green-100 hover:bg-green-200 text-green-700';
-                        break;
-                      case 'LOSS':
-                        statusColor = 'bg-red-100 hover:bg-red-200 text-red-700';
-                        break;
-                      case 'SUSPEND':
-                        statusColor = 'bg-orange-100 hover:bg-orange-200 text-orange-700';
-                        break;
-                      case 'WAITING':
-                        statusColor = 'bg-gray-200 hover:bg-gray-300 text-gray-700';
-                        break;
-                      case 'DONE':
-                        statusColor = 'bg-purple-100 hover:bg-purple-200 text-purple-700';
-                        break;
-                      default:
-                        statusColor = 'bg-gray-200 hover:bg-gray-300 text-gray-700';
-                    }
-
-                    return (
-                      <button
-                        key={status}
-                        onClick={() => { setFilterStatus(status); setActiveFilterSheet(null); }}
-                        className={`w-full text-left py-3 px-4 rounded-lg font-medium text-sm ${
-                          filterStatus === status
-                            ? 'bg-primary text-primary-foreground'
-                            : statusColor
-                        }`}
-                      >
-                        {status}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
               {/* PIC CRM Sheet */}
               {activeFilterSheet === 'picCrm' && (
                 <div className="p-4 space-y-2">
@@ -1037,274 +1018,143 @@ export default function CrmDataManagementPage() {
                 </div>
               )}
 
-              {/* More Filters Sheet - Complete with Sections */}
-              {activeFilterSheet === 'more' && (
-                <div className="space-y-3">
-                  {/* Sertifikat Section */}
+              {/* Sertifikat Sheet - Sesuai dengan FilterSertifikatSection di desktop */}
+              {activeFilterSheet === 'sertifikat' && (
+                <div className="p-4 space-y-4">
+                  <h3 className="text-sm font-semibold mb-3">Filter Sertifikat</h3>
 
-                  {/* Sertifikat Section */}
-                  <div className="border border-purple-200 rounded-lg overflow-hidden mx-4 bg-white shadow-sm">
-                    <button
-                      onClick={() => {
-                        const newSections = expandedFilterSections.includes('sertifikat')
-                          ? expandedFilterSections.filter(s => s !== 'sertifikat')
-                          : [...expandedFilterSections, 'sertifikat'];
-                        setExpandedFilterSections(newSections);
-                      }}
-                      className="w-full flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 transition-all cursor-pointer"
-                    >
-                      <span className="font-medium text-xs text-purple-900">Filter Sertifikat</span>
-                      {expandedFilterSections.includes('sertifikat') ? (
-                        <ChevronDown className="h-4 w-4 text-purple-600" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4 text-purple-600" />
-                      )}
-                    </button>
-                    {expandedFilterSections.includes('sertifikat') && (
-                      <div className="p-3 space-y-3 border-t border-purple-200 bg-gradient-to-b from-white to-purple-50/30">
-                        {/* Standar */}
-                        <div>
-                          <Label className="mb-1.5 block text-xs">Standar</Label>
-                          <Select value={filterStandar} onValueChange={setFilterStandar}>
-                            <SelectTrigger className="w-full h-9 text-xs">
-                              <SelectValue placeholder="All Standar" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">All Standar</SelectItem>
-                              {standarOptions.map((standar) => (
-                                <SelectItem key={standar} value={standar}>{standar}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {/* Akreditasi */}
-                        <div>
-                          <Label className="mb-1.5 block text-xs">Akreditasi</Label>
-                          <div className="grid grid-cols-3 gap-2">
-                            <button
-                              onClick={() => setFilterAkreditasi('all')}
-                              className={`py-2 px-3 rounded-lg text-xs font-medium ${
-                                filterAkreditasi === 'all'
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'bg-muted hover:bg-muted/80'
-                              }`}
-                            >
-                              All
-                            </button>
-                            {['KAN', 'NON AKRE'].map((akreditasi) => (
-                              <button
-                                key={akreditasi}
-                                onClick={() => setFilterAkreditasi(akreditasi)}
-                                className={`py-2 px-3 rounded-lg text-xs font-medium ${
-                                  filterAkreditasi === akreditasi
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-muted hover:bg-muted/80'
-                                }`}
-                              >
-                                {akreditasi}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* EA Code */}
-                        <div>
-                          <Label className="mb-1.5 block text-xs">EA Code</Label>
-                          <Input
-                            placeholder="Search EA Code..."
-                            value={filterEaCode}
-                            onChange={(e) => setFilterEaCode(e.target.value)}
-                            className="h-9"
-                          />
-                        </div>
-
-                        {/* Tahapan Audit */}
-                        <div>
-                          <Label className="mb-1.5 block text-xs">Tahapan Audit</Label>
-                          <Select value={filterTahapAudit} onValueChange={setFilterTahapAudit}>
-                            <SelectTrigger className="w-full h-9 text-xs">
-                              <SelectValue placeholder="All Tahapan" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">All Tahapan</SelectItem>
-                              {tahapanAuditOptions.map((tahap) => (
-                                <SelectItem key={tahap} value={tahap}>{tahap}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {/* Status Sertifikat */}
-                        <div>
-                          <Label className="mb-1.5 block text-xs">Status Sertifikat</Label>
-                          <div className="grid grid-cols-2 gap-2">
-                            <button
-                              onClick={() => setFilterStatusSertifikatTerbit('all')}
-                              className={`py-2 px-3 rounded-lg text-xs font-medium ${
-                                filterStatusSertifikatTerbit === 'all'
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'bg-muted hover:bg-muted/80'
-                              }`}
-                            >
-                              All
-                            </button>
-                            {['Terbit', 'Belum Terbit'].map((status) => (
-                              <button
-                                key={status}
-                                onClick={() => setFilterStatusSertifikatTerbit(status)}
-                                className={`py-2 px-3 rounded-lg text-xs font-medium ${
-                                  filterStatusSertifikatTerbit === status
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-muted hover:bg-muted/80'
-                                }`}
-                              >
-                                {status}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Status */}
-                        <div>
-                          <Label className="mb-1.5 block text-xs">Status</Label>
-                          <div className="grid grid-cols-2 gap-2">
-                            <button
-                              onClick={() => setFilterStatus('all')}
-                              className={`py-2 px-3 rounded-lg text-xs font-medium ${
-                                filterStatus === 'all'
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'bg-muted hover:bg-muted/80'
-                              }`}
-                            >
-                              All
-                            </button>
-                            {['DONE', 'PROSES', 'LOSS', 'SUSPEND', 'WAITING'].map((status) => (
-                              <button
-                                key={status}
-                                onClick={() => setFilterStatus(status)}
-                                className={`py-2 px-3 rounded-lg text-xs font-medium ${
-                                  filterStatus === status
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-muted hover:bg-muted/80'
-                                }`}
-                              >
-                                {status}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                  {/* Status */}
+                  <div>
+                    <Label className="mb-2 block text-xs">Status</Label>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => setFilterStatus('all')}
+                        className={`py-2 px-3 rounded-lg text-xs font-medium border-2 ${
+                          filterStatus === 'all'
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300'
+                        }`}
+                      >
+                        All
+                      </button>
+                      {['DONE', 'PROSES', 'LOSS', 'SUSPEND', 'WAITING'].map((status) => {
+                        let statusColor = '';
+                        switch (status) {
+                          case 'DONE':
+                            statusColor = 'bg-green-100 hover:bg-green-200 text-green-700 border-green-300';
+                            break;
+                          case 'PROSES':
+                            statusColor = 'bg-blue-100 hover:bg-blue-200 text-blue-700 border-blue-300';
+                            break;
+                          case 'LOSS':
+                            statusColor = 'bg-red-100 hover:bg-red-200 text-red-700 border-red-300';
+                            break;
+                          case 'SUSPEND':
+                            statusColor = 'bg-orange-100 hover:bg-orange-200 text-orange-700 border-orange-300';
+                            break;
+                          case 'WAITING':
+                            statusColor = 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300';
+                            break;
+                        }
+                        return (
+                          <button
+                            key={status}
+                            onClick={() => setFilterStatus(status)}
+                            className={`py-2 px-3 rounded-lg text-xs font-medium border-2 ${
+                              filterStatus === status
+                                ? 'bg-black hover:bg-gray-800 text-white border-black'
+                                : statusColor
+                            }`}
+                          >
+                            {status}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
-                  {/* Pembayaran Section */}
-                  <div className="border border-purple-200 rounded-lg overflow-hidden mx-4 bg-white shadow-sm">
-                    <button
-                      onClick={() => {
-                        const newSections = expandedFilterSections.includes('pembayaran')
-                          ? expandedFilterSections.filter(s => s !== 'pembayaran')
-                          : [...expandedFilterSections, 'pembayaran'];
-                        setExpandedFilterSections(newSections);
-                      }}
-                      className="w-full flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 transition-all cursor-pointer"
-                    >
-                      <span className="font-medium text-xs text-purple-900">Filter Pembayaran</span>
-                      {expandedFilterSections.includes('pembayaran') ? (
-                        <ChevronDown className="h-4 w-4 text-purple-600" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4 text-purple-600" />
-                      )}
-                    </button>
-                    {expandedFilterSections.includes('pembayaran') && (
-                      <div className="p-3 space-y-3 border-t border-purple-200 bg-gradient-to-b from-white to-purple-50/30">
-                        {/* Termin */}
-                        <div>
-                          <Label className="mb-1.5 block text-xs">Termin</Label>
-                          <div className="grid grid-cols-2 gap-2">
-                            <button
-                              onClick={() => setFilterTermin('all')}
-                              className={`py-2 px-3 rounded-lg text-xs font-medium ${
-                                filterTermin === 'all'
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'bg-muted hover:bg-muted/80'
-                              }`}
-                            >
-                              All
-                            </button>
-                            {['DP', 'Lunas Diawal', 'Lunas Diakhir'].map((termin) => (
-                              <button
-                                key={termin}
-                                onClick={() => setFilterTermin(termin)}
-                                className={`py-2 px-3 rounded-lg text-xs font-medium ${
-                                  filterTermin === termin
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-muted hover:bg-muted/80'
-                                }`}
-                              >
-                                {termin}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Tipe Produk */}
-                        <div>
-                          <Label className="mb-1.5 block text-xs">Tipe Produk</Label>
-                          <div className="grid grid-cols-2 gap-2">
-                            <button
-                              onClick={() => setFilterTipeProduk('all')}
-                              className={`py-2 px-3 rounded-lg text-xs font-medium ${
-                                filterTipeProduk === 'all'
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'bg-muted hover:bg-muted/80'
-                              }`}
-                            >
-                              All
-                            </button>
-                            {['ISO', 'SUSTAIN'].map((tipe) => {
-                              let tipeColor = '';
-                              switch (tipe) {
-                                case 'ISO':
-                                  tipeColor = 'bg-blue-100 hover:bg-blue-200 text-blue-700';
-                                  break;
-                                case 'SUSTAIN':
-                                  tipeColor = 'bg-green-100 hover:bg-green-200 text-green-700';
-                                  break;
-                              }
-                              return (
-                                <button
-                                  key={tipe}
-                                  type="button"
-                                  onClick={() => {
-                                    console.log('Button clicked:', tipe, 'Current filter:', filterTipeProduk);
-                                    setFilterTipeProduk(tipe);
-                                  }}
-                                  className={`py-2 px-3 rounded-lg text-xs font-medium ${
-                                    filterTipeProduk === tipe
-                                      ? 'bg-primary text-primary-foreground'
-                                      : tipeColor
-                                  }`}
-                                >
-                                  {tipe}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                  {/* Standar */}
+                  <div>
+                    <Label className="mb-1.5 block text-xs">Standar</Label>
+                    <Select value={filterStandar} onValueChange={setFilterStandar}>
+                      <SelectTrigger className="w-full h-10">
+                        <SelectValue placeholder="All Standar" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Standar</SelectItem>
+                        {standarOptions.map((standar) => (
+                          <SelectItem key={standar} value={standar}>{standar}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
-                  {/* Apply Button - Fixed at bottom */}
-                  <div className="sticky bottom-0 bg-gradient-to-t from-background via-background to-transparent pt-4 pb-6 px-4 border-t border-border/50 mt-4">
-                    <button
-                      onClick={() => setActiveFilterSheet(null)}
-                      className="w-full py-3.5 bg-primary text-primary-foreground rounded-xl font-semibold text-base shadow-lg hover:shadow-xl transition-all active:scale-[0.98]"
-                    >
-                      Apply Filters
-                    </button>
+                  {/* Akreditasi */}
+                  <div>
+                    <Label className="mb-2 block text-xs">Akreditasi</Label>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => setFilterAkreditasi('all')}
+                        className={`py-2 px-3 rounded-lg text-xs font-medium border-2 ${
+                          filterAkreditasi === 'all'
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300'
+                        }`}
+                      >
+                        All
+                      </button>
+                      {['KAN', 'NON AKRE'].map((akreditasi) => (
+                        <button
+                          key={akreditasi}
+                          onClick={() => setFilterAkreditasi(akreditasi)}
+                          className={`py-2 px-3 rounded-lg text-xs font-medium border-2 ${
+                            filterAkreditasi === akreditasi
+                              ? 'bg-black hover:bg-gray-800 text-white border-black'
+                              : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300'
+                          }`}
+                        >
+                          {akreditasi}
+                        </button>
+                      ))}
+                    </div>
                   </div>
+
+                  {/* Status Sertifikat */}
+                  <div>
+                    <Label className="mb-2 block text-xs">Status Sertifikat Terbit</Label>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => setFilterStatusSertifikatTerbit('all')}
+                        className={`py-2 px-3 rounded-lg text-xs font-medium border-2 ${
+                          filterStatusSertifikatTerbit === 'all'
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300'
+                        }`}
+                      >
+                        All
+                      </button>
+                      {['Terbit', 'Belum Terbit'].map((status) => (
+                        <button
+                          key={status}
+                          onClick={() => setFilterStatusSertifikatTerbit(status)}
+                          className={`py-2 px-3 rounded-lg text-xs font-medium border-2 ${
+                            filterStatusSertifikatTerbit === status
+                              ? 'bg-black hover:bg-gray-800 text-white border-black'
+                              : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300'
+                          }`}
+                        >
+                          {status}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setActiveFilterSheet(null)}
+                    className="w-full py-3 bg-primary text-primary-foreground rounded-lg font-medium text-sm mt-2"
+                  >
+                    Done
+                  </button>
                 </div>
               )}
               </div>

@@ -71,16 +71,7 @@ export function CRMHeader({ user, onThemeToggle, isDarkMode }: CRMHeaderProps) {
           <Separator orientation="vertical" className="h-6 hidden sm:block" />
 
           <div className="ml-auto flex items-center gap-2">
-            {/* Mobile Search Toggle */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="md:hidden hover:bg-gray-100"
-              onClick={() => {/* Handle mobile search */}}
-            >
-              <Search className="h-4 w-4" />
-            </Button>
-
+            
             {/* Theme Toggle */}
             <Button
               variant="ghost"
@@ -156,7 +147,7 @@ export function CRMHeader({ user, onThemeToggle, isDarkMode }: CRMHeaderProps) {
             </DropdownMenu>
 
             {/* Mobile Menu Toggle */}
-            <Button
+            {/* <Button
               variant="ghost"
               size="sm"
               className="lg:hidden h-9 w-9 p-0 bg-white hover:bg-gray-100"
@@ -167,16 +158,15 @@ export function CRMHeader({ user, onThemeToggle, isDarkMode }: CRMHeaderProps) {
               ) : (
                 <Menu className="h-4 w-4" />
               )}
-            </Button>
+            </Button> */}
           </div>
         </div>
       </div>
 
       {/* Mobile Menu - Full screen overlay */}
-      {isMobileMenuOpen && (
+      {/* {isMobileMenuOpen && (
         <div className="lg:hidden fixed inset-x-0 top-16 z-50 bg-white dark:bg-background border-b border-sidebar-border/40">
           <div className="px-4 py-4 space-y-4">
-            {/* Mobile Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -187,7 +177,6 @@ export function CRMHeader({ user, onThemeToggle, isDarkMode }: CRMHeaderProps) {
               />
             </div>
 
-            {/* Mobile Navigation */}
             <nav className="space-y-2">
               {(user.role === 'super_admin' || user.role === 'manager') ? (
                 <>
@@ -232,7 +221,7 @@ export function CRMHeader({ user, onThemeToggle, isDarkMode }: CRMHeaderProps) {
             </nav>
           </div>
         </div>
-      )}
+      )} */}
     </header>
   )
 }
