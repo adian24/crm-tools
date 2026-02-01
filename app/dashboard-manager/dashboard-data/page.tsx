@@ -310,7 +310,7 @@ export default function CrmDataManagementPage() {
     let matchesTipeProduk = true;
     if (filterTipeProduk !== 'all') {
       const produkUpper = (target.produk || '').toUpperCase();
-      if (filterTipeProduk === 'XMS') {
+      if (filterTipeProduk === 'ISO') {
         matchesTipeProduk = produkUpper.includes('ISO');
       } else if (filterTipeProduk === 'SUSTAIN') {
         matchesTipeProduk = produkUpper.includes('ISPO');
@@ -1262,10 +1262,10 @@ export default function CrmDataManagementPage() {
                             >
                               All
                             </button>
-                            {['XMS', 'SUSTAIN'].map((tipe) => {
+                            {['ISO', 'SUSTAIN'].map((tipe) => {
                               let tipeColor = '';
                               switch (tipe) {
-                                case 'XMS':
+                                case 'ISO':
                                   tipeColor = 'bg-blue-100 hover:bg-blue-200 text-blue-700';
                                   break;
                                 case 'SUSTAIN':
@@ -1275,7 +1275,11 @@ export default function CrmDataManagementPage() {
                               return (
                                 <button
                                   key={tipe}
-                                  onClick={() => setFilterTipeProduk(tipe)}
+                                  type="button"
+                                  onClick={() => {
+                                    console.log('Button clicked:', tipe, 'Current filter:', filterTipeProduk);
+                                    setFilterTipeProduk(tipe);
+                                  }}
                                   className={`py-2 px-3 rounded-lg text-xs font-medium ${
                                     filterTipeProduk === tipe
                                       ? 'bg-primary text-primary-foreground'
@@ -2562,6 +2566,35 @@ export default function CrmDataManagementPage() {
                 const hasBulanTtdNotif = t.bulanTtdNotif && t.bulanTtdNotif !== '';
                 const hasAssociate = t.directOrAssociate;
 
+                // Filter Tipe Produk
+                let matchesTipeProduk = true;
+                if (filterTipeProduk !== 'all') {
+                  const produkUpper = (t.produk || '').toUpperCase();
+                  if (filterTipeProduk === 'ISO') {
+                    matchesTipeProduk = produkUpper.includes('ISO');
+                  } else if (filterTipeProduk === 'SUSTAIN') {
+                    matchesTipeProduk = produkUpper.includes('ISPO');
+                  }
+                }
+
+                // Filter Kategori Produk - filter based on kategori_produk from master-standar.json
+                let matchesKategoriProduk = true;
+                if (filterKategoriProduk !== 'SEMUA') {
+                  const stdCode = (t.std || '').trim();
+                  const standar = masterStandarData.standar.find((s: any) => s.kode === stdCode);
+                  if (standar) {
+                    matchesKategoriProduk = standar.kategori_produk === filterKategoriProduk;
+                  } else {
+                    // If std not found in master, exclude it
+                    matchesKategoriProduk = false;
+                  }
+                }
+
+                // Debug: log filter results
+                if (filterTipeProduk !== 'all' && isDone && isSertifikatMatch && hasBulanTtdNotif && hasAssociate) {
+                  console.log('Associate Filter - Produk:', t.produk, 'Filter:', filterTipeProduk, 'Match:', matchesTipeProduk);
+                }
+
                 // Check tahun dari bulanTtdNotif
                 let matchesTahun = false;
                 if (hasBulanTtdNotif) {
@@ -2574,8 +2607,19 @@ export default function CrmDataManagementPage() {
                   }
                 }
 
-                return isDone && isSertifikatMatch && hasBulanTtdNotif && hasAssociate && matchesTahun;
+                return isDone && isSertifikatMatch && hasBulanTtdNotif && hasAssociate && matchesTahun && matchesTipeProduk && matchesKategoriProduk;
               });
+
+              // Debug: log total counts
+              console.log('=== ASSOCIATE CATEGORY DEBUG ===');
+              console.log('Total Data:', crmTargets?.length);
+              console.log('Filtered Count:', dataWithAssociate.length);
+              console.log('Filter Tipe Produk:', filterTipeProduk);
+              console.log('Filter Kategori Produk:', filterKategoriProduk);
+              console.log('Filter Tahun:', filterTahun);
+              console.log('Filter Status Sertifikat:', filterStatusSertifikatTerbit);
+              console.log('Sample filtered data:', dataWithAssociate.slice(0, 3).map(t => ({ produk: t.produk, status: t.status, sertifikat: t.statusSertifikat, std: t.std })));
+              console.log('=============================');
 
               return (
                 <div className="space-y-6">
@@ -3018,6 +3062,29 @@ export default function CrmDataManagementPage() {
                     const matchesStatus = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
                     const matchesDoneStatus = t.status === 'DONE';
 
+                    // Filter Tipe Produk
+                    let matchesTipeProduk = true;
+                    if (filterTipeProduk !== 'all') {
+                      const produkUpper = (t.produk || '').toUpperCase();
+                      if (filterTipeProduk === 'XMS') {
+                        matchesTipeProduk = produkUpper.includes('ISO');
+                      } else if (filterTipeProduk === 'SUSTAIN') {
+                        matchesTipeProduk = produkUpper.includes('ISPO');
+                      }
+                    }
+
+                    // Filter Kategori Produk
+                    let matchesKategoriProduk = true;
+                    if (filterKategoriProduk !== 'SEMUA') {
+                      const stdCode = (t.std || '').trim();
+                      const standar = masterStandarData.standar.find((s: any) => s.kode === stdCode);
+                      if (standar) {
+                        matchesKategoriProduk = standar.kategori_produk === filterKategoriProduk;
+                      } else {
+                        matchesKategoriProduk = false;
+                      }
+                    }
+
                     // Parse bulanTtdNotif to get month and year
                     let ttdMonth = 0;
                     let ttdYear = null;
@@ -3050,7 +3117,7 @@ export default function CrmDataManagementPage() {
                       matchesBulanTtdNotif = false;
                     }
 
-                    return matchesStatus && matchesDoneStatus && matchesTahun && matchesBulanTtdNotif;
+                    return matchesStatus && matchesDoneStatus && matchesTahun && matchesBulanTtdNotif && matchesTipeProduk && matchesKategoriProduk;
                   });
 
                   // Group by sales and get totals
@@ -3332,7 +3399,7 @@ export default function CrmDataManagementPage() {
                   // Import master-tahapan.json for legend
                   const masterTahapanData = require('@/data/master-tahapan.json');
 
-                  // Filter data: manual filter dari crmTargets dengan bulan EXP, Kategori Produk, PIC CRM (TANPA bulan TTD Notif)
+                  // Filter data: manual filter dari crmTargets dengan bulan EXP, Kategori Produk, PIC CRM, Tipe Produk (TANPA bulan TTD Notif)
                   const dataForTahapan = (crmTargets || []).filter(t => {
                     // Filter tahun
                     const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
@@ -3340,6 +3407,17 @@ export default function CrmDataManagementPage() {
 
                     // Filter PIC CRM
                     const matchesPicCrm = filterPicCrm === 'all' || t.picCrm === filterPicCrm;
+
+                    // Filter Tipe Produk
+                    let matchesTipeProduk = true;
+                    if (filterTipeProduk !== 'all') {
+                      const produkUpper = (t.produk || '').toUpperCase();
+                      if (filterTipeProduk === 'XMS') {
+                        matchesTipeProduk = produkUpper.includes('ISO');
+                      } else if (filterTipeProduk === 'SUSTAIN') {
+                        matchesTipeProduk = produkUpper.includes('ISPO');
+                      }
+                    }
 
                     // Filter Kategori Produk
                     let matchesKategoriProduk = true;
@@ -3381,7 +3459,7 @@ export default function CrmDataManagementPage() {
                       matchesBulanExp = bulanExpNum > 0 && bulanExpNum >= fromMonth && bulanExpNum <= toMonth;
                     }
 
-                    return matchesTahun && matchesStatus && matchesPicCrm && matchesKategoriProduk && matchesBulanExp;
+                    return matchesTahun && matchesStatus && matchesPicCrm && matchesTipeProduk && matchesKategoriProduk && matchesBulanExp;
                   });
 
                   // Group by tahapAudit and get totals
@@ -3659,10 +3737,34 @@ export default function CrmDataManagementPage() {
           </CardHeader>
           <CardContent>
             {(() => {
-              // Filter data: HANYA filter tahun dari ALL data (tanpa filter statusSertifikat)
+              // Filter data: filter tahun dan tipe produk dari ALL data (tanpa filter statusSertifikat)
               const dataForStandar = (crmTargets || []).filter(t => {
                 const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
-                return matchesTahun;
+
+                // Filter Tipe Produk
+                let matchesTipeProduk = true;
+                if (filterTipeProduk !== 'all') {
+                  const produkUpper = (t.produk || '').toUpperCase();
+                  if (filterTipeProduk === 'ISO') {
+                    matchesTipeProduk = produkUpper.includes('ISO');
+                  } else if (filterTipeProduk === 'SUSTAIN') {
+                    matchesTipeProduk = produkUpper.includes('ISPO');
+                  }
+                }
+
+                // Filter Kategori Produk
+                let matchesKategoriProduk = true;
+                if (filterKategoriProduk !== 'SEMUA') {
+                  const stdCode = (t.std || '').trim();
+                  const standar = masterStandarData.standar.find((s: any) => s.kode === stdCode);
+                  if (standar) {
+                    matchesKategoriProduk = standar.kategori_produk === filterKategoriProduk;
+                  } else {
+                    matchesKategoriProduk = false;
+                  }
+                }
+
+                return matchesTahun && matchesTipeProduk && matchesKategoriProduk;
               });
 
               // Group by std and get counts
@@ -3766,10 +3868,34 @@ export default function CrmDataManagementPage() {
           </CardHeader>
           <CardContent>
             {(() => {
-              // Filter data: HANYA filter tahun dari ALL data (tanpa filter statusSertifikat)
+              // Filter data: filter tahun dan tipe produk dari ALL data (tanpa filter statusSertifikat)
               const dataForEaCode = (crmTargets || []).filter(t => {
                 const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
-                return matchesTahun;
+
+                // Filter Tipe Produk
+                let matchesTipeProduk = true;
+                if (filterTipeProduk !== 'all') {
+                  const produkUpper = (t.produk || '').toUpperCase();
+                  if (filterTipeProduk === 'ISO') {
+                    matchesTipeProduk = produkUpper.includes('ISO');
+                  } else if (filterTipeProduk === 'SUSTAIN') {
+                    matchesTipeProduk = produkUpper.includes('ISPO');
+                  }
+                }
+
+                // Filter Kategori Produk
+                let matchesKategoriProduk = true;
+                if (filterKategoriProduk !== 'SEMUA') {
+                  const stdCode = (t.std || '').trim();
+                  const standar = masterStandarData.standar.find((s: any) => s.kode === stdCode);
+                  if (standar) {
+                    matchesKategoriProduk = standar.kategori_produk === filterKategoriProduk;
+                  } else {
+                    matchesKategoriProduk = false;
+                  }
+                }
+
+                return matchesTahun && matchesTipeProduk && matchesKategoriProduk;
               });
 
               // Get list of valid EA codes from master ea code - normalized
@@ -3857,10 +3983,34 @@ export default function CrmDataManagementPage() {
           </CardHeader>
           <CardContent>
             {(() => {
-              // Filter data: HANYA filter tahun dari ALL data (tanpa filter statusSertifikat)
+              // Filter data: filter tahun dan tipe produk dari ALL data (tanpa filter statusSertifikat)
               const dataForAlasan = (crmTargets || []).filter(t => {
                 const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
-                return matchesTahun;
+
+                // Filter Tipe Produk
+                let matchesTipeProduk = true;
+                if (filterTipeProduk !== 'all') {
+                  const produkUpper = (t.produk || '').toUpperCase();
+                  if (filterTipeProduk === 'ISO') {
+                    matchesTipeProduk = produkUpper.includes('ISO');
+                  } else if (filterTipeProduk === 'SUSTAIN') {
+                    matchesTipeProduk = produkUpper.includes('ISPO');
+                  }
+                }
+
+                // Filter Kategori Produk
+                let matchesKategoriProduk = true;
+                if (filterKategoriProduk !== 'SEMUA') {
+                  const stdCode = (t.std || '').trim();
+                  const standar = masterStandarData.standar.find((s: any) => s.kode === stdCode);
+                  if (standar) {
+                    matchesKategoriProduk = standar.kategori_produk === filterKategoriProduk;
+                  } else {
+                    matchesKategoriProduk = false;
+                  }
+                }
+
+                return matchesTahun && matchesTipeProduk && matchesKategoriProduk;
               });
 
               // Get list of valid alasan from master
