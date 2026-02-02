@@ -32,7 +32,7 @@ const CustomTooltip = ({ active, payload }: any) => {
         <p className="font-semibold text-xs sm:text-sm mb-1">{data.name}</p>
         {payload.map((entry: any, index: number) => (
           <p key={index} className="text-xs sm:text-sm" style={{ color: entry.color }}>
-            Trimming Value: Rp {entry.value.toLocaleString('id-ID')}
+            Trimming Value: {entry.value.toLocaleString('id-ID')}
           </p>
         ))}
       </div>
@@ -159,11 +159,11 @@ function ChartCardTr({
                       width={80}
                       tickFormatter={(value) => {
                         if (value >= 1000000000) {
-                          return `Rp ${(value / 1000000000).toFixed(0)}M`;
+                          return `${(value / 1000000000).toFixed(0)}M`;
                         } else if (value >= 1000000) {
-                          return `Rp ${(value / 1000000).toFixed(0)}Jt`;
+                          return `${(value / 1000000).toFixed(0)}Jt`;
                         }
-                        return `Rp ${value.toLocaleString('id-ID')}`;
+                        return `${value.toLocaleString('id-ID')}`;
                       }}
                     />
                     <ChartTooltip
@@ -185,11 +185,11 @@ function ChartCardTr({
                         fill="#374151"
                         formatter={(value: number) => {
                           if (value >= 1000000000) {
-                            return `Rp ${(value / 1000000000).toFixed(1)}M`;
+                            return `${(value / 1000000000).toFixed(1)}M`;
                           } else if (value >= 1000000) {
-                            return `Rp ${(value / 1000000).toFixed(1)}jt`;
+                            return `${(value / 1000000).toFixed(1)}Jt`;
                           }
-                          return `Rp ${value.toLocaleString('id-ID')}`;
+                          return `${value.toLocaleString('id-ID')}`;
                         }}
                       />
                     </Area>
@@ -221,11 +221,11 @@ function ChartCardTr({
                       width={80}
                       tickFormatter={(value) => {
                         if (value >= 1000000000) {
-                          return `Rp ${(value / 1000000000).toFixed(0)}M`;
+                          return `${(value / 1000000000).toFixed(0)}M`;
                         } else if (value >= 1000000) {
-                          return `Rp ${(value / 1000000).toFixed(0)}jt`;
+                          return `${(value / 1000000).toFixed(0)}Jt`;
                         }
-                        return `Rp ${value.toLocaleString('id-ID')}`;
+                        return `${value.toLocaleString('id-ID')}`;
                       }}
                     />
                     <ChartTooltip
@@ -241,11 +241,11 @@ function ChartCardTr({
                         fill="#374151"
                         formatter={(value: number) => {
                           if (value >= 1000000000) {
-                            return `Rp ${(value / 1000000000).toFixed(1)}M`;
+                            return `${(value / 1000000000).toFixed(1)}M`;
                           } else if (value >= 1000000) {
-                            return `Rp ${(value / 1000000).toFixed(1)}jt`;
+                            return `${(value / 1000000).toFixed(1)}Jt`;
                           }
-                          return `Rp ${value.toLocaleString('id-ID')}`;
+                          return `${value.toLocaleString('id-ID')}`;
                         }}
                       />
                     </Bar>
@@ -277,11 +277,11 @@ function ChartCardTr({
                       width={80}
                       tickFormatter={(value) => {
                         if (value >= 1000000000) {
-                          return `Rp ${(value / 1000000000).toFixed(0)}M`;
+                          return `${(value / 1000000000).toFixed(0)}M`;
                         } else if (value >= 1000000) {
-                          return `Rp ${(value / 1000000).toFixed(0)}jt`;
+                          return `${(value / 1000000).toFixed(0)}Jt`;
                         }
-                        return `Rp ${value.toLocaleString('id-ID')}`;
+                        return `${value.toLocaleString('id-ID')}`;
                       }}
                     />
                     <ChartTooltip
@@ -304,11 +304,11 @@ function ChartCardTr({
                         fill="#374151"
                         formatter={(value: number) => {
                           if (value >= 1000000000) {
-                            return `Rp ${(value / 1000000000).toFixed(1)}M`;
+                            return `${(value / 1000000000).toFixed(1)}M`;
                           } else if (value >= 1000000) {
-                            return `Rp ${(value / 1000000).toFixed(1)}jt`;
+                            return `${(value / 1000000).toFixed(1)}Jt`;
                           }
-                          return `Rp ${value.toLocaleString('id-ID')}`;
+                          return `${value.toLocaleString('id-ID')}`;
                         }}
                       />
                     </Line>
@@ -327,11 +327,11 @@ function ChartCardTr({
                         label={(entry) => {
                           const value = entry.trimmingValue;
                           if (value >= 1000000000) {
-                            return `${entry.name}: Rp ${(value / 1000000000).toFixed(1)}M`;
+                            return `${entry.name}: ${(value / 1000000000).toFixed(1)}M`;
                           } else if (value >= 1000000) {
-                            return `${entry.name}: Rp ${(value / 1000000).toFixed(1)}jt`;
+                            return `${entry.name}: ${(value / 1000000).toFixed(1)}Jt`;
                           }
-                          return `${entry.name}: Rp ${value.toLocaleString('id-ID')}`;
+                          return `${entry.name}: ${value.toLocaleString('id-ID')}`;
                         }}
                         outerRadius={100}
                         fill="#8884d8"
@@ -348,7 +348,7 @@ function ChartCardTr({
                             return (
                               <div className="bg-background border rounded-lg shadow-lg p-2">
                                 <p className="font-semibold text-sm">{data.name}</p>
-                                <p className="text-sm">Rp {data.trimmingValue.toLocaleString('id-ID')}</p>
+                                <p className="text-sm">{data.trimmingValue.toLocaleString('id-ID')}</p>
                               </div>
                             );
                           }
@@ -385,11 +385,11 @@ function ChartCardTr({
                       width={80}
                       tickFormatter={(value) => {
                         if (value >= 1000000000) {
-                          return `Rp ${(value / 1000000000).toFixed(0)}M`;
+                          return `${(value / 1000000000).toFixed(0)}M`;
                         } else if (value >= 1000000) {
-                          return `Rp ${(value / 1000000).toFixed(0)}jt`;
+                          return `${(value / 1000000).toFixed(0)}Jt`;
                         }
-                        return `Rp ${value.toLocaleString('id-ID')}`;
+                        return `${value.toLocaleString('id-ID')}`;
                       }}
                     />
                     <ChartTooltip
@@ -405,11 +405,11 @@ function ChartCardTr({
                         fill="#374151"
                         formatter={(value: number) => {
                           if (value >= 1000000000) {
-                            return `Rp ${(value / 1000000000).toFixed(1)}M`;
+                            return `${(value / 1000000000).toFixed(1)}M`;
                           } else if (value >= 1000000) {
-                            return `Rp ${(value / 1000000).toFixed(1)}jt`;
+                            return `${(value / 1000000).toFixed(1)}Jt`;
                           }
-                          return `Rp ${value.toLocaleString('id-ID')}`;
+                          return `${value.toLocaleString('id-ID')}`;
                         }}
                       />
                     </Bar>
