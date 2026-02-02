@@ -24,7 +24,8 @@
       "Bash(PORT=3001 npm run dev:*)",
       "Bash(mkdir:*)",
       "Bash(timeout:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(vercel:*)"
     ],
     "deny": [],
     "ask": []
