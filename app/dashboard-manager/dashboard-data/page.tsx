@@ -1668,11 +1668,11 @@ export default function CrmDataManagementPage() {
                     }).length;
 
                     const mrcProses = mrcDataBase.filter(t => t.status === 'PROSES').length;
-                    const mrcProsesAmount = Math.round(mrcDataBase.filter(t => t.status === 'PROSES').reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
+                    const mrcProsesAmount = Math.round(mrcDataBase.filter(t => t.status === 'PROSES').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
                     const mrcLoss = mrcDataBase.filter(t => t.status === 'LOSS').length;
-                    const mrcLossAmount = Math.round(mrcDataBase.filter(t => t.status === 'LOSS').reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
+                    const mrcLossAmount = Math.round(mrcDataBase.filter(t => t.status === 'LOSS').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
                     const mrcSuspend = mrcDataBase.filter(t => t.status === 'SUSPEND').length;
-                    const mrcSuspendAmount = Math.round(mrcDataBase.filter(t => t.status === 'SUSPEND').reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
+                    const mrcSuspendAmount = Math.round(mrcDataBase.filter(t => t.status === 'SUSPEND').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
                     const mrcWaiting = mrcDataBase.filter(t => t.status === 'WAITING').length;
                     const mrcWaitingAmount = Math.round(mrcDataBase.filter(t => t.status === 'WAITING').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
 
@@ -1975,11 +1975,11 @@ export default function CrmDataManagementPage() {
                     }).length;
 
                     const dhaProses = dhaDataBase.filter(t => t.status === 'PROSES').length;
-                    const dhaProsesAmount = Math.round(dhaDataBase.filter(t => t.status === 'PROSES').reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
+                    const dhaProsesAmount = Math.round(dhaDataBase.filter(t => t.status === 'PROSES').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
                     const dhaLoss = dhaDataBase.filter(t => t.status === 'LOSS').length;
-                    const dhaLossAmount = Math.round(dhaDataBase.filter(t => t.status === 'LOSS').reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
+                    const dhaLossAmount = Math.round(dhaDataBase.filter(t => t.status === 'LOSS').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
                     const dhaSuspend = dhaDataBase.filter(t => t.status === 'SUSPEND').length;
-                    const dhaSuspendAmount = Math.round(dhaDataBase.filter(t => t.status === 'SUSPEND').reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
+                    const dhaSuspendAmount = Math.round(dhaDataBase.filter(t => t.status === 'SUSPEND').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
                     const dhaWaiting = dhaDataBase.filter(t => t.status === 'WAITING').length;
                     const dhaWaitingAmount = Math.round(dhaDataBase.filter(t => t.status === 'WAITING').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
 
@@ -2119,11 +2119,11 @@ export default function CrmDataManagementPage() {
 
               const totalAllContracts = Math.round(allData.reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
 
-              // Calculate total amount by status from hargaTerupdate (except WAITING uses hargaKontrak)
+              // Calculate total amount by status (WAITING, PROSES, SUSPEND, LOSS use hargaKontrak, DONE uses hargaTerupdate)
               const totalDoneAmount = Math.round(allData.filter(t => t.status === 'DONE').reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
-              const totalProsesAmount = Math.round(allData.filter(t => t.status === 'PROSES').reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
-              const totalSuspendAmount = Math.round(allData.filter(t => t.status === 'SUSPEND').reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
-              const totalLossAmount = Math.round(allData.filter(t => t.status === 'LOSS').reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
+              const totalProsesAmount = Math.round(allData.filter(t => t.status === 'PROSES').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
+              const totalSuspendAmount = Math.round(allData.filter(t => t.status === 'SUSPEND').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
+              const totalLossAmount = Math.round(allData.filter(t => t.status === 'LOSS').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
               const totalWaitingAmount = Math.round(allData.filter(t => t.status === 'WAITING').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
 
               // Calculate total unique companies
@@ -2148,7 +2148,7 @@ export default function CrmDataManagementPage() {
                   const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
                   return matchesStatus && matchesSertifikat && matchesTahun;
                 })
-                .reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
+                .reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
               const suspendContracts = Math.round(filteredTargets
                 .filter(t => {
                   const matchesStatus = t.status === 'SUSPEND';
@@ -2156,7 +2156,7 @@ export default function CrmDataManagementPage() {
                   const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
                   return matchesStatus && matchesSertifikat && matchesTahun;
                 })
-                .reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
+                .reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
               const prosesContracts = Math.round(filteredTargets
                 .filter(t => {
                   const matchesStatus = t.status === 'PROSES';
@@ -2164,7 +2164,7 @@ export default function CrmDataManagementPage() {
                   const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
                   return matchesStatus && matchesSertifikat && matchesTahun;
                 })
-                .reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0));
+                .reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
               const waitingContracts = Math.round(filteredTargets
                 .filter(t => {
                   const matchesStatus = t.status === 'WAITING';
