@@ -23,6 +23,7 @@ import { ChartCardKuadranMonthly } from '@/components/chart-card-kuadran-monthly
 import { ChartCardAssociateMonthly } from '@/components/chart-card-associate-monthly';
 import { ChartCardStandarDistribution } from '@/components/chart-card-standar-distribution';
 import { ChartCardEaCodeDistribution } from '@/components/chart-card-ea-code-distribution';
+import { ChartCardTr } from '@/components/chart-card-tr';
 import { ChartCardParetoAlasan } from '@/components/chart-card-pareto-alasan';
 import { InfinityLoader } from '@/components/ui/infinity-loader';
 import { DashboardSkeleton } from '@/components/dashboard-skeleton';
@@ -104,6 +105,7 @@ export default function CrmDataManagementPage() {
   const [selectedTopAssociateChartType, setSelectedTopAssociateChartType] = useState<string>('bar');
   const [selectedStandarChartType, setSelectedStandarChartType] = useState<string>('bar');
   const [selectedEaCodeChartType, setSelectedEaCodeChartType] = useState<string>('bar');
+  const [selectedTrChartType, setSelectedTrChartType] = useState<string>('bar');
   const [activeFilterSheet, setActiveFilterSheet] = useState<string | null>(null);
 
   // Comprehensive Filters
@@ -4662,6 +4664,78 @@ export default function CrmDataManagementPage() {
                   title="Distribusi EA Code"
                   data={allEaCodes}
                   chartType={selectedEaCodeChartType}
+                />
+              );
+            })()}
+          </CardContent>
+        </Card>
+
+        {/* Trimming Value Chart */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Trimming Value per Bulan
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  Total trimming value berdasarkan bulan {filterStatus !== 'all' ? `- Status: ${filterStatus.toUpperCase()}` : '(Semua Status)'}
+                </CardDescription>
+              </div>
+              <Select value={selectedTrChartType} onValueChange={setSelectedTrChartType}>
+                <SelectTrigger className="w-32 h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="area">Area</SelectItem>
+                  <SelectItem value="bar">Bar</SelectItem>
+                  <SelectItem value="line">Line</SelectItem>
+                  <SelectItem value="pie">Pie</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              // Filter data: filter tahun dan tipe produk dari ALL data
+              const dataForTrimming = (crmTargets || []).filter(t => {
+                // Filter tahun
+                const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
+                // Filter by status - if 'all' show all data, otherwise filter by selected status
+                const matchesStatus = filterStatus === 'all' || t.status === filterStatus;
+
+                // Filter Tipe Produk
+                let matchesTipeProduk = true;
+                if (filterTipeProduk !== 'all') {
+                  const produkUpper = (t.produk || '').toUpperCase();
+                  if (filterTipeProduk === 'ISO') {
+                    matchesTipeProduk = produkUpper.includes('ISO');
+                  } else if (filterTipeProduk === 'SUSTAIN') {
+                    matchesTipeProduk = produkUpper.includes('ISPO');
+                  }
+                }
+
+                // Filter Kategori Produk
+                let matchesKategoriProduk = true;
+                if (filterKategoriProduk !== 'SEMUA') {
+                  const stdCode = (t.std || '').trim();
+                  const standar = masterStandarData.standar.find((s: any) => s.kode === stdCode);
+                  if (standar) {
+                    matchesKategoriProduk = standar.kategori_produk === filterKategoriProduk;
+                  } else {
+                    matchesKategoriProduk = false;
+                  }
+                }
+
+                return matchesTahun && matchesStatus && matchesTipeProduk && matchesKategoriProduk;
+              });
+
+              return (
+                <ChartCardTr
+                  title="Trimming Value per Bulan"
+                  data={dataForTrimming}
+                  chartType={selectedTrChartType}
                 />
               );
             })()}
