@@ -48,6 +48,7 @@ import { FilterCompanySection } from "@/components/filters/FilterCompanySection"
 import { FilterPicCrmSection } from "@/components/filters/FilterPicCrmSection"
 import { FilterKunjunganSection } from "@/components/filters/FilterKunjunganSection"
 import { InfinityLoader } from "@/components/ui/infinity-loader"
+import { EditKunjunganDialog } from "@/components/crm-edit-kunjungan-dialog"
 
 import { IconCalendar, IconMapPin, IconPhone, IconBuilding, IconSearch, IconFilter, IconCheck, IconX, IconClock, IconCalendarTime, IconChevronLeft, IconChevronRight } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
@@ -119,6 +120,8 @@ export default function DashboardKunjunganPage() {
 
   // Query based on user role
   const allCrmTargets = useQuery(api.crmTargets.list) || []
+  const allUsers = useQuery(api.auth.getAllUsers);
+  const staffUsers = allUsers?.filter(user => user.role === 'staff') || [];
 
   // Query for staff - pass picCrm only when role is staff and name exists
   const staffCrmTargets = useQuery(
@@ -159,13 +162,6 @@ export default function DashboardKunjunganPage() {
   const [selectedDate, setSelectedDate] = React.useState<Date | null>(null)
   const [selectedTask, setSelectedTask] = React.useState<CrmTarget | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false)
-
-  // Form states
-  const [editTanggal, setEditTanggal] = React.useState<string>("")
-  const [editStatus, setEditStatus] = React.useState<string>("")
-  const [editCatatan, setEditCatatan] = React.useState<string>("")
-  const [editFoto, setEditFoto] = React.useState<string | null>(null)
-  const [isUploading, setIsUploading] = React.useState(false)
 
   // Mutations
   const updateCrmTarget = useMutation(api.crmTargets.updateCrmTarget)
@@ -538,16 +534,6 @@ export default function DashboardKunjunganPage() {
   const totalTasks = displayTasks.length;
   const displayedTasks = paginatedGroups.reduce((sum, group) => sum + group.totalCount, 0);
 
-  // Reset form when selected task changes
-  React.useEffect(() => {
-    if (selectedTask) {
-      setEditTanggal(selectedTask.tanggalKunjungan || "")
-      setEditStatus(selectedTask.statusKunjungan || "")
-      setEditCatatan(selectedTask.catatanKunjungan || "")
-      setEditFoto(selectedTask.fotoBuktiKunjungan || null)
-    }
-  }, [selectedTask])
-
   // Reset city filter when province changes
   React.useEffect(() => {
     if (filterProvinsi !== "all") {
@@ -626,30 +612,6 @@ export default function DashboardKunjunganPage() {
     })
   }
 
-  // Handle file upload
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    // Check file size (max 2MB before compression)
-    if (file.size > 2 * 1024 * 1024) {
-      alert('File terlalu besar! Maksimum 2MB.')
-      return
-    }
-
-    setIsUploading(true)
-    try {
-      // Compress image to max 500KB
-      const compressedImage = await compressImage(file, 500)
-      setEditFoto(compressedImage)
-      setIsUploading(false)
-    } catch (error) {
-      console.error('Error uploading file:', error)
-      alert('Gagal mengupload foto. Silakan coba lagi.')
-      setIsUploading(false)
-    }
-  }
-
   // Handle mass update file upload
   const handleMassFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -671,35 +633,6 @@ export default function DashboardKunjunganPage() {
       console.error('Error uploading file:', error)
       alert('Gagal mengupload foto. Silakan coba lagi.')
       setIsMassUploading(false)
-    }
-  }
-
-  // Handle save
-  const handleSave = async () => {
-    if (!selectedTask) return
-
-    try {
-      await updateCrmTarget({
-        id: selectedTask._id,
-        tanggalKunjungan: editTanggal || undefined,
-        statusKunjungan: editStatus || undefined,
-        catatanKunjungan: editCatatan || undefined,
-        fotoBuktiKunjungan: editFoto || undefined,
-      })
-
-      // Close modal and reset form
-      setIsEditModalOpen(false)
-      setSelectedTask(null)
-      setEditTanggal("")
-      setEditStatus("")
-      setEditCatatan("")
-      setEditFoto(null)
-
-      // Show success message
-      alert('Kunjungan berhasil diupdate!')
-    } catch (error) {
-      console.error('Error updating kunjungan:', error)
-      alert('Gagal mengupdate kunjungan. Silakan coba lagi.')
     }
   }
 
@@ -1536,179 +1469,17 @@ export default function DashboardKunjunganPage() {
       </div>
     </div>
 
-    {/* Edit Modal */}
-    <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Update Kunjungan</DialogTitle>
-          <DialogDescription>
-            Update informasi kunjungan untuk {selectedTask?.namaPerusahaan}
-          </DialogDescription>
-        </DialogHeader>
-
-        {selectedTask && (
-          <div className="space-y-4 py-4">
-            {/* Company Info */}
-            <div className="bg-muted/50 p-4 rounded-lg">
-              <h3 className="font-semibold mb-2 flex items-center gap-2">
-                <IconBuilding className="h-4 w-4" />
-                Informasi Perusahaan
-              </h3>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Nama:</span>
-                  <p className="font-medium">{selectedTask.namaPerusahaan}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Associate:</span>
-                  <p className="font-medium">{selectedTask.namaAssociate || '-'}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">PIC CRM:</span>
-                  <p className="font-medium">{selectedTask.picCrm}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Sales:</span>
-                  <p className="font-medium">{selectedTask.sales}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Visit Information */}
-            <div className="space-y-3">
-              <h3 className="font-semibold flex items-center gap-2">
-                <IconCalendar className="h-4 w-4" />
-                Detail Kunjungan
-              </h3>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-tanggal">Tanggal Kunjungan</Label>
-                  <Input
-                    id="edit-tanggal"
-                    type="date"
-                    value={editTanggal}
-                    onChange={(e) => setEditTanggal(e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="edit-status">Status Kunjungan</Label>
-                  <Select value={editStatus} onValueChange={setEditStatus}>
-                    <SelectTrigger id="edit-status">
-                      <SelectValue placeholder="Pilih status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="VISITED">Visited</SelectItem>
-                      <SelectItem value="NOT YET">Not Yet</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit-foto">Foto Bukti Kunjungan</Label>
-                <div className="space-y-2">
-                  <Input
-                    id="edit-foto"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    disabled={isUploading}
-                  />
-                  {editFoto && (
-                    <div className="mt-2">
-                      <p className="text-xs text-muted-foreground mb-1">Preview:</p>
-                      <img
-                        src={editFoto}
-                        alt="Preview bukti kunjungan"
-                        className="max-w-xs max-h-40 object-cover rounded-lg border"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEditFoto(null)}
-                        className="mt-1 text-xs text-red-600 hover:text-red-700"
-                      >
-                        Hapus foto
-                      </Button>
-                    </div>
-                  )}
-                  {isUploading && (
-                    <p className="text-xs text-muted-foreground">Mengupload foto...</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit-notes">Catatan Kunjungan</Label>
-                <Textarea
-                  id="edit-notes"
-                  placeholder="Tambahkan catatan kunjungan..."
-                  className="min-h-[100px]"
-                  value={editCatatan}
-                  onChange={(e) => setEditCatatan(e.target.value)}
-                />
-              </div>
-            </div>
-
-            {/* Location Info */}
-            <div className="space-y-3">
-              <h3 className="font-semibold flex items-center gap-2">
-                <IconMapPin className="h-4 w-4" />
-                Lokasi
-              </h3>
-              <div className="text-sm space-y-1 bg-muted/50 p-3 rounded-lg">
-                <p><span className="text-muted-foreground">Alamat:</span> {selectedTask.alamat || '-'}</p>
-                <p><span className="text-muted-foreground">Kota:</span> {selectedTask.kota || '-'}</p>
-                <p><span className="text-muted-foreground">Provinsi:</span> {selectedTask.provinsi || '-'}</p>
-              </div>
-            </div>
-
-            {/* Contract Info */}
-            <div className="space-y-3">
-              <h3 className="font-semibold">Informasi Kontrak</h3>
-              <div className="grid grid-cols-2 gap-2 text-sm bg-muted/50 p-3 rounded-lg">
-                <div>
-                  <span className="text-muted-foreground">Produk:</span>
-                  <p className="font-medium">{selectedTask.produk || '-'}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Status:</span>
-                  <Badge className={
-                    selectedTask.status === 'PROSES' ? 'bg-blue-600 hover:bg-blue-700' :
-                    selectedTask.status === 'LANJUT' ? 'bg-green-600 hover:bg-green-700' :
-                    selectedTask.status === 'LOSS' ? 'bg-red-600 hover:bg-red-700' :
-                    'bg-gray-500 hover:bg-gray-600'
-                  }>
-                    {selectedTask.status}
-                  </Badge>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Harga Kontrak:</span>
-                  <p className="font-medium">
-                    {selectedTask.hargaKontrak ? `Rp ${selectedTask.hargaKontrak.toLocaleString('id-ID')}` : '-'}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Bulan Exp:</span>
-                  <p className="font-medium">{selectedTask.bulanExpDate || '-'}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
-            Batal
-          </Button>
-          <Button onClick={handleSave} disabled={isUploading}>
-            {isUploading ? 'Menyimpan...' : 'Simpan Perubahan'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    {/* Edit Kunjungan Modal */}
+    <EditKunjunganDialog
+      open={isEditModalOpen}
+      onOpenChange={setIsEditModalOpen}
+      target={selectedTask}
+      staffUsers={staffUsers}
+      onSuccess={() => {
+        // Refresh data by triggering query update
+        window.location.reload()
+      }}
+    />
 
     {/* Mass Update Kunjungan Modal */}
     <Dialog open={isMassUpdateModalOpen} onOpenChange={setIsMassUpdateModalOpen}>
