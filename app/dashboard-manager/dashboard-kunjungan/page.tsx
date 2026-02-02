@@ -880,20 +880,20 @@ export default function DashboardKunjunganPage() {
           </p>
         </div>
 
-      {/* Stats Cards - Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Stats Cards - Overview - Compact */}
+      <div className="grid grid-cols-3 gap-2">
         {/* Total Kunjungan Card */}
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-blue-600">Total Kunjungan</p>
-                <p className="text-3xl font-bold text-blue-700 mt-0.5">
+          <CardContent className="p-2">
+            <div className="flex flex-col items-center justify-center gap-1">
+              <div className="h-6 w-6 sm:h-7 sm:w-7 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                <IconCalendar className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-white" />
+              </div>
+              <div className="text-center">
+                <p className="text-[9px] sm:text-[10px] font-medium text-blue-600">Total</p>
+                <p className="text-lg sm:text-xl font-bold text-blue-700 leading-tight">
                   {displayTasks.length}
                 </p>
-              </div>
-              <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
-                <IconCalendar className="h-4 w-4 text-white" />
               </div>
             </div>
           </CardContent>
@@ -901,16 +901,16 @@ export default function DashboardKunjunganPage() {
 
         {/* Visited Card */}
         <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-green-600">Sudah Dikunjungi</p>
-                <p className="text-3xl font-bold text-green-700 mt-0.5">
+          <CardContent className="p-2">
+            <div className="flex flex-col items-center justify-center gap-1">
+              <div className="h-6 w-6 sm:h-7 sm:w-7 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                <IconCheck className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-white" />
+              </div>
+              <div className="text-center">
+                <p className="text-[9px] sm:text-[10px] font-medium text-green-600">Sudah</p>
+                <p className="text-lg sm:text-xl font-bold text-green-700 leading-tight">
                   {displayTasks.filter(t => t.statusKunjungan === 'VISITED').length}
                 </p>
-              </div>
-              <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
-                <IconCheck className="h-4 w-4 text-white" />
               </div>
             </div>
           </CardContent>
@@ -918,16 +918,16 @@ export default function DashboardKunjunganPage() {
 
         {/* Pending Card */}
         <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-orange-600">Belum Dikunjungi</p>
-                <p className="text-3xl font-bold text-orange-700 mt-0.5">
+          <CardContent className="p-2">
+            <div className="flex flex-col items-center justify-center gap-1">
+              <div className="h-6 w-6 sm:h-7 sm:w-7 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
+                <IconClock className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-white" />
+              </div>
+              <div className="text-center">
+                <p className="text-[9px] sm:text-[10px] font-medium text-orange-600">Belum</p>
+                <p className="text-lg sm:text-xl font-bold text-orange-700 leading-tight">
                   {displayTasks.filter(t => t.statusKunjungan === 'NOT YET').length}
                 </p>
-              </div>
-              <div className="h-8 w-8 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
-                <IconClock className="h-4 w-4 text-white" />
               </div>
             </div>
           </CardContent>
