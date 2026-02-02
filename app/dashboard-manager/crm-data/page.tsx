@@ -581,7 +581,11 @@ export default function CrmDataManagementPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
   const [isImporting, setIsImporting] = useState(false);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Sorting state
+  const [sortField, setSortField] = useState<string>('updatedAt');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   // Ref for select all checkbox
   const selectAllCheckboxRef = React.useRef<any>(null);
@@ -707,6 +711,24 @@ export default function CrmDataManagementPage() {
   // Clear quick filter
   const clearQuickFilter = () => {
     setQuickFilter(null);
+  };
+
+  // Handle sort
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      // Toggle direction if same field
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // New field, set to desc by default
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
+
+  // Handle items per page change
+  const handleItemsPerPageChange = (value: number) => {
+    setItemsPerPage(value);
+    setCurrentPage(1); // Reset to first page
   };
 
   // Excel-like Form state (multiple rows)
@@ -888,11 +910,29 @@ export default function CrmDataManagementPage() {
            matchesTermin && matchesKunjungan && matchesStatusKunjungan && matchesQuickFilter;
   }) || [];
 
-  // Sort by updatedAt (newest first), then by createdAt (newest first)
-  const sortedTargets = filteredTargets.sort((a, b) => {
-    const dateA = Math.max(a.updatedAt || 0, a.createdAt || 0);
-    const dateB = Math.max(b.updatedAt || 0, b.createdAt || 0);
-    return dateB - dateA; // Sort descending (newest first)
+  // Sort targets based on current sort field and direction
+  const sortedTargets = [...filteredTargets].sort((a, b) => {
+    let comparison = 0;
+
+    // Get values for sorting
+    const aValue = a[sortField as keyof CrmTarget];
+    const bValue = b[sortField as keyof CrmTarget];
+
+    // Handle different data types
+    if (aValue === undefined || aValue === null) return 1;
+    if (bValue === undefined || bValue === null) return -1;
+
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+      comparison = aValue.localeCompare(bValue);
+    } else if (typeof aValue === 'number' && typeof bValue === 'number') {
+      comparison = aValue - bValue;
+    } else {
+      // Fallback to string comparison
+      comparison = String(aValue).localeCompare(String(bValue));
+    }
+
+    // Apply direction
+    return sortDirection === 'asc' ? comparison : -comparison;
   });
 
   // Pagination
@@ -919,6 +959,26 @@ export default function CrmDataManagementPage() {
   // Get unique values for filters
   const uniqueStatuses = [...new Set(crmTargets?.map(t => t.status) || [])].sort();
   const uniquePicCrms = [...new Set(crmTargets?.map(t => t.picCrm) || [])].sort();
+
+  // Helper component for sortable table header
+  const SortableTableHead = ({ children, field, className }: { children: React.ReactNode; field: string; className?: string }) => {
+    const isActive = sortField === field;
+    return (
+      <TableHead
+        className={`cursor-pointer hover:bg-muted/50 transition-colors select-none ${isActive ? 'bg-muted' : ''} ${className || ''}`}
+        onClick={() => handleSort(field)}
+      >
+        <div className="flex items-center gap-1">
+          {children}
+          {isActive && (
+            <span className="ml-1">
+              {sortDirection === 'asc' ? '▲' : '▼'}
+            </span>
+          )}
+        </div>
+      </TableHead>
+    );
+  };
 
   // Helper function to get status badge variant
   const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
@@ -2104,19 +2164,21 @@ export default function CrmDataManagementPage() {
           </div>
         </div>
 
-        {/* Statistics Cards - 2 Column Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Left Column */}
-          <div className="space-y-3">
-            {/* Main Metrics */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-gray-600 uppercase whitespace-nowrap w-44">📊 Main Metrics:</span>
-              <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                <div className="bg-blue-50 rounded px-2 py-1 border border-blue-200 text-center">
-                  <p className="text-xs text-blue-700 font-semibold">Records <span className="font-bold">({crmTargets?.length || 0})</span></p>
-                </div>
-                <div className="bg-purple-50 rounded px-2 py-1 border border-purple-200 text-center">
-                  <p className="text-xs text-purple-700 font-semibold">Companies <span className="font-bold">({new Set((crmTargets || []).map(t => t.namaPerusahaan)).size})</span></p>
+        {/* Statistics Cards - Desktop 2 Column, Mobile Stacked with Certificates at Bottom */}
+        <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-4">
+          {/* Top Section - Always shows first on all screens */}
+          <div className="space-y-3 lg:contents">
+            {/* Main Metrics - Spans full width on desktop */}
+            <div className="lg:col-span-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-gray-600 uppercase whitespace-nowrap w-44">📊 Main Metrics:</span>
+                <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                  <div className="bg-blue-50 rounded px-2 py-1 border border-blue-200 text-center">
+                    <p className="text-xs text-blue-700 font-semibold">Records <span className="font-bold">({crmTargets?.length || 0})</span></p>
+                  </div>
+                  <div className="bg-purple-50 rounded px-2 py-1 border border-purple-200 text-center">
+                    <p className="text-xs text-purple-700 font-semibold">Companies <span className="font-bold">({new Set((crmTargets || []).map(t => t.namaPerusahaan)).size})</span></p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2262,10 +2324,7 @@ export default function CrmDataManagementPage() {
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Right Column */}
-          <div className="space-y-3">
             {/* Lokasi */}
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-gray-600 uppercase whitespace-nowrap w-44">📍 Lokasi:</span>
@@ -2294,7 +2353,12 @@ export default function CrmDataManagementPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
 
+        {/* Sertifikat Section - Always shows at the bottom on mobile */}
+        <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:mt-0">
+          <div className="lg:contents">
             {/* Kategori Akreditasi */}
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-gray-600 uppercase whitespace-nowrap w-44">🏅 Kategori Akreditasi:</span>
@@ -2486,38 +2550,38 @@ export default function CrmDataManagementPage() {
                       />
                     </TableHead>
                     <TableHead className="w-12 sticky left-[1.5rem] bg-white z-10 ">No</TableHead>
-                    <TableHead className="sticky left-[3.5rem] bg-white z-10 border-r border-border min-w-[200px]">Company</TableHead>
-                    <TableHead>Bulan Exp</TableHead>
-                    <TableHead>Produk</TableHead>
-                    <TableHead>PIC CRM</TableHead>
-                    <TableHead>Sales</TableHead>
-                    <TableHead>Nama Associate</TableHead>
-                    <TableHead>Direct/Assoc</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Alasan</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Kuadran</TableHead>
-                    <TableHead>Luar Kota</TableHead>
-                    <TableHead>Provinsi</TableHead>
-                    <TableHead>Kota</TableHead>
+                    <SortableTableHead field="namaPerusahaan" className="sticky left-[3.5rem] bg-white z-10 border-r border-border w-64">Company</SortableTableHead>
+                    <SortableTableHead field="bulanExpDate">Bulan Exp</SortableTableHead>
+                    <SortableTableHead field="produk">Produk</SortableTableHead>
+                    <SortableTableHead field="picCrm">PIC CRM</SortableTableHead>
+                    <SortableTableHead field="sales">Sales</SortableTableHead>
+                    <SortableTableHead field="namaAssociate">Nama Associate</SortableTableHead>
+                    <SortableTableHead field="directOrAssociate">Direct/Assoc</SortableTableHead>
+                    <SortableTableHead field="status">Status</SortableTableHead>
+                    <SortableTableHead field="alasan">Alasan</SortableTableHead>
+                    <SortableTableHead field="category">Category</SortableTableHead>
+                    <SortableTableHead field="kuadran">Kuadran</SortableTableHead>
+                    <SortableTableHead field="luarKota">Luar Kota</SortableTableHead>
+                    <SortableTableHead field="provinsi">Provinsi</SortableTableHead>
+                    <SortableTableHead field="kota">Kota</SortableTableHead>
                     <TableHead>Alamat</TableHead>
                     <TableHead>Akreditasi</TableHead>
-                    <TableHead>Cat Akre</TableHead>
+                    <SortableTableHead field="catAkre">Cat Akre</SortableTableHead>
                     <TableHead>EA Code</TableHead>
                     <TableHead>STD</TableHead>
                     <TableHead>IA Date</TableHead>
                     <TableHead>Exp Date</TableHead>
-                    <TableHead>Tahap Audit</TableHead>
-                    <TableHead>Harga Kontrak</TableHead>
+                    <SortableTableHead field="tahapAudit">Tahap Audit</SortableTableHead>
+                    <SortableTableHead field="hargaKontrak">Harga Kontrak</SortableTableHead>
                     <TableHead>Bulan TTD</TableHead>
-                    <TableHead>Harga Update</TableHead>
+                    <SortableTableHead field="hargaTerupdate">Harga Update</SortableTableHead>
                     <TableHead>Trimming</TableHead>
                     <TableHead>Loss</TableHead>
                     <TableHead>Cashback</TableHead>
                     <TableHead>Termin</TableHead>
-                    <TableHead>Status Sertifikat</TableHead>
-                    <TableHead>Tgl Kunjungan</TableHead>
-                    <TableHead>Status Kunjungan</TableHead>
+                    <SortableTableHead field="statusSertifikat">Status Sertifikat</SortableTableHead>
+                    <SortableTableHead field="tanggalKunjungan">Tgl Kunjungan</SortableTableHead>
+                    <SortableTableHead field="statusKunjungan">Status Kunjungan</SortableTableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -2546,7 +2610,7 @@ export default function CrmDataManagementPage() {
                           />
                         </TableCell>
                         <TableCell className="font-medium sticky left-[1.5rem] bg-white z-10 border-border">{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
-                        <TableCell className="font-medium sticky left-[3rem] bg-white z-10 border-r border-border min-w-[200px]">{target.namaPerusahaan}</TableCell>
+                        <TableCell className="font-medium sticky left-[3rem] bg-white z-10 border-r border-border w-64 truncate" title={target.namaPerusahaan}>{target.namaPerusahaan}</TableCell>
                         <TableCell>{target.bulanExpDate || '-'}</TableCell>
                         <TableCell>{target.produk || '-'}</TableCell>
                         <TableCell>{target.picCrm}</TableCell>
@@ -2624,27 +2688,105 @@ export default function CrmDataManagementPage() {
             </div>
 
             {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between px-6 py-4 border-t">
-                <div className="text-sm text-muted-foreground">
-                  Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredTargets.length)} of {filteredTargets.length} results
+            {sortedTargets.length > 0 && (
+              <div className="flex items-center justify-between px-6 py-4 border-t flex-wrap gap-4">
+                {/* Items per page selector */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Show</span>
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+                    className="border border-border rounded px-2 py-1 text-sm bg-background"
+                  >
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                  <span className="text-sm text-muted-foreground">per page</span>
                 </div>
-                <div className="flex gap-2">
+
+                {/* Page info */}
+                <div className="text-sm text-muted-foreground">
+                  Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, sortedTargets.length)} of {sortedTargets.length} results
+                </div>
+
+                {/* Pagination controls */}
+                <div className="flex items-center gap-1">
+                  {/* First page */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    className="w-9 p-0"
+                    title="First page"
+                  >
+                    ««
+                  </Button>
+
+                  {/* Previous page */}
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
+                    className="w-9 p-0"
+                    title="Previous page"
                   >
-                    Previous
+                    ‹
                   </Button>
+
+                  {/* Page numbers */}
+                  {(() => {
+                    const pages = [];
+                    const maxVisiblePages = 5;
+                    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+                    if (endPage - startPage + 1 < maxVisiblePages) {
+                      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                    }
+
+                    for (let i = startPage; i <= endPage; i++) {
+                      pages.push(
+                        <Button
+                          key={i}
+                          variant={currentPage === i ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(i)}
+                          className="w-9 p-0"
+                        >
+                          {i}
+                        </Button>
+                      );
+                    }
+
+                    return pages;
+                  })()}
+
+                  {/* Next page */}
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
+                    className="w-9 p-0"
+                    title="Next page"
                   >
-                    Next
+                    ›
+                  </Button>
+
+                  {/* Last page */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className="w-9 p-0"
+                    title="Last page"
+                  >
+                    »»
                   </Button>
                 </div>
               </div>

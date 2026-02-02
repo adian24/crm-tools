@@ -304,25 +304,25 @@ const EditCrmDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSu
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[95vw] w-full max-h-[92vh] p-0 gap-0 overflow-hidden bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl sm:max-w-5xl">
         {/* Modern Gradient Header */}
-        <div className="relative bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 px-8 py-6">
+        <div className="relative px-4 sm:px-8 py-4 sm:py-6">
           <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:20px_20px]"></div>
           <DialogHeader className="relative">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="space-y-1">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center shadow-xl">
-                    <Building2 className="w-6 h-6 text-white" />
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center shadow-xl">
+                    <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-purple" />
                   </div>
                   <div>
-                    <DialogTitle className="text-2xl font-bold text-white tracking-tight">
+                    <DialogTitle className="text-xl sm:text-2xl font-bold text-purple-600 dark:text-purple-400 tracking-tight">
                       Edit CRM Target
                     </DialogTitle>
-                    <p className="text-white/90 text-sm mt-1 font-medium">{target.namaPerusahaan}</p>
+                    <p className="text-purple-600/90 dark:text-purple-400/80 text-xs sm:text-sm mt-1 font-medium line-clamp-2">{target.namaPerusahaan}</p>
                   </div>
                 </div>
               </div>
               <div className="flex flex-col items-end gap-2">
-                <div className="px-4 py-2 bg-white/20 backdrop-blur-md rounded-lg text-white text-xs font-bold border border-white/30 shadow-lg">
+                <div className="px-3 py-1.5 sm:px-4 sm:py-2 bg-purple/20 backdrop-blur-md rounded-lg text-purple text-[10px] sm:text-xs font-bold border border-purple/30 shadow-lg">
                   ID: {target._id.slice(-8).toUpperCase()}
                 </div>
               </div>
@@ -331,51 +331,51 @@ const EditCrmDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSu
         </div>
 
         {/* Scrollable Content */}
-        <div className="overflow-y-auto max-h-[calc(92vh-180px)] px-8 py-6 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950">
-          <div className="space-y-6">
-            {/* Quick Stats Cards */}
-            <div className="grid grid-cols-6 gap-3">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white shadow-lg">
-                <div className="text-xs font-semibold text-blue-100 mb-1">Status</div>
-                <div className="text-lg font-bold truncate">{formData.status || 'N/A'}</div>
+        <div className="overflow-y-auto max-h-[calc(92vh-180px)] px-4 sm:px-8 py-4 sm:py-6 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950">
+          <div className="space-y-4 sm:space-y-6">
+            {/* Quick Stats Cards - Responsive */}
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3">
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-2 sm:p-4 text-white shadow-lg">
+                <div className="text-[10px] sm:text-xs font-semibold text-blue-100 mb-1">Status</div>
+                <div className="text-sm sm:text-lg font-bold truncate">{formData.status || 'N/A'}</div>
               </div>
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 text-white shadow-lg">
-                <div className="text-xs font-semibold text-purple-100 mb-1">Produk</div>
-                <div className="text-lg font-bold truncate">{formData.produk || 'N/A'}</div>
+              <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-2 sm:p-4 text-white shadow-lg">
+                <div className="text-[10px] sm:text-xs font-semibold text-purple-100 mb-1">Produk</div>
+                <div className="text-sm sm:text-lg font-bold truncate">{formData.produk || 'N/A'}</div>
               </div>
-              <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-4 text-white shadow-lg">
-                <div className="text-xs font-semibold text-emerald-100 mb-1">PIC CRM</div>
-                <div className="text-sm font-bold truncate">{formData.picCrm || 'N/A'}</div>
+              <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-2 sm:p-4 text-white shadow-lg">
+                <div className="text-[10px] sm:text-xs font-semibold text-emerald-100 mb-1">PIC CRM</div>
+                <div className="text-[10px] sm:text-sm font-bold truncate">{formData.picCrm || 'N/A'}</div>
               </div>
-              <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-4 text-white shadow-lg">
-                <div className="text-xs font-semibold text-orange-100 mb-1">Sales</div>
-                <div className="text-sm font-bold truncate">{formData.sales || 'N/A'}</div>
+              <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-2 sm:p-4 text-white shadow-lg">
+                <div className="text-[10px] sm:text-xs font-semibold text-orange-100 mb-1">Sales</div>
+                <div className="text-[10px] sm:text-sm font-bold truncate">{formData.sales || 'N/A'}</div>
               </div>
-              <div className="bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl p-4 text-white shadow-lg">
-                <div className="text-xs font-semibold text-pink-100 mb-1">Tahun</div>
-                <div className="text-lg font-bold">{formData.tahun || 'N/A'}</div>
+              <div className="bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl p-2 sm:p-4 text-white shadow-lg">
+                <div className="text-[10px] sm:text-xs font-semibold text-pink-100 mb-1">Tahun</div>
+                <div className="text-sm sm:text-lg font-bold">{formData.tahun || 'N/A'}</div>
               </div>
-              <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-xl p-4 text-white shadow-lg">
-                <div className="text-xs font-semibold text-cyan-100 mb-1">Category</div>
-                <div className="text-lg font-bold">{formData.category || 'N/A'}</div>
+              <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-xl p-2 sm:p-4 text-white shadow-lg">
+                <div className="text-[10px] sm:text-xs font-semibold text-cyan-100 mb-1">Category</div>
+                <div className="text-sm sm:text-lg font-bold">{formData.category || 'N/A'}</div>
               </div>
             </div>
 
-            {/* Main Form - 3 Columns */}
-            <div className="grid grid-cols-3 gap-6">
+            {/* Main Form - Responsive: 1 column on mobile, 3 columns on desktop */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
               {/* Column 1: Company Info + Status & People */}
-              <div className="space-y-4 bg-white dark:bg-slate-800 rounded-xl p-5 shadow-lg border border-slate-200 dark:border-slate-700">
+              <div className="space-y-4 bg-white dark:bg-slate-800 rounded-xl p-3 sm:p-5 shadow-lg border border-slate-200 dark:border-slate-700">
                 <div className="flex items-center gap-3 pb-3 border-b-2 border-blue-500">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                    <Building2 className="w-5 h-5 text-white" />
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                    <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Perusahaan & PIC</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Informasi dasar</p>
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Perusahaan & PIC</h3>
+                    <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400">Informasi dasar</p>
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   <div className="space-y-1">
                     <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
                       Nama Perusahaan <span className="text-red-500">*</span>
@@ -571,18 +571,18 @@ const EditCrmDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSu
               </div>
 
               {/* Column 2: Sertifikat */}
-              <div className="space-y-4 bg-white dark:bg-slate-800 rounded-xl p-5 shadow-lg border border-slate-200 dark:border-slate-700">
+              <div className="space-y-4 bg-white dark:bg-slate-800 rounded-xl p-3 sm:p-5 shadow-lg border border-slate-200 dark:border-slate-700">
                 <div className="flex items-center gap-3 pb-3 border-b-2 border-purple-500">
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-white" />
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+                    <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Sertifikat</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Detail sertifikasi</p>
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Sertifikat</h3>
+                    <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400">Detail sertifikasi</p>
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
                       <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Tahun</Label>
@@ -727,18 +727,18 @@ const EditCrmDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSu
               </div>
 
               {/* Column 3: Tanggal & Keuangan */}
-              <div className="space-y-4 bg-white dark:bg-slate-800 rounded-xl p-5 shadow-lg border border-slate-200 dark:border-slate-700">
+              <div className="space-y-4 bg-white dark:bg-slate-800 rounded-xl p-3 sm:p-5 shadow-lg border border-slate-200 dark:border-slate-700">
                 <div className="flex items-center gap-3 pb-3 border-b-2 border-indigo-500">
-                  <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center">
-                    <Calendar className="w-5 h-5 text-white" />
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                    <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Tanggal & Keuangan</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Jadwal & nilai</p>
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Tanggal & Keuangan</h3>
+                    <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400">Jadwal & nilai</p>
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {/* Tanggal Section */}
                   <div>
                     <h4 className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-2">Tanggal Penting</h4>
@@ -878,24 +878,25 @@ const EditCrmDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSu
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between gap-4 px-8 py-5 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800">
-          <div className="text-sm text-slate-500 dark:text-slate-400">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 px-4 sm:px-8 py-4 sm:py-5 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800">
+          <div className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
             <span className="text-red-500">*</span> Wajib diisi
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 h-10 px-6"
+              className="flex-1 sm:flex-none border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 h-9 sm:h-10 px-4 sm:px-6"
             >
-              <X className="w-4 h-4 mr-2" />
-              Batal
+              <X className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Batal</span>
+              <span className="sm:hidden">Batal</span>
             </Button>
             <Button
               onClick={handleUpdate}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg h-10 px-6 cursor-pointer"
+              className="flex-1 sm:flex-none bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg h-9 sm:h-10 px-4 sm:px-6 cursor-pointer"
             >
-              <Save className="w-4 h-4 mr-2" />
+              <Save className="w-4 h-4 mr-1 sm:mr-2" />
               Simpan
             </Button>
           </div>
