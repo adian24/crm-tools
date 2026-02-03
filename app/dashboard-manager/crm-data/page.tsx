@@ -2189,6 +2189,12 @@ export default function CrmDataManagementPage() {
                   <div className="bg-purple-50 rounded px-2 py-1 border border-purple-200 text-center">
                     <p className="text-xs text-purple-700 font-semibold">Companies <span className="font-bold">({new Set((crmTargets || []).map(t => t.namaPerusahaan)).size})</span></p>
                   </div>
+                  <div className="bg-green-50 rounded px-2 py-1 border border-green-200 text-center">
+                    <p className="text-xs text-green-700 font-semibold">Visited <span className="font-bold">({new Set((crmTargets || []).filter(t => t.statusKunjungan === 'VISITED').map(t => t.namaPerusahaan)).size})</span></p>
+                  </div>
+                  <div className="bg-orange-50 rounded px-2 py-1 border border-orange-200 text-center">
+                    <p className="text-xs text-orange-700 font-semibold">Not Yet <span className="font-bold">({new Set((crmTargets || []).filter(t => t.statusKunjungan === 'NOT YET').map(t => t.namaPerusahaan)).size})</span></p>
+                  </div>
                 </div>
               </div>
             </div>

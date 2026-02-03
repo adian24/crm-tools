@@ -793,8 +793,10 @@ export default function DashboardKunjunganPage() {
           </p>
         </div>
 
+
       {/* Stats Cards - Overview - Compact */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-2">
+
         {/* Total Kunjungan Card */}
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
           <CardContent className="p-2">
@@ -803,9 +805,26 @@ export default function DashboardKunjunganPage() {
                 <IconCalendar className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-white" />
               </div>
               <div className="text-center">
-                <p className="text-[9px] sm:text-[10px] font-medium text-blue-600">Total</p>
+                <p className="text-[9px] sm:text-[10px] font-medium text-blue-600">Total Sertifikat</p>
                 <p className="text-lg sm:text-xl font-bold text-blue-700 leading-tight">
                   {displayTasks.length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Total Perusahaan Card */}
+        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+          <CardContent className="p-2">
+            <div className="flex flex-col items-center justify-center gap-1">
+              <div className="h-6 w-6 sm:h-7 sm:w-7 rounded-full bg-purple-500 flex items-center justify-center flex-shrink-0">
+                <IconBuilding className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-white" />
+              </div>
+              <div className="text-center">
+                <p className="text-[9px] sm:text-[10px] font-medium text-purple-600">Total Perusahaan</p>
+                <p className="text-lg sm:text-xl font-bold text-purple-700 leading-tight">
+                  {new Set(displayTasks.map(t => t.namaPerusahaan)).size}
                 </p>
               </div>
             </div>
@@ -820,9 +839,9 @@ export default function DashboardKunjunganPage() {
                 <IconCheck className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-white" />
               </div>
               <div className="text-center">
-                <p className="text-[9px] sm:text-[10px] font-medium text-green-600">Sudah</p>
+                <p className="text-[9px] sm:text-[10px] font-medium text-green-600">VISITED</p>
                 <p className="text-lg sm:text-xl font-bold text-green-700 leading-tight">
-                  {displayTasks.filter(t => t.statusKunjungan === 'VISITED').length}
+                  {new Set(displayTasks.filter(t => t.statusKunjungan === 'VISITED').map(t => t.namaPerusahaan)).size}
                 </p>
               </div>
             </div>
@@ -837,9 +856,9 @@ export default function DashboardKunjunganPage() {
                 <IconClock className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-white" />
               </div>
               <div className="text-center">
-                <p className="text-[9px] sm:text-[10px] font-medium text-orange-600">Belum</p>
+                <p className="text-[9px] sm:text-[10px] font-medium text-orange-600">NOT YET</p>
                 <p className="text-lg sm:text-xl font-bold text-orange-700 leading-tight">
-                  {displayTasks.filter(t => t.statusKunjungan === 'NOT YET').length}
+                  {new Set(displayTasks.filter(t => t.statusKunjungan === 'NOT YET').map(t => t.namaPerusahaan)).size}
                 </p>
               </div>
             </div>
@@ -873,7 +892,8 @@ export default function DashboardKunjunganPage() {
           }
 
           return picsToShow.map((picCrm) => {
-            const picData = crmTargets.filter(t => t.picCrm === picCrm);
+            // Filter data based on current display tasks (respecting all filters)
+            const picData = displayTasks.filter(t => t.picCrm === picCrm);
             const picTotal = picData.length;
             const picLanjut = picData.filter(t => t.status === 'LANJUT' || t.status === 'DONE').length;
             const picLoss = picData.filter(t => t.status === 'LOSS').length;
@@ -881,17 +901,15 @@ export default function DashboardKunjunganPage() {
             const picProses = picData.filter(t => t.status === 'PROSES').length;
             const picWaiting = picData.filter(t => t.status === 'WAITING').length;
 
-            // Get unique companies
-            const picCompanies = new Set(picData.map(t => t.namaPerusahaan));
-            const picTotalCompanies = picCompanies.size;
+            // Get unique companies from displayTasks
+            const picTotalCompanies = Math.round(new Set(picData.map(t => t.namaPerusahaan)).size / 2);
 
             // Get companies with at least one visited target
-            const picVisitedCompanies = new Set(
+            const picVisitedCount = new Set(
               picData
                 .filter(t => t.statusKunjungan === 'VISITED')
                 .map(t => t.namaPerusahaan)
-            );
-            const picVisitedCount = picVisitedCompanies.size;
+            ).size;
             const picProgress = picTotalCompanies > 0 ? Math.round((picVisitedCount / picTotalCompanies) * 100) : 0;
 
             // Get calendar data for this PIC
