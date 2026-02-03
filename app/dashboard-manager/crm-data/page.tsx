@@ -1701,6 +1701,16 @@ export default function CrmDataManagementPage() {
       return;
     }
 
+    // Helper function to truncate long text (Excel max 32767 chars)
+    const truncateText = (text: any, maxLength: number = 10000): string => {
+      if (!text) return '';
+      const str = String(text);
+      if (str.length > maxLength) {
+        return str.substring(0, maxLength) + '... [TRUNCATED]';
+      }
+      return str;
+    };
+
     // Define Excel headers (matching field names in Convex schema)
     const headers = [
       'tahun',
@@ -1777,8 +1787,8 @@ export default function CrmDataManagementPage() {
         target.statusSertifikat || '',
         target.tanggalKunjungan || '',
         target.statusKunjungan || '',
-        target.catatanKunjungan || '',
-        target.fotoBuktiKunjungan || '',
+        truncateText(target.catatanKunjungan, 5000), // Max 5000 chars for notes
+        truncateText(target.fotoBuktiKunjungan, 1000), // Max 1000 chars for photo URL (base64 will be truncated)
       ])
     ];
 
@@ -2132,7 +2142,7 @@ export default function CrmDataManagementPage() {
               variant="outline"
               size="sm"
               disabled={isImporting || selectedIds.size > 0}
-              className="border-green-600 text-green-600 hover:bg-green-50 hover:border-green-700 hover:text-green-700"
+              className="border-green-600 text-green-600 hover:bg-green-50 hover:border-green-700 hover:text-green-700 cursor-pointer"
             >
               <Download className="h-4 w-4 mr-2" />
               Download All Data
