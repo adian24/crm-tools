@@ -635,11 +635,14 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
 
                   <div className="space-y-1">
                     <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Alasan</Label>
-                    <Select value={formData.alasan || undefined} onValueChange={(value) => updateFormField('alasan', value)}>
+                    <Select value={formData.alasan || undefined} onValueChange={(value) => updateFormField('alasan', value === 'empty' ? '' : value)}>
                       <SelectTrigger className="w-full border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500 h-9 text-sm">
                         <SelectValue placeholder="Pilih" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="empty">
+                          <span className="text-slate-400 italic">Kosong</span>
+                        </SelectItem>
                         {alasanOptions.map((alasan) => (
                           <SelectItem key={alasan} value={alasan}>{alasan}</SelectItem>
                         ))}
@@ -679,11 +682,14 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
 
                   <div className="space-y-1">
                     <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Associate</Label>
-                    <Select value={formData.namaAssociate || undefined} onValueChange={(value) => updateFormField('namaAssociate', value)}>
+                    <Select value={formData.namaAssociate || undefined} onValueChange={(value) => updateFormField('namaAssociate', value === 'empty' ? '' : value)}>
                       <SelectTrigger className="w-full border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500 h-9 text-sm">
                         <SelectValue placeholder="Pilih" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="empty">
+                          <span className="text-slate-400 italic">Kosong</span>
+                        </SelectItem>
                         {associateOptions.map((assoc) => (
                           <SelectItem key={assoc} value={assoc}>{assoc}</SelectItem>
                         ))}
@@ -693,11 +699,14 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
 
                   <div className="space-y-1">
                     <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Direct/Associate</Label>
-                    <Select value={formData.directOrAssociate || undefined} onValueChange={(value) => updateFormField('directOrAssociate', value)}>
+                    <Select value={formData.directOrAssociate || undefined} onValueChange={(value) => updateFormField('directOrAssociate', value === 'empty' ? '' : value)}>
                       <SelectTrigger className="w-full border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500 h-9 text-sm">
                         <SelectValue placeholder="Pilih" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="empty">
+                          <span className="text-slate-400 italic">Kosong</span>
+                        </SelectItem>
                         <SelectItem value="Direct">Direct</SelectItem>
                         <SelectItem value="Associate">Associate</SelectItem>
                       </SelectContent>

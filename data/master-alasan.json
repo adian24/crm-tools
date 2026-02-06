@@ -11,7 +11,7 @@
     { "id": 9, "alasan": "Alamat tidak di temukan" },
     { "id": 10, "alasan": "Mundur audit" },
     { "id": 11, "alasan": "Pindah LS" },
-    { "id": 12, "alasan": "IA Reten" },
+    { "id": 12, "alasan": "IA reten" },
     { "id": 13, "alasan": "Tidak sesuai standar" },
     { "id": 14, "alasan": "Merger" },
     { "id": 15, "alasan": "Tidak bisa dihubungi" },
