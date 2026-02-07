@@ -14,20 +14,24 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Calendar, Building2, Loader2, Save, X, Users, CheckCircle2, DollarSign } from 'lucide-react';
+import masterAlasanData from '@/data/master-alasan.json';
+import { ImagePreviewDialog } from '@/components/image-preview-dialog';
 
 interface CrmTarget {
   _id: Id<"crmTargets">;
   namaPerusahaan: string;
   provinsi?: string;
   kota?: string;
+  status?: string;
+  alasan?: string;
   tanggalKunjungan?: string;
   statusKunjungan?: string;
   catatanKunjungan?: string;
   fotoBuktiKunjungan?: string;
-  status?: string;
   hargaKontrak?: number;
   hargaTerupdate?: number;
   trimmingValue?: number;
@@ -43,6 +47,7 @@ interface MassUpdateKunjunganDialogProps {
   companyTargets: CrmTarget[];
   onUpdate: (data: {
     status: string;
+    alasan?: string;
     hargaKontrak: number;
     hargaTerupdate: number;
     trimmingValue: number;
@@ -63,6 +68,7 @@ const MassUpdateKunjunganDialog = React.memo(({
   onUpdate
 }: MassUpdateKunjunganDialogProps) => {
   const [status, setStatus] = useState<string>("");
+  const [alasan, setAlasan] = useState<string>("");
   const [hargaKontrak, setHargaKontrak] = useState<string>("");
   const [hargaTerupdate, setHargaTerupdate] = useState<string>("");
   const [trimmingValue, setTrimmingValue] = useState<string>("");
@@ -74,6 +80,16 @@ const MassUpdateKunjunganDialog = React.memo(({
   const [fotoBukti, setFotoBukti] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [previewImageOpen, setPreviewImageOpen] = useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+
+  // Alasan options
+  const alasanOptions = masterAlasanData.alasan.map(item => item.alasan);
+
+  const handleImageClick = (imageUrl: string) => {
+    setPreviewImageUrl(imageUrl);
+    setPreviewImageOpen(true);
+  };
 
   // Clean formatted number back to plain number
   const cleanNumber = (value: string): string => {
@@ -132,6 +148,7 @@ const MassUpdateKunjunganDialog = React.memo(({
     if (open && selectedCompany && companyTargets.length > 0) {
       const firstTarget = companyTargets[0];
       setStatus(firstTarget.status || "");
+      setAlasan(firstTarget.alasan || "");
       setHargaKontrak(firstTarget.hargaKontrak ? firstTarget.hargaKontrak.toLocaleString('id-ID') : "");
       setHargaTerupdate(firstTarget.hargaTerupdate ? firstTarget.hargaTerupdate.toLocaleString('id-ID') : "");
       setTrimmingValue(firstTarget.trimmingValue?.toString() || "0");
@@ -241,6 +258,7 @@ const MassUpdateKunjunganDialog = React.memo(({
     try {
       await onUpdate({
         status,
+        alasan: alasan || undefined,
         hargaKontrak: parseFloat(cleanNumber(hargaKontrak)) || 0,
         hargaTerupdate: parseFloat(cleanNumber(hargaTerupdate)) || 0,
         trimmingValue: parseFloat(trimmingValue) || 0,
@@ -257,6 +275,7 @@ const MassUpdateKunjunganDialog = React.memo(({
 
       // Reset form
       setStatus("");
+      setAlasan("");
       setHargaKontrak("");
       setHargaTerupdate("");
       setTrimmingValue("");
@@ -277,6 +296,7 @@ const MassUpdateKunjunganDialog = React.memo(({
   if (!selectedCompany) return null;
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[95vw] w-full max-h-[92vh] p-0 gap-0 overflow-hidden bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl sm:max-w-4xl flex flex-col">
         {/* Modern Gradient Header */}
@@ -469,9 +489,23 @@ const MassUpdateKunjunganDialog = React.memo(({
                         alt="Preview bukti kunjungan"
                         className="w-full max-h-48 object-cover rounded-lg border shadow-lg"
                       />
-                      <p className="text-[10px] text-blue-700 dark:text-blue-300">
-                        Ukuran: {Math.round((fotoBukti.length * 0.75) / 1024)} KB (terkompresi)
-                      </p>
+                      <div className="flex items-center justify-between mt-2">
+                        <p className="text-[10px] text-blue-700 dark:text-blue-300">
+                          Ukuran: {Math.round((fotoBukti.length * 0.75) / 1024)} KB (terkompresi)
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleImageClick(fotoBukti)}
+                          className="cursor-pointer text-xs h-7 px-3 bg-white dark:bg-slate-950 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                        >
+                          <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                          </svg>
+                          Lihat Gambar
+                        </Button>
+                      </div>
                     </div>
                   )}
 
@@ -506,58 +540,76 @@ const MassUpdateKunjunganDialog = React.memo(({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-3">
-                {/* Status CRM */}
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Status CRM <span className="text-red-500">*</span>
-                  </Label>
-                  <Select value={status} onValueChange={setStatus}>
-                    <SelectTrigger className="w-full border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500 h-10 text-sm">
-                      <SelectValue placeholder="Pilih status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="WAITING">WAITING</SelectItem>
-                      <SelectItem value="PROSES">PROSES</SelectItem>
-                      <SelectItem value="DONE">DONE</SelectItem>
-                      <SelectItem value="SUSPEND">SUSPEND</SelectItem>
-                      <SelectItem value="LOSS">LOSS</SelectItem>
-                    </SelectContent>
-                  </Select>
+              <div className="space-y-4 mt-3">
+                {/* First Row: Status, Alasan, Bulan TTD Notif, Harga Kontrak */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Status CRM */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      Status CRM <span className="text-red-500">*</span>
+                    </Label>
+                    <Select value={status} onValueChange={setStatus}>
+                      <SelectTrigger className="w-full border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500 h-10 text-sm">
+                        <SelectValue placeholder="Pilih status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="WAITING">WAITING</SelectItem>
+                        <SelectItem value="PROSES">PROSES</SelectItem>
+                        <SelectItem value="DONE">DONE</SelectItem>
+                        <SelectItem value="SUSPEND">SUSPEND</SelectItem>
+                        <SelectItem value="LOSS">LOSS</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Alasan */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      Alasan
+                    </Label>
+                    <SearchableSelect
+                      options={[{ value: '', label: 'Kosong' }, ...alasanOptions.map(a => ({ value: a, label: a }))]}
+                      value={alasan}
+                      onChange={setAlasan}
+                      placeholder="Cari alasan..."
+                      emptyText="Tidak ada alasan"
+                      className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500 h-10 text-sm"
+                    />
+                  </div>
+
+                  {/* Bulan TTD Notif */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      Bulan TTD Notif {status === 'DONE' && <span className="text-red-500">*</span>}
+                    </Label>
+                    <Input
+                      type="date"
+                      value={bulanTtdNotif}
+                      onChange={(e) => setBulanTtdNotif(e.target.value)}
+                      className={`border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500 h-10 text-sm ${status === 'DONE' && !bulanTtdNotif ? 'border-red-500' : ''}`}
+                      required={status === 'DONE'}
+                    />
+                    {status === 'DONE' && !bulanTtdNotif && (
+                      <p className="text-[9px] text-red-500 dark:text-red-400">Wajib diisi untuk status DONE</p>
+                    )}
+                  </div>
+
+                  {/* Harga Kontrak - Readonly */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      Harga Kontrak
+                    </Label>
+                    <Input
+                      type="text"
+                      value={hargaKontrak}
+                      disabled
+                      className="border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 h-10 text-sm cursor-not-allowed"
+                    />
+                    <p className="text-[10px] text-slate-500">Readonly - dari data existing</p>
+                  </div>
                 </div>
 
-                {/* Bulan TTD Notif */}
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Bulan TTD Notif {status === 'DONE' && <span className="text-red-500">*</span>}
-                  </Label>
-                  <Input
-                    type="date"
-                    value={bulanTtdNotif}
-                    onChange={(e) => setBulanTtdNotif(e.target.value)}
-                    className={`border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500 h-10 text-sm ${status === 'DONE' && !bulanTtdNotif ? 'border-red-500' : ''}`}
-                    required={status === 'DONE'}
-                  />
-                  {status === 'DONE' && !bulanTtdNotif && (
-                    <p className="text-[9px] text-red-500 dark:text-red-400">Wajib diisi untuk status DONE</p>
-                  )}
-                </div>
-
-                {/* Harga Kontrak - Readonly */}
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Harga Kontrak
-                  </Label>
-                  <Input
-                    type="text"
-                    value={hargaKontrak}
-                    disabled
-                    className="border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 h-10 text-sm cursor-not-allowed"
-                  />
-                  <p className="text-[10px] text-slate-500">Readonly - dari data existing</p>
-                </div>
-
-                {/* Harga Terupdate */}
+                {/* Second Row: Harga Terupdate (Full Width) */}
                 <div className="space-y-2">
                   <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
                     Harga Terupdate
@@ -567,7 +619,7 @@ const MassUpdateKunjunganDialog = React.memo(({
                     value={hargaTerupdate}
                     onChange={(e) => setHargaTerupdate(formatNumber(e.target.value.replace(/[^0-9]/g, '')))}
                     placeholder="Masukkan harga terupdate..."
-                    className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500 h-10 text-sm"
+                    className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500 h-10 text-sm text-lg font-semibold"
                   />
                 </div>
               </div>
@@ -630,6 +682,15 @@ const MassUpdateKunjunganDialog = React.memo(({
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* Image Preview Dialog */}
+    <ImagePreviewDialog
+      open={previewImageOpen}
+      onOpenChange={setPreviewImageOpen}
+      imageUrl={previewImageUrl}
+      alt="Bukti Kunjungan"
+    />
+    </>
   );
 });
 

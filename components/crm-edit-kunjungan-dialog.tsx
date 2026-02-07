@@ -20,6 +20,7 @@ import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Save, X, Calendar, MapPin, Building2, FileText, DollarSign, Users, Phone, Loader2 } from 'lucide-react';
+import { ImagePreviewDialog } from '@/components/image-preview-dialog';
 import indonesiaData from '@/data/indonesia-provinsi-kota.json';
 import masterSalesData from '@/data/master-sales.json';
 import masterAssociateData from '@/data/master-associate.json';
@@ -160,6 +161,8 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
   const [editFoto, setEditFoto] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [previewImageOpen, setPreviewImageOpen] = useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const isInitialLoad = React.useRef(true);
 
   // Clean formatted number back to plain number
@@ -445,9 +448,15 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
     }
   };
 
+  const handleImageClick = (imageUrl: string) => {
+    setPreviewImageUrl(imageUrl);
+    setPreviewImageOpen(true);
+  };
+
   if (!target) return null;
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[95vw] w-full h-[92vh] sm:max-h-[92vh] p-0 gap-0 overflow-hidden bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl sm:max-w-5xl flex flex-col">
         {/* Modern Gradient Header */}
@@ -1066,15 +1075,29 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
                             alt="Preview bukti kunjungan"
                             className="max-w-full max-h-40 object-cover rounded-lg border"
                           />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setEditFoto(null)}
-                            className="text-xs text-red-600 hover:text-red-700 h-7"
-                          >
-                            <X className="w-3 h-3 mr-1" />
-                            Hapus foto
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleImageClick(editFoto)}
+                              className="cursor-pointer text-xs h-7 bg-white dark:bg-slate-950 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                            >
+                              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                              </svg>
+                              Lihat Gambar
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditFoto(null)}
+                              className="text-xs text-red-600 hover:text-red-700 h-7"
+                            >
+                              <X className="w-3 h-3 mr-1" />
+                              Hapus
+                            </Button>
+                          </div>
                         </div>
                       )}
                       {isUploading && (
@@ -1129,6 +1152,15 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* Image Preview Dialog */}
+    <ImagePreviewDialog
+      open={previewImageOpen}
+      onOpenChange={setPreviewImageOpen}
+      imageUrl={previewImageUrl}
+      alt="Bukti Kunjungan"
+    />
+    </>
   );
 });
 
