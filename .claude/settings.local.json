@@ -29,7 +29,8 @@
       "Bash(npx tsx:*)",
       "Bash(npm audit:*)",
       "Bash(find:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(echo:*)"
     ],
     "deny": [],
     "ask": []
