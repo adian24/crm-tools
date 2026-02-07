@@ -44,37 +44,27 @@ const ImagePreviewDialog = ({ open, onOpenChange, imageUrl, alt = "Preview" }: I
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[100vw] w-screen h-[100vh] p-0 gap-0 overflow-hidden bg-black dark:bg-black border-0 shadow-2xl rounded-none">
+      <DialogContent className="max-w-[100vw] w-screen h-[100vh] max-h-[100dvh] p-0 gap-0 overflow-hidden bg-black dark:bg-black border-0 shadow-2xl rounded-none">
         <DialogTitle className="sr-only">Preview Bukti Kunjungan</DialogTitle>
         {/* Header */}
-        <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-3 sm:p-6 bg-gradient-to-b from-black/90 via-black/70 to-transparent">
+        <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-3 pt-safe-top pb-3 sm:px-6 sm:py-4 bg-gradient-to-b from-black/90 via-black/60 to-transparent">
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <ZoomIn className="w-4 h-4 sm:w-6 sm:h-6 text-white flex-shrink-0" />
-            <h3 className="text-white font-semibold text-xs sm:text-base truncate">Preview Bukti</h3>
+            <ZoomIn className="w-4 h-4 sm:w-5 sm:h-5 text-white flex-shrink-0" />
+            <h3 className="text-white font-semibold text-xs sm:text-sm truncate">Preview Bukti Kunjungan</h3>
           </div>
-          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleDownload}
-              className="text-white hover:text-white hover:bg-white/20 h-8 w-8 sm:h-auto sm:w-auto p-0 sm:px-3"
-            >
-              <Download className="w-4 h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Download</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onOpenChange(false)}
-              className="bg-white/20 hover:bg-white/30 text-white h-8 w-8 sm:h-auto sm:w-auto p-0 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/30"
-            >
-              <X className="w-5 h-5 sm:w-6 sm:h-6" />
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleDownload}
+            className="text-white hover:text-white hover:bg-white/20 h-8 px-2 bg-black/30 backdrop-blur-sm rounded-full border border-white/20"
+          >
+            <Download className="w-4 h-4 mr-1" />
+            <span className="text-xs">Download</span>
+          </Button>
         </div>
 
         {/* Image Container */}
-        <div className="w-full h-full flex items-center justify-center p-0 pt-14 sm:pt-20 bg-black">
+        <div className="w-full h-full flex items-center justify-center p-0 pt-12 sm:pt-16 pb-20 bg-black">
           {imageError ? (
             <div className="text-center text-white">
               <div className="w-16 h-16 mx-auto mb-4 bg-white/10 rounded-full flex items-center justify-center">
@@ -93,10 +83,20 @@ const ImagePreviewDialog = ({ open, onOpenChange, imageUrl, alt = "Preview" }: I
           )}
         </div>
 
-        {/* Footer */}
-        <div className="absolute bottom-0 left-0 right-0 z-10 p-4 bg-gradient-to-t from-black/80 to-transparent">
-          <p className="text-center text-white/80 text-xs sm:text-sm">
-            Klik di luar gambar atau tekan tombol close untuk menutup
+        {/* Footer with Close Button */}
+        <div className="absolute bottom-0 left-0 right-0 z-20 p-4 sm:p-6 bg-gradient-to-t from-black/95 via-black/80 to-black/40 safe-bottom">
+          <div className="flex items-center justify-center gap-3">
+            <Button
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              className="cursor-pointer bg-white hover:bg-white/90 text-black h-12 px-8 rounded-full flex items-center justify-center backdrop-blur-sm border-2 border-white/40 shadow-lg text-sm font-semibold"
+            >
+              <X className="w-5 h-5" />
+              Tutup
+            </Button>
+          </div>
+          <p className="text-center text-white/60 text-[10px] sm:text-xs mt-3">
+            Klik di luar gambar untuk menutup
           </p>
         </div>
       </DialogContent>
