@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { X, ZoomIn, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -44,6 +45,7 @@ const ImagePreviewDialog = ({ open, onOpenChange, imageUrl, alt = "Preview" }: I
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[100vw] w-screen h-[100vh] p-0 gap-0 overflow-hidden bg-black dark:bg-black border-0 shadow-2xl rounded-none">
+        <DialogTitle className="sr-only">Preview Bukti Kunjungan</DialogTitle>
         {/* Header */}
         <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 sm:p-6 bg-gradient-to-b from-black/80 to-transparent">
           <div className="flex items-center gap-2">
