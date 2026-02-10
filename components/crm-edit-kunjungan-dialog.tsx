@@ -270,6 +270,7 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
     [formData.provinsi]
   );
   const alasanOptions = React.useMemo(() => masterAlasanData.alasan.map(item => item.alasan), []);
+  const associateOptions = React.useMemo(() => associates?.map(assoc => assoc.nama) || [], [associates]);
   const salesOptions = React.useMemo(() => masterSalesData.map(sales => sales.nama), []);
   const standarOptions = React.useMemo(() => masterStandarData.standar.map(std => std.kode), []);
   const eaCodeOptions = React.useMemo(() => masterEaCodeData.ea_code.map(ea => ({ id: ea.id, code: ea.ea_code })), []);
