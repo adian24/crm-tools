@@ -15,7 +15,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Search, Users, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Users, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
 
@@ -35,6 +35,7 @@ export default function MasterAssociatePage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedAssociate, setSelectedAssociate] = useState<Associate | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; kode: string; nama: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -97,6 +98,7 @@ export default function MasterAssociatePage() {
   const confirmDelete = async () => {
     if (!deleteConfirm) return;
 
+    setIsDeleting(true);
     try {
       const result = await deleteAssociate(deleteConfirm.kode);
       if (result.success) {
@@ -109,6 +111,7 @@ export default function MasterAssociatePage() {
       toast.error('Gagal menghapus associate');
       console.error(error);
     } finally {
+      setIsDeleting(false);
       setDeleteConfirm(null);
     }
   };
@@ -325,9 +328,14 @@ export default function MasterAssociatePage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDelete(associate.kode, associate.nama)}
+                          disabled={isDeleting && deleteConfirm?.kode === associate.kode}
                           className="cursor-pointer hover:bg-red-50 hover:text-red-600"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          {isDeleting && deleteConfirm?.kode === associate.kode ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
                         </Button>
                       </div>
                     </TableCell>
@@ -431,6 +439,7 @@ export default function MasterAssociatePage() {
               <Button
                 variant="outline"
                 onClick={() => setDeleteConfirm(null)}
+                disabled={isDeleting}
                 className="cursor-pointer"
               >
                 Batal
@@ -438,9 +447,19 @@ export default function MasterAssociatePage() {
               <Button
                 variant="destructive"
                 onClick={confirmDelete}
+                disabled={isDeleting}
                 className="cursor-pointer"
               >
-                Hapus
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Menghapus...
+                  </>
+                ) : (
+                  <>
+                    Hapus
+                  </>
+                )}
               </Button>
             </div>
           </div>
