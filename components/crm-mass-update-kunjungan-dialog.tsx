@@ -254,6 +254,24 @@ const MassUpdateKunjunganDialog = React.memo(({
       return;
     }
 
+    // Validation: Check if hargaTerupdate is required when status is DONE
+    if (status === 'DONE' && !hargaTerupdate) {
+      toast.error('❌ Harga Terupdate wajib diisi!', {
+        description: 'Status DONE memerlukan Harga Terupdate untuk diisi',
+        duration: 4000,
+      });
+      return;
+    }
+
+    // Validation: Check if alasan is required when status is SUSPEND or LOSS
+    if ((status === 'SUSPEND' || status === 'LOSS') && !alasan) {
+      toast.error('❌ Alasan wajib diisi!', {
+        description: `Status ${status} memerlukan Alasan untuk diisi`,
+        duration: 4000,
+      });
+      return;
+    }
+
     setIsSaving(true);
     try {
       await onUpdate({
@@ -565,7 +583,7 @@ const MassUpdateKunjunganDialog = React.memo(({
                   {/* Alasan */}
                   <div className="space-y-2">
                     <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                      Alasan
+                      Alasan {(status === 'SUSPEND' || status === 'LOSS') && <span className="text-red-500">*</span>}
                     </Label>
                     <SearchableSelect
                       options={[{ value: '', label: 'Kosong' }, ...alasanOptions.map(a => ({ value: a, label: a }))]}
@@ -573,8 +591,11 @@ const MassUpdateKunjunganDialog = React.memo(({
                       onChange={setAlasan}
                       placeholder="Cari alasan..."
                       emptyText="Tidak ada alasan"
-                      className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500 h-10 text-sm"
+                      className={`border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500 h-10 text-sm ${(status === 'SUSPEND' || status === 'LOSS') && !alasan ? 'border-red-500' : ''}`}
                     />
+                    {(status === 'SUSPEND' || status === 'LOSS') && !alasan && (
+                      <p className="text-[9px] text-red-500 dark:text-red-400">Wajib diisi untuk status {status}</p>
+                    )}
                   </div>
 
                   {/* Bulan TTD Notif */}
@@ -612,15 +633,19 @@ const MassUpdateKunjunganDialog = React.memo(({
                 {/* Second Row: Harga Terupdate (Full Width) */}
                 <div className="space-y-2">
                   <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Harga Terupdate
+                    Harga Terupdate {status === 'DONE' && <span className="text-red-500">*</span>}
                   </Label>
                   <Input
                     type="text"
                     value={hargaTerupdate}
                     onChange={(e) => setHargaTerupdate(formatNumber(e.target.value.replace(/[^0-9]/g, '')))}
                     placeholder="Masukkan harga terupdate..."
-                    className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500 h-10 text-sm text-lg font-semibold"
+                    className={`border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500 h-10 text-sm text-lg font-semibold ${status === 'DONE' && !hargaTerupdate ? 'border-red-500' : ''}`}
+                    required={status === 'DONE'}
                   />
+                  {status === 'DONE' && !hargaTerupdate && (
+                    <p className="text-[9px] text-red-500 dark:text-red-400">Wajib diisi untuk status DONE</p>
+                  )}
                 </div>
               </div>
 
@@ -663,7 +688,7 @@ const MassUpdateKunjunganDialog = React.memo(({
             </Button>
             <Button
               onClick={handleUpdate}
-              disabled={isSaving || isUploading || !status || !tanggalKunjungan || !statusKunjungan || (status === 'DONE' && !bulanTtdNotif)}
+              disabled={isSaving || isUploading || !status || !tanggalKunjungan || !statusKunjungan || (status === 'DONE' && (!bulanTtdNotif || !hargaTerupdate)) || ((status === 'SUSPEND' || status === 'LOSS') && !alasan)}
               className="flex-1 sm:flex-none bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg h-9 sm:h-10 px-3 sm:px-6 text-xs sm:text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSaving ? (

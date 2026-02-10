@@ -316,6 +316,24 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
       return;
     }
 
+    // Validation: Check if hargaTerupdate is required when status is DONE
+    if (formData.status === 'DONE' && !formData.hargaTerupdate) {
+      toast.error('❌ Harga Terupdate wajib diisi!', {
+        description: 'Status DONE memerlukan Harga Terupdate untuk diisi',
+        duration: 4000,
+      });
+      return;
+    }
+
+    // Validation: Check if alasan is required when status is SUSPEND or LOSS
+    if ((formData.status === 'SUSPEND' || formData.status === 'LOSS') && !formData.alasan) {
+      toast.error('❌ Alasan wajib diisi!', {
+        description: `Status ${formData.status} memerlukan Alasan untuk diisi`,
+        duration: 4000,
+      });
+      return;
+    }
+
     setIsSaving(true);
     try {
       await updateTargetMutation({
@@ -643,15 +661,20 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
                   </div>
 
                   <div className="space-y-1">
-                    <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Alasan</Label>
+                    <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      Alasan {(formData.status === 'SUSPEND' || formData.status === 'LOSS') && <span className="text-red-500">*</span>}
+                    </Label>
                     <SearchableSelect
                       options={[{ value: '', label: 'Kosong' }, ...alasanOptions.map(a => ({ value: a, label: a }))]}
                       value={formData.alasan || ''}
                       onChange={(value) => updateFormField('alasan', value)}
                       placeholder="Cari alasan..."
                       emptyText="Tidak ada alasan"
-                      className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500 h-9 text-sm"
+                      className={`border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500 h-9 text-sm ${(formData.status === 'SUSPEND' || formData.status === 'LOSS') && !formData.alasan ? 'border-red-500' : ''}`}
                     />
+                    {(formData.status === 'SUSPEND' || formData.status === 'LOSS') && !formData.alasan && (
+                      <p className="text-[9px] text-red-500 dark:text-red-400">Wajib diisi untuk status {formData.status}</p>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
@@ -937,14 +960,20 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
                       </div>
 
                       <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Harga Update</Label>
+                        <Label className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                          Harga Update {formData.status === 'DONE' && <span className="text-red-500">*</span>}
+                        </Label>
                         <Input
                           type="text"
                           value={formData.hargaTerupdate}
                           onChange={(e) => updateFormField('hargaTerupdate', e.target.value.replace(/[^0-9.]/g, ''))}
                           placeholder="0"
-                          className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-green-500 h-9 text-sm"
+                          className={`border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-green-500 h-9 text-sm ${formData.status === 'DONE' && !formData.hargaTerupdate ? 'border-red-500' : ''}`}
+                          required={formData.status === 'DONE'}
                         />
+                        {formData.status === 'DONE' && !formData.hargaTerupdate && (
+                          <p className="text-[9px] text-red-500 dark:text-red-400">Wajib diisi untuk status DONE</p>
+                        )}
                       </div>
 
                       <div className="space-y-1">
