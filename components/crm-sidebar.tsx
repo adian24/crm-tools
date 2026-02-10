@@ -23,6 +23,7 @@ import {
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
+import DashboardInfoDialog from "@/components/dashboard-info-dialog"
 import {
   Sidebar,
   SidebarContent,
@@ -150,106 +151,121 @@ const getNavigationItems = (role: string) => {
 };
 
 const getSecondaryItems = (role: string) => {
+  const items = [];
+
   if (role === 'staff') {
-    return [
+    items.push(
       {
         title: "Get Help",
         url: "#",
         icon: IconHelp,
+        action: "help",
       },
       {
         title: "Search",
         url: "#",
         icon: IconSearch,
-      },
-    ];
-  }
-
-  if (role === 'manager') {
-    return [
+      }
+    );
+  } else if (role === 'manager') {
+    items.push(
       {
         title: "Get Help",
         url: "#",
         icon: IconHelp,
+        action: "help",
       },
       {
         title: "Search",
         url: "#",
         icon: IconSearch,
-      },
-    ];
+      }
+    );
+  } else {
+    // Super admin
+    items.push(
+      {
+        title: "Get Help",
+        url: "#",
+        icon: IconHelp,
+        action: "help",
+      }
+    );
   }
 
-  // Super admin gets all secondary items
-  return [
-    {
-      title: "Get Help",
-      url: "#",
-      icon: IconHelp,
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: IconSearch,
-    },
-  ];
+  return items;
 };
 
 export function CRMSidebar({ user, ...props }: CRMSidebarProps) {
   const navItems = getNavigationItems(user.role);
   const secondaryItems = getSecondaryItems(user.role);
+  const [helpDialogOpen, setHelpDialogOpen] = React.useState(false);
+
+  const handleSecondaryItemClick = (item: any) => {
+    if (item.action === 'help') {
+      setHelpDialogOpen(true);
+    }
+  };
 
   return (
-    <Sidebar
-      {...props}
-      collapsible="icon"
-      variant="sidebar"
-      className="relative overflow-hidden"
-    >
-      {/* Gradient overlay for futuristic effect */}
-      <div className="absolute inset-0 bg-gradient-to-b from-purple-700/10 via-blue-600/10 to-purple-900/5 pointer-events-none" />
+    <>
+      <Sidebar
+        {...props}
+        collapsible="icon"
+        variant="sidebar"
+        className="relative overflow-hidden"
+      >
+        {/* Gradient overlay for futuristic effect */}
+        <div className="absolute inset-0 bg-gradient-to-b from-purple-700/10 via-blue-600/10 to-purple-900/5 pointer-events-none" />
 
-      <SidebarHeader className="relative border-b border-sidebar-border/50 bg-gradient-to-r from-purple-600/10 via-blue-600/10 to-purple-600/10 backdrop-blur-sm">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              size="lg"
-            >
-              <Link href={
-                user.role === 'staff'
-                  ? '/dashboard-manager/dashboard-kunjungan'
-                  : user.role === 'manager'
-                  ? '/dashboard-manager/dashboard-data'
-                  : '/dashboard-manager/dashboard-data'
-              } className="flex items-center gap-3 group">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/20 group-hover:shadow-blue-500/40 transition-shadow duration-300 flex-shrink-0">
-                  <IconActivity className="h-5 w-5" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-base font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">CRM Tools</span>
-                  <span className="text-xs text-muted-foreground">Management System</span>
-                </div>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
+        <SidebarHeader className="relative border-b border-sidebar-border/50 bg-gradient-to-r from-purple-600/10 via-blue-600/10 to-purple-600/10 backdrop-blur-sm">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                size="lg"
+              >
+                <Link href={
+                  user.role === 'staff'
+                    ? '/dashboard-manager/dashboard-kunjungan'
+                    : user.role === 'manager'
+                    ? '/dashboard-manager/dashboard-data'
+                    : '/dashboard-manager/dashboard-data'
+                } className="flex items-center gap-3 group">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/20 group-hover:shadow-blue-500/40 transition-shadow duration-300 flex-shrink-0">
+                    <IconActivity className="h-5 w-5" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-base font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">CRM Tools</span>
+                    <span className="text-xs text-muted-foreground">Management System</span>
+                  </div>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarHeader>
 
-      <SidebarContent className="relative gap-4 py-6">
-        <NavMain items={navItems} />
-        <NavSecondary items={secondaryItems} className="mt-auto" />
-      </SidebarContent>
+        <SidebarContent className="relative gap-4 py-6">
+          <NavMain items={navItems} />
+          <NavSecondary items={secondaryItems} className="mt-auto" onItemClick={handleSecondaryItemClick} />
+        </SidebarContent>
 
-      <SidebarFooter className="relative border-t border-sidebar-border/50 bg-background/50 backdrop-blur-sm">
-        <NavUser
-          user={{
-            name: user.name,
-            email: user.email,
-            avatar: user.avatar || ""
-          }}
-        />
-      </SidebarFooter>
-    </Sidebar>
+        <SidebarFooter className="relative border-t border-sidebar-border/50 bg-background/50 backdrop-blur-sm">
+          <NavUser
+            user={{
+              name: user.name,
+              email: user.email,
+              avatar: user.avatar || ""
+            }}
+          />
+        </SidebarFooter>
+      </Sidebar>
+
+      {/* Dashboard Info Dialog */}
+      <DashboardInfoDialog
+        open={helpDialogOpen}
+        onOpenChange={setHelpDialogOpen}
+      />
+    </>
   )
 }

@@ -14,6 +14,7 @@ import {
 
 export function NavSecondary({
   items,
+  onItemClick,
   ...props
 }: {
   items: {
@@ -21,7 +22,9 @@ export function NavSecondary({
     url: string
     icon: Icon
     roles?: string[]
+    action?: string
   }[]
+  onItemClick?: (item: any) => void
 } & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
   return (
     <SidebarGroup {...props}>
@@ -30,7 +33,7 @@ export function NavSecondary({
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
               {item.url === "#" ? (
-                <SidebarMenuButton>
+                <SidebarMenuButton onClick={() => onItemClick?.(item)} className="cursor-pointer">
                   <item.icon />
                   <span>{item.title}</span>
                 </SidebarMenuButton>
