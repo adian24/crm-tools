@@ -1,7 +1,7 @@
 "use server";
 
-import fs from 'fs/promises';
-import path from 'path';
+import { fetchQuery, fetchMutation } from "convex/nextjs";
+import { api } from "@/convex/_generated/api";
 
 export interface Associate {
   kode: string;
@@ -10,14 +10,16 @@ export interface Associate {
   status: 'Aktif' | 'Non-Aktif';
 }
 
-const filePath = path.join(process.cwd(), 'data', 'master-associate.json');
-
 // Read all associates
 export async function getAssociates(): Promise<Associate[]> {
   try {
-    const fileContent = await fs.readFile(filePath, 'utf-8');
-    const data = JSON.parse(fileContent);
-    return data.associate || [];
+    const associates = await fetchQuery(api.masterAssociate.getAssociates, {});
+    return associates.map(assoc => ({
+      kode: assoc.kode,
+      nama: assoc.nama,
+      kategori: assoc.kategori,
+      status: assoc.status,
+    }));
   } catch (error) {
     console.error('Error reading associate data:', error);
     return [];
@@ -27,104 +29,59 @@ export async function getAssociates(): Promise<Associate[]> {
 // Add new associate
 export async function addAssociate(associate: Omit<Associate, 'kode'>): Promise<{ success: boolean; message: string; data?: Associate }> {
   try {
-    const associates = await getAssociates();
+    const result = await fetchMutation(api.masterAssociate.addAssociate, {
+      nama: associate.nama,
+      kategori: associate.kategori,
+      status: associate.status,
+    });
 
-    // Check for duplicate name (case-insensitive)
-    const isDuplicate = associates.some(
-      (existingAssoc) => existingAssoc.nama.toLowerCase().trim() === associate.nama.toLowerCase().trim()
-    );
-
-    if (isDuplicate) {
-      return {
-        success: false,
-        message: `Nama associate "${associate.nama}" sudah ada. Gunakan nama lain.`,
-      };
-    }
-
-    // Generate new kode (ASS + next number)
-    const maxCode = associates.reduce((max, assoc) => {
-      const num = parseInt(assoc.kode.replace('ASS', ''));
-      return num > max ? num : max;
-    }, 0);
-
-    const newKode = `ASS${String(maxCode + 1).padStart(3, '0')}`;
-
-    const newAssociate: Associate = {
-      kode: newKode,
-      ...associate,
+    return {
+      success: result.success,
+      message: result.message,
+      data: result.data ? {
+        kode: result.data.kode,
+        nama: result.data.nama,
+        kategori: result.data.kategori,
+        status: result.data.status,
+      } : undefined,
     };
-
-    associates.push(newAssociate);
-
-    // Sort by kode
-    associates.sort((a, b) => a.kode.localeCompare(b.kode));
-
-    // Write back to file
-    await fs.writeFile(filePath, JSON.stringify({ associate: associates }, null, 2), 'utf-8');
-
-    return { success: true, message: 'Associate berhasil ditambahkan', data: newAssociate };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error adding associate:', error);
-    return { success: false, message: 'Gagal menambahkan associate' };
+    return { success: false, message: error.message || 'Gagal menambahkan associate' };
   }
 }
 
 // Update associate
 export async function updateAssociate(kode: string, associate: Omit<Associate, 'kode'>): Promise<{ success: boolean; message: string }> {
   try {
-    const associates = await getAssociates();
-    const index = associates.findIndex(a => a.kode === kode);
+    const result = await fetchMutation(api.masterAssociate.updateAssociate, {
+      kode: kode,
+      nama: associate.nama,
+      kategori: associate.kategori,
+      status: associate.status,
+    });
 
-    if (index === -1) {
-      return { success: false, message: 'Associate tidak ditemukan' };
-    }
-
-    // Check for duplicate name (case-insensitive), excluding current record
-    const isDuplicate = associates.some(
-      (existingAssoc) =>
-        existingAssoc.kode !== kode &&
-        existingAssoc.nama.toLowerCase().trim() === associate.nama.toLowerCase().trim()
-    );
-
-    if (isDuplicate) {
-      return {
-        success: false,
-        message: `Nama associate "${associate.nama}" sudah ada. Gunakan nama lain.`,
-      };
-    }
-
-    // Update associate
-    associates[index] = {
-      kode,
-      ...associate,
+    return {
+      success: result.success,
+      message: result.message,
     };
-
-    // Write back to file
-    await fs.writeFile(filePath, JSON.stringify({ associate: associates }, null, 2), 'utf-8');
-
-    return { success: true, message: 'Associate berhasil diupdate' };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating associate:', error);
-    return { success: false, message: 'Gagal mengupdate associate' };
+    return { success: false, message: error.message || 'Gagal mengupdate associate' };
   }
 }
 
 // Delete associate
 export async function deleteAssociate(kode: string): Promise<{ success: boolean; message: string }> {
   try {
-    const associates = await getAssociates();
-    const filteredAssociates = associates.filter(a => a.kode !== kode);
+    const result = await fetchMutation(api.masterAssociate.deleteAssociate, { kode });
 
-    if (filteredAssociates.length === associates.length) {
-      return { success: false, message: 'Associate tidak ditemukan' };
-    }
-
-    // Write back to file
-    await fs.writeFile(filePath, JSON.stringify({ associate: filteredAssociates }, null, 2), 'utf-8');
-
-    return { success: true, message: 'Associate berhasil dihapus' };
-  } catch (error) {
+    return {
+      success: result.success,
+      message: result.message,
+    };
+  } catch (error: any) {
     console.error('Error deleting associate:', error);
-    return { success: false, message: 'Gagal menghapus associate' };
+    return { success: false, message: error.message || 'Gagal menghapus associate' };
   }
 }

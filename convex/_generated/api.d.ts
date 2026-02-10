@@ -8,11 +8,14 @@
  * @module
  */
 
+import type * as associatesData from "../associatesData.js";
 import type * as auth from "../auth.js";
 import type * as crmTargets from "../crmTargets.js";
+import type * as importBatch from "../importBatch.js";
 import type * as importCrmTargets from "../importCrmTargets.js";
 import type * as initData from "../initData.js";
 import type * as kpiAnnual from "../kpiAnnual.js";
+import type * as masterAssociate from "../masterAssociate.js";
 import type * as migrate from "../migrate.js";
 import type * as notifications from "../notifications.js";
 import type * as roles from "../roles.js";
@@ -33,11 +36,14 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  associatesData: typeof associatesData;
   auth: typeof auth;
   crmTargets: typeof crmTargets;
+  importBatch: typeof importBatch;
   importCrmTargets: typeof importCrmTargets;
   initData: typeof initData;
   kpiAnnual: typeof kpiAnnual;
+  masterAssociate: typeof masterAssociate;
   migrate: typeof migrate;
   notifications: typeof notifications;
   roles: typeof roles;

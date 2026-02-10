@@ -209,4 +209,20 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_year", ["year"]),
+
+  // Table Master Associate
+  masterAssociate: defineTable({
+    kode: v.string(), // Kode associate (ASS001, ASS002, dll)
+    nama: v.string(), // Nama associate
+    kategori: v.union(v.literal("Direct"), v.literal("Associate")), // Kategori
+    status: v.union(v.literal("Aktif"), v.literal("Non-Aktif")), // Status
+
+    // Audit fields
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_kode", ["kode"])
+    .index("by_kategori", ["kategori"])
+    .index("by_status", ["status"])
+    .index("by_creationTime", ["createdAt"])
 });

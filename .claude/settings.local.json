@@ -30,7 +30,8 @@
       "Bash(npm audit:*)",
       "Bash(find:*)",
       "WebSearch",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(npx kill-port:*)"
     ],
     "deny": [],
     "ask": []
