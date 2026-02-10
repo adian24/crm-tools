@@ -50,10 +50,10 @@ interface FormDataRowProps {
   onRemove: (index: number) => void;
   totalRows: number;
   staffUsers: any[];
-  associateOptions: string[];
+  associates: any[];
 }
 
-export const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, staffUsers, associateOptions }: FormDataRowProps) => {
+export const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, staffUsers, associates }: FormDataRowProps) => {
   const handleChange = (field: keyof CrmFormData, value: string) => {
     onFieldChange(index, field, value);
   };
@@ -209,8 +209,8 @@ export const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, st
           className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
         >
           <option value="">- Pilih -</option>
-          {associateOptions.map((nama: string) => (
-            <option key={nama} value={nama}>{nama}</option>
+          {associates?.map((assoc: any) => (
+            <option key={assoc._id} value={assoc.nama}>{assoc.nama}</option>
           ))}
         </select>
       </td>

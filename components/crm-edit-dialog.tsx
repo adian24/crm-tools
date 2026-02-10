@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useMutation } from 'convex/react';
+import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 import {
@@ -26,7 +26,6 @@ import masterAlasanData from '@/data/master-alasan.json';
 import masterTahapanData from '@/data/master-tahapan.json';
 import masterKuadranData from '@/data/master-kuadran.json';
 import masterAkreditasiData from '@/data/master-akreditasi.json';
-import { getAssociates } from '@/lib/actions/master-associate-actions';
 import { Save, X, Building2, Users, FileText, DollarSign, Calendar, Loader2 } from 'lucide-react';
 
 interface CrmTarget {
@@ -122,10 +121,10 @@ interface FormData {
 
 const EditCrmDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSuccess }: EditCrmDialogProps) => {
   const updateTargetMutation = useMutation(api.crmTargets.updateCrmTarget);
+  const associates = useQuery(api.masterAssociate.getAssociates);
 
   // Loading state
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [associateOptions, setAssociateOptions] = useState<string[]>([]);
 
   // Form state
   const [formData, setFormData] = useState<FormData>({
@@ -222,15 +221,6 @@ const EditCrmDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSu
     }
   }, [target, normalizeForSelect]);
 
-  // Fetch associates from Convex
-  useEffect(() => {
-    const fetchAssociates = async () => {
-      const associates = await getAssociates();
-      setAssociateOptions(associates.map(assoc => assoc.nama));
-    };
-    fetchAssociates();
-  }, []);
-
   // Auto-calculate trimming and loss when hargaKontrak or hargaTerupdate changes
   useEffect(() => {
     const hargaKontrakNum = parseFloat(cleanNumber(formData.hargaKontrak));
@@ -261,6 +251,7 @@ const EditCrmDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSu
     [formData.provinsi]
   );
   const alasanOptions = useMemo(() => masterAlasanData.alasan.map(item => item.alasan), []);
+  const associateOptions = useMemo(() => associates?.map(assoc => assoc.nama) || [], [associates]);
   const salesOptions = useMemo(() => masterSalesData.map(sales => sales.nama), []);
   const standarOptions = useMemo(() => masterStandarData.standar.map(std => std.kode), []);
   const eaCodeOptions = useMemo(() => masterEaCodeData.ea_code.map(ea => ({ id: ea.id, code: ea.ea_code })), []);

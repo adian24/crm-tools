@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useMutation } from 'convex/react';
+import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 import {
@@ -28,7 +28,6 @@ import masterEaCodeData from '@/data/master-ea-code.json';
 import masterAlasanData from '@/data/master-alasan.json';
 import masterKuadranData from '@/data/master-kuadran.json';
 import masterAkreditasiData from '@/data/master-akreditasi.json';
-import { getAssociates } from '@/lib/actions/master-associate-actions';
 
 interface CrmTarget {
   _id: Id<"crmTargets">;
@@ -120,7 +119,7 @@ interface FormData {
 
 const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSuccess }: EditKunjunganDialogProps) => {
   const updateTargetMutation = useMutation(api.crmTargets.updateCrmTarget);
-  const [associateOptions, setAssociateOptions] = useState<string[]>([]);
+  const associates = useQuery(api.masterAssociate.getAssociates);
 
   // Form state
   const [formData, setFormData] = useState<FormData>({
@@ -166,15 +165,6 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const isInitialLoad = React.useRef(true);
 
-  // Fetch associates from Convex
-  useEffect(() => {
-    const fetchAssociates = async () => {
-      const associates = await getAssociates();
-      setAssociateOptions(associates.map(assoc => assoc.nama));
-    };
-    fetchAssociates();
-  }, []);
-
   // Clean formatted number back to plain number
   const cleanNumber = (value: string): string => {
     return value.replace(/\./g, '');
@@ -195,7 +185,7 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
 
       // Get all options for normalization
       const salesOptionsList = masterSalesData.map(sales => sales.nama);
-      const associateOptionsList = associateOptions;
+      const associateOptionsList = associates?.map(assoc => assoc.nama) || [];
       const standarOptionsList = masterStandarData.standar.map(std => std.kode);
       const alasanOptionsList = masterAlasanData.alasan.map(item => item.alasan);
       const kuadranOptionsList = masterKuadranData.kuadran.map(k => k.kode);

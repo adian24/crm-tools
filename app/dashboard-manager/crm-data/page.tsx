@@ -23,7 +23,6 @@ import masterSalesData from '@/data/master-sales.json';
 import masterStandarData from '@/data/master-standar.json';
 import masterEaCodeData from '@/data/master-ea-code.json';
 import masterAlasanData from '@/data/master-alasan.json';
-import { getAssociates } from '@/lib/actions/master-associate-actions';
 import { InfinityLoader } from '@/components/ui/infinity-loader';
 import { FilterSection } from '@/components/filters/FilterSection';
 import { FilterDateSection } from '@/components/filters/FilterDateSection';
@@ -117,7 +116,7 @@ interface FormDataRowProps {
   onRemove: (index: number) => void;
   totalRows: number;
   staffUsers: any[];
-  associateOptions: string[];
+  associates: any[];
 }
 
 // Helper functions to normalize provinsi and kota for flexible matching
@@ -142,7 +141,7 @@ const normalizeKota = (str: string): string => {
 };
 
 // FormDataRow Component for Excel-like table
-const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, staffUsers, associateOptions }: FormDataRowProps) => {
+const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, staffUsers, associates }: FormDataRowProps) => {
   const handleChange = (field: keyof CrmFormData, value: string) => {
     onFieldChange(index, field, value);
   };
@@ -299,8 +298,8 @@ const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, staffUser
           className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
         >
           <option value="">- Pilih -</option>
-          {associateOptions.map((nama: string) => (
-            <option key={nama} value={nama}>{nama}</option>
+          {associates?.map((assoc: any) => (
+            <option key={assoc._id} value={assoc.nama}>{assoc.nama}</option>
           ))}
         </select>
       </td>
@@ -614,7 +613,6 @@ export default function CrmDataManagementPage() {
   const [filterStatusKunjungan, setFilterStatusKunjungan] = useState<string>('all');
   const [filterPicSales, setFilterPicSales] = useState<string>('all');
   const [filterTipeProduk, setFilterTipeProduk] = useState<string>('all');
-  const [associateOptions, setAssociateOptions] = useState<string[]>([]);
 
   // Quick filter from statistics cards
   const [quickFilter, setQuickFilter] = useState<{ field: string; value: string } | null>(null);
@@ -622,20 +620,12 @@ export default function CrmDataManagementPage() {
   // Fetch CRM targets
   const crmTargets = useQuery(api.crmTargets.getCrmTargets);
   const allUsers = useQuery(api.auth.getAllUsers);
+  const associates = useQuery(api.masterAssociate.getAssociates);
   const staffUsers = allUsers?.filter(user => user.role === 'staff') || [];
   const deleteTarget = useMutation(api.crmTargets.deleteCrmTarget);
   const createTarget = useMutation(api.crmTargets.createCrmTarget);
   const updateTargetMutation = useMutation(api.crmTargets.updateCrmTarget);
   const deleteAllTargets = useMutation(api.crmTargets.deleteAllCrmTargets);
-
-  // Fetch associates from Convex
-  useEffect(() => {
-    const fetchAssociates = async () => {
-      const associates = await getAssociates();
-      setAssociateOptions(associates.map(assoc => assoc.nama));
-    };
-    fetchAssociates();
-  }, []);
 
   // Filter options - Dynamic from crmTargets data
   const tahunOptions = Array.from({ length: 11 }, (_, i) => (2024 + i).toString());
@@ -2954,7 +2944,7 @@ export default function CrmDataManagementPage() {
                         onRemove={removeExcelFormRow}
                         totalRows={excelFormData.length}
                         staffUsers={staffUsers}
-                        associateOptions={associateOptions}
+                        associates={associates || []}
                       />
                     ))}
                   </tbody>
