@@ -6,7 +6,6 @@
 import React, { useMemo } from 'react';
 import indonesiaData from '@/data/indonesia-provinsi-kota.json';
 import masterSalesData from '@/data/master-sales.json';
-import masterAssociateData from '@/data/master-associate.json';
 import masterStandarData from '@/data/master-standar.json';
 import masterEaCodeData from '@/data/master-ea-code.json';
 import masterAlasanData from '@/data/master-alasan.json';
@@ -51,9 +50,10 @@ interface FormDataRowProps {
   onRemove: (index: number) => void;
   totalRows: number;
   staffUsers: any[];
+  associateOptions: string[];
 }
 
-export const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, staffUsers }: FormDataRowProps) => {
+export const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, staffUsers, associateOptions }: FormDataRowProps) => {
   const handleChange = (field: keyof CrmFormData, value: string) => {
     onFieldChange(index, field, value);
   };
@@ -209,8 +209,8 @@ export const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, st
           className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
         >
           <option value="">- Pilih -</option>
-          {masterAssociateData.associate.map((assoc: any) => (
-            <option key={assoc.kode} value={assoc.nama}>{assoc.nama}</option>
+          {associateOptions.map((nama: string) => (
+            <option key={nama} value={nama}>{nama}</option>
           ))}
         </select>
       </td>

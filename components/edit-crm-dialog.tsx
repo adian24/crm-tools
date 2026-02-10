@@ -12,10 +12,10 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import indonesiaData from '@/data/indonesia-provinsi-kota.json';
 import masterSalesData from '@/data/master-sales.json';
-import masterAssociateData from '@/data/master-associate.json';
 import masterStandarData from '@/data/master-standar.json';
 import masterEaCodeData from '@/data/master-ea-code.json';
 import masterAlasanData from '@/data/master-alasan.json';
+import { getAssociates } from '@/lib/actions/master-associate-actions';
 
 interface EditFormData {
   tahun: string;
@@ -65,6 +65,7 @@ const EditCrmDialog = React.memo(function EditCrmDialog({
   onSuccess
 }: EditCrmDialogProps) {
   const updateTarget = useMutation(api.crmTargets.updateCrmTarget);
+  const [associateOptions, setAssociateOptions] = useState<string[]>([]);
 
   const [formData, setFormData] = useState<EditFormData>({
     tahun: '',
@@ -137,6 +138,15 @@ const EditCrmDialog = React.memo(function EditCrmDialog({
     }
   }, [target]);
 
+  // Fetch associates from Convex
+  useEffect(() => {
+    const fetchAssociates = async () => {
+      const associates = await getAssociates();
+      setAssociateOptions(associates.map(assoc => assoc.nama));
+    };
+    fetchAssociates();
+  }, []);
+
   // Format number to Indonesian locale (1.000)
   const formatNumber = (value: string) => {
     const cleanValue = value.replace(/\./g, '').replace(/,/g, '.');
@@ -192,7 +202,6 @@ const EditCrmDialog = React.memo(function EditCrmDialog({
   , [formData.provinsi]);
 
   const alasanOptions = useMemo(() => masterAlasanData.alasan.map(item => item.alasan), []);
-  const associateOptions = useMemo(() => masterAssociateData.associate.map(assoc => assoc.nama), []);
   const salesOptions = useMemo(() => masterSalesData.map(sales => sales.nama), []);
   const standarOptions = useMemo(() => masterStandarData.standar.map(std => std.nama), []);
   const eaCodeOptions = useMemo(() => masterEaCodeData.ea_code.map(ea => ({ id: ea.id, code: ea.ea_code })), []);

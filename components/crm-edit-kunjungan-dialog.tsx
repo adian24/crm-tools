@@ -23,12 +23,12 @@ import { Save, X, Calendar, MapPin, Building2, FileText, DollarSign, Users, Phon
 import { ImagePreviewDialog } from '@/components/image-preview-dialog';
 import indonesiaData from '@/data/indonesia-provinsi-kota.json';
 import masterSalesData from '@/data/master-sales.json';
-import masterAssociateData from '@/data/master-associate.json';
 import masterStandarData from '@/data/master-standar.json';
 import masterEaCodeData from '@/data/master-ea-code.json';
 import masterAlasanData from '@/data/master-alasan.json';
 import masterKuadranData from '@/data/master-kuadran.json';
 import masterAkreditasiData from '@/data/master-akreditasi.json';
+import { getAssociates } from '@/lib/actions/master-associate-actions';
 
 interface CrmTarget {
   _id: Id<"crmTargets">;
@@ -120,6 +120,7 @@ interface FormData {
 
 const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSuccess }: EditKunjunganDialogProps) => {
   const updateTargetMutation = useMutation(api.crmTargets.updateCrmTarget);
+  const [associateOptions, setAssociateOptions] = useState<string[]>([]);
 
   // Form state
   const [formData, setFormData] = useState<FormData>({
@@ -165,6 +166,15 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const isInitialLoad = React.useRef(true);
 
+  // Fetch associates from Convex
+  useEffect(() => {
+    const fetchAssociates = async () => {
+      const associates = await getAssociates();
+      setAssociateOptions(associates.map(assoc => assoc.nama));
+    };
+    fetchAssociates();
+  }, []);
+
   // Clean formatted number back to plain number
   const cleanNumber = (value: string): string => {
     return value.replace(/\./g, '');
@@ -185,7 +195,7 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
 
       // Get all options for normalization
       const salesOptionsList = masterSalesData.map(sales => sales.nama);
-      const associateOptionsList = masterAssociateData.associate.map(assoc => assoc.nama);
+      const associateOptionsList = associateOptions;
       const standarOptionsList = masterStandarData.standar.map(std => std.kode);
       const alasanOptionsList = masterAlasanData.alasan.map(item => item.alasan);
       const kuadranOptionsList = masterKuadranData.kuadran.map(k => k.kode);
@@ -270,7 +280,6 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
     [formData.provinsi]
   );
   const alasanOptions = React.useMemo(() => masterAlasanData.alasan.map(item => item.alasan), []);
-  const associateOptions = React.useMemo(() => masterAssociateData.associate.map(assoc => assoc.nama), []);
   const salesOptions = React.useMemo(() => masterSalesData.map(sales => sales.nama), []);
   const standarOptions = React.useMemo(() => masterStandarData.standar.map(std => std.kode), []);
   const eaCodeOptions = React.useMemo(() => masterEaCodeData.ea_code.map(ea => ({ id: ea.id, code: ea.ea_code })), []);
