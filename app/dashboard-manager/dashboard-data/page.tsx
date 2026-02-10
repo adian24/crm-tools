@@ -1678,9 +1678,15 @@ export default function CrmDataManagementPage() {
                     const mrcWaiting = mrcDataBase.filter(t => t.status === 'WAITING').length;
                     const mrcWaitingAmount = Math.round(mrcDataBase.filter(t => t.status === 'WAITING').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
 
-                    // Calculate visits - use base data
-                    const mrcVisitsTarget = Math.round(mrcDataBase.length / 2);
-                    const mrcVisits = mrcDataBase.filter(t => (t.statusKunjungan || '').trim().toUpperCase() === 'VISITED').length;
+                    // Calculate visits - use ALL data for this PIC WITHOUT filters (except PIC)
+                    // This matches the behavior in dashboard-kunjungan
+                    const mrcAllData = (crmTargets || []).filter(t => (t.picCrm || '').toUpperCase() === 'MRC');
+                    const mrcVisitsTarget = Math.round(new Set(mrcAllData.map(t => t.namaPerusahaan)).size / 2);
+                    const mrcVisits = new Set(
+                      mrcAllData
+                        .filter(t => (t.statusKunjungan || '').trim().toUpperCase() === 'VISITED')
+                        .map(t => t.namaPerusahaan)
+                    ).size;
 
                     return (
                       <div className="space-y-3">
@@ -1985,9 +1991,15 @@ export default function CrmDataManagementPage() {
                     const dhaWaiting = dhaDataBase.filter(t => t.status === 'WAITING').length;
                     const dhaWaitingAmount = Math.round(dhaDataBase.filter(t => t.status === 'WAITING').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
 
-                    // Calculate visits - use base data
-                    const dhaVisitsTarget = Math.round(dhaDataBase.length / 2);
-                    const dhaVisits = dhaDataBase.filter(t => (t.statusKunjungan || '').trim().toUpperCase() === 'VISITED').length;
+                    // Calculate visits - use ALL data for this PIC WITHOUT filters (except PIC)
+                    // This matches the behavior in dashboard-kunjungan
+                    const dhaAllData = (crmTargets || []).filter(t => (t.picCrm || '').toUpperCase() === 'DHA');
+                    const dhaVisitsTarget = Math.round(new Set(dhaAllData.map(t => t.namaPerusahaan)).size / 2);
+                    const dhaVisits = new Set(
+                      dhaAllData
+                        .filter(t => (t.statusKunjungan || '').trim().toUpperCase() === 'VISITED')
+                        .map(t => t.namaPerusahaan)
+                    ).size;
 
                     return (
                       <div className="space-y-3">
