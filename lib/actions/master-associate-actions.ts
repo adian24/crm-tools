@@ -29,6 +29,18 @@ export async function addAssociate(associate: Omit<Associate, 'kode'>): Promise<
   try {
     const associates = await getAssociates();
 
+    // Check for duplicate name (case-insensitive)
+    const isDuplicate = associates.some(
+      (existingAssoc) => existingAssoc.nama.toLowerCase().trim() === associate.nama.toLowerCase().trim()
+    );
+
+    if (isDuplicate) {
+      return {
+        success: false,
+        message: `Nama associate "${associate.nama}" sudah ada. Gunakan nama lain.`,
+      };
+    }
+
     // Generate new kode (ASS + next number)
     const maxCode = associates.reduce((max, assoc) => {
       const num = parseInt(assoc.kode.replace('ASS', ''));
@@ -65,6 +77,20 @@ export async function updateAssociate(kode: string, associate: Omit<Associate, '
 
     if (index === -1) {
       return { success: false, message: 'Associate tidak ditemukan' };
+    }
+
+    // Check for duplicate name (case-insensitive), excluding current record
+    const isDuplicate = associates.some(
+      (existingAssoc) =>
+        existingAssoc.kode !== kode &&
+        existingAssoc.nama.toLowerCase().trim() === associate.nama.toLowerCase().trim()
+    );
+
+    if (isDuplicate) {
+      return {
+        success: false,
+        message: `Nama associate "${associate.nama}" sudah ada. Gunakan nama lain.`,
+      };
     }
 
     // Update associate
