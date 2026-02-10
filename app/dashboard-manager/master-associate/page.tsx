@@ -22,7 +22,7 @@ import { useRouter } from 'next/navigation';
 export interface Associate {
   kode: string;
   nama: string;
-  kategori: 'Internal' | 'Consulting' | 'Individual';
+  kategori: 'Direct' | 'Associate';
   status: 'Aktif' | 'Non-Aktif';
 }
 
