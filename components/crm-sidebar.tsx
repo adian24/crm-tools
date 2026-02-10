@@ -17,6 +17,7 @@ import {
   IconCalendarTime,
   IconKey,
   IconAward,
+  IconArchive,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -76,7 +77,18 @@ const getNavigationItems = (role: string) => {
         title: "KPI",
         url: "/dashboard-manager/kpi",
         icon: IconAward,
-      }
+      },
+      {
+        title: "Master Data",
+        icon: IconArchive,
+        items: [
+          {
+            title: "Data Associate",
+            url: "/dashboard-manager/master-associate",
+            icon: IconUsers,
+          },
+        ],
+      },
     ];
   }
 
@@ -106,6 +118,17 @@ const getNavigationItems = (role: string) => {
       title: "KPI",
       url: "/dashboard-manager/kpi",
       icon: IconAward,
+    },
+    {
+      title: "Master Data",
+      icon: IconArchive,
+      items: [
+        {
+          title: "Data Associate",
+          url: "/dashboard-manager/master-associate",
+          icon: IconUsers,
+        },
+      ],
     },
     {
       title: "Settings",
