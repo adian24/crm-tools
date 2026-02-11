@@ -375,6 +375,149 @@ export default function PermissionsManagementPage() {
         </div>
       </div>
 
+      {/* Info Cards - Permission Guide */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+        {/* Dashboard Permissions */}
+        <Card className="border-blue-200 bg-blue-50/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
+                <Shield className="h-4 w-4 text-white" />
+              </div>
+              <CardTitle className="text-sm">Dashboard</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2 text-xs">
+            <div className="space-y-1">
+              <p className="font-semibold text-blue-700">Permissions:</p>
+              <ul className="space-y-0.5 text-muted-foreground">
+                <li>• <strong>dashboard_view:</strong> Lihat dashboard utama</li>
+                <li>• <strong>dashboard_data_view:</strong> Lihat dashboard pencapaian</li>
+                <li>• <strong>dashboard_kunjungan_view:</strong> Lihat dashboard kunjungan</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* CRM Data Permissions */}
+        <Card className="border-purple-200 bg-purple-50/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-full bg-purple-500 flex items-center justify-center">
+                <ShieldCheck className="h-4 w-4 text-white" />
+              </div>
+              <CardTitle className="text-sm">CRM Data</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2 text-xs">
+            <div className="space-y-1">
+              <p className="font-semibold text-purple-700">Permissions:</p>
+              <ul className="space-y-0.5 text-muted-foreground">
+                <li>• <strong>crm_data_view:</strong> <span className="text-green-600">WAJIB</span> untuk akses menu</li>
+                <li>• <strong>crm_data_create:</strong> Tambah data baru</li>
+                <li>• <strong>crm_data_edit:</strong> Edit data yang ada</li>
+                <li>• <strong>crm_data_delete:</strong> Hapus data</li>
+                <li>• <strong>crm_data_export:</strong> Download/export Excel</li>
+              </ul>
+            </div>
+            <div className="pt-2 border-t border-purple-200">
+              <p className="text-purple-700 font-medium">⚠️ Staff: View-only (hanya lihat data sendiri)</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Visit Permissions */}
+        <Card className="border-green-200 bg-green-50/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center">
+                <ShieldAlert className="h-4 w-4 text-white" />
+              </div>
+              <CardTitle className="text-sm">Kunjungan</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2 text-xs">
+            <div className="space-y-1">
+              <p className="font-semibold text-green-700">Permissions:</p>
+              <ul className="space-y-0.5 text-muted-foreground">
+                <li>• <strong>visit_view:</strong> Lihat jadwal kunjungan</li>
+                <li>• <strong>visit_create:</strong> Tambah jadwal baru</li>
+                <li>• <strong>visit_edit:</strong> Edit jadwal</li>
+                <li>• <strong>visit_delete:</strong> Hapus jadwal</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* User & Role Permissions */}
+        <Card className="border-orange-200 bg-orange-50/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-full bg-orange-500 flex items-center justify-center">
+                <KeyIcon className="h-4 w-4 text-white" />
+              </div>
+              <CardTitle className="text-sm">User & Roles</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2 text-xs">
+            <div className="space-y-1">
+              <p className="font-semibold text-orange-700">User Management:</p>
+              <ul className="space-y-0.5 text-muted-foreground">
+                <li>• <strong>users_view:</strong> Lihat daftar user</li>
+                <li>• <strong>users_create:</strong> Tambah user</li>
+                <li>• <strong>users_edit:</strong> Edit user</li>
+                <li>• <strong>users_delete:</strong> Hapus user</li>
+              </ul>
+              <p className="font-semibold text-orange-700 mt-2">Role Management:</p>
+              <ul className="space-y-0.5 text-muted-foreground">
+                <li>• <strong>roles_view:</strong> Lihat daftar role</li>
+                <li>• <strong>roles_create/edit/delete:</strong> Kelola role</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Important Notes */}
+      <Card className="border-yellow-200 bg-yellow-50/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <span>⚠️</span>
+            Penting: Cara Kerja Permission CRM Data
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="font-semibold text-yellow-800 mb-2">1. Akses Menu</p>
+              <p className="text-yellow-700 text-xs">
+                User <strong>WAJIB</strong> memiliki permission <code className="bg-yellow-100 px-1 py-0.5 rounded">crm_data_view</code> untuk bisa melihat menu "CRM Data Management" di sidebar.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-yellow-800 mb-2">2. View-Only Mode (Staff)</p>
+              <p className="text-yellow-700 text-xs">
+                Semua user dengan role <code className="bg-yellow-100 px-1 py-0.5 rounded">staff</code> otomatis dalam mode <strong>view-only</strong> (tidak bisa edit/delete/export) dan hanya melihat data miliknya sendiri (berdasarkan PIC CRM).
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-yellow-800 mb-2">3. Data Filtering</p>
+              <p className="text-yellow-700 text-xs">
+                Data difilter otomatis berdasarkan nama user:
+                <br />• <strong>Admin/Manager:</strong> Lihat semua data
+                <br />• <strong>Staff:</strong> Hanya data di mana <code className="bg-yellow-100 px-1 py-0.5 rounded">picCrm = nama_user</code>
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-yellow-800 mb-2">4. Re-seed Setelah Edit</p>
+              <p className="text-yellow-700 text-xs">
+                Setelah mengedit permissions di file <code className="bg-yellow-100 px-1 py-0.5 rounded">convex/roles.ts</code>, WAJIB klik tombol <strong>"Seed Default Roles"</strong> untuk menerapkan perubahan ke database.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Filters */}
       <Card className="border-border/50 shadow-sm">
         <CardContent className="pt-6">

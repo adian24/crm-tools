@@ -31,7 +31,8 @@
       "Bash(find:*)",
       "WebSearch",
       "Bash(echo:*)",
-      "Bash(npx kill-port:*)"
+      "Bash(npx kill-port:*)",
+      "Bash(npx next build:*)"
     ],
     "deny": [],
     "ask": []

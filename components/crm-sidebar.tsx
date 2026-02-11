@@ -53,6 +53,11 @@ const getNavigationItems = (role: string) => {
         title: "Dashboard Kunjungan",
         url: "/dashboard-manager/dashboard-kunjungan",
         icon: IconCalendarTime,
+      },
+      {
+        title: "CRM Data Management",
+        url: "/dashboard-manager/crm-data",
+        icon: IconTarget,
       }
     ];
   }

@@ -34,7 +34,7 @@ import { FilterKunjunganSection } from '@/components/filters/FilterKunjunganSect
 import { EditCrmDialog } from '@/components/crm-edit-dialog';
 
 interface CrmTarget {
-  _id: Id<"crmTargets">;
+  _id: Id<"filteredCrmTargets">;
   tahun?: string;
   bulanExpDate: string;
   produk: string;
@@ -569,6 +569,7 @@ const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, staffUser
 };
 
 export default function CrmDataManagementPage() {
+  // State variables
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPicCrm, setFilterPicCrm] = useState<string>('all');
@@ -617,7 +618,7 @@ export default function CrmDataManagementPage() {
   // Quick filter from statistics cards
   const [quickFilter, setQuickFilter] = useState<{ field: string; value: string } | null>(null);
 
-  // Fetch CRM targets
+  // Fetch CRM targets and user permissions
   const crmTargets = useQuery(api.crmTargets.getCrmTargets);
   const allUsers = useQuery(api.auth.getAllUsers);
   const associates = useQuery(api.masterAssociate.getAssociates);
@@ -627,7 +628,69 @@ export default function CrmDataManagementPage() {
   const updateTargetMutation = useMutation(api.crmTargets.updateCrmTarget);
   const deleteAllTargets = useMutation(api.crmTargets.deleteAllCrmTargets);
 
-  // Filter options - Dynamic from crmTargets data
+  // Loading state - show loading while any critical query is loading
+  const isLoading = crmTargets === undefined || allUsers === undefined;
+
+  // Get current user with role and permissions
+  const [currentUser, setCurrentUser] = React.useState<any>(null);
+  const [canEdit, setCanEdit] = React.useState(true);
+  const [canViewAll, setCanViewAll] = React.useState(true);
+
+  React.useEffect(() => {
+    try {
+      const userData = localStorage.getItem('crm_user');
+      if (userData) {
+        const parsedUser = JSON.parse(userData);
+        setCurrentUser(parsedUser);
+
+        // Check permissions based on role
+        // All STAFF are view-only (tidak bisa edit/delete/export)
+        if (parsedUser.role === 'staff') {
+          setCanEdit(false);     // View-only mode
+          setCanViewAll(false);  // Hanya lihat data sendiri
+        }
+        // Admin and super_admin: full access
+        else if (parsedUser.role === 'admin' || parsedUser.role === 'super_admin') {
+          setCanEdit(true);
+          setCanViewAll(true);
+        }
+        // Manager: full access
+        else if (parsedUser.role === 'manager') {
+          setCanEdit(true);
+          setCanViewAll(true);
+        }
+
+        // Auto-set PIC CRM filter for staff
+        if (parsedUser.role === 'staff' && parsedUser.name) {
+          setFilterPicCrm(parsedUser.name);
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+      setCanEdit(true);
+      setCanViewAll(true);
+    }
+  }, []);
+
+  // Filter CRM targets based on logged-in user and permissions
+  const filteredCrmTargets = React.useMemo(() => {
+    if (!crmTargets) return [];
+
+    // If user can view all (admin/super_admin), show all data
+    if (canViewAll || currentUser?.role === 'admin' || currentUser?.role === 'super_admin') {
+      return crmTargets;
+    }
+
+    // If user is staff, only show their own data based on their name matching PIC CRM
+    if (currentUser?.role === 'staff' && currentUser?.name) {
+      return crmTargets.filter(target => target.picCrm === currentUser.name);
+    }
+
+    // Default: return all data if role doesn't match
+    return crmTargets;
+  }, [crmTargets, currentUser, canViewAll]);
+
+  // Filter options - Dynamic from filteredCrmTargets data
   const tahunOptions = Array.from({ length: 11 }, (_, i) => (2024 + i).toString());
   const bulanOptions = [
     { value: '1', label: 'Januari' },
@@ -643,7 +706,7 @@ export default function CrmDataManagementPage() {
     { value: '11', label: 'November' },
     { value: '12', label: 'Desember' },
   ];
-  const alasanOptions = [...new Set(crmTargets?.map(t => t.alasan).filter(Boolean) || [])].sort() as string[];
+  const alasanOptions = [...new Set(filteredCrmTargets?.map(t => t.alasan).filter(Boolean) || [])].sort() as string[];
   // Get standar options from master-standar.json
   const standarOptions = masterStandarData.standar.map((s: any) => s.kode).sort();
 
@@ -651,7 +714,7 @@ export default function CrmDataManagementPage() {
   const provinsiOptions = Object.keys(indonesiaData).sort();
 
   // Get unique provinsi values from actual data (for debugging)
-  const provinsiFromData = [...new Set(crmTargets?.map(t => t.provinsi).filter(Boolean) || [])].sort();
+  const provinsiFromData = [...new Set(filteredCrmTargets?.map(t => t.provinsi).filter(Boolean) || [])].sort();
  
   // Get kota options based on selected provinsi from Indonesia data
   const kotaOptions = filterProvinsi !== 'all' && (indonesiaData as any)[filterProvinsi]
@@ -660,11 +723,11 @@ export default function CrmDataManagementPage() {
 
   // Tahapan Audit - Default options + dynamic from data
   const defaultTahapanAudit = ['IA', 'SV1', 'SV2', 'SV3', 'SV4', 'RC'];
-  const tahapanAuditFromData = [...new Set(crmTargets?.map(t => t.tahapAudit).filter(Boolean) || [])];
+  const tahapanAuditFromData = [...new Set(filteredCrmTargets?.map(t => t.tahapAudit).filter(Boolean) || [])];
   const tahapanAuditOptions = [...new Set([...defaultTahapanAudit, ...tahapanAuditFromData])].sort() as string[];
 
   // Sales options
-  const salesOptions = [...new Set(crmTargets?.map(t => t.sales).filter(Boolean) || [])].sort() as string[];
+  const salesOptions = [...new Set(filteredCrmTargets?.map(t => t.sales).filter(Boolean) || [])].sort() as string[];
 
   // Toggle filter section
   const toggleFilterSection = (section: string) => {
@@ -771,7 +834,7 @@ export default function CrmDataManagementPage() {
   const [isSubmittingExcel, setIsSubmittingExcel] = useState(false);
 
   // Filter and search
-  const filteredTargets = crmTargets?.filter(target => {
+  const filteredTargets = filteredCrmTargets?.filter(target => {
     // Search filter
     const matchesSearch = searchTerm === '' ||
       target.namaPerusahaan.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -958,8 +1021,8 @@ export default function CrmDataManagementPage() {
   }, [isAllSelected, isSomeSelected]);
 
   // Get unique values for filters
-  const uniqueStatuses = [...new Set(crmTargets?.map(t => t.status) || [])].sort();
-  const uniquePicCrms = [...new Set(crmTargets?.map(t => t.picCrm) || [])].sort();
+  const uniqueStatuses = [...new Set(filteredCrmTargets?.map(t => t.status) || [])].sort();
+  const uniquePicCrms = [...new Set(filteredCrmTargets?.map(t => t.picCrm) || [])].sort();
 
   // Helper component for sortable table header
   const SortableTableHead = ({ children, field, className }: { children: React.ReactNode; field: string; className?: string }) => {
@@ -1100,7 +1163,7 @@ export default function CrmDataManagementPage() {
       // Delete all selected items
       for (const id of selectedIds) {
         try {
-          await deleteTarget({ id: id as Id<"crmTargets"> });
+          await deleteTarget({ id: id as Id<"filteredCrmTargets"> });
           successCount++;
         } catch (error) {
           console.error(`Failed to delete ${id}:`, error);
@@ -1693,11 +1756,11 @@ export default function CrmDataManagementPage() {
   };
 
   // Bulk insert mutation
-  const createBulkInsert = useMutation(api.crmTargets.bulkInsertCrmTargets);
+  const createBulkInsert = useMutation(api.filteredCrmTargets.bulkInsertCrmTargets);
 
   // Handle Excel export
   const handleExcelExport = () => {
-    if (!crmTargets || crmTargets.length === 0) {
+    if (!filteredCrmTargets || filteredCrmTargets.length === 0) {
       toast.error('No data to export');
       return;
     }
@@ -1754,7 +1817,7 @@ export default function CrmDataManagementPage() {
     // Convert data to Excel format
     const excelData = [
       headers,
-      ...crmTargets.map(target => [
+      ...filteredCrmTargets.map(target => [
         target.tahun || '',
         target.bulanExpDate || '',
         target.produk || '',
@@ -1846,15 +1909,19 @@ export default function CrmDataManagementPage() {
     // Download file
     XLSX.writeFile(workbook, fileName);
 
-    toast.success(`Successfully exported ${crmTargets.length} records to Excel!`);
+    toast.success(`Successfully exported ${filteredCrmTargets.length} records to Excel!`);
   };
 
-  if (crmTargets === undefined) {
+  // Show loading indicator while data is being fetched
+  if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-64">
-        <InfinityLoader size="md" />
-        <p className="mt-4 text-sm font-medium bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-          Loading CRM Management...
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <InfinityLoader size="lg" />
+        <p className="mt-6 text-sm font-medium bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+          Loading CRM Data...
+        </p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Please wait while we fetch your data
         </p>
       </div>
     );
@@ -1865,6 +1932,26 @@ export default function CrmDataManagementPage() {
       {/* LEFT SIDEBAR - FILTERS */}
       <div className="hidden lg:block lg:w-80 flex-shrink-0">
         <div className="sticky top-6 space-y-4">
+          {/* Statistics Cards - Quick Summary */}
+          <Card className="bg-gradient-to-br from-purple-600/10 to-blue-600/10 border-purple-200/50 dark:border-purple-800/50">
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                    {sortedTargets.length}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Total Data</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                    {sortedTargets.filter(t => t.status === 'DONE').length}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Completed</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Filter Card */}
           <Card>
             <CardHeader>
@@ -2117,62 +2204,85 @@ export default function CrmDataManagementPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">CRM Data Management</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl sm:text-3xl font-bold">CRM Data Management</h1>
+              {currentUser?.role === 'staff' && !canEdit && (
+                <>
+                  <Badge variant="secondary" className="bg-amber-100 text-amber-700 border-amber-300">
+                    👁️ View Only Mode
+                  </Badge>
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-300">
+                    PIC: {currentUser.name}
+                  </Badge>
+                </>
+              )}
+              {currentUser?.role === 'staff' && canEdit && (
+                <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-300">
+                  PIC: {currentUser.name}
+                </Badge>
+              )}
+            </div>
             <p className="text-muted-foreground mt-1">
               {selectedIds.size > 0
                 ? `${selectedIds.size} item${selectedIds.size > 1 ? 's' : ''} selected`
+                : currentUser?.role === 'staff'
+                ? !canEdit
+                  ? `Menampilkan ${filteredTargets.length} dari ${filteredCrmTargets.length} data milik ${currentUser.name} (View Only)`
+                  : `Menampilkan ${filteredTargets.length} dari ${filteredCrmTargets.length} data milik ${currentUser.name}`
                 : `${filteredTargets.length} records found`
               }
             </p>
           </div>
-          <div className="flex gap-2">
-            {selectedIds.size > 0 && (
-              <Button
-                onClick={() => setIsBulkDeleteDialogOpen(true)}
-                variant="destructive"
-                size="sm"
-                className='cursor-pointer'
-                disabled={isImporting}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete ({selectedIds.size})
-              </Button>
-            )}
-            <Button
-              onClick={handleExcelExport}
-              variant="outline"
-              size="sm"
-              disabled={isImporting || selectedIds.size > 0}
-              className="border-green-600 text-green-600 hover:bg-green-50 hover:border-green-700 hover:text-green-700 cursor-pointer"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Download All Data
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              asChild
-              disabled={isImporting || selectedIds.size > 0}
-              className="border-blue-600 text-blue-600 hover:bg-blue-50 hover:border-blue-700 hover:text-blue-700"
-            >
-              <label htmlFor="excel-upload" className={`cursor-pointer ${isImporting ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                <Upload className="h-4 w-4 mr-2" />
-                {isImporting ? '...' : 'Import Data'}
-                <input
-                  id="excel-upload"
-                  type="file"
-                  accept=".xlsx,.xls"
-                  className="hidden"
-                  onChange={handleExcelImport}
+          {canEdit && (
+            <div className="flex gap-2">
+              {selectedIds.size > 0 && (
+                <Button
+                  onClick={() => setIsBulkDeleteDialogOpen(true)}
+                  variant="destructive"
+                  size="sm"
+                  className='cursor-pointer'
                   disabled={isImporting}
-                />
-              </label>
-            </Button>
-            <Button onClick={() => setShowExcelFormModal(true)} size="sm" disabled={isImporting || selectedIds.size > 0} className='h-7 text-xs bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 cursor-pointer'>
-              <FileSpreadsheet className="h-4 w-4 mr-2" />
-              Add
-            </Button>
-          </div>
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete ({selectedIds.size})
+                </Button>
+              )}
+              <Button
+                onClick={handleExcelExport}
+                variant="outline"
+                size="sm"
+                disabled={isImporting || selectedIds.size > 0}
+                className="border-green-600 text-green-600 hover:bg-green-50 hover:border-green-700 hover:text-green-700 cursor-pointer"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download All Data
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                asChild
+                disabled={isImporting || selectedIds.size > 0}
+                className="border-blue-600 text-blue-600 hover:bg-blue-50 hover:border-blue-700 hover:text-blue-700"
+              >
+                <label htmlFor="excel-upload" className={`cursor-pointer ${isImporting ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  {isImporting ? '...' : 'Import Data'}
+                  <input
+                    id="excel-upload"
+                    type="file"
+                    accept=".xlsx,.xls"
+                    className="hidden"
+                    onChange={handleExcelImport}
+                    disabled={isImporting}
+                  />
+                </label>
+              </Button>
+              <Button onClick={() => setShowExcelFormModal(true)} size="sm" disabled={isImporting || selectedIds.size > 0} className='h-7 text-xs bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 cursor-pointer'>
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Add
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Statistics Cards - Desktop 2 Column, Mobile Stacked with Certificates at Bottom */}
@@ -2185,16 +2295,16 @@ export default function CrmDataManagementPage() {
                 <span className="text-xs font-semibold text-gray-600 uppercase whitespace-nowrap w-44">📊 Main Metrics:</span>
                 <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                   <div className="bg-blue-50 rounded px-2 py-1 border border-blue-200 text-center">
-                    <p className="text-xs text-blue-700 font-semibold">Records <span className="font-bold">({crmTargets?.length || 0})</span></p>
+                    <p className="text-xs text-blue-700 font-semibold">Records <span className="font-bold">({filteredCrmTargets?.length || 0})</span></p>
                   </div>
                   <div className="bg-purple-50 rounded px-2 py-1 border border-purple-200 text-center">
-                    <p className="text-xs text-purple-700 font-semibold">Companies <span className="font-bold">({new Set((crmTargets || []).map(t => t.namaPerusahaan)).size})</span></p>
+                    <p className="text-xs text-purple-700 font-semibold">Companies <span className="font-bold">({new Set((filteredCrmTargets || []).map(t => t.namaPerusahaan)).size})</span></p>
                   </div>
                   <div className="bg-green-50 rounded px-2 py-1 border border-green-200 text-center">
-                    <p className="text-xs text-green-700 font-semibold">Visited <span className="font-bold">({new Set((crmTargets || []).filter(t => t.statusKunjungan === 'VISITED').map(t => t.namaPerusahaan)).size})</span></p>
+                    <p className="text-xs text-green-700 font-semibold">Visited <span className="font-bold">({new Set((filteredCrmTargets || []).filter(t => t.statusKunjungan === 'VISITED').map(t => t.namaPerusahaan)).size})</span></p>
                   </div>
                   <div className="bg-orange-50 rounded px-2 py-1 border border-orange-200 text-center">
-                    <p className="text-xs text-orange-700 font-semibold">Not Yet <span className="font-bold">({new Set((crmTargets || []).filter(t => t.statusKunjungan === 'NOT YET').map(t => t.namaPerusahaan)).size})</span></p>
+                    <p className="text-xs text-orange-700 font-semibold">Not Yet <span className="font-bold">({new Set((filteredCrmTargets || []).filter(t => t.statusKunjungan === 'NOT YET').map(t => t.namaPerusahaan)).size})</span></p>
                   </div>
                 </div>
               </div>
@@ -2213,7 +2323,7 @@ export default function CrmDataManagementPage() {
                     : handleQuickFilter('status', 'DONE')
                   }
                 >
-                  <p className="text-xs text-purple-700 font-semibold">DONE <span className="font-bold">({(crmTargets || []).filter(t => t.status && t.status.toUpperCase() === 'DONE').length})</span></p>
+                  <p className="text-xs text-purple-700 font-semibold">DONE <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.status && t.status.toUpperCase() === 'DONE').length})</span></p>
                 </div>
                 <div
                   className={`bg-blue-50 rounded px-2 py-1 border border-blue-200 text-center cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all ${
@@ -2224,7 +2334,7 @@ export default function CrmDataManagementPage() {
                     : handleQuickFilter('status', 'PROSES')
                   }
                 >
-                  <p className="text-xs text-blue-700 font-semibold">PROSES <span className="font-bold">({(crmTargets || []).filter(t => t.status && t.status.toUpperCase() === 'PROSES').length})</span></p>
+                  <p className="text-xs text-blue-700 font-semibold">PROSES <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.status && t.status.toUpperCase() === 'PROSES').length})</span></p>
                 </div>
                 <div
                   className={`bg-orange-50 rounded px-2 py-1 border border-orange-200 text-center cursor-pointer hover:ring-2 hover:ring-orange-400 transition-all ${
@@ -2235,7 +2345,7 @@ export default function CrmDataManagementPage() {
                     : handleQuickFilter('status', 'SUSPEND')
                   }
                 >
-                  <p className="text-xs text-orange-700 font-semibold">SUSPEND <span className="font-bold">({(crmTargets || []).filter(t => t.status && t.status.toUpperCase() === 'SUSPEND').length})</span></p>
+                  <p className="text-xs text-orange-700 font-semibold">SUSPEND <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.status && t.status.toUpperCase() === 'SUSPEND').length})</span></p>
                 </div>
                 <div
                   className={`bg-red-50 rounded px-2 py-1 border border-red-200 text-center cursor-pointer hover:ring-2 hover:ring-red-400 transition-all ${
@@ -2246,7 +2356,7 @@ export default function CrmDataManagementPage() {
                     : handleQuickFilter('status', 'LOSS')
                   }
                 >
-                  <p className="text-xs text-red-700 font-semibold">LOSS <span className="font-bold">({(crmTargets || []).filter(t => t.status && t.status.toUpperCase() === 'LOSS').length})</span></p>
+                  <p className="text-xs text-red-700 font-semibold">LOSS <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.status && t.status.toUpperCase() === 'LOSS').length})</span></p>
                 </div>
                 <div
                   className={`bg-gray-50 rounded px-2 py-1 border border-gray-200 text-center cursor-pointer hover:ring-2 hover:ring-gray-400 transition-all ${
@@ -2257,7 +2367,7 @@ export default function CrmDataManagementPage() {
                     : handleQuickFilter('status', 'WAITING')
                   }
                 >
-                  <p className="text-xs text-gray-700 font-semibold">WAITING <span className="font-bold">({(crmTargets || []).filter(t => t.status && t.status.toUpperCase() === 'WAITING').length})</span></p>
+                  <p className="text-xs text-gray-700 font-semibold">WAITING <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.status && t.status.toUpperCase() === 'WAITING').length})</span></p>
                 </div>
               </div>
             </div>
@@ -2275,7 +2385,7 @@ export default function CrmDataManagementPage() {
                     : handleQuickFilter('kuadran', 'K1')
                   }
                 >
-                  <p className="text-xs text-violet-700 font-semibold">K1 <span className="font-bold">({(crmTargets || []).filter(t => t.kuadran && t.kuadran.toUpperCase() === 'K1').length})</span></p>
+                  <p className="text-xs text-violet-700 font-semibold">K1 <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.kuadran && t.kuadran.toUpperCase() === 'K1').length})</span></p>
                 </div>
                 <div
                   className={`bg-fuchsia-50 rounded px-2 py-1 border border-fuchsia-200 text-center cursor-pointer hover:ring-2 hover:ring-fuchsia-400 transition-all ${
@@ -2286,7 +2396,7 @@ export default function CrmDataManagementPage() {
                     : handleQuickFilter('kuadran', 'K2')
                   }
                 >
-                  <p className="text-xs text-fuchsia-700 font-semibold">K2 <span className="font-bold">({(crmTargets || []).filter(t => t.kuadran && t.kuadran.toUpperCase() === 'K2').length})</span></p>
+                  <p className="text-xs text-fuchsia-700 font-semibold">K2 <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.kuadran && t.kuadran.toUpperCase() === 'K2').length})</span></p>
                 </div>
                 <div
                   className={`bg-violet-50 rounded px-2 py-1 border border-violet-200 text-center cursor-pointer hover:ring-2 hover:ring-violet-400 transition-all hidden sm:block ${
@@ -2297,7 +2407,7 @@ export default function CrmDataManagementPage() {
                     : handleQuickFilter('kuadran', 'K3')
                   }
                 >
-                  <p className="text-xs text-violet-700 font-semibold">K3 <span className="font-bold">({(crmTargets || []).filter(t => t.kuadran && t.kuadran.toUpperCase() === 'K3').length})</span></p>
+                  <p className="text-xs text-violet-700 font-semibold">K3 <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.kuadran && t.kuadran.toUpperCase() === 'K3').length})</span></p>
                 </div>
                 <div
                   className={`bg-fuchsia-50 rounded px-2 py-1 border border-fuchsia-200 text-center cursor-pointer hover:ring-2 hover:ring-fuchsia-400 transition-all hidden sm:block ${
@@ -2308,7 +2418,7 @@ export default function CrmDataManagementPage() {
                     : handleQuickFilter('kuadran', 'K4')
                   }
                 >
-                  <p className="text-xs text-fuchsia-700 font-semibold">K4 <span className="font-bold">({(crmTargets || []).filter(t => t.kuadran && t.kuadran.toUpperCase() === 'K4').length})</span></p>
+                  <p className="text-xs text-fuchsia-700 font-semibold">K4 <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.kuadran && t.kuadran.toUpperCase() === 'K4').length})</span></p>
                 </div>
               </div>
             </div>
@@ -2326,7 +2436,7 @@ export default function CrmDataManagementPage() {
                     : handleQuickFilter('luarKota', 'LUAR')
                   }
                 >
-                  <p className="text-xs text-amber-700 font-semibold">Luar Kota <span className="font-bold">({(crmTargets || []).filter(t => t.luarKota && t.luarKota.toUpperCase().includes('LUAR')).length})</span></p>
+                  <p className="text-xs text-amber-700 font-semibold">Luar Kota <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.luarKota && t.luarKota.toUpperCase().includes('LUAR')).length})</span></p>
                 </div>
                 <div
                   className={`bg-yellow-50 rounded px-2 py-1 border border-yellow-200 text-center cursor-pointer hover:ring-2 hover:ring-yellow-400 transition-all ${
@@ -2337,7 +2447,7 @@ export default function CrmDataManagementPage() {
                     : handleQuickFilter('luarKota', 'DALAM')
                   }
                 >
-                  <p className="text-xs text-yellow-700 font-semibold">Dalam Kota <span className="font-bold">({(crmTargets || []).filter(t => !t.luarKota || !t.luarKota.toUpperCase().includes('LUAR')).length})</span></p>
+                  <p className="text-xs text-yellow-700 font-semibold">Dalam Kota <span className="font-bold">({(filteredCrmTargets || []).filter(t => !t.luarKota || !t.luarKota.toUpperCase().includes('LUAR')).length})</span></p>
                 </div>
               </div>
             </div>
@@ -2360,7 +2470,7 @@ export default function CrmDataManagementPage() {
                     : handleQuickFilter('catAkre', 'KAN')
                   }
                 >
-                  <p className="text-xs text-emerald-700 font-semibold">KAN <span className="font-bold">({(crmTargets || []).filter(t => t.catAkre && t.catAkre.toUpperCase() === 'KAN').length})</span></p>
+                  <p className="text-xs text-emerald-700 font-semibold">KAN <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.catAkre && t.catAkre.toUpperCase() === 'KAN').length})</span></p>
                 </div>
                 <div
                   className={`bg-slate-50 rounded px-2 py-1 border border-slate-200 text-center cursor-pointer hover:ring-2 hover:ring-slate-400 transition-all ${
@@ -2371,7 +2481,7 @@ export default function CrmDataManagementPage() {
                     : handleQuickFilter('catAkre', 'NON AKRE')
                   }
                 >
-                  <p className="text-xs text-slate-700 font-semibold">NON AKRE <span className="font-bold">({(crmTargets || []).filter(t => t.catAkre && t.catAkre.toUpperCase() === 'NON AKRE').length})</span></p>
+                  <p className="text-xs text-slate-700 font-semibold">NON AKRE <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.catAkre && t.catAkre.toUpperCase() === 'NON AKRE').length})</span></p>
                 </div>
                 <div
                   className={`bg-blue-50 rounded px-2 py-1 border border-blue-200 text-center cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all ${
@@ -2382,7 +2492,7 @@ export default function CrmDataManagementPage() {
                     : handleQuickFilter('catAkre', 'INTERNASIONAL')
                   }
                 >
-                  <p className="text-xs text-blue-900 font-semibold">INTERNASIONAL <span className="font-bold">({(crmTargets || []).filter(t => t.catAkre && t.catAkre.toUpperCase() === 'INTERNASIONAL').length})</span></p>
+                  <p className="text-xs text-blue-900 font-semibold">INTERNASIONAL <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.catAkre && t.catAkre.toUpperCase() === 'INTERNASIONAL').length})</span></p>
                 </div>
               </div>
             </div>
@@ -2400,7 +2510,7 @@ export default function CrmDataManagementPage() {
                     : handleQuickFilter('statusSertifikat', 'TERBIT')
                   }
                 >
-                  <p className="text-xs text-green-700 font-semibold">Terbit <span className="font-bold">({(crmTargets || []).filter(t => t.statusSertifikat && t.statusSertifikat.toUpperCase() === 'TERBIT').length})</span></p>
+                  <p className="text-xs text-green-700 font-semibold">Terbit <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.statusSertifikat && t.statusSertifikat.toUpperCase() === 'TERBIT').length})</span></p>
                 </div>
                 <div
                   className={`bg-red-50 rounded px-2 py-1 border border-red-200 text-center cursor-pointer hover:ring-2 hover:ring-red-400 transition-all ${
@@ -2411,7 +2521,7 @@ export default function CrmDataManagementPage() {
                     : handleQuickFilter('statusSertifikat', 'BELUM')
                   }
                 >
-                  <p className="text-xs text-red-700 font-semibold">Belum <span className="font-bold">({(crmTargets || []).filter(t => !t.statusSertifikat || t.statusSertifikat.toUpperCase().includes('BELUM')).length})</span></p>
+                  <p className="text-xs text-red-700 font-semibold">Belum <span className="font-bold">({(filteredCrmTargets || []).filter(t => !t.statusSertifikat || t.statusSertifikat.toUpperCase().includes('BELUM')).length})</span></p>
                 </div>
               </div>
             </div>
@@ -2429,7 +2539,7 @@ export default function CrmDataManagementPage() {
                     : handleQuickFilter('tahapAudit', 'IA')
                   }
                 >
-                  <p className="text-xs text-indigo-700 font-semibold">IA <span className="font-bold">({(crmTargets || []).filter(t => t.tahapAudit && t.tahapAudit.toUpperCase() === 'IA').length})</span></p>
+                  <p className="text-xs text-indigo-700 font-semibold">IA <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.tahapAudit && t.tahapAudit.toUpperCase() === 'IA').length})</span></p>
                 </div>
                 <div
                   className={`bg-rose-50 rounded px-2 py-1 border border-rose-200 text-center cursor-pointer hover:ring-2 hover:ring-rose-400 transition-all ${
@@ -2440,7 +2550,7 @@ export default function CrmDataManagementPage() {
                     : handleQuickFilter('tahapAudit', 'RC')
                   }
                 >
-                  <p className="text-xs text-rose-700 font-semibold">RC <span className="font-bold">({(crmTargets || []).filter(t => t.tahapAudit && t.tahapAudit.toUpperCase() === 'RC').length})</span></p>
+                  <p className="text-xs text-rose-700 font-semibold">RC <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.tahapAudit && t.tahapAudit.toUpperCase() === 'RC').length})</span></p>
                 </div>
                 <div
                   className={`bg-sky-50 rounded px-2 py-1 border border-sky-200 text-center cursor-pointer hover:ring-2 hover:ring-sky-400 transition-all ${
@@ -2451,7 +2561,7 @@ export default function CrmDataManagementPage() {
                     : handleQuickFilter('tahapAudit', 'SV1')
                   }
                 >
-                  <p className="text-xs text-sky-700 font-semibold">SV1 <span className="font-bold">({(crmTargets || []).filter(t => t.tahapAudit && t.tahapAudit.toUpperCase() === 'SV1').length})</span></p>
+                  <p className="text-xs text-sky-700 font-semibold">SV1 <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.tahapAudit && t.tahapAudit.toUpperCase() === 'SV1').length})</span></p>
                 </div>
                 <div
                   className={`bg-blue-50 rounded px-2 py-1 border border-blue-200 text-center cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all ${
@@ -2462,7 +2572,7 @@ export default function CrmDataManagementPage() {
                     : handleQuickFilter('tahapAudit', 'SV2')
                   }
                 >
-                  <p className="text-xs text-blue-700 font-semibold">SV2 <span className="font-bold">({(crmTargets || []).filter(t => t.tahapAudit && t.tahapAudit.toUpperCase() === 'SV2').length})</span></p>
+                  <p className="text-xs text-blue-700 font-semibold">SV2 <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.tahapAudit && t.tahapAudit.toUpperCase() === 'SV2').length})</span></p>
                 </div>
                 <div
                   className={`bg-sky-50 rounded px-2 py-1 border border-sky-200 text-center cursor-pointer hover:ring-2 hover:ring-sky-400 transition-all hidden sm:block ${
@@ -2473,7 +2583,7 @@ export default function CrmDataManagementPage() {
                     : handleQuickFilter('tahapAudit', 'SV3')
                   }
                 >
-                  <p className="text-xs text-sky-700 font-semibold">SV3 <span className="font-bold">({(crmTargets || []).filter(t => t.tahapAudit && t.tahapAudit.toUpperCase() === 'SV3').length})</span></p>
+                  <p className="text-xs text-sky-700 font-semibold">SV3 <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.tahapAudit && t.tahapAudit.toUpperCase() === 'SV3').length})</span></p>
                 </div>
                 <div
                   className={`bg-blue-50 rounded px-2 py-1 border border-blue-200 text-center cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all hidden sm:block ${
@@ -2484,7 +2594,7 @@ export default function CrmDataManagementPage() {
                     : handleQuickFilter('tahapAudit', 'SV4')
                   }
                 >
-                  <p className="text-xs text-blue-700 font-semibold">SV4 <span className="font-bold">({(crmTargets || []).filter(t => t.tahapAudit && t.tahapAudit.toUpperCase() === 'SV4').length})</span></p>
+                  <p className="text-xs text-blue-700 font-semibold">SV4 <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.tahapAudit && t.tahapAudit.toUpperCase() === 'SV4').length})</span></p>
                 </div>
               </div>
             </div>
@@ -2502,7 +2612,7 @@ export default function CrmDataManagementPage() {
                     : handleQuickFilter('directOrAssociate', 'DIRECT')
                   }
                 >
-                  <p className="text-xs text-cyan-700 font-semibold">Direct <span className="font-bold">({(crmTargets || []).filter(t => t.directOrAssociate && t.directOrAssociate.toUpperCase() === 'DIRECT').length})</span></p>
+                  <p className="text-xs text-cyan-700 font-semibold">Direct <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.directOrAssociate && t.directOrAssociate.toUpperCase() === 'DIRECT').length})</span></p>
                 </div>
                 <div
                   className={`bg-pink-50 rounded px-2 py-1 border border-pink-200 text-center cursor-pointer hover:ring-2 hover:ring-pink-400 transition-all ${
@@ -2513,12 +2623,32 @@ export default function CrmDataManagementPage() {
                     : handleQuickFilter('directOrAssociate', 'ASSOCIATE')
                   }
                 >
-                  <p className="text-xs text-pink-700 font-semibold">Associate <span className="font-bold">({(crmTargets || []).filter(t => t.directOrAssociate && t.directOrAssociate.toUpperCase() === 'ASSOCIATE').length})</span></p>
+                  <p className="text-xs text-pink-700 font-semibold">Associate <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.directOrAssociate && t.directOrAssociate.toUpperCase() === 'ASSOCIATE').length})</span></p>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
+        {/* View-Only Mode Banner */}
+        {currentUser?.role === 'staff' && !canEdit && (
+          <div className="mb-4 flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+            <div className="text-amber-600 dark:text-amber-400">
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                👁️ Mode View-Only - {currentUser?.name}
+              </p>
+              <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+                Anda hanya dapat melihat data milik PIC CRM <span className="font-bold">{currentUser?.name}</span>. Tidak dapat menambah, mengedit, menghapus, atau mengekspor data.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Active Filter Indicator */}
         {quickFilter && (
@@ -2557,17 +2687,19 @@ export default function CrmDataManagementPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-12 sticky left-0 bg-white z-10">
-                      <Checkbox
-                        ref={selectAllCheckboxRef}
-                        checked={isAllSelected}
-                        className='cursor-pointer'
-                        onCheckedChange={handleSelectAll}
-                        aria-label="Select all"
-                      />
-                    </TableHead>
-                    <TableHead className="w-12 sticky left-[1.5rem] bg-white z-10 ">No</TableHead>
-                    <SortableTableHead field="namaPerusahaan" className="sticky left-[3.5rem] bg-white z-10 border-r border-border w-64">Company</SortableTableHead>
+                    {canEdit && (
+                      <TableHead className="w-12 sticky left-0 bg-white z-10">
+                        <Checkbox
+                          ref={selectAllCheckboxRef}
+                          checked={isAllSelected}
+                          className='cursor-pointer'
+                          onCheckedChange={handleSelectAll}
+                          aria-label="Select all"
+                        />
+                      </TableHead>
+                    )}
+                    <TableHead className={`w-12 sticky ${canEdit ? 'left-[1.5rem]' : 'left-0'} bg-white z-10 `}>No</TableHead>
+                    <SortableTableHead field="namaPerusahaan" className={`sticky ${canEdit ? 'left-[3.5rem]' : 'left-[3rem]'} bg-white z-10 border-r border-border w-64`}>Company</SortableTableHead>
                     <SortableTableHead field="bulanExpDate">Bulan Exp</SortableTableHead>
                     <SortableTableHead field="produk">Produk</SortableTableHead>
                     <SortableTableHead field="picCrm">PIC CRM</SortableTableHead>
@@ -2604,30 +2736,54 @@ export default function CrmDataManagementPage() {
                 <TableBody>
                   {paginatedTargets.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={34} className="text-center py-8">
-                        No data found
+                      <TableCell colSpan={canEdit ? 34 : 33} className="text-center py-12">
+                        <div className="flex flex-col items-center justify-center space-y-3">
+                          <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                            <Search className="h-6 w-6 text-muted-foreground" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-lg">No Data Found</p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {searchTerm || filterStatus !== 'all' || filterPicCrm !== 'all'
+                                ? 'Try adjusting your filters or search terms'
+                                : currentUser?.role === 'staff'
+                                ? 'No CRM data assigned to you yet'
+                                : 'No CRM data available. Start by adding new data.'}
+                            </p>
+                          </div>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ) : (
                     paginatedTargets.map((target, index) => (
                       <TableRow
                         key={target._id}
-                        className="cursor-pointer hover:bg-muted/50"
+                        className={`${
+                          canEdit && "cursor-pointer hover:bg-muted/50"
+                        }`}
                         onClick={() => {
-                          setSelectedTarget(target);
-                          setIsEditDialogOpen(true);
+                          if (canEdit) {
+                            setSelectedTarget(target);
+                            setIsEditDialogOpen(true);
+                          }
                         }}
                       >
-                        <TableCell onClick={(e) => e.stopPropagation()} className="sticky left-0 bg-white z-10 border-border">
-                          <Checkbox
-                            checked={selectedIds.has(target._id)}
-                            onCheckedChange={(checked) => handleSelectRow(target._id, checked === true)}
-                            aria-label={`Select ${target.namaPerusahaan}`}
-                            className='cursor-pointer'
-                          />
-                        </TableCell>
-                        <TableCell className="font-medium sticky left-[1.5rem] bg-white z-10 border-border">{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
-                        <TableCell className="font-medium sticky left-[3rem] bg-white z-10 border-r border-border w-64 truncate" title={target.namaPerusahaan}>{target.namaPerusahaan}</TableCell>
+                        {canEdit && (
+                          <TableCell onClick={(e) => e.stopPropagation()} className="sticky left-0 bg-white z-10 border-border">
+                            <Checkbox
+                              checked={selectedIds.has(target._id)}
+                              onCheckedChange={(checked) => handleSelectRow(target._id, checked === true)}
+                              aria-label={`Select ${target.namaPerusahaan}`}
+                              className='cursor-pointer'
+                            />
+                          </TableCell>
+                        )}
+                        <TableCell className="font-medium sticky bg-white z-10 border-border" style={{
+                          left: canEdit ? '1.5rem' : '0'
+                        }}>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
+                        <TableCell className="font-medium sticky bg-white z-10 border-r border-border w-64 truncate" style={{
+                          left: canEdit ? '3rem' : '3rem'
+                        }} title={target.namaPerusahaan}>{target.namaPerusahaan}</TableCell>
                         <TableCell>{target.bulanExpDate || '-'}</TableCell>
                         <TableCell>{target.produk || '-'}</TableCell>
                         <TableCell>{target.picCrm}</TableCell>

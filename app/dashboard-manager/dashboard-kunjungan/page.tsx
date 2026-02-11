@@ -517,6 +517,13 @@ export default function DashboardKunjunganPage() {
     }));
   }, [displayTasks]);
 
+  // Auto-expand all companies by default
+  React.useEffect(() => {
+    if (groupedByCompany.length > 0) {
+      setExpandedCompanies(new Set(groupedByCompany.map(g => g.companyName)));
+    }
+  }, [groupedByCompany]);
+
   // Pagination for grouped companies
   const totalPages = Math.ceil(groupedByCompany.length / itemsPerPage);
 

@@ -283,6 +283,7 @@ export const seedDefaultRoles = mutation({
       const staffPermissions = [
         "dashboard_view",
         "dashboard_kunjungan_view",
+        "crm_data_view",  // Tambah permission untuk melihat CRM Data
         "visit_view",
         "visit_create",
         "visit_edit",
