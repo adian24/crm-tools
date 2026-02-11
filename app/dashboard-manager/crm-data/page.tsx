@@ -753,9 +753,9 @@ export default function CrmDataManagementPage() {
 
   // Reset all filters
   const resetAllFilters = () => {
-    setFilterTahun('all');
-    setFilterFromBulanExp('all');
-    setFilterToBulanExp('all');
+    setFilterTahun(currentYear);
+    setFilterFromBulanExp('1');
+    setFilterToBulanExp('12');
     setFilterPicCrm('all');
     setFilterStatus('all');
     setFilterAlasan('all');
@@ -3350,7 +3350,7 @@ export default function CrmDataManagementPage() {
           {/* Filter Sheet */}
           <div className="fixed bottom-16 left-0 right-0 z-40 lg:hidden max-h-[70vh] overflow-y-auto bg-background rounded-t-2xl border-t border-border shadow-2xl animate-in slide-in-from-bottom-10">
             {/* Handle bar */}
-            <div className="flex justify-center py-3 border-b">
+            <div className="flex justify-center border-b">
               <div className="w-12 h-1.5 bg-muted rounded-full" />
             </div>
 
@@ -3584,7 +3584,7 @@ export default function CrmDataManagementPage() {
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
-                  <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+                  <div className="space-y-3 max-h-[55vh] overflow-y-auto pb-2">
                     {/* Main Metrics */}
                     <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-3 border border-purple-200">
                       <h4 className="text-xs font-bold text-purple-900 mb-2">📊 Main Metrics</h4>
@@ -3648,7 +3648,9 @@ export default function CrmDataManagementPage() {
                             <div
                               key={kuadran}
                               onClick={() => isActive ? clearQuickFilter() : handleQuickFilter('kuadran', kuadran)}
-                              className="bg-violet-100 border-2 border-violet-300 rounded-lg px-2 py-2 text-center cursor-pointer hover:shadow-md transition-all"
+                              className={`bg-violet-100 border-2 border-violet-300 rounded-lg px-2 py-2 text-center cursor-pointer hover:shadow-md transition-all ${
+                                isActive ? 'ring-2 ring-offset-1 ring-violet-500 shadow-md' : ''
+                              }`}
                             >
                               <p className="text-base font-bold text-violet-700">{count}</p>
                               <p className="text-[8px] font-medium text-violet-600 uppercase">{kuadran}</p>
@@ -3724,7 +3726,9 @@ export default function CrmDataManagementPage() {
                             <div
                               key={tahap}
                               onClick={() => isActive ? clearQuickFilter() : handleQuickFilter('tahapAudit', tahap)}
-                              className="bg-indigo-100 border-2 border-indigo-300 rounded-lg px-2 py-2 text-center cursor-pointer hover:shadow-md transition-all"
+                              className={`bg-indigo-100 border-2 border-indigo-300 rounded-lg px-2 py-2 text-center cursor-pointer hover:shadow-md transition-all ${
+                                isActive ? 'ring-2 ring-offset-1 ring-indigo-500 shadow-md' : ''
+                              }`}
                             >
                               <p className="text-base font-bold text-indigo-700">{count}</p>
                               <p className="text-[8px] font-medium text-indigo-600 uppercase">{tahap}</p>
@@ -3787,14 +3791,14 @@ export default function CrmDataManagementPage() {
                         })}
                       </div>
                     </div>
-
-                    <Button
-                      onClick={() => setActiveFilterSheet(null)}
-                      className="w-full"
-                    >
-                      OK
-                    </Button>
                   </div>
+
+                  <Button
+                    onClick={() => setActiveFilterSheet(null)}
+                    className="w-full sticky bottom-0"
+                  >
+                    OK
+                  </Button>
                 </div>
               )}
             </div>
