@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Pencil, Trash2, Upload, Download, Search, Filter, X, Save, FileSpreadsheet, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, Pencil, Trash2, Upload, Download, Search, Filter, X, Save, FileSpreadsheet, ChevronDown, ChevronRight, Calendar, CalendarClock, Building, MapPin, Shield, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { getCurrentUser } from '@/lib/auth';
@@ -34,7 +34,7 @@ import { FilterKunjunganSection } from '@/components/filters/FilterKunjunganSect
 import { EditCrmDialog } from '@/components/crm-edit-dialog';
 
 interface CrmTarget {
-  _id: Id<"filteredCrmTargets">;
+  _id: Id<"crmTargets">;
   tahun?: string;
   bulanExpDate: string;
   produk: string;
@@ -594,9 +594,9 @@ export default function CrmDataManagementPage() {
   // Comprehensive Filters
   const [expandedFilterSections, setExpandedFilterSections] = useState<string[]>([]);
   const currentYear = new Date().getFullYear().toString();
-  const [filterTahun, setFilterTahun] = useState<string>('all');
-  const [filterFromBulanExp, setFilterFromBulanExp] = useState<string>('all');
-  const [filterToBulanExp, setFilterToBulanExp] = useState<string>('all');
+  const [filterTahun, setFilterTahun] = useState<string>(currentYear);
+  const [filterFromBulanExp, setFilterFromBulanExp] = useState<string>('1');
+  const [filterToBulanExp, setFilterToBulanExp] = useState<string>('12');
   const [filterAlasan, setFilterAlasan] = useState<string>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterProvinsi, setFilterProvinsi] = useState<string>('all');
@@ -617,6 +617,19 @@ export default function CrmDataManagementPage() {
 
   // Quick filter from statistics cards
   const [quickFilter, setQuickFilter] = useState<{ field: string; value: string } | null>(null);
+
+  // Mobile filter sheet state
+  const [activeFilterSheet, setActiveFilterSheet] = useState<string | null>(null);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Auto focus search input when search sheet opens
+  React.useEffect(() => {
+    if (activeFilterSheet === 'search' && searchInputRef.current) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    }
+  }, [activeFilterSheet]);
 
   // Fetch CRM targets and user permissions
   const crmTargets = useQuery(api.crmTargets.getCrmTargets);
@@ -1163,7 +1176,7 @@ export default function CrmDataManagementPage() {
       // Delete all selected items
       for (const id of selectedIds) {
         try {
-          await deleteTarget({ id: id as Id<"filteredCrmTargets"> });
+          await deleteTarget({ id: id as Id<"crmTargets"> });
           successCount++;
         } catch (error) {
           console.error(`Failed to delete ${id}:`, error);
@@ -1756,7 +1769,7 @@ export default function CrmDataManagementPage() {
   };
 
   // Bulk insert mutation
-  const createBulkInsert = useMutation(api.filteredCrmTargets.bulkInsertCrmTargets);
+  const createBulkInsert = useMutation(api.crmTargets.bulkInsertCrmTargets);
 
   // Handle Excel export
   const handleExcelExport = () => {
@@ -1928,8 +1941,9 @@ export default function CrmDataManagementPage() {
   }
 
   return (
-    <div className="lg:flex lg:flex-row gap-6 py-4 lg:py-8 px-4 lg:px-6">
-      {/* LEFT SIDEBAR - FILTERS */}
+    <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 py-4 lg:py-8 lg:px-6 pb-20 lg:pb-8">
+
+      {/* LEFT SIDEBAR - FILTERS (Hidden on mobile) */}
       <div className="hidden lg:block lg:w-80 flex-shrink-0">
         <div className="sticky top-6 space-y-4">
           {/* Statistics Cards - Quick Summary */}
@@ -2093,112 +2107,6 @@ export default function CrmDataManagementPage() {
         </div>
       </div>
 
-      {/* MOBILE FILTERS */}
-      <div className="lg:hidden mb-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label className="mb-2 block">Search</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Company, Sales, PIC..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              <div>
-                <Label className="mb-2 block">Status</Label>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant={filterStatus === "all" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setFilterStatus("all")}
-                    className={`flex items-center gap-1 text-xs h-8 px-2 cursor-pointer ${
-                      filterStatus === "all"
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : ""
-                    }`}
-                  >
-                    All Status
-                  </Button>
-                  {uniqueStatuses.map((status) => {
-                    const statusUpper = status?.toUpperCase() || '';
-                    let statusColor = '';
-
-                    switch (statusUpper) {
-                      case 'PROSES':
-                        statusColor = 'bg-blue-100 hover:bg-blue-200 text-blue-700 border-blue-300';
-                        break;
-                      case 'LANJUT':
-                        statusColor = 'bg-green-100 hover:bg-green-200 text-green-700 border-green-300';
-                        break;
-                      case 'LOSS':
-                        statusColor = 'bg-red-100 hover:bg-red-200 text-red-700 border-red-300';
-                        break;
-                      case 'SUSPEND':
-                        statusColor = 'bg-orange-100 hover:bg-orange-200 text-orange-700 border-orange-300';
-                        break;
-                      case 'WAITING':
-                        statusColor = 'bg-gray-200 hover:bg-gray-300 text-gray-700 border-gray-300';
-                        break;
-                      case 'DONE':
-                        statusColor = 'bg-purple-100 hover:bg-purple-200 text-purple-700 border-purple-300';
-                        break;
-                      default:
-                        statusColor = 'bg-gray-200 hover:bg-gray-300 text-gray-700 border-gray-300';
-                    }
-
-                    return (
-                      <Button
-                        key={status}
-                        size="sm"
-                        onClick={() => setFilterStatus(status)}
-                        className={`flex items-center gap-1 text-xs h-8 px-2 border cursor-pointer ${
-                          filterStatus === status
-                            ? 'bg-black hover:bg-gray-800 text-white border-black'
-                            : statusColor
-                        }`}
-                      >
-                        {status}
-                      </Button>
-                    );
-                  })}
-                </div>
-              </div>
-              <div>
-                <Label className="mb-2 block">PIC CRM</Label>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant={filterPicCrm === "all" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setFilterPicCrm("all")}
-                    className="flex items-center gap-1 text-xs h-8 px-2 cursor-pointer"
-                  >
-                    All PIC
-                  </Button>
-                  {uniquePicCrms.map((pic) => (
-                    <Button
-                      key={pic}
-                      variant={filterPicCrm === pic ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setFilterPicCrm(pic)}
-                      className="flex items-center gap-1 text-xs h-8 px-2 cursor-pointer"
-                    >
-                      <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex-shrink-0"></div>
-                      {pic}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* MAIN CONTENT */}
       <div className="flex-1 min-w-0 space-y-6">
         {/* Header */}
@@ -2255,7 +2163,7 @@ export default function CrmDataManagementPage() {
                 className="border-green-600 text-green-600 hover:bg-green-50 hover:border-green-700 hover:text-green-700 cursor-pointer"
               >
                 <Download className="h-4 w-4 mr-2" />
-                Download All Data
+                Download
               </Button>
               <Button
                 variant="outline"
@@ -2266,7 +2174,7 @@ export default function CrmDataManagementPage() {
               >
                 <label htmlFor="excel-upload" className={`cursor-pointer ${isImporting ? 'opacity-50 cursor-not-allowed' : ''}`}>
                   <Upload className="h-4 w-4 mr-2" />
-                  {isImporting ? '...' : 'Import Data'}
+                  {isImporting ? '...' : 'Import'}
                   <input
                     id="excel-upload"
                     type="file"
@@ -2285,35 +2193,33 @@ export default function CrmDataManagementPage() {
           )}
         </div>
 
-        {/* Statistics Cards - Desktop 2 Column, Mobile Stacked with Certificates at Bottom */}
-        <div className="lg:grid lg:grid-cols-2 lg:gap-2">
-          {/* Top Section - Always shows first on all screens */}
+        {/* Statistics Cards - Desktop only (mobile has accordion version) */}
+        <div className="hidden lg:grid lg:grid-cols-2 lg:gap-2">
+          {/* Desktop Statistics - Full Layout */}
           <div className="lg:contents">
-            {/* Main Metrics - Spans full width on desktop */}
+            {/* Main Metrics */}
             <div className="flex items-center">
-              <div className="flex items-center">
-                <span className="text-xs font-semibold text-gray-600 uppercase whitespace-nowrap w-44">📊 Main Metrics:</span>
-                <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                  <div className="bg-blue-50 rounded px-2 py-1 border border-blue-200 text-center">
-                    <p className="text-xs text-blue-700 font-semibold">Records <span className="font-bold">({filteredCrmTargets?.length || 0})</span></p>
-                  </div>
-                  <div className="bg-purple-50 rounded px-2 py-1 border border-purple-200 text-center">
-                    <p className="text-xs text-purple-700 font-semibold">Companies <span className="font-bold">({new Set((filteredCrmTargets || []).map(t => t.namaPerusahaan)).size})</span></p>
-                  </div>
-                  <div className="bg-green-50 rounded px-2 py-1 border border-green-200 text-center">
-                    <p className="text-xs text-green-700 font-semibold">Visited <span className="font-bold">({new Set((filteredCrmTargets || []).filter(t => t.statusKunjungan === 'VISITED').map(t => t.namaPerusahaan)).size})</span></p>
-                  </div>
-                  <div className="bg-orange-50 rounded px-2 py-1 border border-orange-200 text-center">
-                    <p className="text-xs text-orange-700 font-semibold">Not Yet <span className="font-bold">({new Set((filteredCrmTargets || []).filter(t => t.statusKunjungan === 'NOT YET').map(t => t.namaPerusahaan)).size})</span></p>
-                  </div>
+              <span className="text-xs font-semibold text-gray-600 uppercase whitespace-nowrap w-44 hidden lg:block">📊 Main Metrics:</span>
+              <div className="flex-1 grid grid-cols-4 gap-1.5">
+                <div className="bg-blue-50 rounded px-2 py-1 border border-blue-200 text-center">
+                  <p className="text-xs text-blue-700 font-semibold">Records <span className="font-bold">({filteredCrmTargets?.length || 0})</span></p>
+                </div>
+                <div className="bg-purple-50 rounded px-2 py-1 border border-purple-200 text-center">
+                  <p className="text-xs text-purple-700 font-semibold">Companies <span className="font-bold">({new Set((filteredCrmTargets || []).map(t => t.namaPerusahaan)).size})</span></p>
+                </div>
+                <div className="bg-green-50 rounded px-2 py-1 border border-green-200 text-center">
+                  <p className="text-xs text-green-700 font-semibold">Visited <span className="font-bold">({new Set((filteredCrmTargets || []).filter(t => t.statusKunjungan === 'VISITED').map(t => t.namaPerusahaan)).size})</span></p>
+                </div>
+                <div className="bg-orange-50 rounded px-2 py-1 border border-orange-200 text-center">
+                  <p className="text-xs text-orange-700 font-semibold">Not Yet <span className="font-bold">({new Set((filteredCrmTargets || []).filter(t => t.statusKunjungan === 'NOT YET').map(t => t.namaPerusahaan)).size})</span></p>
                 </div>
               </div>
             </div>
 
             {/* Status */}
             <div className="flex items-center">
-              <span className="text-xs font-semibold text-gray-600 uppercase whitespace-nowrap w-44">📋 Status:</span>
-              <div className="flex-1 grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+              <span className="text-xs font-semibold text-gray-600 uppercase whitespace-nowrap w-44 hidden lg:block">📋 Status:</span>
+              <div className="flex-1 grid grid-cols-5 gap-1.5">
                 <div
                   className={`bg-purple-50 rounded px-2 py-1 border border-purple-200 text-center cursor-pointer hover:ring-2 hover:ring-purple-400 transition-all ${
                     quickFilter?.field === 'status' && quickFilter?.value === 'DONE' ? 'ring-2 ring-purple-600' : ''
@@ -2374,7 +2280,7 @@ export default function CrmDataManagementPage() {
 
             {/* Kuadran */}
             <div className="flex items-center">
-              <span className="text-xs font-semibold text-gray-600 uppercase whitespace-nowrap w-44">🎯 Kuadran:</span>
+              <span className="text-xs font-semibold text-gray-600 uppercase whitespace-nowrap w-44 hidden lg:block">🎯 Kuadran:</span>
               <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                 <div
                   className={`bg-violet-50 rounded px-2 py-1 border border-violet-200 text-center cursor-pointer hover:ring-2 hover:ring-violet-400 transition-all ${
@@ -2425,7 +2331,7 @@ export default function CrmDataManagementPage() {
 
             {/* Lokasi */}
             <div className="flex items-center">
-              <span className="text-xs font-semibold text-gray-600 uppercase whitespace-nowrap w-44">📍 Lokasi:</span>
+              <span className="text-xs font-semibold text-gray-600 uppercase whitespace-nowrap w-44 hidden lg:block">📍 Lokasi:</span>
               <div className="flex-1 grid grid-cols-2 gap-1.5">
                 <div
                   className={`bg-amber-50 rounded px-2 py-1 border border-amber-200 text-center cursor-pointer hover:ring-2 hover:ring-amber-400 transition-all ${
@@ -2454,12 +2360,12 @@ export default function CrmDataManagementPage() {
           </div>
         </div>
 
-        {/* Sertifikat Section - Always shows at the bottom on mobile */}
-        <div className="lg:grid lg:grid-cols-2 lg:gap-2">
+        {/* Sertifikat Section - Desktop only */}
+        <div className="hidden lg:grid lg:grid-cols-2 lg:gap-2">
           <div className="lg:contents">
             {/* Kategori Akreditasi */}
             <div className="flex items-center">
-              <span className="text-xs font-semibold text-gray-600 uppercase whitespace-nowrap w-44">🏅 Kategori Akreditasi:</span>
+              <span className="text-xs font-semibold text-gray-600 uppercase whitespace-nowrap w-44 hidden lg:block">🏅 Kategori Akreditasi:</span>
               <div className="flex-1 grid grid-cols-3 gap-1.5">
                 <div
                   className={`bg-emerald-50 rounded px-2 py-1 border border-emerald-200 text-center cursor-pointer hover:ring-2 hover:ring-emerald-400 transition-all ${
@@ -2499,7 +2405,7 @@ export default function CrmDataManagementPage() {
 
             {/* Status Terbit */}
             <div className="flex items-center">
-              <span className="text-xs font-semibold text-gray-600 uppercase whitespace-nowrap w-44">📜 Status Terbit:</span>
+              <span className="text-xs font-semibold text-gray-600 uppercase whitespace-nowrap w-44 hidden lg:block">📜 Status Terbit:</span>
               <div className="flex-1 grid grid-cols-2 gap-1.5">
                 <div
                   className={`bg-green-50 rounded px-2 py-1 border border-green-200 text-center cursor-pointer hover:ring-2 hover:ring-green-400 transition-all ${
@@ -2528,7 +2434,7 @@ export default function CrmDataManagementPage() {
 
             {/* Tahapan Audit */}
             <div className="flex items-center">
-              <span className="text-xs font-semibold text-gray-600 uppercase whitespace-nowrap w-44">🔍 Tahapan Audit:</span>
+              <span className="text-xs font-semibold text-gray-600 uppercase whitespace-nowrap w-44 hidden lg:block">🔍 Tahapan Audit:</span>
               <div className="flex-1 grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-1.5">
                 <div
                   className={`bg-indigo-50 rounded px-2 py-1 border border-indigo-200 text-center cursor-pointer hover:ring-2 hover:ring-indigo-400 transition-all ${
@@ -2601,7 +2507,7 @@ export default function CrmDataManagementPage() {
 
             {/* Direct/Associate */}
             <div className="flex items-center">
-              <span className="text-xs font-semibold text-gray-600 uppercase whitespace-nowrap w-44">👥 Direct/Associate:</span>
+              <span className="text-xs font-semibold text-gray-600 uppercase whitespace-nowrap w-44 hidden lg:block">👥 Direct/Associate:</span>
               <div className="flex-1 grid grid-cols-2 gap-1.5">
                 <div
                   className={`bg-cyan-50 rounded px-2 py-1 border border-cyan-200 text-center cursor-pointer hover:ring-2 hover:ring-cyan-400 transition-all ${
@@ -2652,27 +2558,29 @@ export default function CrmDataManagementPage() {
 
         {/* Active Filter Indicator */}
         {quickFilter && (
-          <div className="mb-4 flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <span className="text-sm font-semibold text-blue-800">
-              Filter Aktif:
-            </span>
-            <Badge className="bg-blue-600 text-white px-3 py-1">
-              {quickFilter.field === 'status' && `Status: ${quickFilter.value}`}
-              {quickFilter.field === 'directOrAssociate' && `Tipe: ${quickFilter.value}`}
-              {quickFilter.field === 'kuadran' && `Kuadran: ${quickFilter.value}`}
-              {quickFilter.field === 'luarKota' && `Lokasi: ${quickFilter.value === 'LUAR' ? 'Luar Kota' : 'Dalam Kota'}`}
-              {quickFilter.field === 'catAkre' && `Akreditasi: ${quickFilter.value}`}
-              {quickFilter.field === 'statusSertifikat' && `Status Sertifikat: ${quickFilter.value === 'TERBIT' ? 'Terbit' : 'Belum Terbit'}`}
-              {quickFilter.field === 'tahapAudit' && `Tahap Audit: ${quickFilter.value}`}
-            </Badge>
-            <span className="text-sm text-gray-600">
-              Menampilkan <span className="font-bold text-blue-700">{filteredTargets.length}</span> data
-            </span>
+          <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs sm:text-sm font-semibold text-blue-800">
+                Filter Aktif:
+              </span>
+              <Badge className="bg-blue-600 text-white px-2 sm:px-3 py-1 text-[10px] sm:text-xs">
+                {quickFilter.field === 'status' && `Status: ${quickFilter.value}`}
+                {quickFilter.field === 'directOrAssociate' && `Tipe: ${quickFilter.value}`}
+                {quickFilter.field === 'kuadran' && `Kuadran: ${quickFilter.value}`}
+                {quickFilter.field === 'luarKota' && `Lokasi: ${quickFilter.value === 'LUAR' ? 'Luar Kota' : 'Dalam Kota'}`}
+                {quickFilter.field === 'catAkre' && `Akreditasi: ${quickFilter.value}`}
+                {quickFilter.field === 'statusSertifikat' && `Status Sertifikat: ${quickFilter.value === 'TERBIT' ? 'Terbit' : 'Belum Terbit'}`}
+                {quickFilter.field === 'tahapAudit' && `Tahap Audit: ${quickFilter.value}`}
+              </Badge>
+              <span className="text-xs sm:text-sm text-gray-600">
+                <span className="font-bold text-blue-700">{filteredTargets.length}</span> data
+              </span>
+            </div>
             <Button
               onClick={clearQuickFilter}
               variant="outline"
               size="sm"
-              className="ml-auto h-8 border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400"
+              className="w-full sm:w-auto sm:ml-auto h-8 border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 text-xs"
             >
               <X className="h-4 w-4 mr-1" />
               Hapus Filter
@@ -2680,15 +2588,15 @@ export default function CrmDataManagementPage() {
           </div>
         )}
 
-        {/* Table */}
+        {/* TABLE - Desktop & Mobile with horizontal scroll */}
         <Card>
           <CardContent className="p-0">
             <div className="overflow-x-auto relative">
-              <Table>
+              <Table className="[&_th]:text-[10px] sm:[&_th]:text-[14px] [&_td]:text-[10px] sm:[&_td]:text-[14px] [&_th]:py-2 [&_td]:py-2 sm:[&_th]:py-3 sm:[&_td]:py-3 [&_.badge]:text-[9px] sm:[&_.badge]:text-[10px] [&_.badge]:px-1.5 sm:[&_.badge]:px-2 [&_.badge]:py-0 sm:[&_.badge]:py-0.5">
                 <TableHeader>
                   <TableRow>
                     {canEdit && (
-                      <TableHead className="w-12 sticky left-0 bg-white z-10">
+                      <TableHead className="w-12 lg:sticky lg:left-0 bg-white lg:z-10">
                         <Checkbox
                           ref={selectAllCheckboxRef}
                           checked={isAllSelected}
@@ -2698,8 +2606,8 @@ export default function CrmDataManagementPage() {
                         />
                       </TableHead>
                     )}
-                    <TableHead className={`w-12 sticky ${canEdit ? 'left-[1.5rem]' : 'left-0'} bg-white z-10 `}>No</TableHead>
-                    <SortableTableHead field="namaPerusahaan" className={`sticky ${canEdit ? 'left-[3.5rem]' : 'left-[3rem]'} bg-white z-10 border-r border-border w-64`}>Company</SortableTableHead>
+                    <TableHead className={`w-12 ${canEdit ? 'lg:sticky lg:left-[1.5rem]' : 'lg:sticky lg:left-0'} bg-white lg:z-10`}>No</TableHead>
+                    <SortableTableHead field="namaPerusahaan" className={`${canEdit ? 'lg:sticky lg:left-[3.5rem]' : 'lg:sticky lg:left-[2rem]'} bg-white lg:z-10 border-r border-border w-64`}>Company</SortableTableHead>
                     <SortableTableHead field="bulanExpDate">Bulan Exp</SortableTableHead>
                     <SortableTableHead field="produk">Produk</SortableTableHead>
                     <SortableTableHead field="picCrm">PIC CRM</SortableTableHead>
@@ -2769,7 +2677,7 @@ export default function CrmDataManagementPage() {
                         }}
                       >
                         {canEdit && (
-                          <TableCell onClick={(e) => e.stopPropagation()} className="sticky left-0 bg-white z-10 border-border">
+                          <TableCell onClick={(e) => e.stopPropagation()} className="lg:sticky lg:left-0 bg-white lg:z-10 border-border">
                             <Checkbox
                               checked={selectedIds.has(target._id)}
                               onCheckedChange={(checked) => handleSelectRow(target._id, checked === true)}
@@ -2778,11 +2686,11 @@ export default function CrmDataManagementPage() {
                             />
                           </TableCell>
                         )}
-                        <TableCell className="font-medium sticky bg-white z-10 border-border" style={{
+                        <TableCell className="font-medium lg:sticky bg-white lg:z-10 border-border" style={{
                           left: canEdit ? '1.5rem' : '0'
                         }}>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
-                        <TableCell className="font-medium sticky bg-white z-10 border-r border-border w-64 truncate" style={{
-                          left: canEdit ? '3rem' : '3rem'
+                        <TableCell className="font-medium lg:sticky bg-white lg:z-10 border-r border-border w-64 truncate" style={{
+                          left: canEdit ? '3.5rem' : '2rem'
                         }} title={target.namaPerusahaan}>{target.namaPerusahaan}</TableCell>
                         <TableCell>{target.bulanExpDate || '-'}</TableCell>
                         <TableCell>{target.produk || '-'}</TableCell>
@@ -2913,7 +2821,7 @@ export default function CrmDataManagementPage() {
                   {/* Page numbers */}
                   {(() => {
                     const pages = [];
-                    const maxVisiblePages = 5;
+                    const maxVisiblePages = 3;
                     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
                     let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
 
@@ -3344,6 +3252,555 @@ export default function CrmDataManagementPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Mobile Bottom Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border lg:hidden">
+        <div className={`grid gap-1 p-2 ${currentUser?.role === 'staff' ? 'grid-cols-6' : 'grid-cols-7'}`}>
+          {/* Search Tab */}
+          <button
+            onClick={() => setActiveFilterSheet(activeFilterSheet === 'search' ? null : 'search')}
+            className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors ${
+              activeFilterSheet === 'search' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+            }`}
+          >
+            <Search className="h-5 w-5 mb-1" />
+            <span className="text-[10px] font-medium">Search</span>
+          </button>
+
+          {/* Date Filter Tab */}
+          <button
+            onClick={() => setActiveFilterSheet(activeFilterSheet === 'date' ? null : 'date')}
+            className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors ${
+              activeFilterSheet === 'date' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+            }`}
+          >
+            <CalendarClock className="h-5 w-5 mb-1" />
+            <span className="text-[10px] font-medium">Date</span>
+          </button>
+
+          {/* PIC CRM Tab - Hide for staff */}
+          {currentUser?.role !== 'staff' && (
+            <button
+              onClick={() => setActiveFilterSheet(activeFilterSheet === 'picCrm' ? null : 'picCrm')}
+              className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors ${
+                activeFilterSheet === 'picCrm' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+              }`}
+            >
+              <Filter className="h-5 w-5 mb-1" />
+              <span className="text-[10px] font-medium">PIC</span>
+            </button>
+          )}
+
+          {/* Company Tab */}
+          <button
+            onClick={() => setActiveFilterSheet(activeFilterSheet === 'company' ? null : 'company')}
+            className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors ${
+              activeFilterSheet === 'company' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+            }`}
+          >
+            <Building className="h-5 w-5 mb-1" />
+            <span className="text-[10px] font-medium">Company</span>
+          </button>
+
+          {/* Location Tab */}
+          <button
+            onClick={() => setActiveFilterSheet(activeFilterSheet === 'location' ? null : 'location')}
+            className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors ${
+              activeFilterSheet === 'location' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+            }`}
+          >
+            <MapPin className="h-5 w-5 mb-1" />
+            <span className="text-[10px] font-medium">More</span>
+          </button>
+
+          {/* Statistics Tab */}
+          <button
+            onClick={() => setActiveFilterSheet(activeFilterSheet === 'statistics' ? null : 'statistics')}
+            className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors ${
+              activeFilterSheet === 'statistics' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+            }`}
+          >
+            <Shield className="h-5 w-5 mb-1" />
+            <span className="text-[10px] font-medium">Statistics</span>
+          </button>
+
+          {/* Reset Tab */}
+          <button
+            onClick={() => {
+              resetAllFilters();
+              setActiveFilterSheet(null);
+            }}
+            className="flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors hover:bg-red-50 hover:text-red-600 text-red-500"
+          >
+            <X className="h-5 w-5 mb-1" />
+            <span className="text-[10px] font-medium">Reset</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Filter Sheet Overlay */}
+      {activeFilterSheet && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={() => setActiveFilterSheet(null)}
+          />
+
+          {/* Filter Sheet */}
+          <div className="fixed bottom-16 left-0 right-0 z-40 lg:hidden max-h-[70vh] overflow-y-auto bg-background rounded-t-2xl border-t border-border shadow-2xl animate-in slide-in-from-bottom-10">
+            {/* Handle bar */}
+            <div className="flex justify-center py-3 border-b">
+              <div className="w-12 h-1.5 bg-muted rounded-full" />
+            </div>
+
+            {/* Filter Content */}
+            <div className="p-4 space-y-4">
+              {/* Search Filter */}
+              {activeFilterSheet === 'search' && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-sm">Search</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setActiveFilterSheet(null)}
+                      className="h-8 text-xs"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        ref={searchInputRef}
+                        placeholder="Cari nama perusahaan, PIC, kota..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            setActiveFilterSheet(null);
+                          }
+                        }}
+                      />
+                    </div>
+                    {searchTerm && (
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Found: {sortedTargets.length} results</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSearchTerm('')}
+                          className="h-7 text-xs"
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                    )}
+                    <Button
+                      onClick={() => setActiveFilterSheet(null)}
+                      className="w-full"
+                    >
+                      OK
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Date Filter */}
+              {activeFilterSheet === 'date' && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-sm">Filter Date</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setActiveFilterSheet(null)}
+                      className="h-8 text-xs"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    <FilterDateSection
+                      filterTahun={filterTahun}
+                      setFilterTahun={setFilterTahun}
+                      filterFromBulanExp={filterFromBulanExp}
+                      setFilterFromBulanExp={setFilterFromBulanExp}
+                      filterToBulanExp={filterToBulanExp}
+                      setFilterToBulanExp={setFilterToBulanExp}
+                      tahunOptions={tahunOptions}
+                      bulanOptions={bulanOptions}
+                    />
+                    <Button
+                      onClick={() => setActiveFilterSheet(null)}
+                      className="w-full"
+                    >
+                      OK
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* PIC CRM Filter - Hide for staff */}
+              {activeFilterSheet === 'picCrm' && currentUser?.role !== 'staff' && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-sm">PIC CRM</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setActiveFilterSheet(null)}
+                      className="h-8 text-xs"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    <FilterPicCrmSection
+                      filterPicCrm={filterPicCrm}
+                      setFilterPicCrm={setFilterPicCrm}
+                      picCrmOptions={uniquePicCrms}
+                    />
+                    <Button
+                      onClick={() => setActiveFilterSheet(null)}
+                      className="w-full"
+                    >
+                      OK
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Company Filter */}
+              {activeFilterSheet === 'company' && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-sm">Company</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setActiveFilterSheet(null)}
+                      className="h-8 text-xs"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    <FilterCompanySection
+                      filterStatus={filterStatus}
+                      setFilterStatus={setFilterStatus}
+                      filterCategory={filterCategory}
+                      setFilterCategory={setFilterCategory}
+                      filterProvinsi={filterProvinsi}
+                      setFilterProvinsi={setFilterProvinsi}
+                      filterKota={filterKota}
+                      setFilterKota={setFilterKota}
+                      filterAlasan={filterAlasan}
+                      setFilterAlasan={setFilterAlasan}
+                      statusOptions={uniqueStatuses}
+                      provinsiOptions={provinsiOptions}
+                      kotaOptions={kotaOptions}
+                      alasanOptions={alasanOptions}
+                    />
+                    <Button
+                      onClick={() => setActiveFilterSheet(null)}
+                      className="w-full"
+                    >
+                      OK
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Location Filter */}
+              {activeFilterSheet === 'location' && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-sm">More Filters</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setActiveFilterSheet(null)}
+                      className="h-8 text-xs"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="space-y-4">
+                    {/* PIC Sales Filter */}
+                    <FilterPicSalesSection
+                      filterPicSales={filterPicSales}
+                      setFilterPicSales={setFilterPicSales}
+                      salesOptions={salesOptions}
+                    />
+
+                    {/* Sertifikat Filter */}
+                    <FilterSertifikatSection
+                      filterStandar={filterStandar}
+                      setFilterStandar={setFilterStandar}
+                      filterAkreditasi={filterAkreditasi}
+                      setFilterAkreditasi={setFilterAkreditasi}
+                      filterStatusSertifikatTerbit={filterStatusSertifikat}
+                      setFilterStatusSertifikatTerbit={setFilterStatusSertifikat}
+                      filterStatus={filterStatus}
+                      setFilterStatus={setFilterStatus}
+                      standarOptions={standarOptions}
+                    />
+
+                    {/* Kunjungan Filter */}
+                    <FilterKunjunganSection
+                      filterFromKunjungan={filterFromKunjungan}
+                      setFilterFromKunjungan={setFilterFromKunjungan}
+                      filterToKunjungan={filterToKunjungan}
+                      setFilterToKunjungan={setFilterToKunjungan}
+                      filterStatusKunjungan={filterStatusKunjungan}
+                      setFilterStatusKunjungan={setFilterStatusKunjungan}
+                      bulanOptions={bulanOptions}
+                    />
+                    <Button
+                      onClick={() => setActiveFilterSheet(null)}
+                      className="w-full"
+                    >
+                      OK
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Statistics Filter */}
+              {activeFilterSheet === 'statistics' && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-sm">Statistics</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setActiveFilterSheet(null)}
+                      className="h-8 text-xs"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+                    {/* Main Metrics */}
+                    <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-3 border border-purple-200">
+                      <h4 className="text-xs font-bold text-purple-900 mb-2">📊 Main Metrics</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="bg-white rounded-lg px-2 py-2 border border-blue-200 text-center">
+                          <p className="text-base font-bold text-blue-600">{filteredCrmTargets?.length || 0}</p>
+                          <p className="text-[8px] text-blue-700 font-medium uppercase">Records</p>
+                        </div>
+                        <div className="bg-white rounded-lg px-2 py-2 border border-purple-200 text-center">
+                          <p className="text-base font-bold text-purple-600">{new Set((filteredCrmTargets || []).map(t => t.namaPerusahaan)).size}</p>
+                          <p className="text-[8px] text-purple-700 font-medium uppercase">Companies</p>
+                        </div>
+                        <div className="bg-white rounded-lg px-2 py-2 border border-green-200 text-center">
+                          <p className="text-base font-bold text-green-600">{new Set((filteredCrmTargets || []).filter(t => t.statusKunjungan === 'VISITED').map(t => t.namaPerusahaan)).size}</p>
+                          <p className="text-[8px] text-green-700 font-medium uppercase">Visited</p>
+                        </div>
+                        <div className="bg-white rounded-lg px-2 py-2 border border-orange-200 text-center">
+                          <p className="text-base font-bold text-orange-600">{new Set((filteredCrmTargets || []).filter(t => t.statusKunjungan === 'NOT YET').map(t => t.namaPerusahaan)).size}</p>
+                          <p className="text-[8px] text-orange-700 font-medium uppercase">Not Yet</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Status */}
+                    <div className="border rounded-lg p-3">
+                      <h4 className="text-xs font-bold text-gray-700 mb-2">📋 Status</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {['DONE', 'PROSES', 'LOSS', 'SUSPEND', 'WAITING'].map((status) => {
+                          const count = (filteredCrmTargets || []).filter(t => t.status === status).length;
+                          const isActive = quickFilter?.field === 'status' && quickFilter?.value === status;
+                          return (
+                            <div
+                              key={status}
+                              onClick={() => isActive ? clearQuickFilter() : handleQuickFilter('status', status)}
+                              className={`rounded-lg px-2 py-2 text-center cursor-pointer transition-all ${
+                                isActive ? 'ring-2 ring-offset-1 shadow-md' : 'hover:shadow-md'
+                              } ${
+                                status === 'DONE' ? 'bg-purple-100 border-2 border-purple-300 ring-purple-500' :
+                                status === 'PROSES' ? 'bg-blue-100 border-2 border-blue-300 ring-blue-500' :
+                                status === 'LOSS' ? 'bg-red-100 border-2 border-red-300 ring-red-500' :
+                                status === 'SUSPEND' ? 'bg-orange-100 border-2 border-orange-300 ring-orange-500' :
+                                'bg-gray-100 border-2 border-gray-300 ring-gray-500'
+                              }`}
+                            >
+                              <p className="text-base font-bold">{count}</p>
+                              <p className="text-[8px] font-medium uppercase">{status}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Kuadran */}
+                    <div className="border rounded-lg p-3">
+                      <h4 className="text-xs font-bold text-gray-700 mb-2">🎯 Kuadran</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {['K1', 'K2', 'K3', 'K4'].map((kuadran) => {
+                          const count = (filteredCrmTargets || []).filter(t => t.kuadran === kuadran).length;
+                          const isActive = quickFilter?.field === 'kuadran' && quickFilter?.value === kuadran;
+                          return (
+                            <div
+                              key={kuadran}
+                              onClick={() => isActive ? clearQuickFilter() : handleQuickFilter('kuadran', kuadran)}
+                              className="bg-violet-100 border-2 border-violet-300 rounded-lg px-2 py-2 text-center cursor-pointer hover:shadow-md transition-all"
+                            >
+                              <p className="text-base font-bold text-violet-700">{count}</p>
+                              <p className="text-[8px] font-medium text-violet-600 uppercase">{kuadran}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Lokasi */}
+                    <div className="border rounded-lg p-3">
+                      <h4 className="text-xs font-bold text-gray-700 mb-2">📍 Lokasi</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { key: 'LUAR', label: 'Luar Kota', value: 'LUAR', color: 'amber' },
+                          { key: 'DALAM', label: 'Dalam Kota', value: 'DALAM', color: 'yellow' },
+                        ].map((loc) => {
+                          const count = loc.key === 'LUAR'
+                            ? (filteredCrmTargets || []).filter(t => t.luarKota && t.luarKota.toUpperCase().includes('LUAR')).length
+                            : (filteredCrmTargets || []).filter(t => !t.luarKota || !t.luarKota.toUpperCase().includes('LUAR')).length;
+                          const isActive = quickFilter?.field === 'luarKota' && quickFilter?.value === loc.value;
+                          return (
+                            <div
+                              key={loc.key}
+                              onClick={() => isActive ? clearQuickFilter() : handleQuickFilter('luarKota', loc.value)}
+                              className={`bg-${loc.color}-100 border-2 border-${loc.color}-300 rounded-lg px-2 py-2 text-center cursor-pointer hover:shadow-md transition-all ${
+                                isActive ? `ring-2 ring-offset-1 ring-${loc.color}-500 shadow-md` : ''
+                              }`}
+                            >
+                              <p className={`text-base font-bold text-${loc.color}-700`}>{count}</p>
+                              <p className={`text-[8px] font-medium text-${loc.color}-600 uppercase`}>{loc.label}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Kategori Akreditasi */}
+                    <div className="border rounded-lg p-3">
+                      <h4 className="text-xs font-bold text-gray-700 mb-2">🏅 Kategori Akreditasi</h4>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { key: 'KAN', label: 'KAN', color: 'emerald' },
+                          { key: 'NON AKRE', label: 'NON AKRE', color: 'slate' },
+                          { key: 'INTERNASIONAL', label: 'INTERNASIONAL', color: 'blue' },
+                        ].map((kat) => {
+                          const count = (filteredCrmTargets || []).filter(t => t.catAkre && t.catAkre.toUpperCase() === kat.key).length;
+                          const isActive = quickFilter?.field === 'catAkre' && quickFilter?.value === kat.key;
+                          return (
+                            <div
+                              key={kat.key}
+                              onClick={() => isActive ? clearQuickFilter() : handleQuickFilter('catAkre', kat.key)}
+                              className={`bg-${kat.color}-100 border-2 border-${kat.color}-300 rounded-lg px-2 py-2 text-center cursor-pointer hover:shadow-md transition-all ${
+                                isActive ? `ring-2 ring-offset-1 ring-${kat.color}-500 shadow-md` : ''
+                              }`}
+                            >
+                              <p className={`text-base font-bold text-${kat.color === 'blue' ? 'blue-900' : kat.color + '-700'}`}>{count}</p>
+                              <p className={`text-[8px] font-medium text-${kat.color === 'blue' ? 'blue-900' : kat.color + '-600'} uppercase`}>{kat.label}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Tahapan Audit */}
+                    <div className="border rounded-lg p-3">
+                      <h4 className="text-xs font-bold text-gray-700 mb-2">🔍 Tahapan Audit</h4>
+                      <div className="grid grid-cols-3 gap-2">
+                        {['IA', 'SV1', 'SV2', 'SV3', 'SV4', 'RC'].map((tahap) => {
+                          const count = (filteredCrmTargets || []).filter(t => t.tahapAudit === tahap).length;
+                          const isActive = quickFilter?.field === 'tahapAudit' && quickFilter?.value === tahap;
+                          return (
+                            <div
+                              key={tahap}
+                              onClick={() => isActive ? clearQuickFilter() : handleQuickFilter('tahapAudit', tahap)}
+                              className="bg-indigo-100 border-2 border-indigo-300 rounded-lg px-2 py-2 text-center cursor-pointer hover:shadow-md transition-all"
+                            >
+                              <p className="text-base font-bold text-indigo-700">{count}</p>
+                              <p className="text-[8px] font-medium text-indigo-600 uppercase">{tahap}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Status Terbit */}
+                    <div className="border rounded-lg p-3">
+                      <h4 className="text-xs font-bold text-gray-700 mb-2">📜 Status Terbit</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { key: 'TERBIT', label: 'Terbit', color: 'green' },
+                          { key: 'BELUM', label: 'Belum', color: 'red' },
+                        ].map((stat) => {
+                          const count = stat.key === 'TERBIT'
+                            ? (filteredCrmTargets || []).filter(t => t.statusSertifikat && t.statusSertifikat.toUpperCase() === 'TERBIT').length
+                            : (filteredCrmTargets || []).filter(t => !t.statusSertifikat || t.statusSertifikat.toUpperCase().includes('BELUM')).length;
+                          const isActive = quickFilter?.field === 'statusSertifikat' && quickFilter?.value === stat.key;
+                          return (
+                            <div
+                              key={stat.key}
+                              onClick={() => isActive ? clearQuickFilter() : handleQuickFilter('statusSertifikat', stat.key)}
+                              className={`bg-${stat.color}-100 border-2 border-${stat.color}-300 rounded-lg px-2 py-2 text-center cursor-pointer hover:shadow-md transition-all ${
+                                isActive ? `ring-2 ring-offset-1 ring-${stat.color}-500 shadow-md` : ''
+                              }`}
+                            >
+                              <p className={`text-base font-bold text-${stat.color}-700`}>{count}</p>
+                              <p className={`text-[8px] font-medium text-${stat.color}-600 uppercase`}>{stat.label}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Direct/Associate */}
+                    <div className="border rounded-lg p-3">
+                      <h4 className="text-xs font-bold text-gray-700 mb-2">👥 Direct/Associate</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { key: 'DIRECT', label: 'Direct', color: 'cyan' },
+                          { key: 'ASSOCIATE', label: 'Associate', color: 'pink' },
+                        ].map((type) => {
+                          const count = (filteredCrmTargets || []).filter(t => t.directOrAssociate && t.directOrAssociate.toUpperCase() === type.key).length;
+                          const isActive = quickFilter?.field === 'directOrAssociate' && quickFilter?.value === type.key;
+                          return (
+                            <div
+                              key={type.key}
+                              onClick={() => isActive ? clearQuickFilter() : handleQuickFilter('directOrAssociate', type.key)}
+                              className={`bg-${type.color}-100 border-2 border-${type.color}-300 rounded-lg px-2 py-2 text-center cursor-pointer hover:shadow-md transition-all ${
+                                isActive ? `ring-2 ring-offset-1 ring-${type.color}-500 shadow-md` : ''
+                              }`}
+                            >
+                              <p className={`text-base font-bold text-${type.color}-700`}>{count}</p>
+                              <p className={`text-[8px] font-medium text-${type.color}-600 uppercase`}>{type.label}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={() => setActiveFilterSheet(null)}
+                      className="w-full"
+                    >
+                      OK
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
