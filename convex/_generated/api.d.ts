@@ -11,6 +11,7 @@
 import type * as associatesData from "../associatesData.js";
 import type * as auth from "../auth.js";
 import type * as crmTargets from "../crmTargets.js";
+import type * as flyers from "../flyers.js";
 import type * as importBatch from "../importBatch.js";
 import type * as importCrmTargets from "../importCrmTargets.js";
 import type * as initData from "../initData.js";
@@ -39,6 +40,7 @@ declare const fullApi: ApiFromModules<{
   associatesData: typeof associatesData;
   auth: typeof auth;
   crmTargets: typeof crmTargets;
+  flyers: typeof flyers;
   importBatch: typeof importBatch;
   importCrmTargets: typeof importCrmTargets;
   initData: typeof initData;

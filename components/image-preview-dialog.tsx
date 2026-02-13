@@ -44,7 +44,7 @@ const ImagePreviewDialog = ({ open, onOpenChange, imageUrl, alt = "Preview" }: I
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[100vw] w-screen h-[100vh] max-h-[100dvh] p-0 gap-0 overflow-hidden bg-black dark:bg-black border-0 shadow-2xl rounded-none">
+      <DialogContent className="!max-w-[calc(100%-2rem)] max-w-[100vw] md:max-w-[100vw] w-[100vw] md:w-[100vw] h-[100vh] md:h-[100vh] max-h-[100vh] p-0 gap-0 overflow-hidden bg-black dark:bg-black border-0 shadow-2xl rounded-none !fixed !top-0 !left-0 !translate-x-0 !translate-y-0 m-0">
         <DialogTitle className="sr-only">Preview Bukti Kunjungan</DialogTitle>
         {/* Header */}
         <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-3 pt-safe-top pb-3 sm:px-6 sm:py-4 bg-gradient-to-b from-black/90 via-black/60 to-transparent">
@@ -77,7 +77,7 @@ const ImagePreviewDialog = ({ open, onOpenChange, imageUrl, alt = "Preview" }: I
             <img
               src={imageUrl}
               alt={alt}
-              className="w-full h-full object-contain"
+              className="w-full h-full object-contain max-h-[calc(100vh-80px)]"
               onError={() => setImageError(true)}
             />
           )}

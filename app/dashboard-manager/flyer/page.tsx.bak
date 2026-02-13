@@ -1,0 +1,410 @@
+"use client";
+
+import React, { useState } from 'react';
+import { useMutation, useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { Id } from '@/convex/_generated/dataModel';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { FlyerDialog } from '@/components/flyer-dialog';
+import { toast } from 'sonner';
+import {
+  Image as PhotoIcon,
+  Plus,
+  Pencil,
+  Trash2,
+  Eye,
+  Loader2,
+  Calendar,
+} from 'lucide-react';
+import { ImagePreviewDialog } from '@/components/image-preview-dialog';
+
+interface Flyer {
+  _id: Id<"flyers">;
+  title: string;
+  description?: string;
+  month: number;
+  year: number;
+  imageUrl: string;
+  status: "active" | "inactive";
+  created_by?: Id<"users">;
+  createdByName: string;
+  updated_by?: Id<"users">;
+  updatedByName?: string | null | undefined;
+  createdAt: number;
+  updatedAt: number;
+  _creationTime?: number;
+}
+
+const MONTHS = [
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+];
+
+export default function FlyerPage() {
+  const flyers = useQuery(api.flyers.getFlyers);
+  const deleteFlyerMutation = useMutation(api.flyers.deleteFlyer);
+  const updateStatusMutation = useMutation(api.flyers.updateFlyerStatus);
+
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingFlyer, setEditingFlyer] = useState<Flyer | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingFlyer, setDeletingFlyer] = useState<Flyer | null>(null);
+  const [previewImageOpen, setPreviewImageOpen] = useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  // Generate year options (current year - 2 to current year + 5)
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 8 }, (_, i) => currentYear - 2 + i);
+
+  // Filter flyers
+  const filteredFlyers = flyers?.filter(flyer => {
+    const matchesMonth = flyer.month === selectedMonth;
+    const matchesYear = flyer.year === selectedYear;
+    const matchesSearch = searchQuery === "" ||
+      flyer.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      flyer.description?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchesMonth && matchesYear && matchesSearch;
+  }) || [];
+
+  // Sort flyers: active first, then by updated date
+  const sortedFlyers = [...filteredFlyers].sort((a, b) => {
+    if (a.status === b.status) {
+      return b.updatedAt - a.updatedAt;
+    }
+    return a.status === "active" ? -1 : 1;
+  });
+
+  const handleAdd = () => {
+    setEditingFlyer(null);
+    setDialogOpen(true);
+  };
+
+  const handleEdit = (flyer: Flyer) => {
+    setEditingFlyer(flyer);
+    setDialogOpen(true);
+  };
+
+  const handleDelete = (flyer: Flyer) => {
+    setDeletingFlyer(flyer);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingFlyer) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteFlyerMutation({ id: deletingFlyer._id });
+      toast.success("✅ Flyer berhasil dihapus");
+      setDeleteDialogOpen(false);
+      setDeletingFlyer(null);
+    } catch (error) {
+      toast.error("❌ Gagal menghapus flyer");
+      console.error(error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleToggleStatus = async (flyer: Flyer) => {
+    setIsUpdatingStatus(true);
+    try {
+      const newStatus = flyer.status === "active" ? "inactive" : "active";
+      await updateStatusMutation({
+        id: flyer._id,
+        status: newStatus,
+      });
+      toast.success(`✅ Flyer berhasil diubah menjadi ${newStatus}`);
+    } catch (error) {
+      toast.error("❌ Gagal mengubah status flyer");
+      console.error(error);
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const handleImageClick = (imageUrl: string) => {
+    setPreviewImageUrl(imageUrl);
+    setPreviewImageOpen(true);
+  };
+
+  return (
+    <>
+      <div className="flex-1 space-y-6 p-8 pt-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Flyer</h2>
+            <p className="text-muted-foreground">
+              Upload dan kelola flyer promosi per bulan
+            </p>
+          </div>
+          <Button
+            onClick={handleAdd}
+            className="cursor-pointer bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Upload Flyer
+          </Button>
+        </div>
+
+        {/* Filters */}
+        <Card className="p-6 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950 border-slate-200 dark:border-slate-800">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                Bulan
+              </Label>
+              <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
+                <SelectTrigger className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500">
+                  <SelectValue placeholder="Pilih bulan" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MONTHS.map((month, idx) => (
+                    <SelectItem key={idx} value={(idx + 1).toString()}>
+                      {month}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                Tahun
+              </Label>
+              <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+                <SelectTrigger className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500">
+                  <SelectValue placeholder="Pilih tahun" />
+                </SelectTrigger>
+                <SelectContent>
+                  {yearOptions.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                Cari
+              </Label>
+              <Input
+                placeholder="Cari flyer..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+        </Card>
+        </div>
+
+        {/* Flyers Grid */}
+        {flyers === undefined ? (
+          <div className="flex items-center justify-center p-12">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+          </div>
+        ) : sortedFlyers.length === 0 ? (
+          <Card className="p-12 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950 border-slate-200 dark:border-slate-800">
+            <div className="text-center">
+              <PhotoIcon className="h-16 w-16 mx-auto text-slate-400 mb-4" />
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                Tidak ada flyer
+              </h3>
+              <p className="text-slate-500 dark:text-slate-400 mb-4">
+                {searchQuery ? "Tidak ditemukan flyer yang sesuai dengan pencarian" : `Belum ada flyer untuk ${MONTHS[selectedMonth - 1]} ${selectedYear}`}
+              </p>
+              <Button
+                onClick={handleAdd}
+                variant="outline"
+                className="border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Upload Flyer Pertama
+              </Button>
+            </div>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sortedFlyers.map((flyer) => (
+              <Card
+                key={flyer._id}
+                className="overflow-hidden bg-white dark:bg-slate-800 shadow-lg border-slate-200 dark:border-slate-700 hover:shadow-xl transition-shadow"
+              >
+                {/* Image */}
+                <div className="relative aspect-video bg-slate-100 dark:bg-slate-900">
+                  <img
+                    src={flyer.imageUrl}
+                    alt={flyer.title}
+                    className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => handleImageClick(flyer.imageUrl)}
+                  />
+                  <div className="absolute top-2 right-2">
+                    <Badge
+                      variant={flyer.status === "active" ? "default" : "secondary"}
+                      className={flyer.status === "active"
+                        ? "bg-green-600 hover:bg-green-700 text-white shadow-lg"
+                        : "bg-gray-600 hover:bg-gray-700 text-white shadow-lg"
+                      }
+                    >
+                      {flyer.status === "active" ? "Aktif" : "Non-Aktif"}
+                    </Badge>
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="p-4 space-y-3">
+                  <div>
+                    <h3 className="font-bold text-lg text-slate-900 dark:text-white line-clamp-1">
+                      {flyer.title}
+                    </h3>
+                    {flyer.description && (
+                      <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mt-1">
+                        {flyer.description}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                    <Calendar className="h-3 w-3" />
+                    <span className="font-semibold">
+                      {MONTHS[flyer.month - 1]} {flyer.year}
+                    </span>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleImageClick(flyer.imageUrl)}
+                      className="cursor-pointer flex-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 h-8"
+                      disabled={isUpdatingStatus}
+                    >
+                      <Eye className="h-3 w-3 mr-1" />
+                      Lihat
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleToggleStatus(flyer)}
+                      className={`cursor-pointer flex-1 h-8 ${
+                        flyer.status === "active"
+                          ? "text-gray-600 hover:text-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900/20"
+                          : "text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"
+                      }`}
+                      disabled={isUpdatingStatus}
+                    >
+                      {flyer.status === "active" ? "Nonaktifkan" : "Aktifkan"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleEdit(flyer)}
+                      className="cursor-pointer flex-1 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 h-8"
+                      disabled={isUpdatingStatus}
+                    >
+                      <Pencil className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleDelete(flyer)}
+                      className="cursor-pointer flex-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 h-8"
+                      disabled={isDeleting || isUpdatingStatus}
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" />
+                      Hapus
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Add/Edit Dialog */}
+      <FlyerDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        flyer={editingFlyer}
+        onSuccess={() => {
+          setDialogOpen(false);
+          setEditingFlyer(null);
+        }}
+      />
+    </>
+  );
+};
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Flyer?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus flyer "{deletingFlyer?.title}"? Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Menghapus...
+                </>
+              ) : (
+                "Hapus"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Image Preview Dialog */}
+      <ImagePreviewDialog
+        open={previewImageOpen}
+        onOpenChange={setPreviewImageOpen}
+        imageUrl={previewImageUrl}
+        alt="Flyer"
+      />
+    </>
+  );
+}

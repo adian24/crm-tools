@@ -1,0 +1,409 @@
+"use client";
+
+import React, { useState, useRef } from 'react';
+import { useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { Id } from '@/convex/_generated/dataModel';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { toast } from 'sonner';
+import { Save, X, Loader2, Upload } from 'lucide-react';
+
+const MONTHS = [
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+];
+
+interface Flyer {
+  _id: Id<"flyers">;
+  title: string;
+  description?: string;
+  month: number;
+  year: number;
+  imageUrl: string;
+  status: "active" | "inactive";
+}
+
+interface FlyerDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  flyer: Flyer | null;
+  onSuccess?: () => void;
+}
+
+export function FlyerDialog({ open, onOpenChange, flyer, onSuccess }: FlyerDialogProps) {
+  const createFlyerMutation = useMutation(api.flyers.createFlyer);
+  const updateFlyerMutation = useMutation(api.flyers.updateFlyer);
+  const generateUploadUrl = useMutation(api.flyers.generateUploadUrl);
+
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [month, setMonth] = useState(new Date().getMonth() + 1);
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [status, setStatus] = useState<"active" | "inactive">("active");
+  const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Reset form when flyer changes or dialog opens/closes
+  React.useEffect(() => {
+    if (flyer) {
+      setTitle(flyer.title);
+      setDescription(flyer.description || "");
+      setMonth(flyer.month);
+      setYear(flyer.year);
+      setStatus(flyer.status);
+      setImageUrl(flyer.imageUrl);
+      setImageFile(null);
+    } else {
+      setTitle("");
+      setDescription("");
+      setMonth(new Date().getMonth() + 1);
+      setYear(new Date().getFullYear());
+      setStatus("active");
+      setImageUrl("");
+      setImageFile(null);
+    }
+  }, [flyer, open]);
+
+  // Generate year options (current year - 2 to current year + 5)
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 8 }, (_, i) => currentYear - 2 + i);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file type (images only)
+    if (!file.type.startsWith('image/')) {
+      toast.error('❌ Harap pilih file gambar');
+      return;
+    }
+
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('❌ Ukuran file maksimal 5MB');
+      return;
+    }
+
+    setImageFile(file);
+
+    // Preview image
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImageUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const uploadImage = async (): Promise<string | null> => {
+    if (!imageFile) {
+      // If editing and no new file selected, keep existing image
+      if (flyer) {
+        return flyer.imageUrl;
+      }
+      return null;
+    }
+
+    setIsUploading(true);
+    try {
+      // Get upload URL
+      const uploadUrl = await generateUploadUrl({});
+
+      // Upload file
+      const result = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': imageFile.type },
+        body: imageFile,
+      });
+
+      if (!result.ok) {
+        throw new Error('Failed to upload image');
+      }
+
+      // Get storage ID from response
+      const { storageId } = await result.json();
+
+      // Return image URL
+      return new URL(`/api/storage/${storageId}`, window.location.origin).toString();
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('❌ Gagal mengupload gambar');
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    // Validation
+    if (!title.trim()) {
+      toast.error('❌ Judul wajib diisi!');
+      return;
+    }
+
+    if (!imageFile && !flyer) {
+      toast.error('❌ Harap pilih gambar!');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Upload image if needed
+      const finalImageUrl = await uploadImage();
+      if (!finalImageUrl && !flyer) {
+        throw new Error('Gagal mengupload gambar');
+      }
+
+      if (flyer) {
+        // Update existing flyer
+        await updateFlyerMutation({
+          id: flyer._id,
+          title: title.trim(),
+          description: description.trim() || undefined,
+          month,
+          year,
+          imageUrl: finalImageUrl || flyer.imageUrl,
+          status,
+        });
+        toast.success('✅ Flyer berhasil diupdate');
+      } else {
+        // Create new flyer
+        await createFlyerMutation({
+          title: title.trim(),
+          description: description.trim() || undefined,
+          month,
+          year,
+          imageUrl: finalImageUrl!,
+          status,
+        });
+        toast.success('✅ Flyer berhasil dibuat');
+      }
+
+      onSuccess?.();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error saving flyer:', error);
+      toast.error('❌ Gagal menyimpan flyer');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl w-full max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold text-slate-900 dark:text-white">
+            {flyer ? 'Edit Flyer' : 'Upload Flyer Baru'}
+          </DialogTitle>
+          <DialogDescription className="text-slate-500 dark:text-slate-400">
+            {flyer ? 'Edit informasi flyer yang sudah ada' : 'Upload flyer baru untuk promosi'}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-6 py-4">
+          {/* Image Upload */}
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+              Gambar Flyer <span className="text-red-500">*</span>
+            </Label>
+            <div className="space-y-3">
+              <Input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                disabled={isUploading || isSaving}
+                className="hidden"
+              />
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading || isSaving}
+                  className="flex-1 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  {imageFile || flyer ? 'Ganti Gambar' : 'Pilih Gambar'}
+                </Button>
+                {imageUrl && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      setImageUrl("");
+                      setImageFile(null);
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = "";
+                      }
+                    }}
+                    disabled={isUploading || isSaving}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Hapus
+                  </Button>
+                )}
+              </div>
+
+              {imageUrl && (
+                <div className="relative aspect-video w-full bg-slate-100 dark:bg-slate-900 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+                  <img
+                    src={imageUrl}
+                    alt="Preview"
+                    className="w-full h-full object-contain"
+                  />
+                  {isUploading && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                      <Loader2 className="h-8 w-8 animate-spin text-white" />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Title */}
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+              Judul <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Contoh: Promo Tahun Baru"
+              disabled={isSaving}
+              className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Description */}
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+              Deskripsi
+            </Label>
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Tambahkan deskripsi untuk flyer..."
+              rows={3}
+              disabled={isSaving}
+              className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 resize-none"
+            />
+          </div>
+
+          {/* Month & Year */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                Bulan <span className="text-red-500">*</span>
+              </Label>
+              <Select value={month.toString()} onValueChange={(v) => setMonth(parseInt(v))}>
+                <SelectTrigger disabled={isSaving} className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500">
+                  <SelectValue placeholder="Pilih bulan" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MONTHS.map((m, idx) => (
+                    <SelectItem key={idx} value={(idx + 1).toString()}>
+                      {m}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                Tahun <span className="text-red-500">*</span>
+              </Label>
+              <Select value={year.toString()} onValueChange={(v) => setYear(parseInt(v))}>
+                <SelectTrigger disabled={isSaving} className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500">
+                  <SelectValue placeholder="Pilih tahun" />
+                </SelectTrigger>
+                <SelectContent>
+                  {yearOptions.map((y) => (
+                    <SelectItem key={y} value={y.toString()}>
+                      {y}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Status */}
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+              Status
+            </Label>
+            <Select value={status} onValueChange={(v) => setStatus(v as "active" | "inactive")}>
+              <SelectTrigger disabled={isSaving} className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500">
+                <SelectValue placeholder="Pilih status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Aktif</SelectItem>
+                <SelectItem value="inactive">Non-Aktif</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isSaving || isUploading}
+            className="flex-1 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+          >
+            <X className="mr-2 h-4 w-4" />
+            Batal
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={isSaving || isUploading || (!imageUrl && !flyer)}
+            className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg disabled:opacity-50"
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Menyimpan...
+              </>
+            ) : isUploading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Mengupload...
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                Simpan
+              </>
+            )}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -18,6 +18,7 @@ import {
   IconKey,
   IconAward,
   IconArchive,
+  IconPhoto,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -85,6 +86,11 @@ const getNavigationItems = (role: string) => {
         icon: IconAward,
       },
       {
+        title: "Flyer",
+        url: "/dashboard-manager/flyer",
+        icon: IconPhoto,
+      },
+      {
         title: "Master Data",
         icon: IconArchive,
         items: [
@@ -124,6 +130,11 @@ const getNavigationItems = (role: string) => {
       title: "KPI",
       url: "/dashboard-manager/kpi",
       icon: IconAward,
+    },
+    {
+      title: "Flyer",
+      url: "/dashboard-manager/flyer",
+      icon: IconPhoto,
     },
     {
       title: "Master Data",

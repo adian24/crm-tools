@@ -224,5 +224,29 @@ export default defineSchema({
     .index("by_kode", ["kode"])
     .index("by_kategori", ["kategori"])
     .index("by_status", ["status"])
-    .index("by_creationTime", ["createdAt"])
+    .index("by_creationTime", ["createdAt"]),
+
+  // Table Flyers (upload flyer per bulan)
+  flyers: defineTable({
+    title: v.string(), // Judul flyer
+    description: v.optional(v.string()), // Deskripsi flyer
+    month: v.number(), // Bulan (1-12)
+    year: v.number(), // Tahun
+    imageUrl: v.string(), // URL gambar flyer (disimpan di Convex storage)
+    status: v.union(v.literal("active"), v.literal("inactive")), // Status flyer
+    category: v.union(v.literal("Training"), v.literal("Webinar"), v.literal("Promosi")), // Kategori flyer
+    tanggalTerbit: v.optional(v.string()), // Tanggal terbit (format: YYYY-MM-DD)
+    tanggalBroadcast: v.optional(v.string()), // Tanggal broadcast (format: YYYY-MM-DD)
+
+    // Audit fields
+    created_by: v.optional(v.id("users")), // User yang mengupload (optional untuk sementara)
+    updated_by: v.optional(v.id("users")), // User yang terakhir update
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_month_year", ["month", "year"])
+    .index("by_year", ["year"])
+    .index("by_status", ["status"])
+    .index("by_category", ["category"])
+    .index("by_created_by", ["created_by"])
 });
