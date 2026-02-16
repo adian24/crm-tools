@@ -122,9 +122,14 @@ const getNavigationItems = (role: string) => {
       icon: IconCalendarTime,
     },
     {
-      title: "CRM Data Management",
-      url: "/dashboard-manager/crm-data",
-      icon: IconTarget,
+      title: "Dashboard PRM",
+      url: "/dashboard-manager/dashboard-prm",
+      icon: IconCalendarTime,
+    },
+    {
+      title: "Struktur Divisi CRP",
+      url: "/dashboard-manager/struktur-divisi-crp",
+      icon: IconAward,
     },
     {
       title: "KPI",
@@ -132,9 +137,34 @@ const getNavigationItems = (role: string) => {
       icon: IconAward,
     },
     {
+      title: "NPS",
+      url: "/dashboard-manager/nps",
+      icon: IconAward,
+    },
+    {
+      title: "Kolaborasi CRM",
+      url: "/dashboard-manager/kolaborasi-crm",
+      icon: IconAward,
+    },
+    {
       title: "Flyer",
       url: "/dashboard-manager/flyer",
       icon: IconPhoto,
+    },
+    {
+      title: "Isu & Kendala",
+      url: "/dashboard-manager/isu-kendala",
+      icon: IconPhoto,
+    },
+    {
+      title: "CRM Data Management",
+      url: "/dashboard-manager/crm-data",
+      icon: IconTarget,
+    },
+    {
+      title: "Kunjungan Enggangment Partenership",
+      url: "/dashboard-manager/kunjungan-enggangment-partnership",
+      icon: IconTarget,
     },
     {
       title: "Master Data",

@@ -248,5 +248,30 @@ export default defineSchema({
     .index("by_year", ["year"])
     .index("by_status", ["status"])
     .index("by_category", ["category"])
+    .index("by_created_by", ["created_by"]),
+
+  // Table Isu Kendala (catatan isu/kendala per bulan)
+  isuKendala: defineTable({
+    title: v.string(), // Judul isu/kendala
+    month: v.number(), // Bulan (1-12)
+    year: v.number(), // Tahun
+    points: v.array(v.string()), // Array point-point isu/kendala
+    status: v.union(v.literal("active"), v.literal("inactive")), // Status isu
+    category: v.union(v.literal("Internal"), v.literal("Eksternal"), v.literal("Operasional"), v.literal("Teknis")), // Kategori isu
+    priority: v.union(v.literal("Low"), v.literal("Medium"), v.literal("High"), v.literal("Critical")), // Prioritas isu
+    tanggalKejadian: v.optional(v.string()), // Tanggal kejadian (format: YYYY-MM-DD)
+    tanggalSelesai: v.optional(v.string()), // Tanggal selesai (format: YYYY-MM-DD)
+
+    // Audit fields
+    created_by: v.optional(v.id("users")), // User yang membuat
+    updated_by: v.optional(v.id("users")), // User yang terakhir update
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_month_year", ["month", "year"])
+    .index("by_year", ["year"])
+    .index("by_status", ["status"])
+    .index("by_category", ["category"])
+    .index("by_priority", ["priority"])
     .index("by_created_by", ["created_by"])
 });
