@@ -81,13 +81,28 @@ const getNavigationItems = (role: string) => {
         icon: IconTarget,
       },
       {
+        title: "Struktur Divisi CRP",
+        url: "/dashboard-manager/struktur-divisi-crp",
+        icon: IconAward,
+      },
+      {
         title: "KPI",
         url: "/dashboard-manager/kpi",
         icon: IconAward,
       },
       {
+        title: "NPS",
+        url: "/dashboard-manager/nps",
+        icon: IconAward,
+      },
+      {
         title: "Flyer",
         url: "/dashboard-manager/flyer",
+        icon: IconPhoto,
+      },
+      {
+        title: "Isu & Kendala",
+        url: "/dashboard-manager/isu-kendala",
         icon: IconPhoto,
       },
       {
