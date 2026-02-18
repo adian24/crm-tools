@@ -273,5 +273,23 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_category", ["category"])
     .index("by_priority", ["priority"])
+    .index("by_created_by", ["created_by"]),
+
+  // Table Struktur Divisi (organization chart image)
+  strukturDivisi: defineTable({
+    title: v.string(), // Judul struktur organisasi
+    description: v.optional(v.string()), // Deskripsi
+    year: v.number(), // Tahun struktur organisasi
+    imageUrl: v.string(), // URL gambar struktur organisasi
+    isActive: v.boolean(), // Status aktif/non-aktif
+
+    // Audit fields
+    created_by: v.optional(v.id("users")),
+    updated_by: v.optional(v.id("users")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_year", ["year"])
+    .index("by_active", ["isActive"])
     .index("by_created_by", ["created_by"])
 });

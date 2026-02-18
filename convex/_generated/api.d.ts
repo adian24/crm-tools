@@ -23,6 +23,7 @@ import type * as notifications from "../notifications.js";
 import type * as roles from "../roles.js";
 import type * as seed from "../seed.js";
 import type * as staffTargets from "../staffTargets.js";
+import type * as strukturDivisi from "../strukturDivisi.js";
 import type * as targets from "../targets.js";
 import type * as uploads from "../uploads.js";
 import type * as utils_authHelpers from "../utils/authHelpers.js";
@@ -53,6 +54,7 @@ declare const fullApi: ApiFromModules<{
   roles: typeof roles;
   seed: typeof seed;
   staffTargets: typeof staffTargets;
+  strukturDivisi: typeof strukturDivisi;
   targets: typeof targets;
   uploads: typeof uploads;
   "utils/authHelpers": typeof utils_authHelpers;
