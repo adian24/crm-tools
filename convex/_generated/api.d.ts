@@ -10,6 +10,7 @@
 
 import type * as associatesData from "../associatesData.js";
 import type * as auth from "../auth.js";
+import type * as cleanNps from "../cleanNps.js";
 import type * as crmTargets from "../crmTargets.js";
 import type * as flyers from "../flyers.js";
 import type * as importBatch from "../importBatch.js";
@@ -20,6 +21,7 @@ import type * as kpiAnnual from "../kpiAnnual.js";
 import type * as masterAssociate from "../masterAssociate.js";
 import type * as migrate from "../migrate.js";
 import type * as notifications from "../notifications.js";
+import type * as nps from "../nps.js";
 import type * as roles from "../roles.js";
 import type * as seed from "../seed.js";
 import type * as staffTargets from "../staffTargets.js";
@@ -41,6 +43,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   associatesData: typeof associatesData;
   auth: typeof auth;
+  cleanNps: typeof cleanNps;
   crmTargets: typeof crmTargets;
   flyers: typeof flyers;
   importBatch: typeof importBatch;
@@ -51,6 +54,7 @@ declare const fullApi: ApiFromModules<{
   masterAssociate: typeof masterAssociate;
   migrate: typeof migrate;
   notifications: typeof notifications;
+  nps: typeof nps;
   roles: typeof roles;
   seed: typeof seed;
   staffTargets: typeof staffTargets;

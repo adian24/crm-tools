@@ -291,5 +291,47 @@ export default defineSchema({
   })
     .index("by_year", ["year"])
     .index("by_active", ["isActive"])
+    .index("by_created_by", ["created_by"]),
+
+  // Table NPS (Net Promoter Score)
+  nps: defineTable({
+    // Filter fields
+    month: v.optional(v.number()), // Bulan (1-12)
+    year: v.optional(v.number()), // Tahun
+    category: v.union(v.literal("ISO"), v.literal("ISPO"), v.string()), // Kategori (temporarily allow any string for migration)
+
+    // NPS Chart
+    detractors: v.optional(v.number()), // Jumlah Detractors (score 0-6)
+    passives: v.optional(v.number()), // Jumlah Passives (score 7-8)
+    promoters: v.optional(v.number()), // Jumlah Promoters (score 9-10)
+    npsDescription: v.optional(v.string()), // Deskripsi NPS
+
+    // Rating Chart
+    customerRelation: v.optional(v.number()), // Rating Customer Relation
+    finance: v.optional(v.number()), // Rating Finance
+    auditor: v.optional(v.number()), // Rating Auditor
+    admin: v.optional(v.number()), // Rating Admin
+    sales: v.optional(v.number()), // Rating Sales
+    ratingDescription: v.optional(v.string()), // Deskripsi Rating
+
+    isActive: v.boolean(),
+
+    // Audit fields
+    created_by: v.optional(v.id("users")),
+    updated_by: v.optional(v.id("users")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+
+    // Legacy fields (for backward compatibility during migration)
+    clientName: v.optional(v.string()),
+    surveyDate: v.optional(v.string()),
+    surveyorName: v.optional(v.string()),
+    response: v.optional(v.number()),
+    notes: v.optional(v.string()),
+    type: v.optional(v.string()),
+  })
+    .index("by_month_year", ["month", "year"])
+    .index("by_category", ["category"])
+    .index("by_active", ["isActive"])
     .index("by_created_by", ["created_by"])
 });
