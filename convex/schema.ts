@@ -338,5 +338,40 @@ export default defineSchema({
     .index("by_month_year", ["month", "year"])
     .index("by_category", ["category"])
     .index("by_active", ["isActive"])
-    .index("by_created_by", ["created_by"])
+    .index("by_created_by", ["created_by"]),
+
+  // Table Kolaborasi CRM (Struktur Organisasi & Job Desk)
+  kolaborasiCrm: defineTable({
+    // Data dasar staf
+    nama: v.string(), // Nama lengkap
+    fotoUrl: v.optional(v.string()), // URL foto profil
+    jabatan: v.string(), // Jabatan (Manager, Supervisor, Staff, dll)
+
+    // Job Deskripsi
+    jobDesk: v.array(v.string()), // List of job deskripsi tasks
+
+    // Posisi card (untuk drag & drop)
+    positionX: v.number(), // Posisi X (default: 0)
+    positionY: v.number(), // Posisi Y (default: 0)
+
+    // Connections (garis penghubung dengan metadata)
+    connections: v.optional(v.array(v.object({
+      targetId: v.id("kolaborasiCrm"), // Target staff ID
+      type: v.optional(v.string()), // Tipe koneksi: "solid", "dashed", "dotted"
+      label: v.optional(v.string()), // Label koneksi: "reporting", "collaboration", "communication"
+      color: v.optional(v.string()), // Warna garis (hex code)
+      routing: v.optional(v.string()), // Routing style: "straight", "free", "siku"
+    }))), // Array of koneksi dengan metadata
+
+    // Data tambahan
+    keterangan: v.optional(v.string()), // Keterangan tambahan
+    isActive: v.boolean(), // Status aktif/non-aktif
+
+    // Audit fields
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_jabatan", ["jabatan"])
+    .index("by_active", ["isActive"])
+    .index("by_createdAt", ["createdAt"]),
 });

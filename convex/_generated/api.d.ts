@@ -17,6 +17,7 @@ import type * as importBatch from "../importBatch.js";
 import type * as importCrmTargets from "../importCrmTargets.js";
 import type * as initData from "../initData.js";
 import type * as isuKendala from "../isuKendala.js";
+import type * as kolaborasiCrm from "../kolaborasiCrm.js";
 import type * as kpiAnnual from "../kpiAnnual.js";
 import type * as masterAssociate from "../masterAssociate.js";
 import type * as migrate from "../migrate.js";
@@ -50,6 +51,7 @@ declare const fullApi: ApiFromModules<{
   importCrmTargets: typeof importCrmTargets;
   initData: typeof initData;
   isuKendala: typeof isuKendala;
+  kolaborasiCrm: typeof kolaborasiCrm;
   kpiAnnual: typeof kpiAnnual;
   masterAssociate: typeof masterAssociate;
   migrate: typeof migrate;
