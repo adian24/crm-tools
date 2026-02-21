@@ -56,18 +56,25 @@ interface CrmTarget {
   eaCode?: string;
   std?: string;
   iaDate?: string;
+  bulanAuditSebelumnyaSustain?: string;
   expDate?: string;
   tahapAudit?: string;
   hargaKontrak?: number;
   bulanTtdNotif?: string;
+  bulanAudit?: string;
   hargaTerupdate?: number;
   trimmingValue?: number;
   lossValue?: number;
   cashback?: number;
   terminPembayaran?: string;
+  statusInvoice?: string;
+  statusPembayaran?: string;
+  statusKomisi?: string;
   statusSertifikat?: string;
   tanggalKunjungan?: string;
   statusKunjungan?: string;
+  catatanKunjungan?: string;
+  fotoBuktiKunjungan?: string;
   createdAt: number;
   updatedAt: number;
 }
@@ -95,18 +102,25 @@ interface CrmFormData {
   eaCode?: string;
   std?: string;
   iaDate?: string;
+  bulanAuditSebelumnyaSustain?: string;
   expDate?: string;
   tahapAudit?: string;
   hargaKontrak?: string;
   bulanTtdNotif?: string;
+  bulanAudit?: string;
   hargaTerupdate?: string;
   trimmingValue?: string;
   lossValue?: string;
   cashback?: string;
   terminPembayaran?: string;
+  statusInvoice?: string;
+  statusPembayaran?: string;
+  statusKomisi?: string;
   statusSertifikat?: string;
   tanggalKunjungan?: string;
   statusKunjungan?: string;
+  catatanKunjungan?: string;
+  fotoBuktiKunjungan?: string;
 }
 
 interface FormDataRowProps {
@@ -554,6 +568,56 @@ const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, staffUser
           <option value="NOT YET">NOT YET</option>
         </select>
       </td>
+      <td className="border border-border p-1 min-w-[120px]">
+        <input
+          type="date"
+          defaultValue={row.bulanAuditSebelumnyaSustain}
+          onChange={(e) => handleChange('bulanAuditSebelumnyaSustain', e.target.value)}
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
+        />
+      </td>
+      <td className="border border-border p-1 min-w-[120px]">
+        <input
+          type="date"
+          defaultValue={row.bulanAudit}
+          onChange={(e) => handleChange('bulanAudit', e.target.value)}
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
+        />
+      </td>
+      <td className="border border-border p-1 min-w-[120px]">
+        <select
+          defaultValue={row.statusInvoice}
+          onChange={(e) => handleChange('statusInvoice', e.target.value)}
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
+        >
+          <option value="">- Pilih -</option>
+          <option value="Terbit">Terbit</option>
+          <option value="Belum Terbit">Belum Terbit</option>
+        </select>
+      </td>
+      <td className="border border-border p-1 min-w-[120px]">
+        <select
+          defaultValue={row.statusPembayaran}
+          onChange={(e) => handleChange('statusPembayaran', e.target.value)}
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
+        >
+          <option value="">- Pilih -</option>
+          <option value="Lunas">Lunas</option>
+          <option value="Belum Lunas">Belum Lunas</option>
+        </select>
+      </td>
+      <td className="border border-border p-1 min-w-[140px]">
+        <select
+          defaultValue={row.statusKomisi}
+          onChange={(e) => handleChange('statusKomisi', e.target.value)}
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
+        >
+          <option value="">- Pilih -</option>
+          <option value="Sudah Diajukan">Sudah Diajukan</option>
+          <option value="Belum Diajukan">Belum Diajukan</option>
+          <option value="Tidak Ada">Tidak Ada</option>
+        </select>
+      </td>
       <td className="border border-border p-1 text-center">
         <button
           onClick={() => onRemove(index)}
@@ -843,6 +907,11 @@ export default function CrmDataManagementPage() {
     statusSertifikat: '',
     tanggalKunjungan: '',
     statusKunjungan: '',
+    bulanAuditSebelumnyaSustain: '',
+    bulanAudit: '',
+    statusInvoice: '',
+    statusPembayaran: '',
+    statusKomisi: '',
   }]);
   const [isSubmittingExcel, setIsSubmittingExcel] = useState(false);
 
@@ -1340,6 +1409,11 @@ export default function CrmDataManagementPage() {
             statusSertifikat: row.statusSertifikat || undefined,
             tanggalKunjungan: row.tanggalKunjungan || undefined,
             statusKunjungan: row.statusKunjungan || undefined,
+            bulanAuditSebelumnyaSustain: row.bulanAuditSebelumnyaSustain || undefined,
+            bulanAudit: row.bulanAudit || undefined,
+            statusInvoice: row.statusInvoice || undefined,
+            statusPembayaran: row.statusPembayaran || undefined,
+            statusKomisi: row.statusKomisi || undefined,
             created_by: currentUser?._id as any, // Type assertion for Convex Id
           });
           successCount++;
@@ -1501,6 +1575,11 @@ export default function CrmDataManagementPage() {
             statusKunjungan: obj['statusKunjungan'] || obj['STATUS KUNJUNGAN'] || undefined,
             catatanKunjungan: obj['catatanKunjungan'] || obj['CATATAN KUNJUNGAN'] || undefined,
             fotoBuktiKunjungan: obj['fotoBuktiKunjungan'] || obj['FOTO BUKTI KUNJUNGAN'] || undefined,
+            bulanAuditSebelumnyaSustain: parseDate(obj['bulanAuditSebelumnyaSustain'] || obj['BULAN AUDIT SEBELUMNYA SUSTAIN']),
+            bulanAudit: parseDate(obj['bulanAudit'] || obj['BULAN AUDIT']),
+            statusInvoice: obj['statusInvoice'] || obj['STATUS INVOICE'] || undefined,
+            statusPembayaran: obj['statusPembayaran'] || obj['STATUS PEMBAYARAN'] || undefined,
+            statusKomisi: obj['statusKomisi'] || obj['STATUS KOMISI'] || undefined,
             created_by: currentUser?._id, // Add current user ID
           };
 
@@ -1811,15 +1890,20 @@ export default function CrmDataManagementPage() {
       'eaCode',
       'std',
       'iaDate',
+      'bulanAuditSebelumnyaSustain',
       'expDate',
       'tahapAudit',
       'hargaKontrak',
       'bulanTtdNotif',
+      'bulanAudit',
       'hargaTerupdate',
       'trimmingValue',
       'lossValue',
       'cashback',
       'terminPembayaran',
+      'statusInvoice',
+      'statusPembayaran',
+      'statusKomisi',
       'statusSertifikat',
       'tanggalKunjungan',
       'statusKunjungan',
@@ -1852,15 +1936,20 @@ export default function CrmDataManagementPage() {
         target.eaCode || '',
         target.std || '',
         target.iaDate || '',
+        target.bulanAuditSebelumnyaSustain || '',
         target.expDate || '',
         target.tahapAudit || '',
         target.hargaKontrak || '',
         target.bulanTtdNotif || '',
+        target.bulanAudit || '',
         target.hargaTerupdate || '',
         target.trimmingValue || '',
         target.lossValue || '',
         target.cashback || '',
         target.terminPembayaran || '',
+        target.statusInvoice || '',
+        target.statusPembayaran || '',
+        target.statusKomisi || '',
         target.statusSertifikat || '',
         target.tanggalKunjungan || '',
         target.statusKunjungan || '',
@@ -1895,15 +1984,20 @@ export default function CrmDataManagementPage() {
       { wch: 10 }, // eaCode
       { wch: 10 }, // std
       { wch: 12 }, // iaDate
+      { wch: 18 }, // bulanAuditSebelumnyaSustain
       { wch: 12 }, // expDate
       { wch: 12 }, // tahapAudit
       { wch: 15 }, // hargaKontrak
       { wch: 15 }, // bulanTtdNotif
+      { wch: 15 }, // bulanAudit
       { wch: 15 }, // hargaTerupdate
       { wch: 15 }, // trimmingValue
       { wch: 12 }, // lossValue
       { wch: 12 }, // cashback
       { wch: 18 }, // terminPembayaran
+      { wch: 15 }, // statusInvoice
+      { wch: 18 }, // statusPembayaran
+      { wch: 18 }, // statusKomisi
       { wch: 15 }, // statusSertifikat
       { wch: 15 }, // tanggalKunjungan
       { wch: 15 }, // statusKunjungan
@@ -2627,24 +2721,31 @@ export default function CrmDataManagementPage() {
                     <TableHead>EA Code</TableHead>
                     <TableHead>STD</TableHead>
                     <TableHead>IA Date</TableHead>
+                    <TableHead>Bulan Audit Sblm</TableHead>
                     <TableHead>Exp Date</TableHead>
                     <SortableTableHead field="tahapAudit">Tahap Audit</SortableTableHead>
                     <SortableTableHead field="hargaKontrak">Harga Kontrak</SortableTableHead>
                     <TableHead>Bulan TTD</TableHead>
+                    <TableHead>Bulan Audit</TableHead>
                     <SortableTableHead field="hargaTerupdate">Harga Update</SortableTableHead>
                     <TableHead>Trimming</TableHead>
                     <TableHead>Loss</TableHead>
                     <TableHead>Cashback</TableHead>
                     <TableHead>Termin</TableHead>
+                    <TableHead>Status Invoice</TableHead>
+                    <TableHead>Status Pembayaran</TableHead>
+                    <TableHead>Status Komisi</TableHead>
                     <SortableTableHead field="statusSertifikat">Status Sertifikat</SortableTableHead>
                     <SortableTableHead field="tanggalKunjungan">Tgl Kunjungan</SortableTableHead>
                     <SortableTableHead field="statusKunjungan">Status Kunjungan</SortableTableHead>
+                    <TableHead>Catatan Kunjungan</TableHead>
+                    <TableHead>Foto Bukti</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {paginatedTargets.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={canEdit ? 34 : 33} className="text-center py-12">
+                      <TableCell colSpan={canEdit ? 41 : 40} className="text-center py-12">
                         <div className="flex flex-col items-center justify-center space-y-3">
                           <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
                             <Search className="h-6 w-6 text-muted-foreground" />
@@ -2727,6 +2828,7 @@ export default function CrmDataManagementPage() {
                         <TableCell>{target.eaCode || '-'}</TableCell>
                         <TableCell>{target.std || '-'}</TableCell>
                         <TableCell>{target.iaDate || '-'}</TableCell>
+                        <TableCell>{target.bulanAuditSebelumnyaSustain || '-'}</TableCell>
                         <TableCell>{target.expDate || '-'}</TableCell>
                         <TableCell>{target.tahapAudit || '-'}</TableCell>
                         <TableCell>
@@ -2735,6 +2837,7 @@ export default function CrmDataManagementPage() {
                         <TableCell title={target.bulanTtdNotif || ''}>
                           {formatDateToDayMonth(target.bulanTtdNotif)}
                         </TableCell>
+                        <TableCell>{target.bulanAudit || '-'}</TableCell>
                         <TableCell>
                           {target.hargaTerupdate ? `Rp ${target.hargaTerupdate.toLocaleString('id-ID')}` : '-'}
                         </TableCell>
@@ -2748,6 +2851,27 @@ export default function CrmDataManagementPage() {
                           {target.cashback ? `Rp ${target.cashback.toLocaleString('id-ID')}` : '-'}
                         </TableCell>
                         <TableCell>{target.terminPembayaran || '-'}</TableCell>
+                        <TableCell>
+                          {target.statusInvoice ? (
+                            <Badge variant={target.statusInvoice === 'Terbit' ? 'default' : 'secondary'}>
+                              {target.statusInvoice}
+                            </Badge>
+                          ) : '-'}
+                        </TableCell>
+                        <TableCell>
+                          {target.statusPembayaran ? (
+                            <Badge variant={target.statusPembayaran === 'Lunas' ? 'default' : 'secondary'}>
+                              {target.statusPembayaran}
+                            </Badge>
+                          ) : '-'}
+                        </TableCell>
+                        <TableCell>
+                          {target.statusKomisi ? (
+                            <Badge variant="outline">
+                              {target.statusKomisi}
+                            </Badge>
+                          ) : '-'}
+                        </TableCell>
                         <TableCell>{target.statusSertifikat || '-'}</TableCell>
                         <TableCell>{formatTanggalKunjungan(target.tanggalKunjungan)}</TableCell>
                         <TableCell>
@@ -2760,6 +2884,8 @@ export default function CrmDataManagementPage() {
                             </Badge>
                           ) : '-'}
                         </TableCell>
+                        <TableCell className="max-w-xs truncate" title={target.catatanKunjungan}>{target.catatanKunjungan || '-'}</TableCell>
+                        <TableCell className="max-w-xs truncate" title={target.fotoBuktiKunjungan}>{target.fotoBuktiKunjungan || '-'}</TableCell>
 
                       </TableRow>
                     ))
@@ -2995,6 +3121,11 @@ export default function CrmDataManagementPage() {
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[120px]">Bulan Exp</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Tgl Kunjungan</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Status Kunjungan</th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[120px]">Bulan Audit Sblm</th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[120px]">Bulan Audit</th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[120px]">Status Invoice</th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[120px]">Status Pembayaran</th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[140px]">Status Komisi</th>
                       <th className="p-2 border border-border text-center font-medium text-xs whitespace-nowrap min-w-[50px]">Action</th>
                     </tr>
                   </thead>

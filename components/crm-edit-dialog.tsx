@@ -65,6 +65,11 @@ interface CrmTarget {
   statusKunjungan?: string;
   catatanKunjungan?: string;
   fotoBuktiKunjungan?: string;
+  bulanAuditSebelumnyaSustain?: string;
+  bulanAudit?: string;
+  statusInvoice?: string;
+  statusPembayaran?: string;
+  statusKomisi?: string;
 }
 
 interface StaffUser {
@@ -117,6 +122,11 @@ interface FormData {
   statusKunjungan: string;
   catatanKunjungan: string;
   fotoBuktiKunjungan: string;
+  bulanAuditSebelumnyaSustain: string;
+  bulanAudit: string;
+  statusInvoice: string;
+  statusPembayaran: string;
+  statusKomisi: string;
 }
 
 const EditCrmDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSuccess }: EditCrmDialogProps) => {
@@ -217,6 +227,11 @@ const EditCrmDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSu
         statusKunjungan: target.statusKunjungan || '',
         catatanKunjungan: target.catatanKunjungan || '',
         fotoBuktiKunjungan: target.fotoBuktiKunjungan || '',
+        bulanAuditSebelumnyaSustain: target.bulanAuditSebelumnyaSustain || '',
+        bulanAudit: target.bulanAudit || '',
+        statusInvoice: target.statusInvoice || '',
+        statusPembayaran: target.statusPembayaran || '',
+        statusKomisi: target.statusKomisi || '',
       });
     }
   }, [target, normalizeForSelect]);
@@ -348,6 +363,11 @@ const EditCrmDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSu
         statusKunjungan: formData.statusKunjungan || null,
         catatanKunjungan: formData.catatanKunjungan || null,
         fotoBuktiKunjungan: formData.fotoBuktiKunjungan || null,
+        bulanAuditSebelumnyaSustain: formData.bulanAuditSebelumnyaSustain || null,
+        bulanAudit: formData.bulanAudit || null,
+        statusInvoice: formData.statusInvoice || null,
+        statusPembayaran: formData.statusPembayaran || null,
+        statusKomisi: formData.statusKomisi || null,
       });
 
       toast.success('✅ Data berhasil disimpan!', {
@@ -892,6 +912,75 @@ const EditCrmDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSu
                           placeholder="https://example.com/foto.jpg"
                           className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500 h-9 text-sm"
                         />
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Bulan Audit Sebelumnya Sustain</Label>
+                        <Input
+                          type="date"
+                          value={formData.bulanAuditSebelumnyaSustain}
+                          onChange={(e) => updateFormField('bulanAuditSebelumnyaSustain', e.target.value)}
+                          className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500 h-9 text-sm"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Bulan Audit</Label>
+                        <Input
+                          type="date"
+                          value={formData.bulanAudit}
+                          onChange={(e) => updateFormField('bulanAudit', e.target.value)}
+                          className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500 h-9 text-sm"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Status Invoice</Label>
+                        <Select
+                          value={formData.statusInvoice}
+                          onValueChange={(value) => updateFormField('statusInvoice', value)}
+                        >
+                          <SelectTrigger className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500 h-9 text-sm">
+                            <SelectValue placeholder="- Pilih -" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Terbit">Terbit</SelectItem>
+                            <SelectItem value="Belum Terbit">Belum Terbit</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Status Pembayaran</Label>
+                        <Select
+                          value={formData.statusPembayaran}
+                          onValueChange={(value) => updateFormField('statusPembayaran', value)}
+                        >
+                          <SelectTrigger className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500 h-9 text-sm">
+                            <SelectValue placeholder="- Pilih -" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Lunas">Lunas</SelectItem>
+                            <SelectItem value="Belum Lunas">Belum Lunas</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Status Komisi</Label>
+                        <Select
+                          value={formData.statusKomisi}
+                          onValueChange={(value) => updateFormField('statusKomisi', value)}
+                        >
+                          <SelectTrigger className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500 h-9 text-sm">
+                            <SelectValue placeholder="- Pilih -" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Sudah Diajukan">Sudah Diajukan</SelectItem>
+                            <SelectItem value="Belum Diajukan">Belum Diajukan</SelectItem>
+                            <SelectItem value="Tidak Ada">Tidak Ada</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                   </div>

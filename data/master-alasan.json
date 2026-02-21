@@ -16,6 +16,8 @@
     { "id": 14, "alasan": "Merger" },
     { "id": 15, "alasan": "Tidak bisa dihubungi" },
     { "id": 15, "alasan": "Penawaran harga" },
-    { "id": 16, "alasan": "Ditunda" }
+    { "id": 16, "alasan": "Ditunda" },
+    { "id": 17, "alasan": "Kirim form req" },
+    { "id": 18, "alasan": "Kirim kontrak baru" }
   ]
 }

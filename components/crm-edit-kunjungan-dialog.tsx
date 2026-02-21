@@ -43,6 +43,7 @@ interface CrmTarget {
   alasan?: string;
   category?: string;
   kuadran?: string;
+  luarKota?: string;
   provinsi: string;
   kota: string;
   alamat: string;
@@ -51,15 +52,20 @@ interface CrmTarget {
   eaCode?: string;
   std?: string;
   iaDate?: string;
+  bulanAuditSebelumnyaSustain?: string;
   expDate?: string;
   tahapAudit?: string;
   hargaKontrak?: number;
   bulanTtdNotif?: string;
+  bulanAudit?: string;
   hargaTerupdate?: number;
   trimmingValue?: number;
   lossValue?: number;
   cashback?: number;
   terminPembayaran?: string;
+  statusInvoice?: string;
+  statusPembayaran?: string;
+  statusKomisi?: string;
   statusSertifikat?: string;
   tanggalKunjungan?: string;
   statusKunjungan?: string;
@@ -94,6 +100,7 @@ interface FormData {
   alasan: string;
   category: string;
   kuadran: string;
+  luarKota: string;
   provinsi: string;
   kota: string;
   alamat: string;
@@ -102,15 +109,20 @@ interface FormData {
   eaCode: string;
   std: string;
   iaDate: string;
+  bulanAuditSebelumnyaSustain: string;
   expDate: string;
   tahapAudit: string;
   hargaKontrak: string;
   bulanTtdNotif: string;
+  bulanAudit: string;
   hargaTerupdate: string;
   trimmingValue: string;
   lossValue: string;
   cashback: string;
   terminPembayaran: string;
+  statusInvoice: string;
+  statusPembayaran: string;
+  statusKomisi: string;
   statusSertifikat: string;
   tanggalKunjungan: string;
   statusKunjungan: string;
@@ -135,6 +147,7 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
     alasan: '',
     category: '',
     kuadran: '',
+    luarKota: '',
     provinsi: '',
     kota: '',
     alamat: '',
@@ -143,15 +156,20 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
     eaCode: '',
     std: '',
     iaDate: '',
+    bulanAuditSebelumnyaSustain: '',
     expDate: '',
     tahapAudit: '',
     hargaKontrak: '',
     bulanTtdNotif: '',
+    bulanAudit: '',
     hargaTerupdate: '',
     trimmingValue: '',
     lossValue: '',
     cashback: '',
     terminPembayaran: '',
+    statusInvoice: '',
+    statusPembayaran: '',
+    statusKomisi: '',
     statusSertifikat: '',
     tanggalKunjungan: '',
     statusKunjungan: '',
@@ -203,6 +221,7 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
         alasan: normalizeForSelect(target.alasan, alasanOptionsList),
         category: target.category || '',
         kuadran: normalizeForSelect(target.kuadran, kuadranOptionsList),
+        luarKota: target.luarKota || '',
         provinsi: target.provinsi,
         kota: target.kota,
         alamat: target.alamat,
@@ -211,15 +230,20 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
         eaCode: target.eaCode || '',
         std: normalizeForSelect(target.std, standarOptionsList),
         iaDate: target.iaDate || '',
+        bulanAuditSebelumnyaSustain: target.bulanAuditSebelumnyaSustain || '',
         expDate: target.expDate || '',
         tahapAudit: target.tahapAudit || '',
         hargaKontrak: target.hargaKontrak ? target.hargaKontrak.toLocaleString('id-ID') : '',
         bulanTtdNotif: target.bulanTtdNotif || '',
+        bulanAudit: target.bulanAudit || '',
         hargaTerupdate: target.hargaTerupdate ? target.hargaTerupdate.toLocaleString('id-ID') : '',
         trimmingValue: target.trimmingValue?.toString() || '',
         lossValue: target.lossValue?.toString() || '',
         cashback: target.cashback ? target.cashback.toLocaleString('id-ID') : '',
         terminPembayaran: target.terminPembayaran || '',
+        statusInvoice: target.statusInvoice || '',
+        statusPembayaran: target.statusPembayaran || '',
+        statusKomisi: target.statusKomisi || '',
         statusSertifikat: normalizeForSelect(target.statusSertifikat, ['terbit', 'belum terbit']),
         tanggalKunjungan: target.tanggalKunjungan || '',
         statusKunjungan: target.statusKunjungan || '',
@@ -350,6 +374,7 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
         alasan: formData.alasan || null,
         category: formData.category || null,
         kuadran: formData.kuadran || null,
+        luarKota: formData.luarKota || null,
         provinsi: formData.provinsi,
         kota: formData.kota,
         alamat: formData.alamat,
@@ -358,15 +383,20 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
         eaCode: formData.eaCode || null,
         std: formData.std || null,
         iaDate: formData.iaDate || null,
+        bulanAuditSebelumnyaSustain: formData.bulanAuditSebelumnyaSustain || null,
         expDate: formData.expDate || null,
         tahapAudit: formData.tahapAudit || null,
         hargaKontrak: formData.hargaKontrak ? parseFloat(cleanNumber(formData.hargaKontrak)) : null,
         bulanTtdNotif: formData.bulanTtdNotif || null,
+        bulanAudit: formData.bulanAudit || null,
         hargaTerupdate: formData.hargaTerupdate ? parseFloat(cleanNumber(formData.hargaTerupdate)) : null,
         trimmingValue: formData.trimmingValue ? parseFloat(formData.trimmingValue) : null,
         lossValue: formData.lossValue ? parseFloat(formData.lossValue) : null,
         cashback: formData.cashback ? parseFloat(cleanNumber(formData.cashback)) : null,
         terminPembayaran: formData.terminPembayaran || null,
+        statusInvoice: formData.statusInvoice || null,
+        statusPembayaran: formData.statusPembayaran || null,
+        statusKomisi: formData.statusKomisi || null,
         statusSertifikat: formData.statusSertifikat || null,
         tanggalKunjungan: formData.tanggalKunjungan || null,
         statusKunjungan: formData.statusKunjungan || null,
@@ -882,6 +912,19 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
                       </SelectContent>
                     </Select>
                   </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Luar Kota</Label>
+                    <Select value={formData.luarKota || undefined} onValueChange={(value) => updateFormField('luarKota', value)}>
+                      <SelectTrigger className="w-full border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-purple-500 h-9 text-sm">
+                        <SelectValue placeholder="Pilih" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Ya">Ya</SelectItem>
+                        <SelectItem value="Tidak">Tidak</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 
@@ -913,6 +956,16 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
                       </div>
 
                       <div className="space-y-1">
+                        <Label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Bulan Audit Sebelumnya Sustain</Label>
+                        <Input
+                          type="date"
+                          value={formData.bulanAuditSebelumnyaSustain}
+                          onChange={(e) => updateFormField('bulanAuditSebelumnyaSustain', e.target.value)}
+                          className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500 h-9 text-sm"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
                         <Label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Exp Date</Label>
                         <Input
                           type="date"
@@ -936,6 +989,16 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
                         {formData.status === 'DONE' && !formData.bulanTtdNotif && (
                           <p className="text-[9px] text-red-500 dark:text-red-400">Wajib diisi untuk status DONE</p>
                         )}
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Bulan Audit</Label>
+                        <Input
+                          type="date"
+                          value={formData.bulanAudit}
+                          onChange={(e) => updateFormField('bulanAudit', e.target.value)}
+                          className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500 h-9 text-sm"
+                        />
                       </div>
                     </div>
                   </div>
@@ -996,6 +1059,46 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
                           <SelectContent>
                             <SelectItem value="Lunas Diawal">Lunas Diawal</SelectItem>
                             <SelectItem value="Lunas Diakhir">Lunas Diakhir</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Status Invoice</Label>
+                        <Select value={formData.statusInvoice || undefined} onValueChange={(value) => updateFormField('statusInvoice', value)}>
+                          <SelectTrigger className="w-full border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-green-500 h-9 text-sm">
+                            <SelectValue placeholder="Pilih" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Terbit">Terbit</SelectItem>
+                            <SelectItem value="Belum Terbit">Belum Terbit</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Status Pembayaran</Label>
+                        <Select value={formData.statusPembayaran || undefined} onValueChange={(value) => updateFormField('statusPembayaran', value)}>
+                          <SelectTrigger className="w-full border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-green-500 h-9 text-sm">
+                            <SelectValue placeholder="Pilih" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Lunas">Lunas</SelectItem>
+                            <SelectItem value="Belum Lunas">Belum Lunas</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Status Komisi</Label>
+                        <Select value={formData.statusKomisi || undefined} onValueChange={(value) => updateFormField('statusKomisi', value)}>
+                          <SelectTrigger className="w-full border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-green-500 h-9 text-sm">
+                            <SelectValue placeholder="Pilih" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Sudah Diajukan">Sudah Diajukan</SelectItem>
+                            <SelectItem value="Belum Diajukan">Belum Diajukan</SelectItem>
+                            <SelectItem value="Tidak Ada">Tidak Ada</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

@@ -162,6 +162,11 @@ export default defineSchema({
     statusKunjungan: v.optional(v.string()), // STATUS KUNJUNGAN (VISITED, NOT YET)
     catatanKunjungan: v.optional(v.string()), // CATATAN KUNJUNGAN
     fotoBuktiKunjungan: v.optional(v.string()), // FOTO BUKTI KUNJUNGAN (URL gambar)
+    bulanAuditSebelumnyaSustain: v.optional(v.string()), // BULAN AUDIT SEBELUMNYA SUSTAIN (Format: YYYY-MM-DD)
+    bulanAudit: v.optional(v.string()), // BULAN AUDIT (Format: YYYY-MM-DD)
+    statusInvoice: v.optional(v.union(v.literal("Terbit"), v.literal("Belum Terbit"))), // STATUS INVOICE
+    statusPembayaran: v.optional(v.union(v.literal("Lunas"), v.literal("Belum Lunas"))), // STATUS PEMBAYARAN
+    statusKomisi: v.optional(v.union(v.literal("Sudah Diajukan"), v.literal("Belum Diajukan"), v.literal("Tidak Ada"))), // STATUS KOMISI
     // Audit fields (sesuai request)
     created_by: v.optional(v.id("users")), // CREATED BY - User yang membuat data
     createdAt: v.number(), // CREATED AT - Timestamp pembuatan

@@ -62,31 +62,40 @@ interface CrmTarget {
   picCrm: string
   sales: string
   namaAssociate: string
+  directOrAssociate?: string
   namaPerusahaan: string
   status: string
   alasan?: string
   category?: string
+  kuadran?: string
+  luarKota?: string
   provinsi: string
   kota: string
   alamat: string
-  tanggalKunjungan?: string
-  statusKunjungan?: string
-  catatanKunjungan?: string
-  fotoBuktiKunjungan?: string
   akreditasi?: string
-  std?: string
+  catAkre?: string
   eaCode?: string
+  std?: string
   iaDate?: string
+  bulanAuditSebelumnyaSustain?: string
   expDate?: string
   tahapAudit?: string
   hargaKontrak?: number
   bulanTtdNotif?: string
+  bulanAudit?: string
   hargaTerupdate?: number
   trimmingValue?: number
   lossValue?: number
   cashback?: number
   terminPembayaran?: string
+  statusInvoice?: string
+  statusPembayaran?: string
+  statusKomisi?: string
   statusSertifikat?: string
+  tanggalKunjungan?: string
+  statusKunjungan?: string
+  catatanKunjungan?: string
+  fotoBuktiKunjungan?: string
   createdAt: number
   updatedAt: number
 }
@@ -1182,34 +1191,45 @@ export default function DashboardKunjunganPage() {
                       <TableHead>PIC CRM</TableHead>
                       <TableHead>Sales</TableHead>
                       <TableHead>Nama Associate</TableHead>
+                      <TableHead>Direct/Assoc</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Alasan</TableHead>
                       <TableHead>Category</TableHead>
+                      <TableHead>Kuadran</TableHead>
+                      <TableHead>Luar Kota</TableHead>
                       <TableHead>Provinsi</TableHead>
                       <TableHead>Kota</TableHead>
                       <TableHead>Alamat</TableHead>
                       <TableHead>Akreditasi</TableHead>
+                      <TableHead>Cat Akre</TableHead>
                       <TableHead>EA Code</TableHead>
                       <TableHead>STD</TableHead>
                       <TableHead>IA Date</TableHead>
+                      <TableHead>Bulan Audit Sblm</TableHead>
                       <TableHead>Exp Date</TableHead>
                       <TableHead>Tahap Audit</TableHead>
                       <TableHead>Harga Kontrak</TableHead>
                       <TableHead>Bulan TTD</TableHead>
+                      <TableHead>Bulan Audit</TableHead>
                       <TableHead>Harga Update</TableHead>
                       <TableHead>Trimming</TableHead>
                       <TableHead>Loss</TableHead>
                       <TableHead>Cashback</TableHead>
                       <TableHead>Termin</TableHead>
+                      <TableHead>Status Invoice</TableHead>
+                      <TableHead>Status Pembayaran</TableHead>
+                      <TableHead>Status Komisi</TableHead>
                       <TableHead>Status Sertifikat</TableHead>
                       <TableHead>Tgl Kunjungan</TableHead>
                       <TableHead>Status Kunjungan</TableHead>
+                      <TableHead>Catatan</TableHead>
+                      <TableHead>Foto Bukti</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {paginatedGroups.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={29} className="text-center py-8">
+                        <TableCell colSpan={43} className="text-center py-8">
                           No data found
                         </TableCell>
                       </TableRow>
@@ -1249,7 +1269,7 @@ export default function DashboardKunjunganPage() {
                                   </Button>
                                 </div>
                               </TableCell>
-                              <TableCell colSpan={27} className="text-muted-foreground text-sm">
+                              <TableCell colSpan={41} className="text-muted-foreground text-sm">
                                 {group.tasks[0].provinsi && `${group.tasks[0].provinsi}${group.tasks[0].kota ? `, ${group.tasks[0].kota}` : ''} • `}
                                 {group.tasks[0].statusKunjungan && `${group.tasks[0].statusKunjungan || '-'}`}
                               </TableCell>
@@ -1278,6 +1298,7 @@ export default function DashboardKunjunganPage() {
                                 <TableCell>{target.picCrm}</TableCell>
                                 <TableCell>{target.sales}</TableCell>
                                 <TableCell>{target.namaAssociate || '-'}</TableCell>
+                                <TableCell>{target.directOrAssociate || '-'}</TableCell>
                                 <TableCell>
                                   <Badge
                                     variant={target.status === 'PROSES' ? 'default' : target.status === 'LANJUT' ? 'default' : 'destructive'}
@@ -1295,26 +1316,18 @@ export default function DashboardKunjunganPage() {
                                   </Badge>
                                 </TableCell>
                                 <TableCell>{target.alasan || '-'}</TableCell>
-                                <TableCell>
-                                  {target.category ? (
-                                    <Badge
-                                      variant="outline"
-                                      className={target.category === 'GOLD' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white border-yellow-500 font-semibold shadow-sm' :
-                                                target.category === 'SILVER' ? 'bg-gradient-to-r from-gray-300 to-gray-500 hover:from-gray-400 hover:to-gray-600 text-white border-gray-400 font-semibold shadow-sm' :
-                                                target.category === 'BRONZE' ? 'bg-gradient-to-r from-orange-400 to-orange-700 hover:from-orange-500 hover:to-orange-800 text-white border-orange-600 font-semibold shadow-sm' :
-                                                'bg-gray-200'}
-                                    >
-                                      {target.category}
-                                    </Badge>
-                                  ) : '-'}
-                                </TableCell>
+                                <TableCell>{target.category || '-'}</TableCell>
+                                <TableCell>{target.kuadran || '-'}</TableCell>
+                                <TableCell>{target.luarKota || '-'}</TableCell>
                                 <TableCell>{target.provinsi || '-'}</TableCell>
                                 <TableCell>{target.kota || '-'}</TableCell>
                                 <TableCell className="max-w-xs truncate" title={target.alamat}>{target.alamat || '-'}</TableCell>
                                 <TableCell>{target.akreditasi || '-'}</TableCell>
+                                <TableCell>{target.catAkre || '-'}</TableCell>
                                 <TableCell>{target.eaCode || '-'}</TableCell>
                                 <TableCell>{target.std || '-'}</TableCell>
                                 <TableCell>{target.iaDate || '-'}</TableCell>
+                                <TableCell>{target.bulanAuditSebelumnyaSustain || '-'}</TableCell>
                                 <TableCell>{target.expDate || '-'}</TableCell>
                                 <TableCell>{target.tahapAudit || '-'}</TableCell>
                                 <TableCell>
@@ -1322,6 +1335,9 @@ export default function DashboardKunjunganPage() {
                                 </TableCell>
                                 <TableCell title={target.bulanTtdNotif || ''}>
                                   {target.bulanTtdNotif ? new Date(target.bulanTtdNotif).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : '-'}
+                                </TableCell>
+                                <TableCell title={target.bulanAudit || ''}>
+                                  {target.bulanAudit ? new Date(target.bulanAudit).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : '-'}
                                 </TableCell>
                                 <TableCell>
                                   {target.hargaTerupdate ? `Rp ${target.hargaTerupdate.toLocaleString('id-ID')}` : '-'}
@@ -1336,6 +1352,43 @@ export default function DashboardKunjunganPage() {
                                   {target.cashback ? `Rp ${target.cashback.toLocaleString('id-ID')}` : '-'}
                                 </TableCell>
                                 <TableCell>{target.terminPembayaran || '-'}</TableCell>
+                                <TableCell>
+                                  {target.statusInvoice ? (
+                                    <Badge
+                                      variant="outline"
+                                      className={target.statusInvoice === 'Terbit' ? 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600 font-semibold' :
+                                                target.statusInvoice === 'Belum Terbit' ? 'bg-gray-500 hover:bg-gray-600 text-white border-gray-500' :
+                                                'bg-gray-400 hover:bg-gray-500 text-white border-gray-400'}
+                                    >
+                                      {target.statusInvoice}
+                                    </Badge>
+                                  ) : '-'}
+                                </TableCell>
+                                <TableCell>
+                                  {target.statusPembayaran ? (
+                                    <Badge
+                                      variant="outline"
+                                      className={target.statusPembayaran === 'Lunas' ? 'bg-green-600 hover:bg-green-700 text-white border-green-600 font-semibold' :
+                                                target.statusPembayaran === 'Belum Lunas' ? 'bg-red-500 hover:bg-red-600 text-white border-red-500' :
+                                                'bg-gray-400 hover:bg-gray-500 text-white border-gray-400'}
+                                    >
+                                      {target.statusPembayaran}
+                                    </Badge>
+                                  ) : '-'}
+                                </TableCell>
+                                <TableCell>
+                                  {target.statusKomisi ? (
+                                    <Badge
+                                      variant="outline"
+                                      className={target.statusKomisi === 'Sudah Diajukan' ? 'bg-green-600 hover:bg-green-700 text-white border-green-600 font-semibold' :
+                                                target.statusKomisi === 'Belum Diajukan' ? 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500' :
+                                                target.statusKomisi === 'Tidak Ada' ? 'bg-gray-500 hover:bg-gray-600 text-white border-gray-500' :
+                                                'bg-gray-400 hover:bg-gray-500 text-white border-gray-400'}
+                                    >
+                                      {target.statusKomisi}
+                                    </Badge>
+                                  ) : '-'}
+                                </TableCell>
                                 <TableCell>{target.statusSertifikat || '-'}</TableCell>
                                 <TableCell>
                                   {target.tanggalKunjungan ? (
@@ -1359,6 +1412,21 @@ export default function DashboardKunjunganPage() {
                                     >
                                       {target.statusKunjungan}
                                     </Badge>
+                                  ) : '-'}
+                                </TableCell>
+                                <TableCell className="max-w-xs truncate" title={target.catatanKunjungan || ''}>
+                                  {target.catatanKunjungan || '-'}
+                                </TableCell>
+                                <TableCell>
+                                  {target.fotoBuktiKunjungan ? (
+                                    <a
+                                      href={target.fotoBuktiKunjungan}
+                                      target="_blank"
+                                                                      rel="noopener noreferrer"
+                                      className="text-blue-600 hover:text-blue-800 underline text-xs"
+                                    >
+                                      Lihat Foto
+                                    </a>
                                   ) : '-'}
                                 </TableCell>
                               </TableRow>
