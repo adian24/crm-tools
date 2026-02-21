@@ -173,6 +173,11 @@ const EditCrmDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSu
     statusKunjungan: '',
     catatanKunjungan: '',
     fotoBuktiKunjungan: '',
+    bulanAuditSebelumnyaSustain: '',
+    bulanAudit: '',
+    statusInvoice: '',
+    statusPembayaran: '',
+    statusKomisi: '',
   });
 
   // Clean formatted number back to plain number (e.g., 1.000 -> 1000)
@@ -363,6 +368,7 @@ const EditCrmDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSu
         statusKunjungan: formData.statusKunjungan || null,
         catatanKunjungan: formData.catatanKunjungan || null,
         fotoBuktiKunjungan: formData.fotoBuktiKunjungan || null,
+        // @ts-ignore - Fields exist in schema but types not updated yet
         bulanAuditSebelumnyaSustain: formData.bulanAuditSebelumnyaSustain || null,
         bulanAudit: formData.bulanAudit || null,
         statusInvoice: formData.statusInvoice || null,

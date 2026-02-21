@@ -1409,6 +1409,7 @@ export default function CrmDataManagementPage() {
             statusSertifikat: row.statusSertifikat || undefined,
             tanggalKunjungan: row.tanggalKunjungan || undefined,
             statusKunjungan: row.statusKunjungan || undefined,
+            // @ts-ignore - Fields exist in schema but types not updated yet
             bulanAuditSebelumnyaSustain: row.bulanAuditSebelumnyaSustain || undefined,
             bulanAudit: row.bulanAudit || undefined,
             statusInvoice: row.statusInvoice || undefined,

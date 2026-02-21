@@ -101,7 +101,31 @@ function DraggableCard({ staff, onEdit, onDelete, onDragEnd, onCardClick, isConn
       }}
     >
       {/* Card Header - Draggable area */}
-      <div className="bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 rounded-t-xl p-6 cursor-move">
+      <div className="bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 rounded-t-xl p-6 cursor-move relative">
+        {/* Action Buttons - Top Right Corner */}
+        <div className="absolute top-2 right-2 flex gap-1">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(staff);
+            }}
+            className="w-7 h-7 bg-white/90 hover:bg-white text-blue-600 rounded-lg flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-110"
+            title="Edit"
+          >
+            <Edit className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(staff._id, staff.nama);
+            }}
+            className="w-7 h-7 bg-white/90 hover:bg-white text-red-600 rounded-lg flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-110"
+            title="Hapus"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
         <div className="flex flex-col items-center gap-4">
           {staff.fotoUrl ? (
             <img
@@ -122,7 +146,7 @@ function DraggableCard({ staff, onEdit, onDelete, onDragEnd, onCardClick, isConn
       </div>
 
       {/* Card Body */}
-      <div className="p-4 space-y-3">
+      <div className="p-4 pb-3 space-y-3 rounded-b-xl">
         {/* Job Desk */}
         <div>
           <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
@@ -147,34 +171,6 @@ function DraggableCard({ staff, onEdit, onDelete, onDragEnd, onCardClick, isConn
             "{staff.keterangan}"
           </div>
         )}
-      </div>
-
-      {/* Card Footer - Actions */}
-      <div className="px-4 pb-4 flex gap-2">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit(staff);
-          }}
-          className="flex-1 cursor-pointer text-xs h-8"
-        >
-          <Edit className="w-3 h-3 mr-1" />
-          Edit
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(staff._id, staff.nama);
-          }}
-          className="flex-1 cursor-pointer text-xs h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-        >
-          <Trash2 className="w-3 h-3 mr-1" />
-          Hapus
-        </Button>
       </div>
     </div>
   );
@@ -214,6 +210,24 @@ export default function KolaborasiCrmPage() {
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   const [isConnectMode, setIsConnectMode] = useState(false);
   const [selectedForConnection, setSelectedForConnection] = useState<Id<"kolaborasiCrm"> | null>(null);
+
+  // Calculate dynamic canvas height
+  const calculateCanvasHeight = () => {
+    if (!allStaff || allStaff.length === 0) return 600; // Default minimal height
+
+    // Find the lowest position (max Y + card height)
+    const maxY = Math.max(...allStaff.map(s => s.positionY));
+    const cardHeight = 350; // Approximate card height (larger for job desk)
+    const padding = 100; // Extra padding at bottom
+
+    // Calculate minimum height based on content
+    const contentHeight = maxY + cardHeight + padding;
+
+    // Return the maximum of content-based height or default
+    return Math.max(contentHeight, 600);
+  };
+
+  const canvasHeight = calculateCanvasHeight();
 
   // Connection edit dialog state
   const [connectionEditOpen, setConnectionEditOpen] = useState(false);
@@ -441,7 +455,7 @@ export default function KolaborasiCrmPage() {
           className="relative"
           style={{
             width: '100%',
-            height: '800px',
+            height: `${canvasHeight}px`,
             backgroundImage: 'radial-gradient(circle, #e2e8f0 1px, transparent 1px)',
             backgroundSize: '20px 20px',
           }}
@@ -597,7 +611,7 @@ export default function KolaborasiCrmPage() {
       <KolaborasiCrmDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        staff={selectedStaff}
+        staff={selectedStaff as any}
         mode={dialogMode}
         onSuccess={() => {
           setDialogOpen(false);

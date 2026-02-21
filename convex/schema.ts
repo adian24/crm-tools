@@ -298,6 +298,45 @@ export default defineSchema({
     .index("by_active", ["isActive"])
     .index("by_created_by", ["created_by"]),
 
+  // Table Struktur Divisi CRP (Interactive - like Kolaborasi CRM)
+  strukturDivisiCrp: defineTable({
+    // Data dasar staff
+    nama: v.string(), // Nama lengkap
+    fotoUrl: v.optional(v.string()), // URL foto profil
+    jabatan: v.string(), // Jabatan (Manager, Supervisor, Staff, dll)
+
+    // Posisi card (untuk drag & drop)
+    positionX: v.number(), // Posisi X (default: 0)
+    positionY: v.number(), // Posisi Y (default: 0)
+
+    // Connections (garis penghubung dengan metadata)
+    connections: v.optional(v.array(v.object({
+      targetId: v.id("strukturDivisiCrp"), // Target staff ID
+      type: v.optional(v.string()), // Tipe koneksi: "solid", "dashed", "dotted"
+      label: v.optional(v.string()), // Label koneksi: "reporting", "collaboration", "communication"
+      color: v.optional(v.string()), // Warna garis (hex code)
+      routing: v.optional(v.string()), // Routing style: "straight", "free", "siku", "custom", "orgchart"
+      controlPoints: v.optional(v.array(v.object({
+        x: v.number(), // Posisi X control point
+        y: v.number(), // Posisi Y control point
+      }))), // Array control points untuk custom routing
+      fromConnector: v.optional(v.string()), // Connector position: "top", "bottom", "left", "right"
+      toConnector: v.optional(v.string()), // Connector position: "top", "bottom", "left", "right"
+      verticalOffset: v.optional(v.number()), // Tinggi garis org chart (default: 0 = auto)
+    }))), // Array of koneksi dengan metadata
+
+    // Data tambahan
+    keterangan: v.optional(v.string()), // Keterangan tambahan
+    isActive: v.boolean(), // Status aktif/non-aktif
+
+    // Audit fields
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_jabatan", ["jabatan"])
+    .index("by_active", ["isActive"])
+    .index("by_createdAt", ["createdAt"]),
+
   // Table NPS (Net Promoter Score)
   nps: defineTable({
     // Filter fields
@@ -360,7 +399,13 @@ export default defineSchema({
       type: v.optional(v.string()), // Tipe koneksi: "solid", "dashed", "dotted"
       label: v.optional(v.string()), // Label koneksi: "reporting", "collaboration", "communication"
       color: v.optional(v.string()), // Warna garis (hex code)
-      routing: v.optional(v.string()), // Routing style: "straight", "free", "siku"
+      routing: v.optional(v.string()), // Routing style: "straight", "free", "siku", "custom"
+      controlPoints: v.optional(v.array(v.object({
+        x: v.number(), // Posisi X control point
+        y: v.number(), // Posisi Y control point
+      }))), // Array control points untuk custom routing
+      fromConnector: v.optional(v.string()), // Connector position: "top", "bottom", "left", "right"
+      toConnector: v.optional(v.string()), // Connector position: "top", "bottom", "left", "right"
     }))), // Array of koneksi dengan metadata
 
     // Data tambahan

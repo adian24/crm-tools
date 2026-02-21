@@ -11,6 +11,7 @@
 import type * as associatesData from "../associatesData.js";
 import type * as auth from "../auth.js";
 import type * as cleanNps from "../cleanNps.js";
+import type * as clearAllConnections from "../clearAllConnections.js";
 import type * as crmTargets from "../crmTargets.js";
 import type * as flyers from "../flyers.js";
 import type * as importBatch from "../importBatch.js";
@@ -27,6 +28,7 @@ import type * as roles from "../roles.js";
 import type * as seed from "../seed.js";
 import type * as staffTargets from "../staffTargets.js";
 import type * as strukturDivisi from "../strukturDivisi.js";
+import type * as strukturDivisiCrp from "../strukturDivisiCrp.js";
 import type * as targets from "../targets.js";
 import type * as uploads from "../uploads.js";
 import type * as utils_authHelpers from "../utils/authHelpers.js";
@@ -45,6 +47,7 @@ declare const fullApi: ApiFromModules<{
   associatesData: typeof associatesData;
   auth: typeof auth;
   cleanNps: typeof cleanNps;
+  clearAllConnections: typeof clearAllConnections;
   crmTargets: typeof crmTargets;
   flyers: typeof flyers;
   importBatch: typeof importBatch;
@@ -61,6 +64,7 @@ declare const fullApi: ApiFromModules<{
   seed: typeof seed;
   staffTargets: typeof staffTargets;
   strukturDivisi: typeof strukturDivisi;
+  strukturDivisiCrp: typeof strukturDivisiCrp;
   targets: typeof targets;
   uploads: typeof uploads;
   "utils/authHelpers": typeof utils_authHelpers;

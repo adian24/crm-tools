@@ -1,963 +1,411 @@
 "use client";
 
-import React, { useState, useRef } from "react";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { toast } from "sonner";
-import {
-  Image as PhotoIcon,
-  Plus,
-  Pencil,
-  Trash2,
-  Loader2,
-  Calendar,
-  Upload,
-  X,
-} from "lucide-react";
-import { ImagePreviewDialog } from "@/components/image-preview-dialog";
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import ReactFlow, {
+  Node,
+  Edge,
+  useNodesState,
+  useEdgesState,
+  Controls,
+  Background,
+  BackgroundVariant,
+  MarkerType,
+  NodeTypes,
+  MiniMap,
+  Handle,
+  Position,
+  Connection,
+} from 'reactflow';
+import 'reactflow/dist/style.css';
+import { useMutation, useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { Id } from '@/convex/_generated/dataModel';
+import { Button } from '@/components/ui/button';
+import { StrukturDivisiCrpDialog } from '@/components/struktur-divisi-crp-dialog';
+import { Plus, HelpCircle, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+import Image from 'next/image';
 
-interface StrukturDivisi {
-  _id: Id<"strukturDivisi">;
-  title: string;
-  description?: string;
-  year: number;
-  imageUrl: string;
-  isActive: boolean;
-  createdAt: number;
-  updatedAt: number;
-}
+// Custom Node Component - Matching the design from struktur-divisi-crp page
+const StaffNode = ({ data }: { data: any }) => {
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl border-2 border-slate-200 dark:border-slate-700 w-72 hover:border-blue-400 dark:hover:border-blue-500 transition-colors relative">
+      {/* Visible handles for connecting - small blue dots */}
+      {/* Top - Can receive connections */}
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="top"
+        className="!w-3 !h-3 !bg-blue-500 !border-2 !border-white rounded-full hover:!scale-150 transition-transform"
+      />
 
-export default function StrukturDivisiPage() {
-  const strukturDivisi = useQuery(api.strukturDivisi.getStrukturDivisi);
-  const addMutation = useMutation(api.strukturDivisi.addStrukturDivisi);
-  const updateMutation = useMutation(api.strukturDivisi.updateStrukturDivisi);
-  const deleteMutation = useMutation(api.strukturDivisi.deleteStrukturDivisi);
+      {/* Bottom - Can start connections */}
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="bottom"
+        className="!w-3 !h-3 !bg-blue-500 !border-2 !border-white rounded-full hover:!scale-150 transition-transform"
+      />
 
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-  const [searchQuery, setSearchQuery] = useState("");
-  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<StrukturDivisi | null>(null);
-  const [deletingItem, setDeletingItem] = useState<StrukturDivisi | null>(null);
-  const [previewImageOpen, setPreviewImageOpen] = useState(false);
-  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+      {/* Left - Can receive connections */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="left"
+        className="!w-3 !h-3 !bg-blue-500 !border-2 !border-white rounded-full hover:!scale-150 transition-transform"
+      />
 
-  // Form state for upload
-  const [uploadForm, setUploadForm] = useState({
-    title: "",
-    description: "",
-    year: new Date().getFullYear(),
-    imageFile: null as File | null,
-    imagePreview: "",
-  });
+      {/* Right - Can start connections */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="right"
+        className="!w-3 !h-3 !bg-blue-500 !border-2 !border-white rounded-full hover:!scale-150 transition-transform"
+      />
 
-  // Form state for edit
-  const [editForm, setEditForm] = useState({
-    title: "",
-    description: "",
-    year: new Date().getFullYear(),
-    imageFile: null as File | null,
-    imagePreview: "",
-  });
+      {/* Card Header - Gradient Background */}
+      <div className={`bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 p-6 relative ${data.keterangan ? 'rounded-t-xl' : 'rounded-xl'}`}>
+        {/* Action Buttons - Top Right Corner */}
+        <div className="absolute top-2 right-2 flex gap-1">
+          <button
+            onClick={data.onEdit}
+            className="w-7 h-7 bg-white/90 hover:bg-white text-emerald-600 rounded-lg flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-110"
+            title="Edit"
+          >
+            <span className="text-sm font-bold">✏️</span>
+          </button>
+          <button
+            onClick={data.onDelete}
+            className="w-7 h-7 bg-white/90 hover:bg-white text-red-600 rounded-lg flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-110"
+            title="Hapus"
+          >
+            <span className="text-sm font-bold">🗑️</span>
+          </button>
+        </div>
 
-  // Generate year options (current year - 5 to current year + 5)
-  const currentYear = new Date().getFullYear();
-  const yearOptions = Array.from({ length: 11 }, (_, i) => currentYear - 5 + i);
+        <div className="flex flex-col items-center gap-4">
+          {data.fotoUrl ? (
+            <div className="relative w-28 h-28">
+              <Image
+                src={data.fotoUrl}
+                alt={data.label}
+                fill
+                className="rounded-full border-4 border-white shadow-2xl object-cover"
+              />
+            </div>
+          ) : (
+            <div className="w-28 h-28 rounded-full bg-white/20 flex items-center justify-center border-4 border-white/30">
+              <span className="text-white text-5xl font-bold">{data.label.charAt(0)}</span>
+            </div>
+          )}
+          <div className="text-center flex-1 w-full">
+            <h3 className="text-xl font-bold text-white truncate">{data.label}</h3>
+            <p className="text-sm text-emerald-100 truncate">{data.jabatan}</p>
+          </div>
+        </div>
+      </div>
 
-  // Filter items
-  const filteredItems = strukturDivisi?.filter((item) => {
-    const matchesYear = item.year === selectedYear;
-    const matchesSearch =
-      searchQuery === "" ||
-      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesYear && matchesSearch;
-  }) || [];
+      {/* Card Body - Keterangan */}
+      {data.keterangan && (
+        <div className="p-4 pt-2 rounded-b-xl">
+          <div className="text-xs text-slate-600 dark:text-slate-400 italic text-center">
+            "{data.keterangan}"
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
-  // Sort by year desc, then updated date desc
-  const sortedItems = [...filteredItems].sort((a, b) => {
-    if (a.year !== b.year) {
-      return b.year - a.year;
-    }
-    return b.updatedAt - a.updatedAt;
-  });
+export default function StrukturDivisiCrpReactFlowPage() {
+  const nodeTypes: NodeTypes = useMemo(() => ({
+    staff: StaffNode,
+  }), []);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const editFileInputRef = useRef<HTMLInputElement>(null);
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
-  const handleUploadClick = () => {
-    setUploadForm({
-      title: "",
-      description: "",
-      year: selectedYear,
-      imageFile: null,
-      imagePreview: "",
-    });
-    setUploadDialogOpen(true);
-  };
+  // Dialog state
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
+  const [selectedStaff, setSelectedStaff] = useState<any>(null);
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // Fetch data from Convex
+  const allStaff = useQuery(api.strukturDivisiCrp.getAllStaff);
+  const createMutation = useMutation(api.strukturDivisiCrp.createStaff);
+  const updateMutation = useMutation(api.strukturDivisiCrp.updateStaff);
+  const deleteMutation = useMutation(api.strukturDivisiCrp.deleteStaff);
+  const addConnectionMutation = useMutation(api.strukturDivisiCrp.addConnection);
+  const removeConnectionMutation = useMutation(api.strukturDivisiCrp.removeConnection);
+  const updatePositionMutation = useMutation(api.strukturDivisiCrp.updateStaffPosition);
+  const clearAllConnectionsMutation = useMutation(api.strukturDivisiCrp.clearAllConnections);
 
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      toast.error("❌ Harap pilih file gambar");
-      return;
-    }
+  useEffect(() => {
+    if (allStaff) {
+      const newNodes: Node[] = allStaff.map((staff) => ({
+        id: staff._id,
+        type: 'staff',
+        position: { x: staff.positionX, y: staff.positionY },
+        data: {
+          id: staff._id,
+          label: staff.nama,
+          jabatan: staff.jabatan,
+          fotoUrl: staff.fotoUrl,
+          keterangan: staff.keterangan,
+          onEdit: () => handleEdit(staff),
+          onDelete: () => handleDelete(staff._id, staff.nama),
+        },
+      }));
 
-    // Validate file size (max 5MB before compression)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("❌ Ukuran file maksimal 5MB");
-      return;
-    }
+      const newEdges: Edge[] = [];
+      allStaff.forEach((staff) => {
+        if (staff.connections) {
+          staff.connections.forEach((connection) => {
+            const connectionId = typeof connection === 'object' ? connection.targetId : connection;
+            const connectionData = typeof connection === 'object' ? connection : undefined;
 
-    setIsUploading(true);
-
-    // Compress image and convert to base64 (like Flyer)
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (event) => {
-      const img = new Image();
-      img.src = event.target?.result as string;
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        let width = img.width;
-        let height = img.height;
-
-        // Calculate new dimensions (max 1024px)
-        const MAX_DIMENSION = 1024;
-        if (width > height) {
-          if (width > MAX_DIMENSION) {
-            height *= MAX_DIMENSION / width;
-            width = MAX_DIMENSION;
-          }
-        } else {
-          if (height > MAX_DIMENSION) {
-            width *= MAX_DIMENSION / height;
-            height = MAX_DIMENSION;
-          }
+            // Render edge in the direction it was stored (unidirectional)
+            const edgeId = `${staff._id}-${connectionId}`;
+            newEdges.push({
+              id: edgeId,
+              source: staff._id,
+              target: connectionId,
+              sourceHandle: connectionData?.fromConnector || 'bottom',
+              targetHandle: connectionData?.toConnector || 'top',
+              type: 'smoothstep',
+              animated: false,
+              style: {
+                stroke: '#10b981',
+                strokeWidth: 3,
+              },
+              markerEnd: {
+                type: MarkerType.ArrowClosed,
+                color: '#10b981',
+              },
+            });
+          });
         }
-
-        canvas.width = width;
-        canvas.height = height;
-
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          toast.error("❌ Gagal memproses gambar");
-          setIsUploading(false);
-          return;
-        }
-
-        ctx.drawImage(img, 0, 0, width, height);
-
-        // Start with high quality
-        let quality = 0.9;
-        let compressedDataUrl = canvas.toDataURL("image/jpeg", quality);
-
-        // Reduce quality until size is under limit (500KB)
-        while (
-          compressedDataUrl.length > 500 * 1024 * 1.37 &&
-          quality > 0.1
-        ) {
-          quality -= 0.1;
-          compressedDataUrl = canvas.toDataURL("image/jpeg", quality);
-        }
-
-        setUploadForm((prev) => ({
-          ...prev,
-          imageFile: file,
-          imagePreview: compressedDataUrl,
-        }));
-        setIsUploading(false);
-        toast.success("✅ Foto berhasil diupload");
-      };
-      img.onerror = () => {
-        toast.error("❌ Gagal memuat gambar");
-        setIsUploading(false);
-      };
-    };
-    reader.onerror = () => {
-      toast.error("❌ Gagal membaca file");
-      setIsUploading(false);
-    };
-  };
-
-  const handleEditImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      toast.error("❌ Harap pilih file gambar");
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("❌ Ukuran file maksimal 5MB");
-      return;
-    }
-
-    setIsUploading(true);
-
-    // Compress image and convert to base64 (like Flyer)
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (event) => {
-      const img = new Image();
-      img.src = event.target?.result as string;
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        let width = img.width;
-        let height = img.height;
-
-        // Calculate new dimensions (max 1024px)
-        const MAX_DIMENSION = 1024;
-        if (width > height) {
-          if (width > MAX_DIMENSION) {
-            height *= MAX_DIMENSION / width;
-            width = MAX_DIMENSION;
-          }
-        } else {
-          if (height > MAX_DIMENSION) {
-            width *= MAX_DIMENSION / height;
-            height = MAX_DIMENSION;
-          }
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          toast.error("❌ Gagal memproses gambar");
-          setIsUploading(false);
-          return;
-        }
-
-        ctx.drawImage(img, 0, 0, width, height);
-
-        // Start with high quality
-        let quality = 0.9;
-        let compressedDataUrl = canvas.toDataURL("image/jpeg", quality);
-
-        // Reduce quality until size is under limit (500KB)
-        while (
-          compressedDataUrl.length > 500 * 1024 * 1.37 &&
-          quality > 0.1
-        ) {
-          quality -= 0.1;
-          compressedDataUrl = canvas.toDataURL("image/jpeg", quality);
-        }
-
-        setEditForm((prev) => ({
-          ...prev,
-          imageFile: file,
-          imagePreview: compressedDataUrl,
-        }));
-        setIsUploading(false);
-        toast.success("✅ Foto berhasil diupload");
-      };
-      img.onerror = () => {
-        toast.error("❌ Gagal memuat gambar");
-        setIsUploading(false);
-      };
-    };
-    reader.onerror = () => {
-      toast.error("❌ Gagal membaca file");
-      setIsUploading(false);
-    };
-  };
-
-  const handleRemoveImage = () => {
-    setUploadForm((prev) => ({
-      ...prev,
-      imageFile: null,
-      imagePreview: "",
-    }));
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  const handleEditRemoveImage = () => {
-    setEditForm((prev) => ({
-      ...prev,
-      imageFile: null,
-      imagePreview: "",
-    }));
-    if (editFileInputRef.current) {
-      editFileInputRef.current.value = "";
-    }
-  };
-
-  const handleUploadSubmit = async () => {
-    // Validation
-    if (!uploadForm.title.trim()) {
-      toast.error("❌ Judul harus diisi");
-      return;
-    }
-    if (!uploadForm.imagePreview) {
-      toast.error("❌ Harap upload gambar struktur organisasi");
-      return;
-    }
-
-    setIsUploading(true);
-
-    try {
-      // Add to database with base64 image
-      const result = await addMutation({
-        title: uploadForm.title.trim(),
-        description: uploadForm.description.trim() || undefined,
-        year: uploadForm.year,
-        imageUrl: uploadForm.imagePreview,
       });
 
-      if (result.success) {
-        toast.success("✅ " + result.message);
-        setUploadDialogOpen(false);
-      } else {
-        toast.error("❌ " + result.message);
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("❌ Gagal mengupload struktur organisasi");
-    } finally {
-      setIsUploading(false);
+      setNodes(newNodes);
+      setEdges(newEdges);
     }
-  };
+  }, [allStaff, setNodes, setEdges]);
 
-  const handleEdit = (item: StrukturDivisi) => {
-    setEditingItem(item);
-    setEditForm({
-      title: item.title,
-      description: item.description || "",
-      year: item.year,
-      imageFile: null,
-      imagePreview: item.imageUrl,
-    });
-    setEditDialogOpen(true);
-  };
-
-  const handleEditSubmit = async () => {
-    if (!editingItem) return;
-
-    if (!editForm.title.trim()) {
-      toast.error("❌ Judul harus diisi");
-      return;
-    }
-    if (!editForm.imagePreview) {
-      toast.error("❌ Harap upload gambar struktur organisasi");
-      return;
-    }
-
-    setIsUploading(true);
-
-    try {
-      // Update with base64 image
-      const result = await updateMutation({
-        id: editingItem._id,
-        title: editForm.title.trim(),
-        description: editForm.description.trim() || undefined,
-        year: editForm.year,
-        imageUrl: editForm.imagePreview,
+  const onNodeDragStop = useCallback((_: any, node: Node) => {
+    updatePositionMutation({
+      id: node.id as Id<"strukturDivisiCrp">,
+      positionX: node.position.x,
+      positionY: node.position.y,
+    })
+      .then(() => {
+        // Optional: show success toast
+      })
+      .catch(() => {
+        toast.error('❌ Gagal menyimpan posisi!');
       });
+  }, [updatePositionMutation]);
 
-      if (result.success) {
-        toast.success("✅ " + result.message);
-        setEditDialogOpen(false);
-        setEditingItem(null);
-      } else {
-        toast.error("❌ " + result.message);
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("❌ Gagal mengupdate struktur organisasi");
-    } finally {
-      setIsUploading(false);
-    }
+  const isValidConnection = useCallback((connection: Connection) => {
+    // Allow all connections including source-to-source
+    // Only prevent self-connections
+    return connection.source !== connection.target;
+  }, []);
+
+  const onConnect = useCallback((connection: Connection) => {
+    console.log('🔗 Creating connection:', connection);
+
+    const newEdge: Edge = {
+      id: `${connection.source}-${connection.target}`,
+      source: connection.source || '',
+      target: connection.target || '',
+      sourceHandle: connection.sourceHandle || undefined,
+      targetHandle: connection.targetHandle || undefined,
+      type: 'smoothstep',
+      animated: false,
+      style: {
+        stroke: '#10b981',
+        strokeWidth: 3,
+      },
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        color: '#10b981',
+      },
+    };
+
+    // Add edge locally first
+    setEdges((eds) => [...eds, newEdge]);
+
+    // Then save to Convex
+    addConnectionMutation({
+      fromId: connection.source as Id<"strukturDivisiCrp">,
+      toId: connection.target as Id<"strukturDivisiCrp">,
+      fromConnector: connection.sourceHandle || 'bottom',
+      toConnector: connection.targetHandle || 'top',
+      type: 'solid',
+      label: 'reporting',
+      color: '#10b981',
+      routing: 'smoothstep',
+    })
+      .then((result) => {
+        if (result?.alreadyExists) {
+          toast.info('ℹ️ Koneksi sudah ada!');
+          setEdges((eds) => eds.filter((e) => e.id !== newEdge.id));
+        } else {
+          toast.success('✅ Koneksi berhasil dibuat!');
+        }
+      })
+      .catch((error) => {
+        console.error('❌ Connection failed:', error);
+        toast.error('❌ Gagal membuat koneksi: ' + error.message);
+        setEdges((eds) => eds.filter((e) => e.id !== newEdge.id));
+      });
+  }, [addConnectionMutation, setEdges]);
+
+  const handleAdd = () => {
+    setDialogMode('add');
+    setSelectedStaff(null);
+    setDialogOpen(true);
   };
 
-  const handleDelete = (item: StrukturDivisi) => {
-    setDeletingItem(item);
-    setDeleteDialogOpen(true);
+  const handleEdit = (staff: any) => {
+    setDialogMode('edit');
+    setSelectedStaff(staff);
+    setDialogOpen(true);
   };
 
-  const confirmDelete = async () => {
-    if (!deletingItem) return;
+  const handleDialogSuccess = () => {
+    setDialogOpen(false);
+  };
 
-    setIsDeleting(true);
+  const showHelp = () => {
+    toast.info('📌 Cara Menggunakan:', {
+      description: '✨ DRAG CARD: Geser card untuk atur posisi\n✨ CONNECT: Drag dari titik biru di KANAN/BAWAH card ke KIRI/ATAS card lain\n❌ DELETE EDGE: Double-click pada garis koneksi',
+      duration: 8000,
+    });
+  };
+
+  const handleClearAllConnections = async () => {
+    const confirmed = confirm('⚠️ Hapus SEMUA koneksi?');
+    if (!confirmed) return;
 
     try {
-      const result = await deleteMutation({ id: deletingItem._id });
-
-      if (result.success) {
-        toast.success("✅ " + result.message);
-        setDeleteDialogOpen(false);
-        setDeletingItem(null);
-      } else {
-        toast.error("❌ " + result.message);
-      }
+      await clearAllConnectionsMutation();
+      toast.success('✅ Semua koneksi berhasil dihapus!');
+      setEdges([]);
     } catch (error) {
-      console.error(error);
-      toast.error("❌ Gagal menghapus struktur organisasi");
-    } finally {
-      setIsDeleting(false);
+      console.error('Error clearing connections:', error);
+      toast.error('❌ Gagal menghapus koneksi!');
     }
   };
 
-  const handleImageClick = (imageUrl: string) => {
-    setPreviewImageUrl(imageUrl);
-    setPreviewImageOpen(true);
+  const onEdgeDoubleClick = useCallback((_: React.MouseEvent, edge: Edge) => {
+    const sourceId = edge.source as Id<"strukturDivisiCrp">;
+    const targetId = edge.target as Id<"strukturDivisiCrp">;
+
+    const confirmed = confirm(`Hapus koneksi ini?`);
+    if (!confirmed) return;
+
+    removeConnectionMutation({
+      fromId: sourceId,
+      toId: targetId,
+    })
+      .then(() => {
+        toast.success('✅ Koneksi berhasil dihapus!');
+      })
+      .catch(() => {
+        toast.error('❌ Gagal menghapus koneksi!');
+      });
+  }, [removeConnectionMutation]);
+
+  const handleDelete = async (id: Id<"strukturDivisiCrp">, nama: string) => {
+    const confirmed = confirm(`Yakin ingin menghapus ${nama}?`);
+    if (!confirmed) return;
+
+    try {
+      await deleteMutation({ id });
+      toast.success(`✅ ${nama} berhasil dihapus!`);
+    } catch (error) {
+      toast.error('❌ Gagal menghapus staff!');
+      console.error(error);
+    }
   };
 
   return (
-    <>
-      <div className="flex-1 space-y-6 p-8 pt-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+      {/* Header */}
+      <div className="max-w-10xl mx-auto p-6">
+        <div className="flex justify-between items-start">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Struktur Divisi CRP</h2>
-            <p className="text-muted-foreground">
-              Upload dan kelola struktur organisasi CRP per tahun
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">
+                Struktur Divisi CRP
+              </h1>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={showHelp}
+                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 cursor-pointer"
+                title="Cara menggunakan"
+              >
+                ❓
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearAllConnections}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 cursor-pointer"
+                title="Hapus semua koneksi"
+              >
+                🗑️
+              </Button>
+            </div>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+              ✨ Drag card untuk geser • Drag dari titik biru (KANAN/BAWAH) ke titik (KIRI/ATAS) untuk connect • Double-click garis untuk hapus
             </p>
           </div>
           <Button
-            onClick={handleUploadClick}
-            className="cursor-pointer bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
+            onClick={handleAdd}
+            className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white shadow-lg cursor-pointer"
           >
-            <Plus className="mr-2 h-4 w-4" />
-            Upload Struktur
+            <Plus className="w-4 h-4 mr-2" />
+            Tambah Staff
           </Button>
         </div>
-
-        {/* Filters */}
-        <Card className="p-6 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950 border-slate-200 dark:border-slate-800">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                Tahun
-              </Label>
-              <Select
-                value={selectedYear.toString()}
-                onValueChange={(v) => setSelectedYear(parseInt(v))}
-              >
-                <SelectTrigger className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500">
-                  <SelectValue placeholder="Pilih tahun" />
-                </SelectTrigger>
-                <SelectContent>
-                  {yearOptions.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                Cari
-              </Label>
-              <Input
-                placeholder="Cari struktur organisasi..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-        </Card>
-
-        {/* Items Grid */}
-        {strukturDivisi === undefined ? (
-          <div className="flex items-center justify-center p-12">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          </div>
-        ) : sortedItems.length === 0 ? (
-          <Card className="p-12 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950 border-slate-200 dark:border-slate-800">
-            <div className="text-center">
-              <PhotoIcon className="h-16 w-16 mx-auto text-slate-400 mb-4" />
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-                Belum Ada Struktur Organisasi
-              </h3>
-              <p className="text-slate-500 dark:text-slate-400 mb-4">
-                {searchQuery
-                  ? "Tidak ditemukan struktur organisasi yang sesuai dengan pencarian"
-                  : `Belum ada struktur organisasi untuk tahun ${selectedYear}`}
-              </p>
-              <Button
-                onClick={handleUploadClick}
-                variant="outline"
-                className="border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Upload Struktur Pertama
-              </Button>
-            </div>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1">
-            {sortedItems.map((item) => (
-              <Card
-                key={item._id}
-                className="overflow-hidden bg-white dark:bg-slate-800 shadow-lg border-slate-200 dark:border-slate-700 hover:shadow-xl transition-shadow"
-              >
-                {/* Image */}
-                  <img
-                    src={item.imageUrl}
-                    alt={item.title}
-                    className="w-full h-full object-contain cursor-pointer hover:opacity-90 transition-opacity p-4"
-                    onClick={() => handleImageClick(item.imageUrl)}
-                  />
-
-                {/* Content */}
-                <div className="p-4 space-y-3">
-                  <div>
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <h3 className="font-bold text-lg text-slate-900 dark:text-white line-clamp-1 flex-1">
-                        {item.title}
-                      </h3>
-                      <Badge
-                        variant="outline"
-                        className="text-xs font-semibold shrink-0 bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700"
-                      >
-                        <Calendar className="h-3 w-3 mr-1 inline" />
-                        {item.year}
-                      </Badge>
-                    </div>
-                    {item.description && (
-                      <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mt-1">
-                        {item.description}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-2 pt-2 border-t border-slate-200 dark:border-slate-700 px-4 pb-4">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handleImageClick(item.imageUrl)}
-                    className="cursor-pointer flex-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                  >
-                    Lihat
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handleEdit(item)}
-                    className="cursor-pointer flex-1 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20"
-                    disabled={isUploading}
-                  >
-                    <Pencil className="h-3 w-3 mr-1" />
-                    Edit
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handleDelete(item)}
-                    className="cursor-pointer flex-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                    disabled={isDeleting}
-                  >
-                    <Trash2 className="h-3 w-3 mr-1" />
-                    Hapus
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
       </div>
 
-      {/* Upload Dialog */}
-      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Upload Struktur Organisasi</DialogTitle>
-            <DialogDescription>
-              Upload gambar struktur organisasi CRP untuk tahun tertentu
-            </DialogDescription>
-          </DialogHeader>
+      {/* React Flow Canvas */}
+      <div className="max-w-full mx-auto mt-6 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700" style={{ height: 'calc(100vh - 200px)' }}>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onNodeDragStop={onNodeDragStop}
+          onEdgeDoubleClick={onEdgeDoubleClick}
+          nodeTypes={nodeTypes}
+          isValidConnection={isValidConnection}
+          fitView
+          attributionPosition="bottom-left"
+        >
+          <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
+          <Controls />
+          <MiniMap
+            nodeColor={() => '#10b981'}
+            maskColor="rgba(0, 0, 0, 0.1)"
+          />
+        </ReactFlow>
+      </div>
 
-          <div className="space-y-4 py-4">
-            {/* Title */}
-            <div className="space-y-2">
-              <Label htmlFor="upload-title">
-                Judul <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="upload-title"
-                value={uploadForm.title}
-                onChange={(e) =>
-                  setUploadForm((prev) => ({ ...prev, title: e.target.value }))
-                }
-                placeholder="Contoh: Struktur Organisasi CRP 2025"
-              />
-            </div>
-
-            {/* Year */}
-            <div className="space-y-2">
-              <Label htmlFor="upload-year">
-                Tahun <span className="text-red-500">*</span>
-              </Label>
-              <Select
-                value={uploadForm.year.toString()}
-                onValueChange={(v) =>
-                  setUploadForm((prev) => ({ ...prev, year: parseInt(v) }))
-                }
-              >
-                <SelectTrigger id="upload-year">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {yearOptions.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="upload-description">Deskripsi</Label>
-              <Textarea
-                id="upload-description"
-                value={uploadForm.description}
-                onChange={(e) =>
-                  setUploadForm((prev) => ({ ...prev, description: e.target.value }))
-                }
-                placeholder="Deskripsi singkat tentang struktur organisasi..."
-                rows={3}
-              />
-            </div>
-
-            {/* Image Upload */}
-            <div className="space-y-2">
-              <Label>
-                Gambar Struktur Organisasi <span className="text-red-500">*</span>
-              </Label>
-              {uploadForm.imagePreview ? (
-                <div className="relative border-2 border-dashed border-slate-300 rounded-lg p-4">
-                  <div className="relative aspect-[4/3] bg-slate-100 rounded-lg overflow-hidden">
-                    <img
-                      src={uploadForm.imagePreview}
-                      alt="Preview"
-                      className="w-full h-full object-contain"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={handleRemoveImage}
-                      className="absolute top-2 right-2"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-2 text-center">
-                    {uploadForm.imageFile?.name || "Current image"}
-                  </p>
-                </div>
-              ) : (
-                <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageSelect}
-                    className="hidden"
-                  />
-                  <Upload className="h-12 w-12 mx-auto text-slate-400 mb-4" />
-                  <p className="text-sm text-slate-600 mb-2">
-                    Drag & drop gambar atau klik untuk browse
-                  </p>
-                  <p className="text-xs text-slate-500 mb-4">
-                    PNG, JPG, JPEG hingga 10MB
-                  </p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    Pilih File
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="flex gap-3 pt-4 border-t">
-            <Button
-              variant="outline"
-              onClick={() => setUploadDialogOpen(false)}
-              disabled={isUploading}
-            >
-              Batal
-            </Button>
-            <Button
-              onClick={handleUploadSubmit}
-              disabled={isUploading}
-              className="flex-1"
-            >
-              {isUploading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Mengupload...
-                </>
-              ) : (
-                "Upload"
-              )}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Struktur Organisasi</DialogTitle>
-            <DialogDescription>
-              Update informasi dan gambar struktur organisasi
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            {/* Title */}
-            <div className="space-y-2">
-              <Label htmlFor="edit-title">
-                Judul <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="edit-title"
-                value={editForm.title}
-                onChange={(e) =>
-                  setEditForm((prev) => ({ ...prev, title: e.target.value }))
-                }
-                placeholder="Contoh: Struktur Organisasi CRP 2025"
-              />
-            </div>
-
-            {/* Year */}
-            <div className="space-y-2">
-              <Label htmlFor="edit-year">
-                Tahun <span className="text-red-500">*</span>
-              </Label>
-              <Select
-                value={editForm.year.toString()}
-                onValueChange={(v) =>
-                  setEditForm((prev) => ({ ...prev, year: parseInt(v) }))
-                }
-              >
-                <SelectTrigger id="edit-year">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {yearOptions.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="edit-description">Deskripsi</Label>
-              <Textarea
-                id="edit-description"
-                value={editForm.description}
-                onChange={(e) =>
-                  setEditForm((prev) => ({ ...prev, description: e.target.value }))
-                }
-                placeholder="Deskripsi singkat tentang struktur organisasi..."
-                rows={3}
-              />
-            </div>
-
-            {/* Image Upload */}
-            <div className="space-y-2">
-              <Label>
-                Gambar Struktur Organisasi <span className="text-red-500">*</span>
-              </Label>
-              {editForm.imagePreview ? (
-                <div className="relative border-2 border-dashed border-slate-300 rounded-lg p-4">
-                  <div className="relative aspect-[4/3] bg-slate-100 rounded-lg overflow-hidden">
-                    <img
-                      src={editForm.imagePreview}
-                      alt="Preview"
-                      className="w-full h-full object-contain"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={handleEditRemoveImage}
-                      className="absolute top-2 right-2"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-2 text-center">
-                    {editForm.imageFile?.name || "Current image"}
-                  </p>
-                  {!editForm.imageFile && (
-                    <input
-                      ref={editFileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleEditImageSelect}
-                      className="hidden"
-                    />
-                  )}
-                  {!editForm.imageFile && (
-                    <div className="text-center mt-3">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => editFileInputRef.current?.click()}
-                      >
-                        <Upload className="h-4 w-4 mr-2" />
-                        Ganti Gambar
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
-                  <input
-                    ref={editFileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleEditImageSelect}
-                    className="hidden"
-                  />
-                  <Upload className="h-12 w-12 mx-auto text-slate-400 mb-4" />
-                  <p className="text-sm text-slate-600 mb-2">
-                    Drag & drop gambar atau klik untuk browse
-                  </p>
-                  <p className="text-xs text-slate-500 mb-4">
-                    PNG, JPG, JPEG hingga 10MB
-                  </p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => editFileInputRef.current?.click()}
-                  >
-                    Pilih File
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="flex gap-3 pt-4 border-t">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setEditDialogOpen(false);
-                setEditingItem(null);
-              }}
-              disabled={isUploading}
-            >
-              Batal
-            </Button>
-            <Button
-              onClick={handleEditSubmit}
-              disabled={isUploading}
-              className="flex-1"
-            >
-              {isUploading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Menyimpan...
-                </>
-              ) : (
-                "Simpan Perubahan"
-              )}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Hapus Struktur Organisasi?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Apakah Anda yakin ingin menghapus struktur organisasi &quot;
-              {deletingItem?.title}&quot;? Tindakan ini tidak dapat dibatalkan.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Batal</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              disabled={isDeleting}
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
-              {isDeleting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Menghapus...
-                </>
-              ) : (
-                "Hapus"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Image Preview Dialog */}
-      <ImagePreviewDialog
-        open={previewImageOpen}
-        onOpenChange={setPreviewImageOpen}
-        imageUrl={previewImageUrl}
-        alt="Struktur Organisasi"
+      {/* Dialog Add/Edit Staff */}
+      <StrukturDivisiCrpDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        staff={selectedStaff}
+        mode={dialogMode}
+        onSuccess={handleDialogSuccess}
       />
-    </>
+    </div>
   );
 }
