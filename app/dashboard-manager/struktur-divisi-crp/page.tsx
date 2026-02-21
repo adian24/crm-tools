@@ -22,7 +22,7 @@ import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 import { Button } from '@/components/ui/button';
 import { StrukturDivisiCrpDialog } from '@/components/struktur-divisi-crp-dialog';
-import { Plus, HelpCircle, Trash2 } from 'lucide-react';
+import { Plus, HelpCircle, Trash2, Pencil, Trash } from 'lucide-react';
 import { toast } from 'sonner';
 import Image from 'next/image';
 
@@ -69,17 +69,17 @@ const StaffNode = ({ data }: { data: any }) => {
         <div className="absolute top-2 right-2 flex gap-1">
           <button
             onClick={data.onEdit}
-            className="w-7 h-7 bg-white/90 hover:bg-white text-emerald-600 rounded-lg flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-110"
+            className="w-7 h-7 bg-white/90 hover:bg-white text-blue-600 rounded-lg flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-110"
             title="Edit"
           >
-            <span className="text-sm font-bold">✏️</span>
+            <Pencil className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={data.onDelete}
             className="w-7 h-7 bg-white/90 hover:bg-white text-red-600 rounded-lg flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-110"
             title="Hapus"
           >
-            <span className="text-sm font-bold">🗑️</span>
+            <Trash className="w-3.5 h-3.5" />
           </button>
         </div>
 
@@ -361,7 +361,7 @@ export default function StrukturDivisiCrpReactFlowPage() {
               </Button>
             </div>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-              ✨ Drag card untuk geser • Drag dari titik biru (KANAN/BAWAH) ke titik (KIRI/ATAS) untuk connect • Double-click garis untuk hapus
+              ✨ Drag card untuk geser • Drag dari titik ke titik untuk connect • Double-click garis untuk hapus
             </p>
           </div>
           <Button
@@ -375,7 +375,7 @@ export default function StrukturDivisiCrpReactFlowPage() {
       </div>
 
       {/* React Flow Canvas */}
-      <div className="max-w-full mx-auto mt-6 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700" style={{ height: 'calc(100vh - 200px)' }}>
+      <div className="max-w-full mx-5 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700" style={{ height: 'calc(100vh - 160px)' }}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
