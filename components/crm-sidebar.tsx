@@ -96,6 +96,11 @@ const getNavigationItems = (role: string) => {
         icon: IconAward,
       },
       {
+        title: "Kolaborasi CRM",
+        url: "/dashboard-manager/kolaborasi-crm",
+        icon: IconAward,
+      },
+      {
         title: "Flyer",
         url: "/dashboard-manager/flyer",
         icon: IconPhoto,

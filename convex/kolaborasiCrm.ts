@@ -87,14 +87,6 @@ export const updateStaff = mutation({
       throw new Error("Staff not found");
     }
 
-    // Debug logging
-    console.log('📝 Updating staff:', id);
-    console.log('📊 Existing jobDesk:', existing.jobDesk);
-    console.log('📊 Existing keterangan:', existing.keterangan);
-    console.log('✏️ New jobDesk value in args:', updateData.jobDesk);
-    console.log('✏️ New keterangan value in args:', updateData.keterangan);
-    console.log('🔍 jobDesk key exists in args?', 'jobDesk' in updateData);
-
     // Only update provided fields
     const updates: any = {};
     if (updateData.nama !== undefined) updates.nama = updateData.nama;
@@ -108,7 +100,6 @@ export const updateStaff = mutation({
     } else {
       // Set to empty string to indicate "no content"
       updates.jobDesk = "";
-      console.log('🗑️ jobDesk set to empty string');
     }
 
     if (updateData.positionX !== undefined) updates.positionX = updateData.positionX;
@@ -119,23 +110,13 @@ export const updateStaff = mutation({
       updates.keterangan = updateData.keterangan;
     } else {
       updates.keterangan = "";
-      console.log('🗑️ keterangan set to empty string');
     }
 
     if (updateData.isActive !== undefined) updates.isActive = updateData.isActive;
 
     updates.updatedAt = Date.now();
 
-    console.log('💾 Final updates to apply:', updates);
-
     await ctx.db.patch(id, updates);
-
-    // Verify the update
-    const updated = await ctx.db.get(id);
-    if (updated) {
-      console.log('✅ After patch - jobDesk:', updated.jobDesk);
-      console.log('✅ After patch - keterangan:', updated.keterangan);
-    }
 
     return id;
   },

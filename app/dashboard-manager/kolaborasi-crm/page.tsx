@@ -181,16 +181,6 @@ const StaffNode = ({ data, selected }: { data: any; selected?: boolean }) => {
       </div>
 
       {/* Card Body - Job Desk & Keterangan */}
-      {(() => {
-        console.log('🎨 Rendering card for:', data.label);
-        console.log('📊 jobDesk value:', data.jobDesk);
-        console.log('📊 jobDesk type:', typeof data.jobDesk);
-        console.log('📊 keterangan value:', data.keterangan);
-        const hasJobDesk = data.jobDesk && data.jobDesk.trim() !== '';
-        const hasKeterangan = data.keterangan && data.keterangan.trim() !== '';
-        console.log('✅ Should render body?', !!(hasJobDesk || hasKeterangan));
-        return null;
-      })()}
       {((data.jobDesk && data.jobDesk.trim() !== '') || (data.keterangan && data.keterangan.trim() !== '')) && (
         <div className="p-4 bg-white dark:bg-slate-800 rounded-b-xl">
           {/* Job Desk Section */}
@@ -350,17 +340,9 @@ export default function KolaborasiCrmPage() {
 
   useEffect(() => {
     if (allStaff) {
-      console.log('🔄 Rebuilding nodes from allStaff, refreshKey:', refreshKey);
-
       const newNodes: Node[] = allStaff.map((staff) => {
         // Check if this is a note (based on jabatan field)
         const isNote = staff.jabatan === '__NOTE__';
-
-        console.log(`📦 Building node for ${staff.nama}:`, {
-          jobDesk: staff.jobDesk,
-          jobDeskType: typeof staff.jobDesk,
-          keterangan: staff.keterangan
-        });
 
         return {
           id: staff._id,
@@ -491,8 +473,6 @@ export default function KolaborasiCrmPage() {
   }, []);
 
   const onConnect = useCallback((connection: Connection) => {
-    console.log('🔗 Creating connection:', connection);
-
     const edgeColor = '#a855f7'; // Purple color
     const sourceHandle = connection.sourceHandle || 'bottom';
     const targetHandle = connection.targetHandle || 'top';
@@ -501,8 +481,6 @@ export default function KolaborasiCrmPage() {
     const isTwoWay = arrowType === 'two-way';
     const isArrowLeft = arrowType === 'one-way-left';
     const isArrowRight = arrowType === 'one-way-right';
-
-    console.log('📍 Connection details:', { sourceHandle, targetHandle, arrowType });
 
     const newEdge: Edge = {
       id: `${connection.source}-${connection.target}`,
@@ -565,7 +543,6 @@ export default function KolaborasiCrmPage() {
         }
       })
       .catch((error) => {
-        console.error('❌ Connection failed:', error);
         toast.error('❌ Gagal membuat koneksi: ' + error.message);
         setEdges((eds) => eds.filter((e) => e.id !== newEdge.id));
       });
@@ -619,7 +596,6 @@ export default function KolaborasiCrmPage() {
           toast.success('✅ Semua koneksi berhasil dihapus!');
           setEdges([]);
         } catch (error) {
-          console.error('Error clearing connections:', error);
           toast.error('❌ Gagal menghapus koneksi!');
         }
       },
@@ -638,14 +614,13 @@ export default function KolaborasiCrmPage() {
           // Refresh page to see changes
           setTimeout(() => window.location.reload(), 1500);
         } catch (error) {
-          console.error('Error migrating jobDesk:', error);
           toast.error('❌ Gagal migrasi jobDesk!');
         }
       },
     });
   };
 
-  const onEdgeDoubleClick = useCallback((_: React.MouseEvent, edge: Edge) => {
+  const onEdgeClick = useCallback((_: React.MouseEvent, edge: Edge) => {
     const sourceId = edge.source as Id<"kolaborasiCrm">;
     const targetId = edge.target as Id<"kolaborasiCrm">;
 
@@ -679,7 +654,6 @@ export default function KolaborasiCrmPage() {
           toast.success(`✅ ${nama} berhasil dihapus!`);
         } catch (error) {
           toast.error('❌ Gagal menghapus staff!');
-          console.error(error);
         }
       },
     });
@@ -727,7 +701,7 @@ export default function KolaborasiCrmPage() {
               </Button>
             </div>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-              ✨ Klik card untuk select • Ctrl/Cmd + Klik untuk multi-select • Drag card untuk geser semua • Drag dari titik ke titik untuk connect • Double-click garis untuk hapus
+              ✨ Klik card untuk select • Ctrl/Cmd + Klik untuk multi-select • Drag card untuk geser semua • Drag dari titik ke titik untuk connect • Klik garis untuk hapus
             </p>
           </div>
           <div className="flex gap-3 items-center">
@@ -826,7 +800,7 @@ export default function KolaborasiCrmPage() {
           onNodeDragStop={onNodeDragStop}
           onSelectionChange={onSelectionChange}
           onPaneClick={onPaneClick}
-          onEdgeDoubleClick={onEdgeDoubleClick}
+          onEdgeClick={onEdgeClick}
           nodeTypes={nodeTypes}
           isValidConnection={isValidConnection}
           fitView

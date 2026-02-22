@@ -115,7 +115,6 @@ const KolaborasiCrmDialog = ({ open, onOpenChange, staff, mode, isNote = false, 
       toast.success('✅ Foto berhasil diupload!');
     } catch (error) {
       toast.error('❌ Gagal mengupload foto!');
-      console.error(error);
     }
   };
 
@@ -200,11 +199,9 @@ const KolaborasiCrmDialog = ({ open, onOpenChange, staff, mode, isNote = false, 
 
     // First check: is it empty after parsing?
     if (isHtmlEmpty(trimmed)) {
-      console.log('🗑️ HTML detected as empty, will return undefined');
       return undefined;
     }
 
-    console.log('✅ HTML has content, will keep it');
     return trimmed;
   };
 
@@ -223,11 +220,6 @@ const KolaborasiCrmDialog = ({ open, onOpenChange, staff, mode, isNote = false, 
     try {
       const cleanedJobDesk = cleanHtmlContent(formData.jobDesk);
       const cleanedKeterangan = formData.keterangan.trim() || undefined;
-
-      // Debug logging
-      console.log('💾 Saving jobDesk:', formData.jobDesk);
-      console.log('✨ Cleaned jobDesk:', cleanedJobDesk);
-      console.log('📏 Is empty?', isHtmlEmpty(formData.jobDesk || ''));
 
       if (mode === 'add') {
         // Calculate random position for new card
@@ -264,15 +256,11 @@ const KolaborasiCrmDialog = ({ open, onOpenChange, staff, mode, isNote = false, 
           updateData.keterangan = cleanedKeterangan;
         }
 
-        console.log('📤 Sending update data:', updateData);
-
         await updateMutation(updateData)
           .then((result) => {
-            console.log('✅ Update mutation result:', result);
             toast.success('✅ Data staff berhasil diupdate!');
           })
           .catch((error) => {
-            console.error('❌ Update mutation error:', error);
             toast.error('❌ Gagal mengupdate data!');
           });
       }
@@ -281,7 +269,6 @@ const KolaborasiCrmDialog = ({ open, onOpenChange, staff, mode, isNote = false, 
       onSuccess?.();
     } catch (error) {
       toast.error('❌ Gagal menyimpan data!');
-      console.error(error);
     } finally {
       setIsSaving(false);
     }

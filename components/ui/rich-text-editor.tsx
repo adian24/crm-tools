@@ -183,10 +183,10 @@ const RichTextEditor = ({
           <div key={`group-${groupIndex}`} className="flex gap-1 border-r border-slate-300 dark:border-slate-600 pr-1 mr-1 last:border-0">
             {group.map((btn, btnIndex) => {
               const Icon = btn.icon;
-              const uniqueKey = `${groupIndex}-${btnIndex}-${btn.command || 'image'}`;
+              const uniqueKey = `${groupIndex}-${btnIndex}-${('command' in btn) ? btn.command : 'image'}`;
 
               // Handle image button separately
-              if ((btn as any).isImage) {
+              if ('isImage' in btn && btn.isImage) {
                 return (
                   <Button
                     key={uniqueKey}
@@ -208,7 +208,7 @@ const RichTextEditor = ({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => execCommand(btn.command, btn.value)}
+                  onClick={() => 'command' in btn && execCommand(btn.command, btn.value)}
                   className="h-7 w-7 p-0 hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer"
                   title={btn.title}
                 >
