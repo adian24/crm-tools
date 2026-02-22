@@ -1,640 +1,893 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import ReactFlow, {
+  Node,
+  Edge,
+  useNodesState,
+  useEdgesState,
+  Controls,
+  Background,
+  BackgroundVariant,
+  MarkerType,
+  NodeTypes,
+  MiniMap,
+  Handle,
+  Position,
+  Connection,
+} from 'reactflow';
+import 'reactflow/dist/style.css';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 import { Button } from '@/components/ui/button';
 import { KolaborasiCrmDialog } from '@/components/kolaborasi-crm-dialog';
-import { ConnectionEditDialog } from '@/components/connection-edit-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Plus, HelpCircle, Trash2, Pencil, Trash, StickyNote, ArrowRightLeft, ArrowRight, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, Users, Settings } from 'lucide-react';
+import Image from 'next/image';
 
-// Draggable Card Component
-interface DraggableCardProps {
-  staff: Staff;
-  onEdit: (staff: Staff) => void;
-  onDelete: (id: Id<"kolaborasiCrm">, nama: string) => void;
-  onDragEnd: (id: Id<"kolaborasiCrm">, position: { x: number; y: number }) => void;
-  onCardClick?: (id: Id<"kolaborasiCrm">) => void;
-  isConnectMode?: boolean;
-  isSelected?: boolean;
-}
-
-function DraggableCard({ staff, onEdit, onDelete, onDragEnd, onCardClick, isConnectMode, isSelected }: DraggableCardProps) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [position, setPosition] = useState({ x: staff.positionX, y: staff.positionY });
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    // Only drag on header, not buttons
-    if ((e.target as HTMLElement).closest('button')) return;
-
-    if (!isConnectMode) {
-      setIsDragging(true);
-      setDragStart({
-        x: e.clientX - position.x,
-        y: e.clientY - position.y,
-      });
-    }
-  };
-
-  const handleCardClick = () => {
-    if (isConnectMode && onCardClick) {
-      onCardClick(staff._id);
-    }
-  };
-
-  React.useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
-
-      const newX = e.clientX - dragStart.x;
-      const newY = e.clientY - dragStart.y;
-
-      setPosition({ x: newX, y: newY });
-    };
-
-    const handleMouseUp = () => {
-      if (isDragging) {
-        setIsDragging(false);
-        onDragEnd(staff._id, position);
-      }
-    };
-
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-    }
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging, dragStart, position, staff._id, onDragEnd, isConnectMode]);
-
-  // Update position when staff prop changes
-  React.useEffect(() => {
-    setPosition({ x: staff.positionX, y: staff.positionY });
-  }, [staff.positionX, staff.positionY]);
-
+// Note Node Component - For custom text boxes/notes
+const NoteNode = ({ data, selected }: { data: any; selected?: boolean }) => {
   return (
-    <div
-      ref={cardRef}
-      onMouseDown={handleMouseDown}
-      onClick={handleCardClick}
-      className={`absolute bg-white dark:bg-slate-800 rounded-xl shadow-xl border-2 transition-all duration-200 w-72 ${
-        isConnectMode
-          ? 'cursor-pointer hover:border-purple-400 dark:hover:border-purple-500 hover:shadow-2xl hover:scale-105'
-          : 'cursor-move'
-      } ${
-        isDragging ? 'shadow-2xl scale-105 z-50' : ''
-      } ${
-        isSelected
-          ? 'border-purple-500 ring-4 ring-purple-200 dark:ring-purple-800 z-40'
-          : 'border-slate-200 dark:border-slate-700'
-      }`}
-      style={{
-        left: position.x,
-        top: position.y,
-      }}
-    >
-      {/* Card Header - Draggable area */}
-      <div className="bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 rounded-t-xl p-6 cursor-move relative">
+    <div className={`bg-purple-50 dark:bg-purple-900/20 rounded-xl shadow-2xl border-2 min-w-[200px] max-w-[500px] w-auto transition-colors relative ${
+      selected
+        ? 'border-purple-600 dark:border-purple-400 ring-4 ring-purple-300 dark:ring-purple-700'
+        : 'border-purple-300 dark:border-purple-600 hover:border-purple-400 dark:hover:border-purple-500'
+    }`}>
+      {/* Handles for connecting */}
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="top"
+        className="!w-3 !h-3 !bg-purple-500 !border-2 !border-white rounded-full hover:!scale-150 transition-transform"
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="bottom"
+        className="!w-3 !h-3 !bg-purple-500 !border-2 !border-white rounded-full hover:!scale-150 transition-transform"
+      />
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="left"
+        className="!w-3 !h-3 !bg-purple-500 !border-2 !border-white rounded-full hover:!scale-150 transition-transform"
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="right"
+        className="!w-3 !h-3 !bg-purple-500 !border-2 !border-white rounded-full hover:!scale-150 transition-transform"
+      />
+
+      {/* Action buttons - top right */}
+      <div className="absolute top-2 right-2 z-10 flex gap-1">
+        <button
+          onClick={data.onEdit}
+          className="w-6 h-6 bg-purple-400 hover:bg-purple-500 text-white rounded-md flex items-center justify-center shadow-md cursor-pointer transition-all hover:scale-110 opacity-70 hover:opacity-100"
+          title="Edit"
+        >
+          <Pencil className="w-3 h-3" />
+        </button>
+        <button
+          onClick={data.onDelete}
+          className="w-6 h-6 bg-red-400 hover:bg-red-500 text-white rounded-md flex items-center justify-center shadow-md cursor-pointer transition-all hover:scale-110 opacity-70 hover:opacity-100"
+          title="Hapus"
+        >
+          <Trash className="w-3 h-3" />
+        </button>
+      </div>
+
+      {/* Note Content - hanya isi note */}
+      <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
+        <div
+          className="text-sm text-slate-700 dark:text-slate-300 jobdesk-content"
+          dangerouslySetInnerHTML={{ __html: data.content || '' }}
+        />
+      </div>
+    </div>
+  );
+};
+
+// Custom Node Component - Matching the design from struktur-divisi-crp page
+const StaffNode = ({ data, selected }: { data: any; selected?: boolean }) => {
+  return (
+    <div className={`bg-white dark:bg-slate-800 rounded-xl shadow-2xl border-2 w-72 transition-colors relative ${
+      selected
+        ? 'border-purple-600 dark:border-purple-400 ring-4 ring-purple-300 dark:ring-purple-700 scale-105'
+        : 'border-slate-200 dark:border-slate-700 hover:border-purple-400 dark:hover:border-purple-500'
+    }`}>
+      {/* Invisible handles for connecting - small purple dots */}
+      {/* Top - Can receive connections */}
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="top"
+        className="!w-3 !h-3 !bg-purple-500 !border-2 !border-white rounded-full hover:!scale-150 transition-transform"
+      />
+
+      {/* Bottom - Can start connections */}
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="bottom"
+        className="!w-3 !h-3 !bg-purple-500 !border-2 !border-white rounded-full hover:!scale-150 transition-transform"
+      />
+
+      {/* Left - Can receive connections */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="left"
+        className="!w-3 !h-3 !bg-purple-500 !border-2 !border-white rounded-full hover:!scale-150 transition-transform"
+      />
+
+      {/* Right - Can start connections */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="right"
+        className="!w-3 !h-3 !bg-purple-500 !border-2 !border-white rounded-full hover:!scale-150 transition-transform"
+      />
+
+      {/* Card Header - Gradient Background */}
+      <div className={`bg-gradient-to-br from-purple-400 via-purple-600 to-purple-800 p-6 relative ${(data.jobDesk?.trim() || data.keterangan?.trim()) ? 'rounded-t-xl' : 'rounded-xl'}`}>
         {/* Action Buttons - Top Right Corner */}
         <div className="absolute top-2 right-2 flex gap-1">
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(staff);
-            }}
-            className="w-7 h-7 bg-white/90 hover:bg-white text-blue-600 rounded-lg flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-110"
+            onClick={data.onEdit}
+            className="w-7 h-7 bg-white/90 hover:bg-white text-purple-600 rounded-lg flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-110"
             title="Edit"
           >
-            <Edit className="w-3.5 h-3.5" />
+            <Pencil className="w-3.5 h-3.5" />
           </button>
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(staff._id, staff.nama);
-            }}
+            onClick={data.onDelete}
             className="w-7 h-7 bg-white/90 hover:bg-white text-red-600 rounded-lg flex items-center justify-center shadow-lg cursor-pointer transition-all hover:scale-110"
             title="Hapus"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash className="w-3.5 h-3.5" />
           </button>
         </div>
 
         <div className="flex flex-col items-center gap-4">
-          {staff.fotoUrl ? (
-            <img
-              src={staff.fotoUrl}
-              alt={staff.nama}
-              className="w-28 h-28 rounded-full border-4 border-white shadow-2xl object-cover"
-            />
+          {data.fotoUrl ? (
+            <div className="relative w-28 h-28">
+              <Image
+                src={data.fotoUrl}
+                alt={data.label}
+                fill
+                className="rounded-full border-4 border-white shadow-2xl object-cover"
+              />
+            </div>
           ) : (
             <div className="w-28 h-28 rounded-full bg-white/20 flex items-center justify-center border-4 border-white/30">
-              <Users className="w-14 h-14 text-white" />
+              <span className="text-white text-5xl font-bold">{data.label.charAt(0)}</span>
             </div>
           )}
           <div className="text-center flex-1 w-full">
-            <h3 className="text-xl font-bold text-white truncate">{staff.nama}</h3>
-            <p className="text-sm text-blue-100 truncate">{staff.jabatan}</p>
+            <h3 className="text-xl font-bold text-white truncate">{data.label}</h3>
+            <p className="text-sm text-purple-100 truncate">{data.jabatan}</p>
           </div>
         </div>
       </div>
 
-      {/* Card Body */}
-      <div className="p-4 pb-3 space-y-3 rounded-b-xl">
-        {/* Job Desk */}
-        <div>
-          <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
-            Job Deskripsi ({staff.jobDesk.length})
-          </h4>
-          <ul className="space-y-1">
-            {staff.jobDesk.map((jd, idx) => (
-              <li
-                key={idx}
-                className="text-xs text-slate-600 dark:text-slate-400 flex items-start gap-2"
-              >
-                <span className="text-blue-500 font-bold">•</span>
-                <span className="flex-1">{jd}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+      {/* Card Body - Job Desk & Keterangan */}
+      {(() => {
+        console.log('🎨 Rendering card for:', data.label);
+        console.log('📊 jobDesk value:', data.jobDesk);
+        console.log('📊 jobDesk type:', typeof data.jobDesk);
+        console.log('📊 keterangan value:', data.keterangan);
+        const hasJobDesk = data.jobDesk && data.jobDesk.trim() !== '';
+        const hasKeterangan = data.keterangan && data.keterangan.trim() !== '';
+        console.log('✅ Should render body?', !!(hasJobDesk || hasKeterangan));
+        return null;
+      })()}
+      {((data.jobDesk && data.jobDesk.trim() !== '') || (data.keterangan && data.keterangan.trim() !== '')) && (
+        <div className="p-4 bg-white dark:bg-slate-800 rounded-b-xl">
+          {/* Job Desk Section */}
+          {data.jobDesk && data.jobDesk.trim() !== '' && (
+            <div className="mb-3">
+              <h4 className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wide">
+                Job Desk
+              </h4>
+              <div
+                className="text-sm text-slate-600 dark:text-slate-400 jobdesk-content"
+                dangerouslySetInnerHTML={{ __html: data.jobDesk }}
+              />
+            </div>
+          )}
 
-        {/* Keterangan */}
-        {staff.keterangan && (
-          <div className="text-xs text-slate-500 dark:text-slate-500 italic">
-            "{staff.keterangan}"
-          </div>
-        )}
-      </div>
+          {/* Keterangan */}
+          {data.keterangan && data.keterangan.trim() !== '' && (
+            <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
+              <div className="text-xs text-slate-600 dark:text-slate-400 italic text-center">
+                "{data.keterangan}"
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
-}
+};
 
-interface Staff {
-  _id: Id<"kolaborasiCrm">;
-  nama: string;
-  fotoUrl?: string;
-  jabatan: string;
-  jobDesk: string[];
-  positionX: number;
-  positionY: number;
-  connections: Array<{
-    targetId: Id<"kolaborasiCrm">;
-    type?: string;
-    label?: string;
-    color?: string;
-    routing?: string;
-  }>;
-  keterangan?: string;
-  isActive: boolean;
-  createdAt: string | number;
-  updatedAt: string | number;
-}
+// Custom styles for jobDesk HTML content
+const jobDeskStyles = `
+  .jobdesk-content {
+    line-height: 1.5;
+  }
+  .jobdesk-content ul {
+    list-style-type: disc;
+    padding-left: 1.5rem;
+    margin: 0.25rem 0;
+  }
+  .jobdesk-content ol {
+    list-style-type: decimal;
+    padding-left: 1.5rem;
+    margin: 0.25rem 0;
+  }
+  .jobdesk-content li {
+    margin: 0.1rem 0;
+    padding: 0;
+  }
+  .jobdesk-content p {
+    margin: 0.1rem 0;
+  }
+  .jobdesk-content h1 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin: 0.4rem 0 0.2rem 0;
+  }
+  .jobdesk-content h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0.3rem 0 0.15rem 0;
+  }
+  .jobdesk-content h3 {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    margin: 0.25rem 0 0.1rem 0;
+  }
+  .jobdesk-content blockquote {
+    border-left: 3px solid rgb(226, 232, 240);
+    padding-left: 0.75rem;
+    margin: 0.25rem 0;
+    font-style: italic;
+    color: rgb(100, 116, 139);
+  }
+  .jobdesk-content code {
+    background-color: rgb(241, 245, 249);
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    font-family: monospace;
+    font-size: 0.875em;
+  }
+  .jobdesk-content strong {
+    font-weight: 600;
+    color: rgb(51, 65, 85);
+  }
+  .jobdesk-content em {
+    font-style: italic;
+  }
+  .jobdesk-content u {
+    text-decoration: underline;
+  }
+  .jobdesk-content hr {
+    margin: 0.5rem 0;
+    border: none;
+    border-top: 1px solid rgb(226, 232, 240);
+  }
+  .jobdesk-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 4px auto;
+    display: block;
+    object-fit: contain;
+  }
+  .jobdesk-content p {
+    margin-bottom: 0.25rem;
+  }
+  .jobdesk-content p:last-child {
+    margin-bottom: 0;
+  }
+`;
 
 export default function KolaborasiCrmPage() {
-  const allStaff = useQuery(api.kolaborasiCrm.getAllStaff);
-  const deleteMutation = useMutation(api.kolaborasiCrm.deleteStaff);
-  const updatePositionMutation = useMutation(api.kolaborasiCrm.updateStaffPosition);
-  const addConnectionMutation = useMutation(api.kolaborasiCrm.addConnection);
-  const removeConnectionMutation = useMutation(api.kolaborasiCrm.removeConnection);
-  const migrateMutation = useMutation(api.kolaborasiCrm.migrateConnections);
+  const nodeTypes: NodeTypes = useMemo(() => ({
+    staff: StaffNode,
+    note: NoteNode,
+  }), []);
 
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+
+  // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
-  const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
-  const [isConnectMode, setIsConnectMode] = useState(false);
-  const [selectedForConnection, setSelectedForConnection] = useState<Id<"kolaborasiCrm"> | null>(null);
+  const [selectedStaff, setSelectedStaff] = useState<any>(null);
+  const [isAddingNote, setIsAddingNote] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0); // Add refresh key
 
-  // Calculate dynamic canvas height
-  const calculateCanvasHeight = () => {
-    if (!allStaff || allStaff.length === 0) return 600; // Default minimal height
+  // Confirm dialog state
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  }>({
+    open: false,
+    title: '',
+    description: '',
+    onConfirm: () => {},
+  });
 
-    // Find the lowest position (max Y + card height)
-    const maxY = Math.max(...allStaff.map(s => s.positionY));
-    const cardHeight = 350; // Approximate card height (larger for job desk)
-    const padding = 100; // Extra padding at bottom
+  // Arrow type selection: 'one-way-right' | 'one-way-left' | 'two-way'
+  const [arrowType, setArrowType] = useState<'one-way-right' | 'one-way-left' | 'two-way'>('one-way-right');
 
-    // Calculate minimum height based on content
-    const contentHeight = maxY + cardHeight + padding;
+  // Multi-selection state
+  const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
 
-    // Return the maximum of content-based height or default
-    return Math.max(contentHeight, 600);
-  };
+  // Fetch data from Convex
+  const allStaff = useQuery(api.kolaborasiCrm.getAllStaff);
+  const createMutation = useMutation(api.kolaborasiCrm.createStaff);
+  const updateMutation = useMutation(api.kolaborasiCrm.updateStaff);
+  const deleteMutation = useMutation(api.kolaborasiCrm.deleteStaff);
+  const addConnectionMutation = useMutation(api.kolaborasiCrm.addConnection);
+  const removeConnectionMutation = useMutation(api.kolaborasiCrm.removeConnection);
+  const updatePositionMutation = useMutation(api.kolaborasiCrm.updateStaffPosition);
+  const clearAllConnectionsMutation = useMutation(api.kolaborasiCrm.clearAllConnections);
+  const migrateJobDeskMutation = useMutation(api.kolaborasiCrm.migrateJobDeskToHtml);
 
-  const canvasHeight = calculateCanvasHeight();
+  useEffect(() => {
+    if (allStaff) {
+      console.log('🔄 Rebuilding nodes from allStaff, refreshKey:', refreshKey);
 
-  // Connection edit dialog state
-  const [connectionEditOpen, setConnectionEditOpen] = useState(false);
-  const [selectedConnection, setSelectedConnection] = useState<{
-    fromId: Id<"kolaborasiCrm">;
-    toId: Id<"kolaborasiCrm">;
-    fromName: string;
-    toName: string;
-    connection?: {
-      targetId: Id<"kolaborasiCrm">;
-      type?: string;
-      label?: string;
-      color?: string;
+      const newNodes: Node[] = allStaff.map((staff) => {
+        // Check if this is a note (based on jabatan field)
+        const isNote = staff.jabatan === '__NOTE__';
+
+        console.log(`📦 Building node for ${staff.nama}:`, {
+          jobDesk: staff.jobDesk,
+          jobDeskType: typeof staff.jobDesk,
+          keterangan: staff.keterangan
+        });
+
+        return {
+          id: staff._id,
+          type: isNote ? 'note' : 'staff',
+          position: { x: staff.positionX, y: staff.positionY },
+          data: {
+            id: staff._id,
+            label: staff.nama,
+            jabatan: staff.jabatan,
+            fotoUrl: staff.fotoUrl,
+            keterangan: staff.keterangan,
+            jobDesk: staff.jobDesk,
+            content: isNote ? staff.jobDesk || '' : undefined, // For notes
+            onEdit: () => handleEdit(staff),
+            onDelete: () => handleDelete(staff._id, staff.nama),
+          },
+          selected: selectedNodeIds.includes(staff._id), // Add selected state
+        };
+      });
+
+      const newEdges: Edge[] = [];
+      allStaff.forEach((staff) => {
+        if (staff.connections) {
+          staff.connections.forEach((connection) => {
+            const connectionId = typeof connection === 'object' ? connection.targetId : connection;
+            const connectionData = typeof connection === 'object' ? connection : undefined;
+
+            // Render edge in the direction it was stored (unidirectional)
+            const edgeId = `${staff._id}-${connectionId}`;
+            const edgeArrowType = connectionData?.arrowType || 'one-way-right';
+            const isTwoWay = edgeArrowType === 'two-way';
+            const isArrowLeft = edgeArrowType === 'one-way-left';
+            const isArrowRight = edgeArrowType === 'one-way-right';
+
+            newEdges.push({
+              id: edgeId,
+              source: staff._id,
+              target: connectionId,
+              sourceHandle: connectionData?.fromConnector || 'bottom',
+              targetHandle: connectionData?.toConnector || 'top',
+              type: 'smoothstep',
+              animated: false,
+              style: {
+                stroke: '#a855f7', // Purple color
+                strokeWidth: 3,
+              },
+              ...(isArrowRight && {
+                markerEnd: {
+                  type: MarkerType.ArrowClosed,
+                  color: '#a855f7', // Purple color
+                },
+              }),
+              ...(isArrowLeft && {
+                markerStart: {
+                  type: MarkerType.ArrowClosed,
+                  color: '#a855f7', // Purple color
+                },
+              }),
+              ...(isTwoWay && {
+                markerStart: {
+                  type: MarkerType.ArrowClosed,
+                  color: '#a855f7', // Purple color
+                },
+                markerEnd: {
+                  type: MarkerType.ArrowClosed,
+                  color: '#a855f7', // Purple color
+                },
+              }),
+            });
+          });
+        }
+      });
+
+      setNodes(newNodes);
+      setEdges(newEdges);
+    }
+  }, [allStaff, setNodes, setEdges, dialogOpen, refreshKey, selectedNodeIds]); // Add selectedNodeIds to force re-render
+
+  const onNodeDragStop = useCallback((_: any, node: Node) => {
+    // Update the dragged node position
+    updatePositionMutation({
+      id: node.id as Id<"kolaborasiCrm">,
+      positionX: node.position.x,
+      positionY: node.position.y,
+    })
+      .then(() => {
+        // Optional: show success toast
+      })
+      .catch(() => {
+        toast.error('❌ Gagal menyimpan posisi!');
+      });
+
+    // Also update other selected nodes if any
+    if (selectedNodeIds.length > 0) {
+      const currentNodes = nodes;
+      selectedNodeIds.forEach(nodeId => {
+        if (nodeId !== node.id) {
+          const selectedNode = currentNodes.find(n => n.id === nodeId);
+          if (selectedNode) {
+            updatePositionMutation({
+              id: nodeId as Id<"kolaborasiCrm">,
+              positionX: selectedNode.position.x,
+              positionY: selectedNode.position.y,
+            }).catch(() => {
+              // Silently fail for secondary nodes
+            });
+          }
+        }
+      });
+    }
+  }, [updatePositionMutation, selectedNodeIds, nodes]);
+
+  // Handle selection changes from ReactFlow
+  const onSelectionChange = useCallback((params: any) => {
+    const selectedNodes = params.nodes || [];
+    setSelectedNodeIds(selectedNodes.map((n: Node) => n.id));
+  }, []);
+
+  // Handle pane click to clear selection
+  const onPaneClick = useCallback(() => {
+    setSelectedNodeIds([]);
+  }, []);
+
+  const isValidConnection = useCallback((connection: Connection) => {
+    // Allow all connections including source-to-source
+    // Only prevent self-connections
+    return connection.source !== connection.target;
+  }, []);
+
+  const onConnect = useCallback((connection: Connection) => {
+    console.log('🔗 Creating connection:', connection);
+
+    const edgeColor = '#a855f7'; // Purple color
+    const sourceHandle = connection.sourceHandle || 'bottom';
+    const targetHandle = connection.targetHandle || 'top';
+
+    // Determine arrow markers based on arrowType
+    const isTwoWay = arrowType === 'two-way';
+    const isArrowLeft = arrowType === 'one-way-left';
+    const isArrowRight = arrowType === 'one-way-right';
+
+    console.log('📍 Connection details:', { sourceHandle, targetHandle, arrowType });
+
+    const newEdge: Edge = {
+      id: `${connection.source}-${connection.target}`,
+      source: connection.source || '',
+      target: connection.target || '',
+      sourceHandle: sourceHandle,
+      targetHandle: targetHandle,
+      type: 'smoothstep',
+      animated: false,
+      style: {
+        stroke: edgeColor,
+        strokeWidth: 3,
+      },
+      // Add markers based on arrow type
+      ...(isArrowRight && {
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: edgeColor,
+        },
+      }),
+      ...(isArrowLeft && {
+        markerStart: {
+          type: MarkerType.ArrowClosed,
+          color: edgeColor,
+        },
+      }),
+      ...(isTwoWay && {
+        markerStart: {
+          type: MarkerType.ArrowClosed,
+          color: edgeColor,
+        },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: edgeColor,
+        },
+      }),
     };
-  } | null>(null);
+
+    // Add edge locally first
+    setEdges((eds) => [...eds, newEdge]);
+
+    // Then save to Convex
+    addConnectionMutation({
+      fromId: connection.source as Id<"kolaborasiCrm">,
+      toId: connection.target as Id<"kolaborasiCrm">,
+      fromConnector: sourceHandle,
+      toConnector: targetHandle,
+      type: 'solid',
+      label: 'collaboration',
+      color: edgeColor,
+      routing: 'smoothstep',
+      arrowType: arrowType,
+    })
+      .then((result) => {
+        if (result?.alreadyExists) {
+          toast.info('ℹ️ Koneksi sudah ada!');
+          setEdges((eds) => eds.filter((e) => e.id !== newEdge.id));
+        } else {
+          toast.success('✅ Koneksi berhasil dibuat!');
+        }
+      })
+      .catch((error) => {
+        console.error('❌ Connection failed:', error);
+        toast.error('❌ Gagal membuat koneksi: ' + error.message);
+        setEdges((eds) => eds.filter((e) => e.id !== newEdge.id));
+      });
+  }, [addConnectionMutation, setEdges, arrowType]);
 
   const handleAdd = () => {
     setDialogMode('add');
     setSelectedStaff(null);
+    setIsAddingNote(false);
     setDialogOpen(true);
   };
 
-  const handleEdit = (staff: Staff) => {
+  const handleAddNote = () => {
+    setDialogMode('add');
+    setSelectedStaff(null);
+    setIsAddingNote(true);
+    setDialogOpen(true);
+  };
+
+  const handleEdit = (staff: any) => {
     setDialogMode('edit');
     setSelectedStaff(staff);
     setDialogOpen(true);
   };
 
-  const handleDelete = async (id: Id<"kolaborasiCrm">, nama: string) => {
-    const confirmed = confirm(`Yakin ingin menghapus ${nama}?`);
-    if (!confirmed) return;
+  const handleDialogSuccess = () => {
+    setDialogOpen(false);
+    setIsAddingNote(false);
 
-    try {
-      await deleteMutation({ id });
-      toast.success(`✅ ${nama} berhasil dihapus!`);
-    } catch (error) {
-      toast.error('❌ Gagal menghapus staff!');
-      console.error(error);
-    }
+    // Force refresh by incrementing refreshKey
+    setTimeout(() => {
+      setRefreshKey(prev => prev + 1);
+    }, 100);
   };
 
-  const handleDragStop = async (staffId: Id<"kolaborasiCrm">, newPosition: { x: number; y: number }) => {
-    try {
-      await updatePositionMutation({
-        id: staffId,
-        positionX: newPosition.x,
-        positionY: newPosition.y,
-      });
-    } catch (error) {
-      toast.error('❌ Gagal menyimpan posisi!');
-      console.error(error);
-    }
-  };
-
-  const handleCardClick = async (staffId: Id<"kolaborasiCrm">) => {
-    if (!isConnectMode) return;
-
-    if (!selectedForConnection) {
-      // First card selected
-      setSelectedForConnection(staffId);
-      toast.info('🔗 Pilih card kedua untuk membuat garis');
-    } else {
-      // Second card selected - create connection
-      if (selectedForConnection === staffId) {
-        toast.error('❌ Tidak bisa connect ke diri sendiri!');
-        setSelectedForConnection(null);
-        return;
-      }
-
-      try {
-        await addConnectionMutation({
-          fromId: selectedForConnection,
-          toId: staffId,
-          type: 'solid',
-          label: 'collaboration',
-          color: '#8b5cf6',
-          routing: 'straight',
-        });
-        toast.success('✅ Garis berhasil dibuat!');
-        setSelectedForConnection(null);
-      } catch (error: any) {
-        toast.error(`❌ ${error.message}`);
-        setSelectedForConnection(null);
-      }
-    }
-  };
-
-  const handleEditConnection = (
-    fromId: Id<"kolaborasiCrm">,
-    toId: Id<"kolaborasiCrm">,
-    connection?: any
-  ) => {
-    const fromStaff = allStaff?.find(s => s._id === fromId);
-    const toStaff = allStaff?.find(s => s._id === toId);
-
-    if (!fromStaff || !toStaff) return;
-
-    setSelectedConnection({
-      fromId,
-      toId,
-      fromName: fromStaff.nama,
-      toName: toStaff.nama,
-      connection,
+  const showHelp = () => {
+    toast.info('📌 Cara Menggunakan:', {
+      description: '✨ DRAG CARD: Geser card untuk atur posisi\n✨ CONNECT: Drag dari titik biru di KANAN/BAWAH card ke KIRI/ATAS card lain\n❌ DELETE EDGE: Double-click pada garis koneksi',
+      duration: 8000,
     });
-    setConnectionEditOpen(true);
   };
 
-  const handleRemoveConnection = async (fromId: Id<"kolaborasiCrm">, toId: Id<"kolaborasiCrm">) => {
-    try {
-      await removeConnectionMutation({ fromId, toId });
-      toast.success('✅ Garis berhasil dihapus!');
-    } catch (error) {
-      toast.error('❌ Gagal menghapus garis!');
-      console.error(error);
-    }
+  const handleClearAllConnections = async () => {
+    setConfirmDialog({
+      open: true,
+      title: 'Hapus Semua Koneksi',
+      description: '⚠️ Apakah Anda yakin ingin menghapus SEMUA koneksi antar staff? Tindakan ini tidak dapat dibatalkan.',
+      onConfirm: async () => {
+        try {
+          await clearAllConnectionsMutation();
+          toast.success('✅ Semua koneksi berhasil dihapus!');
+          setEdges([]);
+        } catch (error) {
+          console.error('Error clearing connections:', error);
+          toast.error('❌ Gagal menghapus koneksi!');
+        }
+      },
+    });
   };
 
-  // Helper function to calculate path based on routing style
-  const calculatePath = (
-    fromX: number,
-    fromY: number,
-    toX: number,
-    toY: number,
-    routing: string
-  ) => {
-    switch (routing) {
-      case 'free':
-        // Bezier curve
-        const midX = (fromX + toX) / 2;
-        const midY = (fromY + toY) / 2 - 50; // Curve upward
-        return `M ${fromX} ${fromY} Q ${midX} ${midY}, ${toX} ${toY}`;
+  const handleMigrateJobDesk = async () => {
+    setConfirmDialog({
+      open: true,
+      title: 'Migrasi Job Desk',
+      description: '⚠️ Migrasi jobDesk dari array ke HTML format? Ini akan mengubah format data lama.',
+      onConfirm: async () => {
+        try {
+          const result = await migrateJobDeskMutation();
+          toast.success(`✅ Migrasi berhasil! ${result.migrated} staff di-migrate`);
+          // Refresh page to see changes
+          setTimeout(() => window.location.reload(), 1500);
+        } catch (error) {
+          console.error('Error migrating jobDesk:', error);
+          toast.error('❌ Gagal migrasi jobDesk!');
+        }
+      },
+    });
+  };
 
-      case 'siku':
-        // Orthogonal: horizontal then vertical (or vice versa)
-        const midPointX = (fromX + toX) / 2;
-        return `M ${fromX} ${fromY} L ${midPointX} ${fromY} L ${midPointX} ${toY} L ${toX} ${toY}`;
+  const onEdgeDoubleClick = useCallback((_: React.MouseEvent, edge: Edge) => {
+    const sourceId = edge.source as Id<"kolaborasiCrm">;
+    const targetId = edge.target as Id<"kolaborasiCrm">;
 
-      case 'straight':
-      default:
-        // Straight line - return null to use line element
-        return null;
-    }
+    setConfirmDialog({
+      open: true,
+      title: 'Hapus Koneksi',
+      description: 'Apakah Anda yakin ingin menghapus koneksi ini?',
+      onConfirm: async () => {
+        removeConnectionMutation({
+          fromId: sourceId,
+          toId: targetId,
+        })
+          .then(() => {
+            toast.success('✅ Koneksi berhasil dihapus!');
+          })
+          .catch(() => {
+            toast.error('❌ Gagal menghapus koneksi!');
+          });
+      },
+    });
+  }, [removeConnectionMutation]);
+
+  const handleDelete = async (id: Id<"kolaborasiCrm">, nama: string) => {
+    setConfirmDialog({
+      open: true,
+      title: 'Hapus Staff',
+      description: `Apakah Anda yakin ingin menghapus ${nama}?`,
+      onConfirm: async () => {
+        try {
+          await deleteMutation({ id });
+          toast.success(`✅ ${nama} berhasil dihapus!`);
+        } catch (error) {
+          toast.error('❌ Gagal menghapus staff!');
+          console.error(error);
+        }
+      },
+    });
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950 p-6">
-      {/* Header */}
-      <div className="max-w-7xl mx-auto mb-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-slate-800 rounded-xl p-4 sm:p-6 shadow-lg border border-slate-200 dark:border-slate-700">
+    <>
+      <style>{jobDeskStyles}</style>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+      {/* Header - Sticky */}
+      <div className="sticky top-0 z-50 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 shadow-md">
+        <div className="max-w-full mx-auto p-6">
+        <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-              </div>
-              Kolaborasi CRM
-            </h1>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">
+                Kolaborasi CRM
+              </h1>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={showHelp}
+                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 cursor-pointer"
+                title="Cara menggunakan"
+              >
+                ❓
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearAllConnections}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 cursor-pointer"
+                title="Hapus semua koneksi"
+              >
+                🗑️
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleMigrateJobDesk}
+                className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 cursor-pointer"
+                title="Migrasi jobDesk ke format HTML"
+              >
+                🔄
+              </Button>
+            </div>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-              Atur struktur tim dan job deskripsi • Geser card untuk mengatur posisi
+              ✨ Klik card untuk select • Ctrl/Cmd + Klik untuk multi-select • Drag card untuk geser semua • Drag dari titik ke titik untuk connect • Double-click garis untuk hapus
             </p>
           </div>
-          <div className="flex gap-3">
-            <Button
-              onClick={async () => {
-                try {
-                  const result = await migrateMutation();
-                  toast.success(`✅ Migration berhasil! ${result.migrated} staff di-update`);
-                } catch (error) {
-                  toast.error('❌ Migration gagal!');
-                  console.error(error);
-                }
-              }}
-              variant="outline"
-              className="cursor-pointer border-orange-300 text-orange-700 hover:bg-orange-50"
-            >
-              🔄 Migrate Data
-            </Button>
-            <Button
-              onClick={() => {
-                setIsConnectMode(!isConnectMode);
-                setSelectedForConnection(null);
-                toast.info(isConnectMode ? '❌ Mode Connect dimatikan' : '🔗 Mode Connect aktif - Klik 2 card untuk membuat garis');
-              }}
-              variant={isConnectMode ? "default" : "outline"}
-              className={isConnectMode
-                ? "bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white shadow-lg cursor-pointer"
-                : "cursor-pointer border-purple-300 text-purple-700 hover:bg-purple-50"
-              }
-            >
-              🔗 {isConnectMode ? 'Mode Connect Aktif' : 'Connect Mode'}
-            </Button>
+          <div className="flex gap-3 items-center">
             <Button
               onClick={handleAdd}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg cursor-pointer"
+              className="bg-gradient-to-r from-purple-400 to-purple-700 hover:from-purple-500 hover:to-purple-800 text-white shadow-lg cursor-pointer"
             >
               <Plus className="w-4 h-4 mr-2" />
               Tambah Staff
             </Button>
-          </div>
-        </div>
+            <Button
+              onClick={handleAddNote}
+              className="bg-gradient-to-r from-fuchsia-400 to-purple-600 hover:from-fuchsia-500 hover:to-purple-700 text-white shadow-lg cursor-pointer"
+            >
+              <StickyNote className="w-4 h-4 mr-2" />
+              Tambah Note
+            </Button>
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mt-4">
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white shadow-lg">
-            <div className="text-xs font-semibold text-blue-100 mb-1">Total Staff</div>
-            <div className="text-2xl font-bold">{allStaff?.length || 0}</div>
-          </div>
-          <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-4 text-white shadow-lg">
-            <div className="text-xs font-semibold text-emerald-100 mb-1">Total Job Desk</div>
-            <div className="text-2xl font-bold">
-              {allStaff?.reduce((acc, staff) => acc + staff.jobDesk.length, 0) || 0}
-            </div>
-          </div>
-          <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 text-white shadow-lg">
-            <div className="text-xs font-semibold text-purple-100 mb-1">Jabatan Unik</div>
-            <div className="text-2xl font-bold">
-              {new Set(allStaff?.map(s => s.jabatan) || []).size}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Canvas Area for Draggable Cards */}
-      <div className="max-w-full mx-auto bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
-        <div
-          className="relative"
-          style={{
-            width: '100%',
-            height: `${canvasHeight}px`,
-            backgroundImage: 'radial-gradient(circle, #e2e8f0 1px, transparent 1px)',
-            backgroundSize: '20px 20px',
-          }}
-        >
-          {/* SVG Lines Layer */}
-          <svg
-            className="absolute inset-0 w-full h-full pointer-events-none"
-            style={{ zIndex: 0 }}
-          >
-            {allStaff?.map((staff) =>
-              staff.connections?.map((connection) => {
-                // Handle both old format (ID) and new format (object)
-                const connectionId = typeof connection === 'object' ? connection.targetId : connection;
-                const connectionData = typeof connection === 'object' ? connection : undefined;
-
-                const connectedStaff = allStaff.find(s => s._id === connectionId);
-                if (!connectedStaff) return null;
-
-                // Only draw line once (from lower ID to higher ID)
-                if (staff._id > connectionId) return null;
-
-                // Calculate center points of cards
-                const fromX = staff.positionX + 144; // 288px card width / 2
-                const fromY = staff.positionY + 100; // Approximate center
-                const toX = connectedStaff.positionX + 144;
-                const toY = connectedStaff.positionY + 100;
-
-                // Get connection style properties
-                const lineType = connectionData?.type || 'solid';
-                const lineColor = connectionData?.color || '#8b5cf6';
-                const lineLabel = connectionData?.label || 'collaboration';
-                const routing = connectionData?.routing || 'straight';
-
-                // Calculate stroke dasharray based on type
-                const strokeDasharray =
-                  lineType === 'dashed' ? '10,5' :
-                  lineType === 'dotted' ? '2,4' :
-                  'none';
-
-                // Calculate path based on routing
-                const pathData = calculatePath(fromX, fromY, toX, toY, routing);
-
-                // Calculate midpoint for buttons and labels
-                const midX = (fromX + toX) / 2;
-                const midY = (fromY + toY) / 2;
-
-                return (
-                  <g key={`${staff._id}-${connectionId}`}>
-                    {/* Line or Path */}
-                    {pathData ? (
-                      <path
-                        d={pathData}
-                        stroke={lineColor}
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        fill="none"
-                        strokeDasharray={strokeDasharray}
-                      />
-                    ) : (
-                      <line
-                        x1={fromX}
-                        y1={fromY}
-                        x2={toX}
-                        y2={toY}
-                        stroke={lineColor}
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeDasharray={strokeDasharray}
-                      />
-                    )}
-
-                    {/* Remove button on line */}
-                    <foreignObject
-                      x={midX - 30}
-                      y={midY - 12}
-                      width="60"
-                      height="24"
-                      className="pointer-events-auto"
-                    >
-                      <div className="flex gap-1 items-center justify-center">
-                        {/* Edit button */}
-                        <button
-                          onClick={() => handleEditConnection(staff._id, connectionId, connectionData)}
-                          className="w-6 h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg cursor-pointer"
-                          title="Edit koneksi"
-                        >
-                          <Settings className="w-3 h-3" />
-                        </button>
-                        {/* Delete button */}
-                        <button
-                          onClick={() => handleRemoveConnection(staff._id, connectionId)}
-                          className="w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg cursor-pointer"
-                          title="Hapus garis"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    </foreignObject>
-
-                    {/* Connection label badge */}
-                    {lineLabel && (
-                      <foreignObject
-                        x={midX - 40}
-                        y={midY - 40}
-                        width="80"
-                        height="20"
-                        className="pointer-events-auto"
-                      >
-                        <div
-                      className="text-[10px] font-semibold text-white px-2 py-0.5 rounded-full text-center whitespace-nowrap"
-                      style={{ backgroundColor: lineColor }}
-                    >
-                      {lineLabel}
-                    </div>
-                  </foreignObject>
-                )}
-                  </g>
-                );
-              })
-            )}
-          </svg>
-
-          {allStaff && allStaff.length > 0 ? (
-            allStaff.map((staff) => (
-              <DraggableCard
-                key={staff._id}
-                staff={staff}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onDragEnd={handleDragStop}
-                onCardClick={handleCardClick}
-                isConnectMode={isConnectMode}
-                isSelected={selectedForConnection === staff._id}
-              />
-            ))
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center">
-                <Users className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-slate-600 dark:text-slate-400 mb-2">
-                  Belum ada data staff
-                </h3>
-                <p className="text-sm text-slate-500 dark:text-slate-500 mb-4">
-                  Klik tombol "Tambah Staff" untuk memulai
-                </p>
+            {/* Arrow Type Selector */}
+            <div className="flex items-center gap-2 ml-4 pl-4 border-l border-slate-300 dark:border-slate-600">
+              <span className="text-sm text-slate-600 dark:text-slate-400 font-medium">Tipe Panah:</span>
+              <div className="flex gap-1">
+                <Button
+                  variant={arrowType === 'one-way-right' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setArrowType('one-way-right')}
+                  className={arrowType === 'one-way-right'
+                    ? 'bg-purple-600 hover:bg-purple-700 text-white cursor-pointer'
+                    : 'cursor-pointer'
+                  }
+                  title="Panah ke Kanan (→)"
+                >
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={arrowType === 'one-way-left' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setArrowType('one-way-left')}
+                  className={arrowType === 'one-way-left'
+                    ? 'bg-purple-600 hover:bg-purple-700 text-white cursor-pointer'
+                    : 'cursor-pointer'
+                  }
+                  title="Panah ke Kiri (←)"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={arrowType === 'two-way' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setArrowType('two-way')}
+                  className={arrowType === 'two-way'
+                    ? 'bg-purple-600 hover:bg-purple-700 text-white cursor-pointer'
+                    : 'cursor-pointer'
+                  }
+                  title="Panah 2 Arah (↔)"
+                >
+                  <ArrowRightLeft className="w-4 h-4" />
+                </Button>
               </div>
             </div>
-          )}
+          </div>
+        </div>
         </div>
       </div>
 
-      {/* Dialog */}
+      {/* React Flow Canvas */}
+      <div className="max-w-full mx-5 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700" style={{ height: 'calc(100vh - 160px)', cursor: 'crosshair' }}>
+        <style>{`
+          /* Black pointer for canvas area */
+          .react-flow__pane {
+            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5'%3E%3Cpath d='M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z' fill='black'/%3E%3C/svg%3E") 0 24, pointer !important;
+          }
+
+          /* Black crosshair for connector handles */
+          .react-flow__handle,
+          .react-flow__handle:hover {
+            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' stroke='black' stroke-width='2'%3E%3Ccircle cx='12' cy='12' r='10' fill='none'/%3E%3Cline x1='12' y1='2' x2='12' y2='22'/%3E%3Cline x1='2' y1='12' x2='22' y2='12'/%3E%3C/svg%3E") 12 12, crosshair !important;
+          }
+
+          /* Black open hand cursor for nodes (but not handles) */
+          .react-flow__node {
+            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 11V6a2 2 0 0 0-4 0v5'/%3E%3Cpath d='M14 11V4a2 2 0 0 0-4 0v7'/%3E%3Cpath d='M10 11V9a2 2 0 0 0-4 0v2'/%3E%3Cpath d='M6 11V4a2 2 0 0 1 4 0v7'/%3E%3Cpath d='M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15'/%3E%3C/svg%3E") 12 12, grab !important;
+          }
+
+          /* Black closed fist cursor when dragging nodes */
+          .react-flow__node:active {
+            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='black' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 11V6a2 2 0 0 0-4 0v5'/%3E%3Cpath d='M14 11V4a2 2 0 0 0-4 0v7'/%3E%3Cpath d='M10 11V9a2 2 0 0 0-4 0v2'/%3E%3Cpath d='M6 11V4a2 2 0 0 1 4 0v7'/%3E%3Cpath d='M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15'/%3E%3C/svg%3E") 12 12, grabbing !important;
+          }
+        `}</style>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onNodeDragStop={onNodeDragStop}
+          onSelectionChange={onSelectionChange}
+          onPaneClick={onPaneClick}
+          onEdgeDoubleClick={onEdgeDoubleClick}
+          nodeTypes={nodeTypes}
+          isValidConnection={isValidConnection}
+          fitView
+          attributionPosition="bottom-left"
+          multiSelectionKeyCode="Control" // Enable Ctrl/Cmd for multi-selection
+          deleteKeyCode="Delete" // Enable Delete key for deleting selected nodes
+        >
+          <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
+          <Controls />
+          <MiniMap
+            nodeColor={() => '#a855f7'}
+            maskColor="rgba(0, 0, 0, 0.1)"
+          />
+        </ReactFlow>
+      </div>
+
+      {/* Dialog Add/Edit Staff */}
       <KolaborasiCrmDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        staff={selectedStaff as any}
+        staff={selectedStaff}
         mode={dialogMode}
-        onSuccess={() => {
-          setDialogOpen(false);
-          setSelectedStaff(null);
-        }}
+        isNote={isAddingNote}
+        onSuccess={handleDialogSuccess}
       />
 
-      {/* Connection Edit Dialog */}
-      {selectedConnection && (
-        <ConnectionEditDialog
-          open={connectionEditOpen}
-          onOpenChange={setConnectionEditOpen}
-          fromId={selectedConnection.fromId}
-          toId={selectedConnection.toId}
-          fromName={selectedConnection.fromName}
-          toName={selectedConnection.toName}
-          currentConnection={selectedConnection.connection}
-          onSuccess={() => {
-            setConnectionEditOpen(false);
-            setSelectedConnection(null);
-          }}
-        />
-      )}
+      {/* Confirm Dialog */}
+      <Dialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}>
+        <DialogContent className="sm:max-w-[350px]">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/20 flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-amber-600 dark:text-amber-500" />
+              </div>
+              <div>
+                <DialogTitle>{confirmDialog.title}</DialogTitle>
+                <DialogDescription>{confirmDialog.description}</DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setConfirmDialog(prev => ({ ...prev, open: false }))}
+              className="cursor-pointer"
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={() => {
+                confirmDialog.onConfirm();
+                setConfirmDialog(prev => ({ ...prev, open: false }));
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white cursor-pointer"
+            >
+              Ya, Hapus
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+    </>
   );
 }

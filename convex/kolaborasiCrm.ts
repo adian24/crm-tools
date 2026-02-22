@@ -46,7 +46,7 @@ export const createStaff = mutation({
     nama: v.string(),
     fotoUrl: v.optional(v.string()),
     jabatan: v.string(),
-    jobDesk: v.array(v.string()),
+    jobDesk: v.optional(v.string()),
     positionX: v.number(),
     positionY: v.number(),
     keterangan: v.optional(v.string()),
@@ -73,7 +73,7 @@ export const updateStaff = mutation({
     nama: v.optional(v.string()),
     fotoUrl: v.optional(v.string()),
     jabatan: v.optional(v.string()),
-    jobDesk: v.optional(v.array(v.string())),
+    jobDesk: v.optional(v.string()),
     positionX: v.optional(v.number()),
     positionY: v.optional(v.number()),
     keterangan: v.optional(v.string()),
@@ -87,20 +87,55 @@ export const updateStaff = mutation({
       throw new Error("Staff not found");
     }
 
+    // Debug logging
+    console.log('📝 Updating staff:', id);
+    console.log('📊 Existing jobDesk:', existing.jobDesk);
+    console.log('📊 Existing keterangan:', existing.keterangan);
+    console.log('✏️ New jobDesk value in args:', updateData.jobDesk);
+    console.log('✏️ New keterangan value in args:', updateData.keterangan);
+    console.log('🔍 jobDesk key exists in args?', 'jobDesk' in updateData);
+
     // Only update provided fields
     const updates: any = {};
     if (updateData.nama !== undefined) updates.nama = updateData.nama;
     if (updateData.fotoUrl !== undefined) updates.fotoUrl = updateData.fotoUrl;
     if (updateData.jabatan !== undefined) updates.jabatan = updateData.jabatan;
-    if (updateData.jobDesk !== undefined) updates.jobDesk = updateData.jobDesk;
+
+    // IMPORTANT: If jobDesk key is NOT in updateData, set to empty string
+    // Empty string will be treated as "no content" by the frontend
+    if ('jobDesk' in updateData) {
+      updates.jobDesk = updateData.jobDesk;
+    } else {
+      // Set to empty string to indicate "no content"
+      updates.jobDesk = "";
+      console.log('🗑️ jobDesk set to empty string');
+    }
+
     if (updateData.positionX !== undefined) updates.positionX = updateData.positionX;
     if (updateData.positionY !== undefined) updates.positionY = updateData.positionY;
-    if (updateData.keterangan !== undefined) updates.keterangan = updateData.keterangan;
+
+    // Same for keterangan
+    if ('keterangan' in updateData) {
+      updates.keterangan = updateData.keterangan;
+    } else {
+      updates.keterangan = "";
+      console.log('🗑️ keterangan set to empty string');
+    }
+
     if (updateData.isActive !== undefined) updates.isActive = updateData.isActive;
 
     updates.updatedAt = Date.now();
 
+    console.log('💾 Final updates to apply:', updates);
+
     await ctx.db.patch(id, updates);
+
+    // Verify the update
+    const updated = await ctx.db.get(id);
+    if (updated) {
+      console.log('✅ After patch - jobDesk:', updated.jobDesk);
+      console.log('✅ After patch - keterangan:', updated.keterangan);
+    }
 
     return id;
   },
@@ -165,15 +200,44 @@ export const migrateConnections = mutation({
   },
 });
 
+// Migration: Convert jobDesk from array to HTML string
+export const migrateJobDeskToHtml = mutation({
+  handler: async (ctx) => {
+    const allStaff = await ctx.db.query("kolaborasiCrm").collect();
+    let migratedCount = 0;
+
+    for (const staff of allStaff) {
+      // Check if jobDesk is still an array (old format)
+      if (Array.isArray(staff.jobDesk)) {
+        // Convert array to HTML list
+        const htmlContent = staff.jobDesk
+          .map((item: string) => `<li>${item}</li>`)
+          .join('');
+
+        await ctx.db.patch(staff._id, {
+          jobDesk: htmlContent,
+          updatedAt: Date.now(),
+        });
+        migratedCount++;
+      }
+    }
+
+    return { migrated: migratedCount, total: allStaff.length };
+  },
+});
+
 // Add connection between two staff with metadata
 export const addConnection = mutation({
   args: {
     fromId: v.id("kolaborasiCrm"),
     toId: v.id("kolaborasiCrm"),
+    fromConnector: v.optional(v.string()), // "top", "right", "bottom", "left"
+    toConnector: v.optional(v.string()), // "top", "right", "bottom", "left"
     type: v.optional(v.string()), // "solid", "dashed", "dotted"
     label: v.optional(v.string()), // "reporting", "collaboration", "communication"
     color: v.optional(v.string()), // hex color
     routing: v.optional(v.string()), // "straight", "free", "siku"
+    arrowType: v.optional(v.string()), // "one-way" | "two-way"
   },
   handler: async (ctx, args) => {
     const fromStaff = await ctx.db.get(args.fromId);
@@ -188,16 +252,19 @@ export const addConnection = mutation({
       (conn: any) => typeof conn === 'object' && conn.targetId === args.toId
     );
     if (existingConnection) {
-      throw new Error("Connection already exists");
+      return { alreadyExists: true, fromId: args.fromId, toId: args.toId };
     }
 
-    // Create connection object
+    // Create connection object with connector information
     const connectionData = {
       targetId: args.toId,
+      fromConnector: args.fromConnector || "bottom",
+      toConnector: args.toConnector || "top",
       type: args.type || "solid",
       label: args.label || "collaboration",
-      color: args.color || "#8b5cf6",
+      color: args.color || "#a855f7",
       routing: args.routing || "straight",
+      arrowType: args.arrowType || "one-way",
     };
 
     // Add connection to fromStaff
@@ -206,16 +273,18 @@ export const addConnection = mutation({
       updatedAt: Date.now(),
     });
 
-    // Add reverse connection to toStaff
+    // Add reverse connection to toStaff (swapped connectors)
     await ctx.db.patch(args.toId, {
       connections: [...(toStaff.connections || []), {
         ...connectionData,
         targetId: args.fromId,
+        fromConnector: args.toConnector || "top",
+        toConnector: args.fromConnector || "bottom",
       }],
       updatedAt: Date.now(),
     });
 
-    return { fromId: args.fromId, toId: args.toId };
+    return { success: true, fromId: args.fromId, toId: args.toId };
   },
 });
 
@@ -316,5 +385,23 @@ export const removeConnection = mutation({
     });
 
     return { fromId: args.fromId, toId: args.toId };
+  },
+});
+
+// Clear all connections (for fixing corrupted data)
+export const clearAllConnections = mutation({
+  handler: async (ctx) => {
+    const allStaff = await ctx.db.query("kolaborasiCrm").collect();
+
+    for (const staff of allStaff) {
+      if (staff.connections && staff.connections.length > 0) {
+        await ctx.db.patch(staff._id, {
+          connections: [],
+          updatedAt: Date.now(),
+        });
+      }
+    }
+
+    return { success: true, count: allStaff.length };
   },
 });

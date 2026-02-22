@@ -15,15 +15,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { toast } from 'sonner';
-import { Save, X, Loader2, Plus, Trash2, Upload, Image as ImageIcon } from 'lucide-react';
+import { Save, X, Loader2, Trash2, Upload, Image as ImageIcon } from 'lucide-react';
 
 interface Staff {
   _id: Id<"kolaborasiCrm">;
   nama: string;
   fotoUrl?: string;
   jabatan: string;
-  jobDesk: string[];
+  jobDesk?: string;
   positionX: number;
   positionY: number;
   keterangan?: string;
@@ -37,10 +38,11 @@ interface KolaborasiCrmDialogProps {
   onOpenChange: (open: boolean) => void;
   staff: Staff | null;
   mode: 'add' | 'edit';
+  isNote?: boolean;
   onSuccess?: () => void;
 }
 
-const KolaborasiCrmDialog = ({ open, onOpenChange, staff, mode, onSuccess }: KolaborasiCrmDialogProps) => {
+const KolaborasiCrmDialog = ({ open, onOpenChange, staff, mode, isNote = false, onSuccess }: KolaborasiCrmDialogProps) => {
   const createMutation = useMutation(api.kolaborasiCrm.createStaff);
   const updateMutation = useMutation(api.kolaborasiCrm.updateStaff);
 
@@ -49,7 +51,7 @@ const KolaborasiCrmDialog = ({ open, onOpenChange, staff, mode, onSuccess }: Kol
     nama: '',
     fotoUrl: '',
     jabatan: '',
-    jobDesk: [''],
+    jobDesk: '',
     keterangan: '',
   });
 
@@ -60,23 +62,28 @@ const KolaborasiCrmDialog = ({ open, onOpenChange, staff, mode, onSuccess }: Kol
   // Reset form when dialog opens/closes or staff changes
   useEffect(() => {
     if (open && staff && mode === 'edit') {
+      const isEditNote = staff.jabatan === '__NOTE__';
       setFormData({
         nama: staff.nama,
         fotoUrl: staff.fotoUrl || '',
-        jabatan: staff.jabatan,
-        jobDesk: staff.jobDesk.length > 0 ? staff.jobDesk : [''],
+        jabatan: isEditNote ? '__NOTE__' : staff.jabatan,
+        jobDesk: staff.jobDesk || '',
         keterangan: staff.keterangan || '',
       });
     } else if (open && mode === 'add') {
       setFormData({
-        nama: '',
+        nama: isNote ? 'Note' : '', // Default nama untuk note
         fotoUrl: '',
-        jabatan: '',
-        jobDesk: [''],
+        jabatan: isNote ? '__NOTE__' : '',
+        jobDesk: '',
         keterangan: '',
       });
     }
-  }, [open, staff, mode]);
+  }, [open, staff, mode, isNote]);
+
+  // Determine if this is actually a note being edited
+  const isActuallyNote = mode === 'edit' && staff?.jabatan === '__NOTE__';
+  const showNoteForm = isNote || isActuallyNote;
 
   // Convert file to base64
   const fileToBase64 = (file: File): Promise<string> => {
@@ -157,6 +164,50 @@ const KolaborasiCrmDialog = ({ open, onOpenChange, staff, mode, onSuccess }: Kol
     }
   };
 
+  // Helper function to check if HTML content is empty
+  const isHtmlEmpty = (html: string): boolean => {
+    if (!html) return true;
+
+    // Create a temporary div to parse HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+
+    // Check if there's any text content (excluding whitespace)
+    const textContent = tempDiv.textContent || tempDiv.innerText || '';
+    const hasText = textContent.trim().length > 0;
+
+    // Check if there are any images
+    const hasImages = tempDiv.querySelector('img') !== null;
+
+    // Check if there are any meaningful elements (not just empty p/div/br)
+    const allElements = tempDiv.querySelectorAll('*');
+    const hasNonEmptyElements = Array.from(allElements).some(el => {
+      const tagName = el.tagName.toLowerCase();
+      if (tagName === 'img') return true;
+      if (tagName === 'br') return false;
+      // Check if element has any non-whitespace content
+      return el.textContent && el.textContent.trim().length > 0;
+    });
+
+    // Return true if no text, no images, and no meaningful elements
+    return !hasText && !hasImages && !hasNonEmptyElements;
+  };
+
+  // Helper function to clean HTML content
+  const cleanHtmlContent = (html: string): string | undefined => {
+    if (!html) return undefined;
+    const trimmed = html.trim();
+
+    // First check: is it empty after parsing?
+    if (isHtmlEmpty(trimmed)) {
+      console.log('🗑️ HTML detected as empty, will return undefined');
+      return undefined;
+    }
+
+    console.log('✅ HTML has content, will keep it');
+    return trimmed;
+  };
+
   const handleSubmit = async () => {
     // Validation
     if (!formData.nama.trim()) {
@@ -168,15 +219,16 @@ const KolaborasiCrmDialog = ({ open, onOpenChange, staff, mode, onSuccess }: Kol
       return;
     }
 
-    // Filter empty job desks
-    const validJobDesk = formData.jobDesk.filter(jd => jd.trim() !== '');
-    if (validJobDesk.length === 0) {
-      toast.error('❌ Minimal 1 job desk harus diisi!');
-      return;
-    }
-
     setIsSaving(true);
     try {
+      const cleanedJobDesk = cleanHtmlContent(formData.jobDesk);
+      const cleanedKeterangan = formData.keterangan.trim() || undefined;
+
+      // Debug logging
+      console.log('💾 Saving jobDesk:', formData.jobDesk);
+      console.log('✨ Cleaned jobDesk:', cleanedJobDesk);
+      console.log('📏 Is empty?', isHtmlEmpty(formData.jobDesk || ''));
+
       if (mode === 'add') {
         // Calculate random position for new card
         const randomX = Math.floor(Math.random() * 500);
@@ -186,24 +238,43 @@ const KolaborasiCrmDialog = ({ open, onOpenChange, staff, mode, onSuccess }: Kol
           nama: formData.nama.trim(),
           fotoUrl: formData.fotoUrl.trim() || undefined,
           jabatan: formData.jabatan.trim(),
-          jobDesk: validJobDesk,
+          ...(cleanedJobDesk && { jobDesk: cleanedJobDesk }), // Only include if not undefined
           positionX: randomX,
           positionY: randomY,
-          keterangan: formData.keterangan.trim() || undefined,
+          ...(cleanedKeterangan && { keterangan: cleanedKeterangan }), // Only include if not undefined
         });
 
         toast.success('✅ Staff berhasil ditambahkan!');
       } else {
-        await updateMutation({
+        // Build update object dynamically
+        const updateData: any = {
           id: staff!._id,
           nama: formData.nama.trim(),
-          fotoUrl: formData.fotoUrl.trim() || undefined,
           jabatan: formData.jabatan.trim(),
-          jobDesk: validJobDesk,
-          keterangan: formData.keterangan.trim() || undefined,
-        });
+        };
 
-        toast.success('✅ Data staff berhasil diupdate!');
+        // Only add optional fields if they have values
+        if (formData.fotoUrl.trim()) {
+          updateData.fotoUrl = formData.fotoUrl.trim();
+        }
+        if (cleanedJobDesk) {
+          updateData.jobDesk = cleanedJobDesk;
+        }
+        if (cleanedKeterangan) {
+          updateData.keterangan = cleanedKeterangan;
+        }
+
+        console.log('📤 Sending update data:', updateData);
+
+        await updateMutation(updateData)
+          .then((result) => {
+            console.log('✅ Update mutation result:', result);
+            toast.success('✅ Data staff berhasil diupdate!');
+          })
+          .catch((error) => {
+            console.error('❌ Update mutation error:', error);
+            toast.error('❌ Gagal mengupdate data!');
+          });
       }
 
       onOpenChange(false);
@@ -216,74 +287,62 @@ const KolaborasiCrmDialog = ({ open, onOpenChange, staff, mode, onSuccess }: Kol
     }
   };
 
-  const addJobDesk = () => {
-    setFormData(prev => ({
-      ...prev,
-      jobDesk: [...prev.jobDesk, '']
-    }));
-  };
-
-  const removeJobDesk = (index: number) => {
-    if (formData.jobDesk.length > 1) {
-      setFormData(prev => ({
-        ...prev,
-        jobDesk: prev.jobDesk.filter((_, i) => i !== index)
-      }));
-    } else {
-      toast.error('❌ Minimal 1 job desk harus ada!');
-    }
-  };
-
-  const updateJobDesk = (index: number, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      jobDesk: prev.jobDesk.map((jd, i) => i === index ? value : jd)
-    }));
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">
-            {mode === 'add' ? '➕ Tambah Staff Baru' : '✏️ Edit Data Staff'}
+            {showNoteForm
+              ? (mode === 'add' ? '📝 Tambah Note Baru' : '✏️ Edit Note')
+              : (mode === 'add' ? '➕ Tambah Staff Baru' : '✏️ Edit Data Staff')
+            }
           </DialogTitle>
           <DialogDescription>
-            {mode === 'add' ? 'Tambahkan staff baru ke kolaborasi CRM' : 'Edit data staff kolaborasi CRM'}
+            {showNoteForm
+              ? (mode === 'add' ? 'Tambahkan note baru ke canvas' : 'Edit note di canvas')
+              : (mode === 'add' ? 'Tambahkan staff baru ke kolaborasi CRM' : 'Edit data staff kolaborasi CRM')
+            }
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 mt-4">
-          {/* Nama */}
-          <div className="space-y-2">
-            <Label className="text-sm font-semibold">
-              Nama Lengkap <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              value={formData.nama}
-              onChange={(e) => setFormData(prev => ({ ...prev, nama: e.target.value }))}
-              placeholder="Masukkan nama lengkap"
-              className="text-sm"
-            />
-          </div>
+          {!showNoteForm && (
+            <>
+              {/* Nama */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">
+                  Nama Lengkap <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  value={formData.nama}
+                  onChange={(e) => setFormData(prev => ({ ...prev, nama: e.target.value }))}
+                  placeholder="Masukkan nama lengkap"
+                  className="text-sm"
+                />
+              </div>
 
-          {/* Jabatan */}
-          <div className="space-y-2">
-            <Label className="text-sm font-semibold">
-              Jabatan <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              value={formData.jabatan}
-              onChange={(e) => setFormData(prev => ({ ...prev, jabatan: e.target.value }))}
-              placeholder="Contoh: Manager CRM, Staff CRM, Supervisor"
-              className="text-sm"
-            />
-          </div>
+              {/* Jabatan */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">
+                  Jabatan <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  value={formData.jabatan}
+                  onChange={(e) => setFormData(prev => ({ ...prev, jabatan: e.target.value }))}
+                  placeholder="Contoh: Manager CRM, Staff CRM, Supervisor"
+                  className="text-sm"
+                />
+              </div>
+            </>
+          )}
 
-          {/* Upload Foto */}
-          <div className="space-y-2">
-            <Label className="text-sm font-semibold">Foto Profil</Label>
-            <div
+          {/* Upload Foto - only for Staff */}
+          {!showNoteForm && (
+            <>
+              {/* Upload Foto */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Foto Profil</Label>
+                <div
               onDragEnter={handleDragEnter}
               onDragLeave={handleDragLeave}
               onDragOver={handleDragOver}
@@ -354,62 +413,41 @@ const KolaborasiCrmDialog = ({ open, onOpenChange, staff, mode, onSuccess }: Kol
                   </div>
                 </label>
               )}
-            </div>
-          </div>
-
-          {/* Job Desk */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-semibold">
-                Job Deskripsi <span className="text-red-500">*</span>
-              </Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addJobDesk}
-                className="h-7 text-xs"
-              >
-                <Plus className="w-3 h-3 mr-1" />
-                Tambah
-              </Button>
-            </div>
-            <div className="space-y-2">
-              {formData.jobDesk.map((jd, index) => (
-                <div key={index} className="flex gap-2">
-                  <Input
-                    value={jd}
-                    onChange={(e) => updateJobDesk(index, e.target.value)}
-                    placeholder={`Job desk ${index + 1}`}
-                    className="text-sm flex-1"
-                  />
-                  {formData.jobDesk.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeJobDesk(index)}
-                      className="h-9 w-9 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  )}
                 </div>
-              ))}
-            </div>
+              </div>
+            </>
+          )}
+
+          {/* Job Desk / Note Content */}
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold">
+              {showNoteForm ? 'Isi Note' : 'Job Deskripsi'} {!showNoteForm && <span className="text-red-500">*</span>}
+            </Label>
+            <RichTextEditor
+              value={formData.jobDesk}
+              onChange={(value) => setFormData(prev => ({ ...prev, jobDesk: value }))}
+              placeholder={showNoteForm ? "Ketik isi note di sini..." : "Ketik job deskripsi di sini...&#10;&#10;Tips:&#10;• Gunakan toolbar untuk format teks&#10;• Klik icon list untuk membuat bullet list&#10;• Bisa copy-paste dari dokumen lain"}
+              rows={6}
+              className="text-sm"
+            />
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              💡 Gunakan toolbar di atas untuk: Bold, Italic, List, Alignment, dan Insert Gambar. Bisa copy-paste langsung dari dokumen lain.
+            </p>
           </div>
 
-          {/* Keterangan */}
-          <div className="space-y-2">
-            <Label className="text-sm font-semibold">Keterangan</Label>
-            <Textarea
-              value={formData.keterangan}
-              onChange={(e) => setFormData(prev => ({ ...prev, keterangan: e.target.value }))}
-              placeholder="Keterangan tambahan..."
-              rows={3}
-              className="text-sm resize-none"
-            />
-          </div>
+          {/* Keterangan - hanya untuk Staff */}
+          {!showNoteForm && (
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Keterangan</Label>
+              <Textarea
+                value={formData.keterangan}
+                onChange={(e) => setFormData(prev => ({ ...prev, keterangan: e.target.value }))}
+                placeholder="Keterangan tambahan..."
+                rows={3}
+                className="text-sm resize-none"
+              />
+            </div>
+          )}
         </div>
 
         {/* Actions */}

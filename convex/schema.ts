@@ -386,8 +386,8 @@ export default defineSchema({
     fotoUrl: v.optional(v.string()), // URL foto profil
     jabatan: v.string(), // Jabatan (Manager, Supervisor, Staff, dll)
 
-    // Job Deskripsi
-    jobDesk: v.array(v.string()), // List of job deskripsi tasks
+    // Job Deskripsi (HTML content or legacy array)
+    jobDesk: v.optional(v.union(v.string(), v.array(v.string()))), // HTML content atau legacy array
 
     // Posisi card (untuk drag & drop)
     positionX: v.number(), // Posisi X (default: 0)
@@ -406,6 +406,7 @@ export default defineSchema({
       }))), // Array control points untuk custom routing
       fromConnector: v.optional(v.string()), // Connector position: "top", "bottom", "left", "right"
       toConnector: v.optional(v.string()), // Connector position: "top", "bottom", "left", "right"
+      arrowType: v.optional(v.string()), // Arrow type: "one-way", "two-way"
     }))), // Array of koneksi dengan metadata
 
     // Data tambahan
