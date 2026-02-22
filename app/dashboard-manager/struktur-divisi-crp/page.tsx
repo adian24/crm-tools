@@ -30,13 +30,13 @@ import Image from 'next/image';
 const StaffNode = ({ data }: { data: any }) => {
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl border-2 border-slate-200 dark:border-slate-700 w-72 hover:border-blue-400 dark:hover:border-blue-500 transition-colors relative">
-      {/* Visible handles for connecting - small blue dots */}
+      {/* Visible handles for connecting - small navy dots */}
       {/* Top - Can receive connections */}
       <Handle
         type="target"
         position={Position.Top}
         id="top"
-        className="!w-3 !h-3 !bg-blue-500 !border-2 !border-white rounded-full hover:!scale-150 transition-transform"
+        className="!w-3 !h-3 !bg-slate-800 !border-2 !border-white rounded-full hover:!scale-150 transition-transform"
       />
 
       {/* Bottom - Can start connections */}
@@ -44,7 +44,7 @@ const StaffNode = ({ data }: { data: any }) => {
         type="source"
         position={Position.Bottom}
         id="bottom"
-        className="!w-3 !h-3 !bg-blue-500 !border-2 !border-white rounded-full hover:!scale-150 transition-transform"
+        className="!w-3 !h-3 !bg-slate-800 !border-2 !border-white rounded-full hover:!scale-150 transition-transform"
       />
 
       {/* Left - Can receive connections */}
@@ -52,7 +52,7 @@ const StaffNode = ({ data }: { data: any }) => {
         type="target"
         position={Position.Left}
         id="left"
-        className="!w-3 !h-3 !bg-blue-500 !border-2 !border-white rounded-full hover:!scale-150 transition-transform"
+        className="!w-3 !h-3 !bg-slate-800 !border-2 !border-white rounded-full hover:!scale-150 transition-transform"
       />
 
       {/* Right - Can start connections */}
@@ -60,11 +60,11 @@ const StaffNode = ({ data }: { data: any }) => {
         type="source"
         position={Position.Right}
         id="right"
-        className="!w-3 !h-3 !bg-blue-500 !border-2 !border-white rounded-full hover:!scale-150 transition-transform"
+        className="!w-3 !h-3 !bg-slate-800 !border-2 !border-white rounded-full hover:!scale-150 transition-transform"
       />
 
       {/* Card Header - Gradient Background */}
-      <div className={`bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 p-6 relative ${data.keterangan ? 'rounded-t-xl' : 'rounded-xl'}`}>
+      <div className={`bg-gradient-to-br from-blue-500 via-blue-900 to-blue-950 p-6 relative ${data.keterangan ? 'rounded-t-xl' : 'rounded-xl'}`}>
         {/* Action Buttons - Top Right Corner */}
         <div className="absolute top-2 right-2 flex gap-1">
           <button
@@ -100,7 +100,7 @@ const StaffNode = ({ data }: { data: any }) => {
           )}
           <div className="text-center flex-1 w-full">
             <h3 className="text-xl font-bold text-white truncate">{data.label}</h3>
-            <p className="text-sm text-emerald-100 truncate">{data.jabatan}</p>
+            <p className="text-sm text-slate-300 truncate">{data.jabatan}</p>
           </div>
         </div>
       </div>
@@ -175,12 +175,12 @@ export default function StrukturDivisiCrpReactFlowPage() {
               type: 'smoothstep',
               animated: false,
               style: {
-                stroke: '#10b981',
+                stroke: '#1e3a8a', // Navy blue
                 strokeWidth: 3,
               },
               markerEnd: {
                 type: MarkerType.ArrowClosed,
-                color: '#10b981',
+                color: '#1e3a8a', // Navy blue
               },
             });
           });
@@ -213,8 +213,6 @@ export default function StrukturDivisiCrpReactFlowPage() {
   }, []);
 
   const onConnect = useCallback((connection: Connection) => {
-    console.log('🔗 Creating connection:', connection);
-
     const newEdge: Edge = {
       id: `${connection.source}-${connection.target}`,
       source: connection.source || '',
@@ -224,12 +222,12 @@ export default function StrukturDivisiCrpReactFlowPage() {
       type: 'smoothstep',
       animated: false,
       style: {
-        stroke: '#10b981',
+        stroke: '#1e3a8a', // Navy blue
         strokeWidth: 3,
       },
       markerEnd: {
         type: MarkerType.ArrowClosed,
-        color: '#10b981',
+        color: '#1e3a8a', // Navy blue
       },
     };
 
@@ -244,7 +242,7 @@ export default function StrukturDivisiCrpReactFlowPage() {
       toConnector: connection.targetHandle || 'top',
       type: 'solid',
       label: 'reporting',
-      color: '#10b981',
+      color: '#1e3a8a', // Navy blue
       routing: 'smoothstep',
     })
       .then((result) => {
@@ -256,7 +254,6 @@ export default function StrukturDivisiCrpReactFlowPage() {
         }
       })
       .catch((error) => {
-        console.error('❌ Connection failed:', error);
         toast.error('❌ Gagal membuat koneksi: ' + error.message);
         setEdges((eds) => eds.filter((e) => e.id !== newEdge.id));
       });
@@ -294,7 +291,6 @@ export default function StrukturDivisiCrpReactFlowPage() {
       toast.success('✅ Semua koneksi berhasil dihapus!');
       setEdges([]);
     } catch (error) {
-      console.error('Error clearing connections:', error);
       toast.error('❌ Gagal menghapus koneksi!');
     }
   };
@@ -327,7 +323,6 @@ export default function StrukturDivisiCrpReactFlowPage() {
       toast.success(`✅ ${nama} berhasil dihapus!`);
     } catch (error) {
       toast.error('❌ Gagal menghapus staff!');
-      console.error(error);
     }
   };
 
@@ -366,7 +361,7 @@ export default function StrukturDivisiCrpReactFlowPage() {
           </div>
           <Button
             onClick={handleAdd}
-            className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white shadow-lg cursor-pointer"
+            className="bg-gradient-to-r from-purple-800 to-purple-900 hover:from-purple-900 hover:to-purple-950 text-white shadow-lg cursor-pointer"
           >
             <Plus className="w-4 h-4 mr-2" />
             Tambah Staff
@@ -392,7 +387,7 @@ export default function StrukturDivisiCrpReactFlowPage() {
           <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
           <Controls />
           <MiniMap
-            nodeColor={() => '#10b981'}
+            nodeColor={() => '#1e3a8a'}
             maskColor="rgba(0, 0, 0, 0.1)"
           />
         </ReactFlow>
