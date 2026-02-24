@@ -19,6 +19,7 @@ import {
   IconAward,
   IconArchive,
   IconPhoto,
+  IconAlertCircle,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -111,6 +112,11 @@ const getNavigationItems = (role: string) => {
         icon: IconPhoto,
       },
       {
+        title: "Customer Complain",
+        url: "/dashboard-manager/customer-complain",
+        icon: IconAlertCircle,
+      },
+      {
         title: "Master Data",
         icon: IconArchive,
         items: [
@@ -175,6 +181,11 @@ const getNavigationItems = (role: string) => {
       title: "Isu & Kendala",
       url: "/dashboard-manager/isu-kendala",
       icon: IconPhoto,
+    },
+    {
+      title: "Customer Complain",
+      url: "/dashboard-manager/customer-complain",
+      icon: IconAlertCircle,
     },
     {
       title: "CRM Data Management",

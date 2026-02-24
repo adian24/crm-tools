@@ -420,4 +420,40 @@ export default defineSchema({
     .index("by_jabatan", ["jabatan"])
     .index("by_active", ["isActive"])
     .index("by_createdAt", ["createdAt"]),
+
+  // Table Customer Complain
+  customerComplain: defineTable({
+    namaPerusahaan: v.string(), // Nama perusahaan
+    komplain: v.string(), // Isi komplain
+    divisi: v.union(
+      v.literal("Sales"),
+      v.literal("CRM"),
+      v.literal("Opration ISO"),
+      v.literal("Opration ISPO"),
+      v.literal("HR"),
+      v.literal("Finance"),
+      v.literal("Product Development"),
+      v.literal("Tata Kelola"),
+      v.literal("IT")
+    ), // Divisi
+    tanggal: v.string(), // Tanggal komplain (format: YYYY-MM-DD)
+    month: v.number(), // Bulan (1-12)
+    year: v.number(), // Tahun
+    status: v.union(v.literal("active"), v.literal("inactive")), // Status komplain
+    priority: v.union(v.literal("Low"), v.literal("Medium"), v.literal("High"), v.literal("Critical")), // Prioritas komplain
+    tanggalSelesai: v.optional(v.string()), // Tanggal selesai (format: YYYY-MM-DD)
+    penyelesaian: v.optional(v.string()), // Penyelesaian masalah
+
+    // Audit fields
+    created_by: v.optional(v.id("users")), // User yang membuat
+    updated_by: v.optional(v.id("users")), // User yang terakhir update
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_month_year", ["month", "year"])
+    .index("by_year", ["year"])
+    .index("by_status", ["status"])
+    .index("by_divisi", ["divisi"])
+    .index("by_priority", ["priority"])
+    .index("by_created_by", ["created_by"]),
 });
