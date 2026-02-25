@@ -456,4 +456,30 @@ export default defineSchema({
     .index("by_divisi", ["divisi"])
     .index("by_priority", ["priority"])
     .index("by_created_by", ["created_by"]),
+
+  // Table Kunjungan Engagement Partnership
+  kunjunganEngagementPartnership: defineTable({
+    namaClient: v.string(), // Nama Client
+    namaPicClient: v.string(), // Nama PIC Client
+    noHp: v.string(), // No HP
+    picTsi: v.string(), // PIC TSI
+    tglKunjungan: v.string(), // Tanggal Kunjungan (format: YYYY-MM-DD)
+    month: v.number(), // Bulan (1-12)
+    year: v.number(), // Tahun
+    catatan: v.optional(v.string()), // Catatan
+    tindakLanjut: v.optional(v.string()), // Tindak Lanjut
+    fotoBukti: v.optional(v.string()), // Foto bukti kunjungan (base64)
+
+    // Audit fields
+    created_by: v.optional(v.id("users")), // User yang membuat
+    updated_by: v.optional(v.id("users")), // User yang terakhir update
+    createdByName: v.string(), // Nama user yang membuat (denormalized for easier display)
+    updatedByName: v.optional(v.string()), // Nama user yang terakhir update
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_month_year", ["month", "year"])
+    .index("by_year", ["year"])
+    .index("by_tglKunjungan", ["tglKunjungan"])
+    .index("by_created_by", ["created_by"]),
 });

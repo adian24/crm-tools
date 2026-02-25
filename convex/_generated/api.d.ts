@@ -21,6 +21,7 @@ import type * as initData from "../initData.js";
 import type * as isuKendala from "../isuKendala.js";
 import type * as kolaborasiCrm from "../kolaborasiCrm.js";
 import type * as kpiAnnual from "../kpiAnnual.js";
+import type * as kunjunganEngagementPartnership from "../kunjunganEngagementPartnership.js";
 import type * as masterAssociate from "../masterAssociate.js";
 import type * as migrate from "../migrate.js";
 import type * as notifications from "../notifications.js";
@@ -58,6 +59,7 @@ declare const fullApi: ApiFromModules<{
   isuKendala: typeof isuKendala;
   kolaborasiCrm: typeof kolaborasiCrm;
   kpiAnnual: typeof kpiAnnual;
+  kunjunganEngagementPartnership: typeof kunjunganEngagementPartnership;
   masterAssociate: typeof masterAssociate;
   migrate: typeof migrate;
   notifications: typeof notifications;

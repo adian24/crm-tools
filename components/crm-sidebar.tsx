@@ -117,6 +117,11 @@ const getNavigationItems = (role: string) => {
         icon: IconAlertCircle,
       },
       {
+        title: "Kunjungan Engagement Partnership",
+        url: "/dashboard-manager/kunjungan-engagement-partnership",
+        icon: IconUsers,
+      },
+      {
         title: "Master Data",
         icon: IconArchive,
         items: [
@@ -193,9 +198,9 @@ const getNavigationItems = (role: string) => {
       icon: IconTarget,
     },
     {
-      title: "Kunjungan Enggangment Partenership",
-      url: "/dashboard-manager/kunjungan-enggangment-partnership",
-      icon: IconTarget,
+      title: "Kunjungan Engagement Partnership",
+      url: "/dashboard-manager/kunjungan-engagement-partnership",
+      icon: IconUsers,
     },
     {
       title: "Master Data",
