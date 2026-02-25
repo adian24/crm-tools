@@ -60,7 +60,12 @@ const getNavigationItems = (role: string) => {
         title: "CRM Data Management",
         url: "/dashboard-manager/crm-data",
         icon: IconTarget,
-      }
+      },
+      {
+        title: "Kunjungan Engagement Partnership",
+        url: "/dashboard-manager/kunjungan-engagement-partnership",
+        icon: IconUsers,
+      },
     ];
   }
 
@@ -193,14 +198,14 @@ const getNavigationItems = (role: string) => {
       icon: IconAlertCircle,
     },
     {
-      title: "CRM Data Management",
-      url: "/dashboard-manager/crm-data",
-      icon: IconTarget,
-    },
-    {
       title: "Kunjungan Engagement Partnership",
       url: "/dashboard-manager/kunjungan-engagement-partnership",
       icon: IconUsers,
+    },
+    {
+      title: "CRM Data Management",
+      url: "/dashboard-manager/crm-data",
+      icon: IconTarget,
     },
     {
       title: "Master Data",

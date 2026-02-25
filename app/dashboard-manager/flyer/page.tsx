@@ -7,7 +7,7 @@ import { Id } from '@/convex/_generated/dataModel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
   Select,
@@ -36,6 +36,13 @@ import {
   Eye,
   Loader2,
   Calendar,
+  LayoutGrid,
+  Table as TableIcon,
+  Search,
+  X,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { ImagePreviewDialog } from '@/components/image-preview-dialog';
 
@@ -80,6 +87,9 @@ export default function FlyerPage() {
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [mobileFilterOpen, setMobileFilterOpen] = useState<'search' | 'date' | null>(null);
 
   // Generate year options (current year - 2 to current year + 5)
   const currentYear = new Date().getFullYear();
@@ -102,6 +112,17 @@ export default function FlyerPage() {
     }
     return a.status === "active" ? -1 : 1;
   });
+
+  // Pagination logic
+  const totalPages = Math.ceil(sortedFlyers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedFlyers = sortedFlyers.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedMonth, selectedYear, searchQuery, itemsPerPage]);
 
   const handleAdd = () => {
     setEditingFlyer(null);
@@ -159,27 +180,29 @@ export default function FlyerPage() {
 
   return (
     <>
-      <div className="flex-1 space-y-6 p-8 pt-6">
+      <div className="flex-1 space-y-4 sm:space-y-6 p-4 sm:p-8 pt-6 pb-20 sm:pb-8">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Flyer</h2>
-            <p className="text-muted-foreground">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Flyer</h2>
+            <p className="text-sm sm:text-base text-muted-foreground">
               Upload dan kelola flyer promosi per bulan
             </p>
           </div>
-          <Button
-            onClick={handleAdd}
-            className="cursor-pointer bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Upload Flyer
-          </Button>
+          <div className="hidden sm:flex">
+            <Button
+              onClick={handleAdd}
+              className="cursor-pointer bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Upload Flyer
+            </Button>
+          </div>
         </div>
 
-        {/* Filters */}
-        <Card className="p-6 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950 border-slate-200 dark:border-slate-800">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Filters - Desktop */}
+        <Card className="hidden sm:block p-4 sm:p-6 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950 border-slate-200 dark:border-slate-800">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
             <div className="space-y-2">
               <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                 Bulan
@@ -230,6 +253,13 @@ export default function FlyerPage() {
           </div>
         </Card>
 
+        {/* Total Data Info */}
+        {sortedFlyers.length > 0 && (
+          <div className="text-sm text-slate-600 dark:text-slate-400 text-center sm:text-left">
+            Total <span className="font-bold text-slate-900 dark:text-white mx-1">{sortedFlyers.length}</span> flyer
+          </div>
+        )}
+
         {/* Flyers Grid */}
         {flyers === undefined ? (
           <div className="flex items-center justify-center p-12">
@@ -256,8 +286,8 @@ export default function FlyerPage() {
             </div>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {sortedFlyers.map((flyer) => (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+            {paginatedFlyers.map((flyer) => (
               <Card
                 key={flyer._id}
                 className="overflow-hidden bg-white dark:bg-slate-800 shadow-lg border-slate-200 dark:border-slate-700 hover:shadow-xl transition-shadow"
@@ -270,12 +300,12 @@ export default function FlyerPage() {
                     className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
                     onClick={() => handleImageClick(flyer.imageUrl)}
                   />
-                  <div className="absolute top-2 right-2">
+                  <div className="absolute top-1 sm:top-2 right-1 sm:right-2">
                     <Badge
                       variant={flyer.status === "active" ? "default" : "secondary"}
                       className={flyer.status === "active"
-                        ? "bg-green-600 hover:bg-green-700 text-white shadow-lg"
-                        : "bg-gray-600 hover:bg-gray-700 text-white shadow-lg"
+                        ? "bg-green-600 hover:bg-green-700 text-white shadow-lg text-[10px] sm:text-xs"
+                        : "bg-gray-600 hover:bg-gray-700 text-white shadow-lg text-[10px] sm:text-xs"
                       }
                     >
                       {flyer.status === "active" ? "Aktif" : "Non-Aktif"}
@@ -284,15 +314,15 @@ export default function FlyerPage() {
                 </div>
 
                 {/* Content */}
-                <div className="p-4 space-y-3">
+                <div className="p-2 sm:p-4 space-y-1 sm:space-y-3">
                   <div>
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <h3 className="font-bold text-lg text-slate-900 dark:text-white line-clamp-1 flex-1">
+                    <div className="flex items-start justify-between gap-1 sm:gap-2 mb-1 sm:mb-2">
+                      <h3 className="font-bold text-sm sm:text-lg text-slate-900 dark:text-white line-clamp-2 flex-1">
                         {flyer.title}
                       </h3>
                       <Badge
                         variant="outline"
-                        className={`text-xs font-semibold shrink-0 ${
+                        className={`text-[10px] sm:text-xs font-semibold shrink-0 ${
                           flyer.category === "Training"
                             ? "bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900 dark:text-blue-300 dark:border-blue-700"
                             : flyer.category === "Webinar"
@@ -304,21 +334,21 @@ export default function FlyerPage() {
                       </Badge>
                     </div>
                     {flyer.description && (
-                      <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mt-1">
+                      <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mt-1">
                         {flyer.description}
                       </p>
                     )}
                   </div>
 
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                      <Calendar className="h-3 w-3" />
+                    <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs text-slate-500 dark:text-slate-400">
+                      <Calendar className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                       <span className="font-semibold">
                         {MONTHS[flyer.month - 1]} {flyer.year}
                       </span>
                     </div>
                     {(flyer.tanggalTerbit || flyer.tanggalBroadcast) && (
-                      <div className="flex flex-wrap gap-2 text-xs text-slate-500 dark:text-slate-400">
+                      <div className="flex flex-wrap gap-1 sm:gap-2 text-[10px] sm:text-xs text-slate-500 dark:text-slate-400">
                         {flyer.tanggalTerbit && (
                           <div className="flex items-center gap-1">
                             <span className="font-semibold">Terbit:</span>
@@ -337,54 +367,153 @@ export default function FlyerPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2 pt-2 border-t border-slate-200 dark:border-slate-700"
+                <div className="flex gap-1 sm:gap-2 p-2 sm:p-4 pt-1 sm:pt-2 border-t border-slate-200 dark:border-slate-700"
                 >
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={() => handleImageClick(flyer.imageUrl)}
-                    className="cursor-pointer flex-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 h-8"
+                    className="cursor-pointer flex-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 h-7 sm:h-8 px-1 sm:px-2"
                     disabled={isUpdatingStatus}
                   >
-                      <Eye className="h-3 w-3 mr-1" />
-                      Lihat
+                      <Eye className="h-2.5 w-2.5 sm:h-3 sm:w-3 sm:mr-1" />
+                      <span className="hidden sm:inline text-xs">Lihat</span>
                     </Button>
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => handleToggleStatus(flyer)}
-                      className={`cursor-pointer flex-1 h-8 ${
+                      className={`cursor-pointer flex-1 h-7 sm:h-8 px-1 sm:px-2 ${
                         flyer.status === "active"
                           ? "text-gray-600 hover:text-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900/20"
                           : "text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"
                       }`}
                       disabled={isUpdatingStatus}
                     >
-                      {flyer.status === "active" ? "Nonaktifkan" : "Aktifkan"}
+                      {flyer.status === "active" ? (
+                        <>
+                          <CheckCircle2 className="h-2.5 w-2.5 sm:h-3 sm:w-3 sm:mr-1" />
+                          <span className="hidden sm:inline text-xs">Nonaktif</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="h-2.5 w-2.5 sm:h-3 sm:w-3 sm:mr-1" />
+                          <span className="hidden sm:inline text-xs">Aktif</span>
+                        </>
+                      )}
                     </Button>
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => handleEdit(flyer)}
-                      className="cursor-pointer flex-1 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 h-8"
+                      className="cursor-pointer flex-1 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 h-7 sm:h-8 px-1 sm:px-2"
                       disabled={isUpdatingStatus}
                     >
-                      <Pencil className="h-3 w-3 mr-1" />
-                      Edit
+                      <Pencil className="h-2.5 w-2.5 sm:h-3 sm:w-3 sm:mr-1" />
+                      <span className="hidden sm:inline text-xs">Edit</span>
                     </Button>
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => handleDelete(flyer)}
-                      className="cursor-pointer flex-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 h-8"
+                      className="cursor-pointer flex-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 h-7 sm:h-8 px-1 sm:px-2"
                       disabled={isDeleting || isUpdatingStatus}
                     >
-                      <Trash2 className="h-3 w-3 mr-1" />
-                      Hapus
+                      <Trash2 className="h-2.5 w-2.5 sm:h-3 sm:w-3 sm:mr-1" />
+                      <span className="hidden sm:inline text-xs">Hapus</span>
                     </Button>
                   </div>
               </Card>
             ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {sortedFlyers.length > itemsPerPage && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 px-3 sm:px-4 py-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-lg">
+            {/* Rows per Page */}
+            <div className="flex items-center justify-center sm:justify-start gap-2 sm:gap-4 text-sm w-full sm:w-auto">
+              <div className="flex items-center gap-2">
+                <span className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">Tampilkan:</span>
+                <Select
+                  value={itemsPerPage.toString()}
+                  onValueChange={(v) => setItemsPerPage(parseInt(v))}
+                >
+                  <SelectTrigger className="h-8 w-16 sm:w-20 border-slate-300 dark:border-slate-600 text-xs sm:text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+                <span className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm hidden sm:inline">data/hal</span>
+              </div>
+            </div>
+
+            {/* Pagination Buttons */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-1 sm:gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="h-7 sm:h-8 px-2 sm:px-3 border-slate-300 dark:border-slate-600 text-xs sm:text-sm"
+                >
+                  <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline ml-1">Sebelumnya</span>
+                </Button>
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage === 1) {
+                      pageNum = i + 1;
+                    } else if (currentPage === totalPages) {
+                      pageNum = totalPages - 2 + i;
+                    } else {
+                      pageNum = currentPage - 1 + i;
+                    }
+
+                    return (
+                      <Button
+                        key={pageNum}
+                        size="sm"
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`h-7 sm:h-8 w-7 sm:w-8 p-0 text-xs sm:text-sm ${
+                          currentPage === pageNum
+                            ? "bg-blue-600 hover:bg-blue-700 text-white"
+                            : "border-slate-300 dark:border-slate-600"
+                        }`}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="h-7 sm:h-8 px-2 sm:px-3 border-slate-300 dark:border-slate-600 text-xs sm:text-sm"
+                >
+                  <span className="hidden sm:inline mr-1">Selanjutnya</span>
+                  <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
+                </Button>
+              </div>
+            )}
+
+            {/* Page Info */}
+            <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 text-center">
+              Hal <span className="font-bold text-slate-900 dark:text-white">{currentPage}</span> / <span className="font-bold text-slate-900 dark:text-white">{totalPages}</span>
+            </div>
           </div>
         )}
       </div>
@@ -436,6 +565,192 @@ export default function FlyerPage() {
         imageUrl={previewImageUrl}
         alt="Flyer"
       />
+
+      {/* Mobile Bottom Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border lg:hidden">
+        <div className="grid grid-cols-4 gap-1 p-2">
+          {/* Search Tab */}
+          <button
+            onClick={() => setMobileFilterOpen(mobileFilterOpen === 'search' ? null : 'search')}
+            className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors ${
+              mobileFilterOpen === 'search' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+            }`}
+          >
+            <Search className="h-5 w-5 mb-1" />
+            <span className="text-[10px] font-medium">Cari</span>
+          </button>
+
+          {/* Date Filter Tab */}
+          <button
+            onClick={() => setMobileFilterOpen(mobileFilterOpen === 'date' ? null : 'date')}
+            className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors ${
+              mobileFilterOpen === 'date' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+            }`}
+          >
+            <Calendar className="h-5 w-5 mb-1" />
+            <span className="text-[10px] font-medium">Filter</span>
+          </button>
+
+          {/* Add Button */}
+          <button
+            onClick={handleAdd}
+            className="flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md"
+          >
+            <Plus className="h-5 w-5 mb-1" />
+            <span className="text-[10px] font-medium">Upload</span>
+          </button>
+
+          {/* Grid Toggle - Dummy button since there's no table view for flyers */}
+          <button
+            className="flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors bg-muted opacity-50 cursor-not-allowed"
+            disabled
+          >
+            <LayoutGrid className="h-5 w-5 mb-1" />
+            <span className="text-[10px] font-medium">Grid</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Filter Sheet Overlay */}
+      {mobileFilterOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={() => setMobileFilterOpen(null)}
+          />
+
+          {/* Filter Sheet */}
+          <div className="fixed bottom-16 left-0 right-0 z-40 lg:hidden max-h-[70vh] overflow-y-auto bg-background rounded-t-2xl border-t border-border shadow-2xl animate-in slide-in-from-bottom-10">
+            {/* Handle bar */}
+            <div className="flex justify-center border-b p-3">
+              <div className="w-12 h-1.5 bg-muted rounded-full" />
+            </div>
+
+            {/* Filter Content */}
+            <div className="p-4 space-y-4">
+              {/* Search Filter */}
+              {mobileFilterOpen === 'search' && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-sm">Cari Flyer</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setMobileFilterOpen(null)}
+                      className="h-8 text-xs"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Cari flyer..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            setMobileFilterOpen(null);
+                          }
+                        }}
+                      />
+                    </div>
+                    {searchQuery && (
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Ditemukan: {sortedFlyers.length} hasil</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSearchQuery('')}
+                          className="h-7 text-xs"
+                        >
+                          Hapus
+                        </Button>
+                      </div>
+                    )}
+                    <Button
+                      onClick={() => setMobileFilterOpen(null)}
+                      className="w-full"
+                    >
+                      OK
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Date Filter */}
+              {mobileFilterOpen === 'date' && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-sm">Filter Tanggal</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setMobileFilterOpen(null)}
+                      className="h-8 text-xs"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    {/* Bulan */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">Bulan</Label>
+                      <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
+                        <SelectTrigger className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500">
+                          <SelectValue placeholder="Pilih bulan" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {MONTHS.map((month, idx) => (
+                            <SelectItem key={idx} value={(idx + 1).toString()}>
+                              {month}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Tahun */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">Tahun</Label>
+                      <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+                        <SelectTrigger className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500">
+                          <SelectValue placeholder="Pilih tahun" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {yearOptions.map((year) => (
+                            <SelectItem key={year} value={year.toString()}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Filter Info */}
+                    <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">
+                      <p>📊 Menampilkan <span className="font-bold text-foreground">{sortedFlyers.length}</span> flyer</p>
+                      <p className="mt-1">
+                        {MONTHS[selectedMonth - 1]} {selectedYear}
+                      </p>
+                    </div>
+
+                    <Button
+                      onClick={() => setMobileFilterOpen(null)}
+                      className="w-full"
+                    >
+                      OK
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 }
