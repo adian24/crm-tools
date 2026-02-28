@@ -37,6 +37,7 @@ interface CrmTarget {
   sales: string;
   namaAssociate: string;
   directOrAssociate?: string;
+  grup?: string;
   namaPerusahaan: string;
   status: string;
   alasan?: string;
@@ -94,6 +95,7 @@ interface FormData {
   sales: string;
   namaAssociate: string;
   directOrAssociate: string;
+  grup: string;
   namaPerusahaan: string;
   status: string;
   alasan: string;
@@ -145,6 +147,7 @@ const EditCrmDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSu
     sales: '',
     namaAssociate: '',
     directOrAssociate: '',
+    grup: '',
     namaPerusahaan: '',
     status: '',
     alasan: '',
@@ -204,6 +207,7 @@ const EditCrmDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSu
         sales: target.sales,
         namaAssociate: target.namaAssociate,
         directOrAssociate: normalizeForSelect(target.directOrAssociate, ['Direct', 'Associate']),
+        grup: target.grup || '',
         namaPerusahaan: target.namaPerusahaan,
         status: target.status,
         alasan: target.alasan || '',
@@ -340,6 +344,7 @@ const EditCrmDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSu
         sales: formData.sales,
         namaAssociate: formData.namaAssociate || null,
         directOrAssociate: formData.directOrAssociate || null,
+        grup: formData.grup || null,
         namaPerusahaan: formData.namaPerusahaan,
         status: formData.status,
         alasan: formData.alasan || null,
@@ -666,6 +671,17 @@ const EditCrmDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSu
                       </SelectContent>
                     </Select>
                   </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Grup</Label>
+                    <Input
+                      type="text"
+                      value={formData.grup || ''}
+                      onChange={(e) => updateFormField('grup', e.target.value)}
+                      placeholder="Masukkan grup"
+                      className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500 h-9 text-sm"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -968,6 +984,7 @@ const EditCrmDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSu
                           <SelectContent>
                             <SelectItem value="Lunas">Lunas</SelectItem>
                             <SelectItem value="Belum Lunas">Belum Lunas</SelectItem>
+                            <SelectItem value="Sudah DP">Sudah DP</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Pencil, Trash2, Upload, Download, Search, Filter, X, Save, FileSpreadsheet, ChevronDown, ChevronRight, Calendar, CalendarClock, Building, MapPin, Shield, Clock } from 'lucide-react';
+import { Plus, Pencil, Trash2, Upload, Download, Search, Filter, X, Save, FileSpreadsheet, ChevronDown, ChevronRight, Calendar, CalendarClock, Building, MapPin, Shield, Clock, FileClock } from 'lucide-react';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { getCurrentUser } from '@/lib/auth';
@@ -31,6 +31,7 @@ import { FilterCompanySection } from '@/components/filters/FilterCompanySection'
 import { FilterPicSalesSection } from '@/components/filters/FilterPicSalesSection';
 import { FilterSertifikatSection } from '@/components/filters/FilterSertifikatSection';
 import { FilterKunjunganSection } from '@/components/filters/FilterKunjunganSection';
+import { FilterBulanAuditSustain } from '@/components/filters/FilterBulanAuditSustain';
 import { EditCrmDialog } from '@/components/crm-edit-dialog';
 
 interface CrmTarget {
@@ -42,6 +43,7 @@ interface CrmTarget {
   sales: string;
   namaAssociate: string;
   directOrAssociate?: string;
+  grup?: string;
   namaPerusahaan: string;
   status: string;
   alasan?: string;
@@ -88,6 +90,7 @@ interface CrmFormData {
   sales: string;
   namaAssociate: string;
   directOrAssociate?: string;
+  grup?: string;
   namaPerusahaan: string;
   status: string;
   alasan?: string;
@@ -327,6 +330,15 @@ const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, staffUser
           <option value="DIRECT">DIRECT</option>
           <option value="ASSOCIATE">ASSOCIATE</option>
         </select>
+      </td>
+      <td className="border border-border p-1 min-w-[100px]">
+        <input
+          type="text"
+          defaultValue={row.grup}
+          onChange={(e) => handleChange('grup', e.target.value)}
+          placeholder="Grup"
+          className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
+        />
       </td>
       <td className="border border-border p-1 min-w-[100px]">
         <select
@@ -604,6 +616,7 @@ const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, staffUser
           <option value="">- Pilih -</option>
           <option value="Lunas">Lunas</option>
           <option value="Belum Lunas">Belum Lunas</option>
+          <option value="Sudah DP">Sudah DP</option>
         </select>
       </td>
       <td className="border border-border p-1 min-w-[140px]">
@@ -673,6 +686,9 @@ export default function CrmDataManagementPage() {
   const [filterToBulanTTD, setFilterToBulanTTD] = useState<string>('all');
   const [filterStatusSertifikat, setFilterStatusSertifikat] = useState<string>('all');
   const [filterTermin, setFilterTermin] = useState<string>('all');
+  const [filterTahunAuditSustain, setFilterTahunAuditSustain] = useState<string>('all');
+  const [filterFromBulanAuditSustain, setFilterFromBulanAuditSustain] = useState<string>('all');
+  const [filterToBulanAuditSustain, setFilterToBulanAuditSustain] = useState<string>('all');
   const [filterFromKunjungan, setFilterFromKunjungan] = useState<string>('all');
   const [filterToKunjungan, setFilterToKunjungan] = useState<string>('all');
   const [filterStatusKunjungan, setFilterStatusKunjungan] = useState<string>('all');
@@ -806,6 +822,19 @@ export default function CrmDataManagementPage() {
   // Sales options
   const salesOptions = [...new Set(filteredCrmTargets?.map(t => t.sales).filter(Boolean) || [])].sort() as string[];
 
+  // Get unique tahun options from bulanAuditSebelumnyaSustain data
+  const tahunAuditSustainOptions = [...new Set(
+    filteredCrmTargets
+      ?.map(t => {
+        if (t.bulanAuditSebelumnyaSustain) {
+          const year = new Date(t.bulanAuditSebelumnyaSustain).getUTCFullYear();
+          return year.toString();
+        }
+        return null;
+      })
+      .filter((year): year is string => year !== null) || []
+  )].sort();
+
   // Toggle filter section
   const toggleFilterSection = (section: string) => {
     setExpandedFilterSections(prev =>
@@ -834,6 +863,9 @@ export default function CrmDataManagementPage() {
     setFilterToBulanTTD('all');
     setFilterStatusSertifikat('all');
     setFilterTermin('all');
+    setFilterTahunAuditSustain('all');
+    setFilterFromBulanAuditSustain('all');
+    setFilterToBulanAuditSustain('all');
     setFilterFromKunjungan('all');
     setFilterToKunjungan('all');
     setFilterStatusKunjungan('all');
@@ -881,6 +913,7 @@ export default function CrmDataManagementPage() {
     sales: '',
     namaAssociate: '',
     directOrAssociate: '',
+    grup: '',
     namaPerusahaan: '',
     status: '',
     alasan: '',
@@ -954,7 +987,11 @@ export default function CrmDataManagementPage() {
       const fromMonth = filterFromBulanExp !== 'all' ? parseInt(filterFromBulanExp) : 1;
       const toMonth = filterToBulanExp !== 'all' ? parseInt(filterToBulanExp) : 12;
 
-      matchesBulanExp = bulanExpNum > 0 && bulanExpNum >= fromMonth && bulanExpNum <= toMonth;
+      // Hanya filter jika bulanExpNum valid (> 0), jika kosong biarkan lewat (true)
+      if (bulanExpNum > 0) {
+        matchesBulanExp = bulanExpNum >= fromMonth && bulanExpNum <= toMonth;
+      }
+      // Jika bulanExpNum = 0 (kosong/invalid), biarkan matchesBulanExp = true (tidak filter)
     }
 
     // Details section filters
@@ -989,9 +1026,8 @@ export default function CrmDataManagementPage() {
         const fromMonth = filterFromBulanTTD !== 'all' ? parseInt(filterFromBulanTTD) : 1;
         const toMonth = filterToBulanTTD !== 'all' ? parseInt(filterToBulanTTD) : 12;
         matchesBulanTTD = ttdMonth >= fromMonth && ttdMonth <= toMonth;
-      } else {
-        matchesBulanTTD = false;
       }
+      // Jika ttdDate kosong, biarkan matchesBulanTTD = true (tidak filter)
     }
 
     // Jadwal Kunjungan section filters
@@ -1003,10 +1039,39 @@ export default function CrmDataManagementPage() {
         const fromMonth = filterFromKunjungan !== 'all' ? parseInt(filterFromKunjungan) : 1;
         const toMonth = filterToKunjungan !== 'all' ? parseInt(filterToKunjungan) : 12;
         matchesKunjungan = visitMonth >= fromMonth && visitMonth <= toMonth;
+      }
+      // Jika visitDate kosong, biarkan matchesKunjungan = true (tidak filter)
+    }
+
+    // Bulan Audit Sebelumnya Sustain section filter
+    let matchesBulanAuditSustain = true;
+    if (filterTahunAuditSustain !== 'all' || filterFromBulanAuditSustain !== 'all' || filterToBulanAuditSustain !== 'all') {
+      const auditSustainDate = target.bulanAuditSebelumnyaSustain;
+
+      // Jika filter aktif dan auditSustainDate kosong, exclude record
+      if (!auditSustainDate) {
+        matchesBulanAuditSustain = false;
       } else {
-        matchesKunjungan = false;
+        // Parse tanggal menggunakan UTC untuk menghindari timezone issues
+        const dateObj = new Date(auditSustainDate);
+        const auditSustainYear = dateObj.getUTCFullYear().toString();
+        const auditSustainMonth = dateObj.getUTCMonth() + 1;
+
+        // Filter tahun
+        const matchesTahun = filterTahunAuditSustain === 'all' || auditSustainYear === filterTahunAuditSustain;
+
+        // Filter bulan
+        let matchesBulan = true;
+        if (filterFromBulanAuditSustain !== 'all' || filterToBulanAuditSustain !== 'all') {
+          const fromMonth = filterFromBulanAuditSustain !== 'all' ? parseInt(filterFromBulanAuditSustain) : 1;
+          const toMonth = filterToBulanAuditSustain !== 'all' ? parseInt(filterToBulanAuditSustain) : 12;
+          matchesBulan = auditSustainMonth >= fromMonth && auditSustainMonth <= toMonth;
+        }
+
+        matchesBulanAuditSustain = matchesTahun && matchesBulan;
       }
     }
+
     const matchesStatusKunjungan = filterStatusKunjungan === 'all' || target.statusKunjungan === filterStatusKunjungan;
 
     // Quick filter from statistics cards
@@ -1053,7 +1118,7 @@ export default function CrmDataManagementPage() {
            matchesPicSales && matchesStatus && matchesAlasan && matchesCategory && matchesProvinsi &&
            matchesKota && matchesTipeProduk && matchesStandar && matchesAkreditasi && matchesEaCode &&
            matchesTahapAudit && matchesBulanTTD && matchesStatusSertifikat &&
-           matchesTermin && matchesKunjungan && matchesStatusKunjungan && matchesQuickFilter;
+           matchesTermin && matchesBulanAuditSustain && matchesKunjungan && matchesStatusKunjungan && matchesQuickFilter;
   }) || [];
 
   // Sort targets based on current sort field and direction
@@ -1304,6 +1369,7 @@ export default function CrmDataManagementPage() {
       sales: '',
       namaAssociate: '',
       directOrAssociate: '',
+      grup: '',
       namaPerusahaan: '',
       status: '',
       alasan: '',
@@ -1383,6 +1449,7 @@ export default function CrmDataManagementPage() {
             sales: row.sales,
             namaAssociate: row.namaAssociate,
             directOrAssociate: row.directOrAssociate || undefined,
+            grup: row.grup || undefined,
             namaPerusahaan: row.namaPerusahaan,
             status: row.status || 'WAITING',
             alasan: row.alasan || undefined,
@@ -1435,6 +1502,7 @@ export default function CrmDataManagementPage() {
         sales: '',
         namaAssociate: '',
         directOrAssociate: '',
+        grup: '',
         namaPerusahaan: '',
         status: '',
         alasan: '',
@@ -1548,6 +1616,7 @@ export default function CrmDataManagementPage() {
             sales: obj['sales'] || obj['SALES'] || '',
             namaAssociate: obj['namaAssociate'] || obj['NAMA ASSOSIATE'] || '',
             directOrAssociate: obj['directOrAssociate'] || obj['DIRECT OR ASSOCIATE'] || undefined,
+            grup: obj['grup'] || obj['GRUP'] || undefined,
             namaPerusahaan: obj['namaPerusahaan'] || obj['NAMA PERUSAHAAN'] || '',
             status: obj['status'] || obj['STATUS'] || '',
             alasan: obj['alasan'] || obj['ALASAN'] || undefined,
@@ -1578,8 +1647,8 @@ export default function CrmDataManagementPage() {
             fotoBuktiKunjungan: obj['fotoBuktiKunjungan'] || obj['FOTO BUKTI KUNJUNGAN'] || undefined,
             bulanAuditSebelumnyaSustain: parseDate(obj['bulanAuditSebelumnyaSustain'] || obj['BULAN AUDIT SEBELUMNYA SUSTAIN']),
             bulanAudit: parseDate(obj['bulanAudit'] || obj['BULAN AUDIT']),
-            statusInvoice: obj['statusInvoice'] || obj['STATUS INVOICE'] || undefined,
-            statusPembayaran: obj['statusPembayaran'] || obj['STATUS PEMBAYARAN'] || undefined,
+            statusInvoice: normalizeStatusInvoice(obj['statusInvoice'] || obj['STATUS INVOICE'] || ''),
+            statusPembayaran: normalizeStatusPembayaran(obj['statusPembayaran'] || obj['STATUS PEMBAYARAN'] || ''),
             statusKomisi: obj['statusKomisi'] || obj['STATUS KOMISI'] || undefined,
             created_by: currentUser?._id, // Add current user ID
           };
@@ -1662,6 +1731,45 @@ export default function CrmDataManagementPage() {
   };
 
   // Helper functions
+  // Normalize statusInvoice value
+  const normalizeStatusInvoice = (value: string): string | undefined => {
+    if (!value || value.trim() === '') return undefined;
+
+    const normalized = value.trim().toLowerCase();
+
+    // Map various forms to standard values
+    if (normalized === 'terbit' || normalized === 'telah terbit' || normalized === 'sudah terbit') {
+      return 'Terbit';
+    }
+    if (normalized === 'belum terbit' || normalized === 'tidak terbit' || normalized === 'belum terbit.' || normalized === 'tidak') {
+      return 'Belum Terbit';
+    }
+
+    // Return original if no match (will be validated by Convex)
+    return value;
+  };
+
+  // Normalize statusPembayaran value
+  const normalizeStatusPembayaran = (value: string): string | undefined => {
+    if (!value || value.trim() === '') return undefined;
+
+    const normalized = value.trim().toLowerCase();
+
+    // Map various forms to standard values
+    if (normalized === 'lunas' || normalized === 'lunas.' || normalized === 'sudah lunas') {
+      return 'Lunas';
+    }
+    if (normalized === 'belum lunas' || normalized === 'belum lunas.' || normalized === 'belum bayar' || normalized === 'unpaid') {
+      return 'Belum Lunas';
+    }
+    if (normalized === 'sudah dp' || normalized === 'dp' || normalized === 'down payment' || normalized === 'sudah dp.') {
+      return 'Sudah DP';
+    }
+
+    // Return original if no match (will be validated by Convex)
+    return value;
+  };
+
   const parseDate = (value: string): string | undefined => {
     if (!value || value.trim() === '' || value.trim() === '-') return undefined;
 
@@ -1877,6 +1985,7 @@ export default function CrmDataManagementPage() {
       'sales',
       'namaAssociate',
       'directOrAssociate',
+      'grup',
       'namaPerusahaan',
       'status',
       'alasan',
@@ -1923,6 +2032,7 @@ export default function CrmDataManagementPage() {
         target.sales || '',
         target.namaAssociate || '',
         target.directOrAssociate || '',
+        target.grup || '',
         target.namaPerusahaan,
         target.status || '',
         target.alasan || '',
@@ -1971,6 +2081,7 @@ export default function CrmDataManagementPage() {
       { wch: 10 }, // sales
       { wch: 15 }, // namaAssociate
       { wch: 18 }, // directOrAssociate
+      { wch: 15 }, // grup
       { wch: 40 }, // namaPerusahaan
       { wch: 12 }, // status
       { wch: 30 }, // alasan
@@ -2194,6 +2305,24 @@ export default function CrmDataManagementPage() {
                   setFilterToKunjungan={setFilterToKunjungan}
                   filterStatusKunjungan={filterStatusKunjungan}
                   setFilterStatusKunjungan={setFilterStatusKunjungan}
+                  bulanOptions={bulanOptions}
+                />
+              </FilterSection>
+
+              {/* Section Bulan Audit Sebelumnya Sustain */}
+              <FilterSection
+                title="Filter Bulan Audit Sustain"
+                isExpanded={expandedFilterSections.includes('bulanAuditSustain')}
+                onToggle={() => toggleFilterSection('bulanAuditSustain')}
+              >
+                <FilterBulanAuditSustain
+                  filterTahunAuditSustain={filterTahunAuditSustain}
+                  setFilterTahunAuditSustain={setFilterTahunAuditSustain}
+                  filterFromBulanAuditSustain={filterFromBulanAuditSustain}
+                  setFilterFromBulanAuditSustain={setFilterFromBulanAuditSustain}
+                  filterToBulanAuditSustain={filterToBulanAuditSustain}
+                  setFilterToBulanAuditSustain={setFilterToBulanAuditSustain}
+                  tahunOptions={tahunAuditSustainOptions}
                   bulanOptions={bulanOptions}
                 />
               </FilterSection>
@@ -2709,6 +2838,7 @@ export default function CrmDataManagementPage() {
                     <SortableTableHead field="sales">Sales</SortableTableHead>
                     <SortableTableHead field="namaAssociate">Nama Associate</SortableTableHead>
                     <SortableTableHead field="directOrAssociate">Direct/Assoc</SortableTableHead>
+                    <SortableTableHead field="grup">Grup</SortableTableHead>
                     <SortableTableHead field="status">Status</SortableTableHead>
                     <SortableTableHead field="alasan">Alasan</SortableTableHead>
                     <SortableTableHead field="category">Category</SortableTableHead>
@@ -2800,6 +2930,7 @@ export default function CrmDataManagementPage() {
                         <TableCell>{target.sales}</TableCell>
                         <TableCell>{target.namaAssociate || '-'}</TableCell>
                         <TableCell>{target.directOrAssociate || '-'}</TableCell>
+                        <TableCell>{target.grup || '-'}</TableCell>
                         <TableCell>
                           <Badge
                             variant={getStatusBadgeVariant(target.status)}
@@ -3100,6 +3231,7 @@ export default function CrmDataManagementPage() {
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Sales</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[120px]">Associate</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Direct/Assoc</th>
+                      <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Grup</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Produk</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">STD</th>
                       <th className="p-2 border border-border text-left font-medium text-xs whitespace-nowrap min-w-[100px]">Category</th>
@@ -3387,7 +3519,7 @@ export default function CrmDataManagementPage() {
 
       {/* Mobile Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border lg:hidden">
-        <div className={`grid gap-1 p-2 ${currentUser?.role === 'staff' ? 'grid-cols-6' : 'grid-cols-7'}`}>
+        <div className={`grid gap-1 p-2 ${currentUser?.role === 'staff' ? 'grid-cols-7' : 'grid-cols-8'}`}>
           {/* Search Tab */}
           <button
             onClick={() => setActiveFilterSheet(activeFilterSheet === 'search' ? null : 'search')}
@@ -3454,6 +3586,17 @@ export default function CrmDataManagementPage() {
           >
             <Shield className="h-5 w-5 mb-1" />
             <span className="text-[10px] font-medium">Statistics</span>
+          </button>
+
+          {/* Audit Sustain Tab */}
+          <button
+            onClick={() => setActiveFilterSheet(activeFilterSheet === 'auditSustain' ? null : 'auditSustain')}
+            className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors ${
+              activeFilterSheet === 'auditSustain' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+            }`}
+          >
+            <FileClock className="h-5 w-5 mb-1" />
+            <span className="text-[10px] font-medium">Audit Sustain</span>
           </button>
 
           {/* Reset Tab */}
@@ -3931,6 +4074,41 @@ export default function CrmDataManagementPage() {
                   >
                     OK
                   </Button>
+                </div>
+              )}
+
+              {/* Audit Sustain Filter */}
+              {activeFilterSheet === 'auditSustain' && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-sm">Audit Sustain</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setActiveFilterSheet(null)}
+                      className="h-8 text-xs"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    <FilterBulanAuditSustain
+                      filterTahunAuditSustain={filterTahunAuditSustain}
+                      setFilterTahunAuditSustain={setFilterTahunAuditSustain}
+                      filterFromBulanAuditSustain={filterFromBulanAuditSustain}
+                      setFilterFromBulanAuditSustain={setFilterFromBulanAuditSustain}
+                      filterToBulanAuditSustain={filterToBulanAuditSustain}
+                      setFilterToBulanAuditSustain={setFilterToBulanAuditSustain}
+                      tahunOptions={tahunAuditSustainOptions}
+                      bulanOptions={bulanOptions}
+                    />
+                    <Button
+                      onClick={() => setActiveFilterSheet(null)}
+                      className="w-full"
+                    >
+                      OK
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>

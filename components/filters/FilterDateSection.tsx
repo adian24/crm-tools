@@ -15,12 +15,18 @@ interface FilterDateSectionProps {
   setFilterFromBulanTTD?: (value: string) => void;
   filterToBulanTTD?: string;
   setFilterToBulanTTD?: (value: string) => void;
+  filterFromBulanAuditSustain?: string;
+  setFilterFromBulanAuditSustain?: (value: string) => void;
+  filterToBulanAuditSustain?: string;
+  setFilterToBulanAuditSustain?: (value: string) => void;
   tahunOptions: string[];
   bulanOptions: Array<{ value: string; label: string }>;
   filterBulanExpEnabled?: boolean;
   setFilterBulanExpEnabled?: (value: boolean) => void;
   filterBulanTTDEnabled?: boolean;
   setFilterBulanTTDEnabled?: (value: boolean) => void;
+  filterBulanAuditSustainEnabled?: boolean;
+  setFilterBulanAuditSustainEnabled?: (value: boolean) => void;
 }
 
 export function FilterDateSection({
@@ -34,12 +40,18 @@ export function FilterDateSection({
   setFilterFromBulanTTD,
   filterToBulanTTD,
   setFilterToBulanTTD,
+  filterFromBulanAuditSustain,
+  setFilterFromBulanAuditSustain,
+  filterToBulanAuditSustain,
+  setFilterToBulanAuditSustain,
   tahunOptions,
   bulanOptions,
   filterBulanExpEnabled = true,
   setFilterBulanExpEnabled,
   filterBulanTTDEnabled = true,
   setFilterBulanTTDEnabled,
+  filterBulanAuditSustainEnabled = true,
+  setFilterBulanAuditSustainEnabled,
 }: FilterDateSectionProps) {
   return (
     <>
@@ -187,6 +199,78 @@ export function FilterDateSection({
                 disabled={!filterBulanTTDEnabled}
               >
                 <SelectTrigger className="w-full h-8 border-orange-200 text-xs">
+                  <SelectValue placeholder="To" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  {bulanOptions.map((bulan) => (
+                    <SelectItem key={bulan.value} value={bulan.value}>
+                      {bulan.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Section: Bulan Audit Sebelumnya Sustain - GREEN THEME */}
+      {(filterFromBulanAuditSustain !== undefined || filterToBulanAuditSustain !== undefined) && (
+        <div className={`border rounded-lg p-2 space-y-2 transition-opacity ${filterBulanAuditSustainEnabled ? 'border-green-200 bg-green-50/30' : 'border-gray-200 bg-gray-50/30 opacity-60'}`}>
+          <div className="flex items-center justify-between">
+            <div className="text-xs font-semibold text-green-900">🔄 Bulan Audit Sblm Sustain</div>
+            {setFilterBulanAuditSustainEnabled && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 cursor-pointer hover:bg-gray-300"
+                onClick={() => setFilterBulanAuditSustainEnabled(!filterBulanAuditSustainEnabled)}
+              >
+                {filterBulanAuditSustainEnabled ? (
+                  <>
+                    <Power className="h-3 w-3 mr-1 text-green-600" />
+                    <span className="text-[10px] text-green-600">Aktif</span>
+                  </>
+                ) : (
+                  <>
+                    <PowerOff className="h-3 w-3 mr-1 text-red-600" />
+                    <span className="text-[10px] text-red-600">Nonaktif</span>
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="mb-1 block text-[10px] text-green-700">From</Label>
+              <Select
+                value={filterFromBulanAuditSustain || 'all'}
+                onValueChange={setFilterFromBulanAuditSustain || (() => {})}
+                disabled={!filterBulanAuditSustainEnabled}
+              >
+                <SelectTrigger className="w-full h-8 border-green-200 text-xs">
+                  <SelectValue placeholder="From" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  {bulanOptions.map((bulan) => (
+                    <SelectItem key={bulan.value} value={bulan.value}>
+                      {bulan.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="mb-1 block text-[10px] text-green-700">To</Label>
+              <Select
+                value={filterToBulanAuditSustain || 'all'}
+                onValueChange={setFilterToBulanAuditSustain || (() => {})}
+                disabled={!filterBulanAuditSustainEnabled}
+              >
+                <SelectTrigger className="w-full h-8 border-green-200 text-xs">
                   <SelectValue placeholder="To" />
                 </SelectTrigger>
                 <SelectContent>

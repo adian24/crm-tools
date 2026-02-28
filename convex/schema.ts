@@ -134,6 +134,7 @@ export default defineSchema({
     sales: v.string(), // SALES (NAC, ARH, BSC, dll)
     namaAssociate: v.string(), // NAMA ASSOSIATE
     directOrAssociate: v.optional(v.string()), // DIRECT OR ASSOCIATE
+    grup: v.optional(v.string()), // GRUP
     namaPerusahaan: v.string(), // NAMA PERUSAHAAN
     status: v.string(), // STATUS (WAITING, PROSES, SUSPEND, LOSS, DONE)
     alasan: v.optional(v.string()), // ALASAN
@@ -165,7 +166,7 @@ export default defineSchema({
     bulanAuditSebelumnyaSustain: v.optional(v.string()), // BULAN AUDIT SEBELUMNYA SUSTAIN (Format: YYYY-MM-DD)
     bulanAudit: v.optional(v.string()), // BULAN AUDIT (Format: YYYY-MM-DD)
     statusInvoice: v.optional(v.union(v.literal("Terbit"), v.literal("Belum Terbit"))), // STATUS INVOICE
-    statusPembayaran: v.optional(v.union(v.literal("Lunas"), v.literal("Belum Lunas"))), // STATUS PEMBAYARAN
+    statusPembayaran: v.optional(v.union(v.literal("Lunas"), v.literal("Belum Lunas"), v.literal("Sudah DP"))), // STATUS PEMBAYARAN
     statusKomisi: v.optional(v.union(v.literal("Sudah Diajukan"), v.literal("Belum Diajukan"), v.literal("Tidak Ada"))), // STATUS KOMISI
     // Audit fields (sesuai request)
     created_by: v.optional(v.id("users")), // CREATED BY - User yang membuat data
