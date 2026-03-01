@@ -18,12 +18,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { IconPlus, IconDownload, IconUpload, IconTrash, IconTableExport, IconDeviceFloppy, IconFilter, IconSortAscending, IconSortDescending, IconFileImport, IconZoomIn, IconZoomOut, IconZoomReset } from "@tabler/icons-react";
+import { IconPlus, IconDownload, IconUpload, IconTrash, IconTableExport, IconDeviceFloppy, IconFilter, IconSortAscending, IconSortDescending, IconFileImport, IconZoomIn, IconZoomOut, IconZoomReset, IconLoader, IconAlertCircle } from "@tabler/icons-react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
 import * as ExcelJS from 'exceljs';
+import { toast } from "sonner";
 
 // Register ALL Handsontable modules
 registerAllModules();
@@ -142,6 +143,8 @@ export default function KPIPage() {
   const [isImporting, setIsImporting] = useState(false);
   const importFinishedRef = useRef(false);
   const [globalFontSize, setGlobalFontSize] = useState(13);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   useEffect(() => {
     const userStr = localStorage.getItem('crm_user');
@@ -199,12 +202,13 @@ export default function KPIPage() {
   const isLoadingConvexData = selectedKPI === undefined;
   const updateKPI = useMutation(api.kpiAnnual.update);
   const createKPI = useMutation(api.kpiAnnual.create);
+  const deleteKPI = useMutation(api.kpiAnnual.remove);
 
   const handleCreateKPI = async (year: string, name: string) => {
     try {
       const currentUser = getCurrentUser();
       if (!currentUser || !currentUser._id) {
-        alert("❌ Anda belum login. Silakan login terlebih dahulu.");
+        toast.error("Anda belum login. Silakan login terlebih dahulu.");
         router.push('/login');
         return;
       }
@@ -232,16 +236,16 @@ export default function KPIPage() {
         setIsLoadingYear(false);
       }, 500);
 
-      alert(`✅ KPI "${name}" untuk tahun ${year} berhasil dibuat!`);
+      toast.success(`KPI "${name}" untuk tahun ${year} berhasil dibuat!`);
     } catch (error: any) {
       console.error("Error creating KPI:", error);
       setIsLoadingYear(false);
 
       if (error.message.includes("Unauthorized") || error.message.includes("User not found")) {
-        alert("❌ Sesi Anda telah berakhir. Silakan login ulang.");
+        toast.error("Sesi Anda telah berakhir. Silakan login ulang.");
         router.push('/login');
       } else {
-        alert("❌ Gagal membuat KPI: " + error.message);
+        toast.error("Gagal membuat KPI: " + error.message);
       }
     }
   };
@@ -251,6 +255,56 @@ export default function KPIPage() {
       setIsLoadingYear(true);
     }
     setSelectedYear(year);
+  };
+
+  const handleDeleteKPI = async () => {
+    if (!selectedKPI) {
+      toast.error("Tidak ada KPI yang dipilih");
+      return;
+    }
+
+    const currentUser = getCurrentUser();
+    if (!currentUser || !currentUser._id) {
+      toast.error("Sesi berakhir. Login ulang.");
+      router.push('/login');
+      return;
+    }
+
+    // Open confirmation modal
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeleteKPI = async () => {
+    if (!selectedKPI) return;
+
+    const currentUser = getCurrentUser();
+    if (!currentUser || !currentUser._id) {
+      toast.error("Sesi berakhir. Login ulang.");
+      router.push('/login');
+      setIsDeleteModalOpen(false);
+      return;
+    }
+
+    try {
+      await deleteKPI({
+        year: selectedYear,
+        userId: currentUser._id as any,
+      });
+
+      toast.success(`KPI "${selectedKPI.name}" berhasil dihapus!`);
+
+      // Reset to first available year or current year
+      if (allYears && allYears.length > 0) {
+        setSelectedYear(allYears[0].year);
+      } else {
+        setSelectedYear(new Date().getFullYear().toString());
+      }
+
+      setIsDeleteModalOpen(false);
+    } catch (error: any) {
+      console.error("Error deleting KPI:", error);
+      toast.error("Gagal menghapus KPI: " + error.message);
+    }
   };
 
   const applyColorToCells = (color: string) => {
@@ -268,7 +322,7 @@ export default function KPIPage() {
     }
 
     if (!selectedCellsRef.current || selectedCellsRef.current.length === 0) {
-      alert('Pilih cell terlebih dahulu!');
+      toast.error('Pilih cell terlebih dahulu!');
       return;
     }
 
@@ -320,7 +374,7 @@ export default function KPIPage() {
     }
 
     if (!selectedCellsRef.current || selectedCellsRef.current.length === 0) {
-      alert('Pilih cell terlebih dahulu!');
+      toast.error('Pilih cell terlebih dahulu!');
       return;
     }
 
@@ -371,7 +425,7 @@ export default function KPIPage() {
     }
 
     if (!selectedCellsRef.current || selectedCellsRef.current.length === 0) {
-      alert('Pilih cell terlebih dahulu!');
+      toast.error('Pilih cell terlebih dahulu!');
       return;
     }
 
@@ -422,7 +476,7 @@ export default function KPIPage() {
     }
 
     if (!selectedCellsRef.current || selectedCellsRef.current.length === 0) {
-      alert('Pilih cell terlebih dahulu!');
+      toast.error('Pilih cell terlebih dahulu!');
       return;
     }
 
@@ -470,7 +524,7 @@ export default function KPIPage() {
     }
 
     if (!selectedCellsRef.current || selectedCellsRef.current.length === 0) {
-      alert('Pilih cell terlebih dahulu!');
+      toast.error('Pilih cell terlebih dahulu!');
       return;
     }
 
@@ -905,15 +959,12 @@ export default function KPIPage() {
 
       console.log('✅ Import complete!');
 
-      alert(
-        `✅ Import Excel Berhasil!\n\n` +
-        `📊 Worksheet: ${actualMaxRow} baris × ${actualMaxCol} kolom\n` +
-        `✈️ Data Terpakai: ${usedMaxRow} baris × ${usedMaxCol} kolom\n` +
-        `📦 Tabel Dibuat: ${jsonData.length} baris × ${jsonData[0]?.length || 0} kolom\n` +
-        `🔗 Merge Cells: ${mergeCells.length}\n` +
-        `🎨 Background Colors: ${Object.keys(newCellColors).length}\n` +
-        `💅 Cell Styles: ${Object.keys(newCellStyles).length}\n\n` +
-        `⚠️ Klik "Simpan" untuk menyimpan perubahan!`
+      toast.success(
+        `Import Excel Berhasil!`,
+        {
+          description: `${actualMaxRow} baris × ${actualMaxCol} kolom | ${mergeCells.length} merge cells | ${Object.keys(newCellColors).length} warna`,
+          duration: 5000,
+        }
       );
 
       setIsDirty(true);
@@ -927,12 +978,13 @@ export default function KPIPage() {
     } catch (error) {
       console.error('❌ Error importing Excel:', error);
       setIsImporting(false);
-      alert('❌ Gagal import: ' + (error as Error).message);
+      toast.error('Gagal import: ' + (error as Error).message);
     }
   };
 
   const handleSaveTable = async () => {
     if (hotTableRef.current) {
+      setIsSaving(true);
       const hotInstance = hotTableRef.current.hotInstance;
       const data = hotInstance.getData();
       const mergeCellsPlugin = hotInstance.getPlugin('mergeCells');
@@ -964,8 +1016,9 @@ export default function KPIPage() {
         const currentUser = getCurrentUser();
 
         if (!currentUser || !currentUser._id) {
-          alert("❌ Sesi berakhir. Login ulang.");
+          toast.error("Sesi berakhir. Login ulang.");
           router.push('/login');
+          setIsSaving(false);
           return;
         }
 
@@ -985,10 +1038,12 @@ export default function KPIPage() {
         }
 
         setIsDirty(false);
-        alert("✅ Data berhasil disimpan!");
+        toast.success("Data berhasil disimpan!");
       } catch (error) {
         console.error("Error saving:", error);
-        alert("❌ Gagal menyimpan: " + (error as Error).message);
+        toast.error("Gagal menyimpan: " + (error as Error).message);
+      } finally {
+        setIsSaving(false);
       }
     }
   };
@@ -1032,7 +1087,7 @@ export default function KPIPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-6">
       <div className="max-w-[1900px] mx-auto space-y-6">
         {/* Development Warning Banner */}
-        <Card className="border-2 border-red-500 bg-gradient-to-r from-red-50 to-rose-50 shadow-lg">
+        {/* <Card className="border-2 border-red-500 bg-gradient-to-r from-red-50 to-rose-50 shadow-lg">
           <div className="flex items-start gap-3 p-4">
             <div className="flex-shrink-0 mt-0.5">
               <svg className="h-6 w-6 text-red-600 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1055,7 +1110,7 @@ export default function KPIPage() {
               </div>
             </div>
           </div>
-        </Card>
+        </Card> */}
 
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -1076,6 +1131,16 @@ export default function KPIPage() {
               <IconPlus className="h-4 w-4" />
               Buat KPI Baru
             </Button>
+            {selectedKPI && (
+              <Button
+                variant="outline"
+                className="gap-2 border-red-300 hover:bg-red-50 text-red-700 hover:text-red-800"
+                onClick={handleDeleteKPI}
+              >
+                <IconTrash className="h-4 w-4" />
+                Hapus KPI
+              </Button>
+            )}
             <Button
               variant="outline"
               className="gap-2 border-green-200 hover:bg-green-50"
@@ -1217,9 +1282,19 @@ export default function KPIPage() {
                     size="sm"
                     className="gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
                     onClick={handleSaveTable}
+                    disabled={isSaving}
                   >
-                    <IconDeviceFloppy className="h-4 w-4" />
-                    Simpan
+                    {isSaving ? (
+                      <>
+                        <IconLoader className="h-4 w-4 animate-spin" />
+                        Menyimpan...
+                      </>
+                    ) : (
+                      <>
+                        <IconDeviceFloppy className="h-4 w-4" />
+                        Simpan
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
@@ -1434,6 +1509,52 @@ export default function KPIPage() {
         />
       )}
 
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && selectedKPI && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md p-6 shadow-2xl border-red-200">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                  <IconAlertCircle className="h-6 w-6 text-red-600" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-red-900 mb-2">Hapus KPI?</h3>
+                <p className="text-slate-700 mb-4">
+                  Anda akan menghapus <strong>KPI &quot;{selectedKPI.name}&quot;</strong> untuk tahun <strong>{selectedKPI.year}</strong>.
+                </p>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-red-800 font-medium">
+                    ⚠️ Tindakan ini TIDAK DAPAT dibatalkan!
+                  </p>
+                  <p className="text-xs text-red-700 mt-1">
+                    Semua data yang terkait akan dihapus secara permanen.
+                  </p>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsDeleteModalOpen(false)}
+                    className="border-slate-300 hover:bg-slate-50"
+                  >
+                    Batal
+                  </Button>
+                  <Button
+                    variant="default"
+                    onClick={confirmDeleteKPI}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    <IconTrash className="h-4 w-4 mr-2" />
+                    Ya, Hapus
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
       {/* Styles */}
       <style jsx global>{`
         .htCore thead th {
@@ -1452,6 +1573,36 @@ export default function KPIPage() {
       <style jsx global>{`
         .htCore td, .htCore thead th, .htCore tbody th {
           font-size: ${globalFontSize}px !important;
+        }
+      `}</style>
+      <style jsx global>{`
+        /* Cursor pointer for all clickable elements */
+        button, a, [role="button"], [onClick] {
+          cursor: pointer !important;
+        }
+
+        /* Ensure inputs and selects have proper cursor */
+        input, select, textarea {
+          cursor: text !important;
+        }
+
+        input[type="button"],
+        input[type="submit"],
+        input[type="reset"],
+        input[type="file"],
+        input[type="checkbox"],
+        input[type="radio"] {
+          cursor: pointer !important;
+        }
+
+        /* Hover effects for interactive elements */
+        button:hover {
+          opacity: 0.9;
+        }
+
+        button:disabled {
+          cursor: not-allowed !important;
+          opacity: 0.6;
         }
       `}</style>
     </div>
@@ -1479,7 +1630,7 @@ function NewKPIModal({
 
   const handleSave = () => {
     if (!name || !year) {
-      alert("Mohon isi semua field");
+      toast.error("Mohon isi semua field");
       return;
     }
     onSave(year, name);
