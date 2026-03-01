@@ -417,3 +417,15 @@ export const deleteAllCrmTargets = mutation({
     return { deletedCount: crmTargets.length };
   },
 });
+
+// Get visited CRM targets (for Laporan Kunjungan)
+export const getVisitedTargets = query({
+  args: {},
+  handler: async (ctx) => {
+    const crmTargets = await ctx.db.query("crmTargets").collect();
+    // Filter only VISITED status and has tanggalKunjungan
+    return crmTargets.filter((target) => {
+      return target.statusKunjungan === "VISITED" && target.tanggalKunjungan;
+    });
+  },
+});
