@@ -4,7 +4,7 @@ import { mutation, query } from "./_generated/server";
 // === QUERIES ===
 
 // Get paginated CRM targets (more efficient than loading all)
-export const getCrmTargetsPaginated = query({
+export const getCrmNewClientsPaginated = query({
   args: {
     paginationOpts: v.object({
       numItems: v.number(),
@@ -13,7 +13,7 @@ export const getCrmTargetsPaginated = query({
   },
   handler: async (ctx, args) => {
     const results = await ctx.db
-      .query("crmTargets")
+      .query("crmNewClient")
       .order("desc")
       .paginate(args.paginationOpts);
 
@@ -24,28 +24,43 @@ export const getCrmTargetsPaginated = query({
   },
 });
 
-// Get all CRM targets (alias for getCrmTargets)
+// Get all CRM targets (alias for getCrmNewClients)
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    const crmTargets = await ctx.db.query("crmTargets").collect();
-    return crmTargets;
+    const crmNewClient = await ctx.db.query("crmNewClient").collect();
+    return crmNewClient;
   },
 });
 
 // Get all CRM targets (optimized with lean data)
-export const getCrmTargets = query({
+export const getCrmNewClients = query({
   args: {},
   handler: async (ctx) => {
-    const crmTargets = await ctx.db.query("crmTargets").collect();
+    const crmNewClient = await ctx.db.query("crmNewClient").collect();
     // Return data immediately without processing
-    return crmTargets;
+    return crmNewClient;
+  },
+});
+
+// Alias for getAllNewClients (used in components)
+export const getAllNewClients = getCrmNewClients;
+
+// Get visited new clients (statusKunjungan = "VISITED" and has tanggalKunjungan)
+export const getVisitedNewClients = query({
+  args: {},
+  handler: async (ctx) => {
+    const crmNewClients = await ctx.db.query("crmNewClient").collect();
+    // Filter only VISITED status and has tanggalKunjungan
+    return crmNewClients.filter((client) => {
+      return client.statusKunjungan === "VISITED" && client.tanggalKunjungan;
+    });
   },
 });
 
 // Get CRM target by ID
-export const getCrmTarget = query({
-  args: { id: v.id("crmTargets") },
+export const getCrmNewClient = query({
+  args: { id: v.id("crmNewClient") },
   handler: async (ctx, args) => {
     const crmTarget = await ctx.db.get(args.id);
     return crmTarget;
@@ -53,70 +68,70 @@ export const getCrmTarget = query({
 });
 
 // Get CRM targets by PIC CRM
-export const getCrmTargetsByPicCrm = query({
+export const getCrmNewClientsByPicCrm = query({
   args: { picCrm: v.optional(v.string()) },
   handler: async (ctx, args) => {
     if (!args.picCrm) {
       return [];
     }
-    const crmTargets = await ctx.db
-      .query("crmTargets")
+    const crmNewClient = await ctx.db
+      .query("crmNewClient")
       .withIndex("by_picCrm", (q) => q.eq("picCrm", args.picCrm!))
       .collect();
-    return crmTargets;
+    return crmNewClient;
   },
 });
 
 // Get CRM targets by Sales
-export const getCrmTargetsBySales = query({
+export const getCrmNewClientsBySales = query({
   args: { sales: v.string() },
   handler: async (ctx, args) => {
-    const crmTargets = await ctx.db
-      .query("crmTargets")
+    const crmNewClient = await ctx.db
+      .query("crmNewClient")
       .withIndex("by_sales", (q) => q.eq("sales", args.sales))
       .collect();
-    return crmTargets;
+    return crmNewClient;
   },
 });
 
 // Get CRM targets by Status
-export const getCrmTargetsByStatus = query({
+export const getCrmNewClientsByStatus = query({
   args: { status: v.string() },
   handler: async (ctx, args) => {
-    const crmTargets = await ctx.db
-      .query("crmTargets")
+    const crmNewClient = await ctx.db
+      .query("crmNewClient")
       .withIndex("by_status", (q) => q.eq("status", args.status))
       .collect();
-    return crmTargets;
+    return crmNewClient;
   },
 });
 
 // Get CRM targets by Provinsi
-export const getCrmTargetsByProvinsi = query({
+export const getCrmNewClientsByProvinsi = query({
   args: { provinsi: v.string() },
   handler: async (ctx, args) => {
-    const crmTargets = await ctx.db
-      .query("crmTargets")
+    const crmNewClient = await ctx.db
+      .query("crmNewClient")
       .withIndex("by_provinsi", (q) => q.eq("provinsi", args.provinsi))
       .collect();
-    return crmTargets;
+    return crmNewClient;
   },
 });
 
 // Get CRM targets by Date Range (tanggalKunjungan)
-export const getCrmTargetsByDateRange = query({
+export const getCrmNewClientsByDateRange = query({
   args: {
     startDate: v.string(),
     endDate: v.string(),
   },
   handler: async (ctx, args) => {
-    const crmTargets = await ctx.db
-      .query("crmTargets")
+    const crmNewClient = await ctx.db
+      .query("crmNewClient")
       .withIndex("by_tanggalKunjungan")
       .collect();
 
     // Filter by date range on the client side
-    return crmTargets.filter((target) => {
+    return crmNewClient.filter((target) => {
       if (!target.tanggalKunjungan) return false;
       const targetDate = new Date(target.tanggalKunjungan);
       const startDate = new Date(args.startDate);
@@ -127,13 +142,13 @@ export const getCrmTargetsByDateRange = query({
 });
 
 // Get CRM targets statistics
-export const getCrmTargetsStats = query({
+export const getCrmNewClientsStats = query({
   args: {},
   handler: async (ctx) => {
-    const crmTargets = await ctx.db.query("crmTargets").collect();
+    const crmNewClient = await ctx.db.query("crmNewClient").collect();
 
     const stats = {
-      total: crmTargets.length,
+      total: crmNewClient.length,
       byStatus: {} as Record<string, number>,
       byPicCrm: {} as Record<string, number>,
       bySales: {} as Record<string, number>,
@@ -144,7 +159,7 @@ export const getCrmTargetsStats = query({
       totalHargaKontrak: 0,
     };
 
-    crmTargets.forEach((target) => {
+    crmNewClient.forEach((target) => {
       // By Status
       stats.byStatus[target.status] = (stats.byStatus[target.status] || 0) + 1;
 
@@ -182,7 +197,7 @@ export const getCrmTargetsStats = query({
 // === MUTATIONS ===
 
 // Create CRM target
-export const createCrmTarget = mutation({
+export const createCrmNewClient = mutation({
   args: {
     tahun: v.string(),
     bulanExpDate: v.string(),
@@ -225,7 +240,7 @@ export const createCrmTarget = mutation({
   handler: async (ctx, args) => {
     const now = Date.now();
 
-    const crmTargetId = await ctx.db.insert("crmTargets", {
+    const crmTargetId = await ctx.db.insert("crmNewClient", {
       ...args,
       createdAt: now,
       updatedAt: now,
@@ -237,9 +252,9 @@ export const createCrmTarget = mutation({
 });
 
 // Update CRM target
-export const updateCrmTarget = mutation({
+export const updateCrmNewClient = mutation({
   args: {
-    id: v.id("crmTargets"),
+    id: v.id("crmNewClient"),
     tahun: v.optional(v.union(v.string(), v.null())),
     bulanExpDate: v.optional(v.union(v.string(), v.null())),
     produk: v.optional(v.union(v.string(), v.null())),
@@ -332,8 +347,8 @@ export const updateCrmTarget = mutation({
 });
 
 // Delete CRM target
-export const deleteCrmTarget = mutation({
-  args: { id: v.id("crmTargets") },
+export const deleteCrmNewClient = mutation({
+  args: { id: v.id("crmNewClient") },
   handler: async (ctx, args) => {
     await ctx.db.delete(args.id);
     return { success: true };
@@ -341,7 +356,7 @@ export const deleteCrmTarget = mutation({
 });
 
 // Bulk insert CRM targets (for Excel import)
-export const bulkInsertCrmTargets = mutation({
+export const bulkInsertCrmNewClients = mutation({
   args: {
     targets: v.array(
       v.object({
@@ -395,7 +410,7 @@ export const bulkInsertCrmTargets = mutation({
     const insertedIds = [];
 
     for (const target of args.targets) {
-      const id = await ctx.db.insert("crmTargets", {
+      const id = await ctx.db.insert("crmNewClient", {
         ...target,
         createdAt: now,
         updatedAt: now,
@@ -415,10 +430,10 @@ export const bulkInsertCrmTargets = mutation({
 export const fixDirectOrAssociateTypo = mutation({
   args: {},
   handler: async (ctx) => {
-    const crmTargets = await ctx.db.query("crmTargets").collect();
+    const crmNewClient = await ctx.db.query("crmNewClient").collect();
     let fixedCount = 0;
 
-    for (const target of crmTargets) {
+    for (const target of crmNewClient) {
       // Check if directOrAssociate has typo variations
       if (target.directOrAssociate) {
         const normalized = target.directOrAssociate.toLowerCase();
@@ -447,25 +462,14 @@ export const fixDirectOrAssociateTypo = mutation({
 });
 
 // Delete all CRM targets (useful for re-import)
-export const deleteAllCrmTargets = mutation({
+export const deleteAllCrmNewClients = mutation({
   args: {},
   handler: async (ctx) => {
-    const crmTargets = await ctx.db.query("crmTargets").collect();
-    for (const target of crmTargets) {
+    const crmNewClient = await ctx.db.query("crmNewClient").collect();
+    for (const target of crmNewClient) {
       await ctx.db.delete(target._id);
     }
-    return { deletedCount: crmTargets.length };
+    return { deletedCount: crmNewClient.length };
   },
 });
 
-// Get visited CRM targets (for Laporan Kunjungan)
-export const getVisitedTargets = query({
-  args: {},
-  handler: async (ctx) => {
-    const crmTargets = await ctx.db.query("crmTargets").collect();
-    // Filter only VISITED status and has tanggalKunjungan
-    return crmTargets.filter((target) => {
-      return target.statusKunjungan === "VISITED" && target.tanggalKunjungan;
-    });
-  },
-});

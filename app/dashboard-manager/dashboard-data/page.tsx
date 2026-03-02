@@ -3185,7 +3185,7 @@ export default function CrmDataManagementPage() {
                 const matchesStatus = filterStatus === 'all' || t.status === filterStatus;
                 const isSertifikatMatch = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
                 const hasBulanTtdNotif = t.bulanTtdNotif && t.bulanTtdNotif !== '';
-                const hasAssociate = t.directOrAssociate;
+                const hasAssociate = t.directOrAssociate && t.directOrAssociate.trim() !== '';
 
                 // Filter Tipe Produk
                 let matchesTipeProduk = true;
@@ -3248,14 +3248,14 @@ export default function CrmDataManagementPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {['Direct', 'Associate'].map(assocType => {
                       const assocTotal = dataWithAssociate
-                        .filter(t => t.directOrAssociate === assocType)
+                        .filter(t => t.directOrAssociate && t.directOrAssociate.toLowerCase() === assocType.toLowerCase())
                         .reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0);
-                      const assocCount = dataWithAssociate.filter(t => t.directOrAssociate === assocType).length;
+                      const assocCount = dataWithAssociate.filter(t => t.directOrAssociate && t.directOrAssociate.toLowerCase() === assocType.toLowerCase()).length;
 
                       // Calculate unique companies per associate type
                       const assocCompanies = new Set(
                         dataWithAssociate
-                          .filter(t => t.directOrAssociate === assocType)
+                          .filter(t => t.directOrAssociate && t.directOrAssociate.toLowerCase() === assocType.toLowerCase())
                           .map(t => t.namaPerusahaan)
                       );
                       const assocCompanyCount = assocCompanies.size;

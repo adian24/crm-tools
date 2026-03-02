@@ -108,6 +108,7 @@ export function LaporanKunjunganDialog({ open, onOpenChange, targets, onSuccess 
   const alasanOptions = masterAlasanData.alasan.map(item => item.alasan);
 
   const [tanggalKunjungan, setTanggalKunjungan] = useState("");
+  const [statusKunjungan, setStatusKunjungan] = useState("VISITED");
   const [catatanKunjungan, setCatatanKunjungan] = useState("");
   const [fotoBuktiKunjungan, setFotoBuktiKunjungan] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -196,11 +197,13 @@ export function LaporanKunjunganDialog({ open, onOpenChange, targets, onSuccess 
     if (targets && targets.length > 0) {
       const firstTarget = targets[0];
       setTanggalKunjungan(firstTarget.tanggalKunjungan || "");
+      setStatusKunjungan(firstTarget.statusKunjungan || "VISITED");
       setCatatanKunjungan(firstTarget.catatanKunjungan || "");
       setFotoBuktiKunjungan(firstTarget.fotoBuktiKunjungan || "");
       setStandardUpdates({});
     } else {
       setTanggalKunjungan("");
+      setStatusKunjungan("VISITED");
       setCatatanKunjungan("");
       setFotoBuktiKunjungan("");
       setStandardUpdates({});
@@ -315,7 +318,7 @@ export function LaporanKunjunganDialog({ open, onOpenChange, targets, onSuccess 
           trimmingValue: updates?.trimmingValue ? parseFloat(updates.trimmingValue) : undefined,
           lossValue: updates?.lossValue ? parseFloat(updates.lossValue) : undefined,
           tanggalKunjungan,
-          statusKunjungan: "VISITED",
+          statusKunjungan,
           catatanKunjungan: catatanKunjungan.trim() || undefined,
           fotoBuktiKunjungan: fotoBuktiKunjungan || undefined,
           updated_by: user?._id,
@@ -535,6 +538,28 @@ export function LaporanKunjunganDialog({ open, onOpenChange, targets, onSuccess 
                 className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 h-9 text-sm pl-10"
               />
             </div>
+          </div>
+
+          {/* Status Kunjungan */}
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+              Status Kunjungan <span className="text-red-500">*</span>
+            </Label>
+            <Select value={statusKunjungan} onValueChange={setStatusKunjungan} disabled={isSaving}>
+              <SelectTrigger className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 h-9 text-sm">
+                <SelectValue placeholder="Pilih Status Kunjungan" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="VISITED">✅ VISITED (Sudah Dikunjungi)</SelectItem>
+                <SelectItem value="NOT YET">❌ NOT YET (Belum Dikunjungi)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {statusKunjungan === "VISITED"
+                ? "Kunjungan sudah dilakukan"
+                : "Kunjungan dibatalkan atau belum dilakukan. Data tidak akan muncul di laporan."
+              }
+            </p>
           </div>
 
           {/* Catatan Kunjungan */}

@@ -97,7 +97,9 @@ function ChartCardAssociateMonthly({
       }
 
       const monthName = monthNames[monthIndex];
-      const associateType = item.directOrAssociate || 'Direct'; // Use directOrAssociate field
+      // Normalize to proper case (Direct or Associate)
+      const associateTypeRaw = item.directOrAssociate || 'Direct';
+      const associateType = associateTypeRaw.toLowerCase() === 'associate' ? 'Associate' : 'Direct';
 
       // Add hargaTerupdate to the corresponding month and associate type
       if (monthlyData[monthName] && associateType in monthlyData[monthName]) {

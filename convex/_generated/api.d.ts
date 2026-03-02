@@ -12,6 +12,7 @@ import type * as associatesData from "../associatesData.js";
 import type * as auth from "../auth.js";
 import type * as cleanNps from "../cleanNps.js";
 import type * as clearAllConnections from "../clearAllConnections.js";
+import type * as crmNewClient from "../crmNewClient.js";
 import type * as crmTargets from "../crmTargets.js";
 import type * as customerComplain from "../customerComplain.js";
 import type * as flyers from "../flyers.js";
@@ -50,6 +51,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   cleanNps: typeof cleanNps;
   clearAllConnections: typeof clearAllConnections;
+  crmNewClient: typeof crmNewClient;
   crmTargets: typeof crmTargets;
   customerComplain: typeof customerComplain;
   flyers: typeof flyers;
