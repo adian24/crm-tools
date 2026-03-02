@@ -27,6 +27,7 @@ import type * as masterAssociate from "../masterAssociate.js";
 import type * as migrate from "../migrate.js";
 import type * as notifications from "../notifications.js";
 import type * as nps from "../nps.js";
+import type * as prmReferralPencapaian from "../prmReferralPencapaian.js";
 import type * as roles from "../roles.js";
 import type * as seed from "../seed.js";
 import type * as staffTargets from "../staffTargets.js";
@@ -66,6 +67,7 @@ declare const fullApi: ApiFromModules<{
   migrate: typeof migrate;
   notifications: typeof notifications;
   nps: typeof nps;
+  prmReferralPencapaian: typeof prmReferralPencapaian;
   roles: typeof roles;
   seed: typeof seed;
   staffTargets: typeof staffTargets;

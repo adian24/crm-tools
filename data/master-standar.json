@@ -103,6 +103,18 @@
       "deskripsi": "Sistem manajemen mutu untuk perangkat medis"
     },
     {
+      "kode": "37301",
+      "nama": "ISO 37301",
+      "kategori_produk": "ISO",
+      "deskripsi": "-"
+    },
+    {
+      "kode": "56001",
+      "nama": "ISO 56001",
+      "kategori_produk": "ISO",
+      "deskripsi": "-"
+    },
+    {
       "kode": "ISCC PLUS",
       "nama": "ISCC PLUS",
       "kategori_produk": "SUSTAIN",

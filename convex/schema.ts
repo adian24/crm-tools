@@ -513,4 +513,27 @@ export default defineSchema({
     .index("by_year", ["year"])
     .index("by_tglKunjungan", ["tglKunjungan"])
     .index("by_created_by", ["created_by"]),
+
+  // Table PRM & Referral Pencapaian
+  prmReferralPencapaian: defineTable({
+    year: v.number(), // Tahun
+    month: v.number(), // Bulan (1-12)
+    judul: v.string(), // Judul pencapaian
+    category: v.string(), // Kategori: "PRM" atau "REFERRAL"
+    target: v.number(), // Target pencapaian
+    pencapaian: v.number(), // Pencapaian aktual
+    deskripsi: v.optional(v.string()), // Deskripsi pencapaian
+
+    // Audit fields
+    created_by: v.optional(v.id("users")), // User yang membuat
+    updated_by: v.optional(v.id("users")), // User yang terakhir update
+    createdByName: v.string(), // Nama user yang membuat
+    updatedByName: v.optional(v.string()), // Nama user yang terakhir update
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_category", ["category"])
+    .index("by_month_year", ["month", "year"])
+    .index("by_year", ["year"])
+    .index("by_created_by", ["created_by"]),
 });

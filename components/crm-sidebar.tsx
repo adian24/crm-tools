@@ -97,7 +97,12 @@ const getNavigationItems = (role: string) => {
         icon: IconDatabase,
       },
       {
-        title: "Dashboard Kunjungan",
+        title: "Pencapaian PRM & Referral",
+        url: "/dashboard-manager/pencapaian-prm-referral",
+        icon: IconCalendarTime,
+      },
+      {
+        title: "Jadwal Kunjungan",
         url: "/dashboard-manager/dashboard-kunjungan",
         icon: IconCalendarTime,
       },
@@ -178,7 +183,12 @@ const getNavigationItems = (role: string) => {
       icon: IconDatabase,
     },
     {
-      title: "Dashboard Kunjungan",
+      title: "Pencapaian PRM",
+      url: "/dashboard-manager/pencapaian-prm-referral",
+      icon: IconCalendarTime,
+    },
+    {
+      title: "Jadwal Kunjungan",
       url: "/dashboard-manager/dashboard-kunjungan",
       icon: IconCalendarTime,
     },
@@ -211,11 +221,6 @@ const getNavigationItems = (role: string) => {
       title: "Isu & Kendala",
       url: "/dashboard-manager/isu-kendala",
       icon: IconPhoto,
-    },
-    {
-      title: "Dashboard PRM",
-      url: "/dashboard-manager/dashboard-prm",
-      icon: IconCalendarTime,
     },
     {
       title: "CRM Data Management",
