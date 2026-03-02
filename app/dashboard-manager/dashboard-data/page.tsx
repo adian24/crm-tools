@@ -3688,7 +3688,7 @@ export default function CrmDataManagementPage() {
                     let matchesTipeProduk = true;
                     if (filterTipeProduk !== 'all') {
                       const produkUpper = (t.produk || '').toUpperCase();
-                      if (filterTipeProduk === 'XMS') {
+                      if (filterTipeProduk === 'ISO') {
                         matchesTipeProduk = produkUpper.includes('ISO');
                       } else if (filterTipeProduk === 'SUSTAIN') {
                         matchesTipeProduk = produkUpper.includes('ISPO');
@@ -4122,7 +4122,7 @@ export default function CrmDataManagementPage() {
                     let matchesTipeProduk = true;
                     if (filterTipeProduk !== 'all') {
                       const produkUpper = (t.produk || '').toUpperCase();
-                      if (filterTipeProduk === 'XMS') {
+                      if (filterTipeProduk === 'ISO') {
                         matchesTipeProduk = produkUpper.includes('ISO');
                       } else if (filterTipeProduk === 'SUSTAIN') {
                         matchesTipeProduk = produkUpper.includes('ISPO');

@@ -488,7 +488,7 @@ const EditCrmDialog = React.memo(function EditCrmDialog({
                       <SelectValue placeholder="Pilih" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="XMS">XMS</SelectItem>
+                      <SelectItem value="ISO">ISO</SelectItem>
                       <SelectItem value="SUSTAIN">SUSTAIN</SelectItem>
                     </SelectContent>
                   </Select>
