@@ -32,6 +32,7 @@ import { FilterPicSalesSection } from '@/components/filters/FilterPicSalesSectio
 import { FilterSertifikatSection } from '@/components/filters/FilterSertifikatSection';
 import { FilterKunjunganSection } from '@/components/filters/FilterKunjunganSection';
 import { FilterBulanAuditSustain } from '@/components/filters/FilterBulanAuditSustain';
+import { FilterBulanAudit } from '@/components/filters/FilterBulanAudit';
 import { EditCrmDialog } from '@/components/crm-edit-dialog';
 
 interface CrmTarget {
@@ -689,6 +690,9 @@ export default function CrmDataManagementPage() {
   const [filterTahunAuditSustain, setFilterTahunAuditSustain] = useState<string>('all');
   const [filterFromBulanAuditSustain, setFilterFromBulanAuditSustain] = useState<string>('all');
   const [filterToBulanAuditSustain, setFilterToBulanAuditSustain] = useState<string>('all');
+  const [filterTahunAudit, setFilterTahunAudit] = useState<string>('all');
+  const [filterFromBulanAudit, setFilterFromBulanAudit] = useState<string>('all');
+  const [filterToBulanAudit, setFilterToBulanAudit] = useState<string>('all');
   const [filterFromKunjungan, setFilterFromKunjungan] = useState<string>('all');
   const [filterToKunjungan, setFilterToKunjungan] = useState<string>('all');
   const [filterStatusKunjungan, setFilterStatusKunjungan] = useState<string>('all');
@@ -835,7 +839,17 @@ export default function CrmDataManagementPage() {
       .filter((year): year is string => year !== null) || []
   )].sort();
 
-  // Toggle filter section
+  const tahunAuditOptions = [...new Set(
+    filteredCrmTargets
+      ?.map(t => {
+        if (t.bulanAudit) {
+          return new Date(t.bulanAudit).getUTCFullYear().toString();
+        }
+        return null;
+      })
+      .filter((year): year is string => year !== null) || []
+  )].sort();
+
   const toggleFilterSection = (section: string) => {
     setExpandedFilterSections(prev =>
       prev.includes(section)
@@ -866,6 +880,9 @@ export default function CrmDataManagementPage() {
     setFilterTahunAuditSustain('all');
     setFilterFromBulanAuditSustain('all');
     setFilterToBulanAuditSustain('all');
+    setFilterTahunAudit('all');
+    setFilterFromBulanAudit('all');
+    setFilterToBulanAudit('all');
     setFilterFromKunjungan('all');
     setFilterToKunjungan('all');
     setFilterStatusKunjungan('all');
@@ -1074,6 +1091,30 @@ export default function CrmDataManagementPage() {
 
     const matchesStatusKunjungan = filterStatusKunjungan === 'all' || target.statusKunjungan === filterStatusKunjungan;
 
+    let matchesBulanAudit = true;
+    if (filterTahunAudit !== 'all' || filterFromBulanAudit !== 'all' || filterToBulanAudit !== 'all') {
+      const auditDate = target.bulanAudit;
+
+      if (!auditDate) {
+        matchesBulanAudit = false;
+      } else {
+        const dateObj = new Date(auditDate);
+        const auditYear = dateObj.getUTCFullYear().toString();
+        const auditMonth = dateObj.getUTCMonth() + 1;
+
+        const matchesTahun = filterTahunAudit === 'all' || auditYear === filterTahunAudit;
+
+        let matchesBulan = true;
+        if (filterFromBulanAudit !== 'all' || filterToBulanAudit !== 'all') {
+          const fromMonth = filterFromBulanAudit !== 'all' ? parseInt(filterFromBulanAudit) : 1;
+          const toMonth = filterToBulanAudit !== 'all' ? parseInt(filterToBulanAudit) : 12;
+          matchesBulan = auditMonth >= fromMonth && auditMonth <= toMonth;
+        }
+
+        matchesBulanAudit = matchesTahun && matchesBulan;
+      }
+    }
+
     // Quick filter from statistics cards
     let matchesQuickFilter = true;
     if (quickFilter) {
@@ -1118,7 +1159,7 @@ export default function CrmDataManagementPage() {
            matchesPicSales && matchesStatus && matchesAlasan && matchesCategory && matchesProvinsi &&
            matchesKota && matchesTipeProduk && matchesStandar && matchesAkreditasi && matchesEaCode &&
            matchesTahapAudit && matchesBulanTTD && matchesStatusSertifikat &&
-           matchesTermin && matchesBulanAuditSustain && matchesKunjungan && matchesStatusKunjungan && matchesQuickFilter;
+           matchesTermin && matchesBulanAuditSustain && matchesBulanAudit && matchesKunjungan && matchesStatusKunjungan && matchesQuickFilter;
   }) || [];
 
   // Sort targets based on current sort field and direction
@@ -2320,9 +2361,27 @@ export default function CrmDataManagementPage() {
                   setFilterTahunAuditSustain={setFilterTahunAuditSustain}
                   filterFromBulanAuditSustain={filterFromBulanAuditSustain}
                   setFilterFromBulanAuditSustain={setFilterFromBulanAuditSustain}
-                  filterToBulanAuditSustain={filterToBulanAuditSustain}
+                  filterToBulanAuditSustain={setFilterToBulanAuditSustain}
                   setFilterToBulanAuditSustain={setFilterToBulanAuditSustain}
                   tahunOptions={tahunAuditSustainOptions}
+                  bulanOptions={bulanOptions}
+                />
+              </FilterSection>
+
+              {/* Section Bulan Audit */}
+              <FilterSection
+                title="Filter Bulan Audit"
+                isExpanded={expandedFilterSections.includes('bulanAudit')}
+                onToggle={() => toggleFilterSection('bulanAudit')}
+              >
+                <FilterBulanAudit
+                  filterTahunAudit={filterTahunAudit}
+                  setFilterTahunAudit={setFilterTahunAudit}
+                  filterFromBulanAudit={filterFromBulanAudit}
+                  setFilterFromBulanAudit={setFilterFromBulanAudit}
+                  filterToBulanAudit={filterToBulanAudit}
+                  setFilterToBulanAudit={setFilterToBulanAudit}
+                  tahunOptions={tahunAuditOptions}
                   bulanOptions={bulanOptions}
                 />
               </FilterSection>
@@ -3519,11 +3578,11 @@ export default function CrmDataManagementPage() {
 
       {/* Mobile Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border lg:hidden">
-        <div className={`grid gap-1 p-2 ${currentUser?.role === 'staff' ? 'grid-cols-7' : 'grid-cols-8'}`}>
+        <div className="flex gap-1 p-2 overflow-x-auto snap-x hide-scrollbar">
           {/* Search Tab */}
           <button
             onClick={() => setActiveFilterSheet(activeFilterSheet === 'search' ? null : 'search')}
-            className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors ${
+            className={`flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-colors min-w-[70px] snap-start shrink-0 ${
               activeFilterSheet === 'search' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
             }`}
           >
@@ -3534,7 +3593,7 @@ export default function CrmDataManagementPage() {
           {/* Date Filter Tab */}
           <button
             onClick={() => setActiveFilterSheet(activeFilterSheet === 'date' ? null : 'date')}
-            className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors ${
+            className={`flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-colors min-w-[70px] snap-start shrink-0 ${
               activeFilterSheet === 'date' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
             }`}
           >
@@ -3546,7 +3605,7 @@ export default function CrmDataManagementPage() {
           {currentUser?.role !== 'staff' && (
             <button
               onClick={() => setActiveFilterSheet(activeFilterSheet === 'picCrm' ? null : 'picCrm')}
-              className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors ${
+              className={`flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-colors min-w-[70px] snap-start shrink-0 ${
                 activeFilterSheet === 'picCrm' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
               }`}
             >
@@ -3558,7 +3617,7 @@ export default function CrmDataManagementPage() {
           {/* Company Tab */}
           <button
             onClick={() => setActiveFilterSheet(activeFilterSheet === 'company' ? null : 'company')}
-            className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors ${
+            className={`flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-colors min-w-[70px] snap-start shrink-0 ${
               activeFilterSheet === 'company' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
             }`}
           >
@@ -3569,7 +3628,7 @@ export default function CrmDataManagementPage() {
           {/* Location Tab */}
           <button
             onClick={() => setActiveFilterSheet(activeFilterSheet === 'location' ? null : 'location')}
-            className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors ${
+            className={`flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-colors min-w-[70px] snap-start shrink-0 ${
               activeFilterSheet === 'location' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
             }`}
           >
@@ -3580,7 +3639,7 @@ export default function CrmDataManagementPage() {
           {/* Statistics Tab */}
           <button
             onClick={() => setActiveFilterSheet(activeFilterSheet === 'statistics' ? null : 'statistics')}
-            className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors ${
+            className={`flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-colors min-w-[70px] snap-start shrink-0 ${
               activeFilterSheet === 'statistics' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
             }`}
           >
@@ -3591,12 +3650,23 @@ export default function CrmDataManagementPage() {
           {/* Audit Sustain Tab */}
           <button
             onClick={() => setActiveFilterSheet(activeFilterSheet === 'auditSustain' ? null : 'auditSustain')}
-            className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors ${
+            className={`flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-colors min-w-[70px] snap-start shrink-0 ${
               activeFilterSheet === 'auditSustain' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
             }`}
           >
             <FileClock className="h-5 w-5 mb-1" />
             <span className="text-[10px] font-medium">Audit Sustain</span>
+          </button>
+
+          {/* Bulan Audit Tab */}
+          <button
+            onClick={() => setActiveFilterSheet(activeFilterSheet === 'bulanAudit' ? null : 'bulanAudit')}
+            className={`flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-colors min-w-[70px] snap-start shrink-0 ${
+              activeFilterSheet === 'bulanAudit' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+            }`}
+          >
+            <Calendar className="h-5 w-5 mb-1" />
+            <span className="text-[10px] font-medium">Bulan Audit</span>
           </button>
 
           {/* Reset Tab */}
@@ -3605,11 +3675,14 @@ export default function CrmDataManagementPage() {
               resetAllFilters();
               setActiveFilterSheet(null);
             }}
-            className="flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors hover:bg-red-50 hover:text-red-600 text-red-500"
+            className="flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-colors hover:bg-red-50 hover:text-red-600 text-red-500 min-w-[70px] snap-start shrink-0"
           >
             <X className="h-5 w-5 mb-1" />
             <span className="text-[10px] font-medium">Reset</span>
           </button>
+        </div>
+        <div className="text-center pb-1">
+          <p className="text-[9px] text-muted-foreground">Geser untuk melihat semua filter →</p>
         </div>
       </div>
 
@@ -4100,6 +4173,41 @@ export default function CrmDataManagementPage() {
                       filterToBulanAuditSustain={filterToBulanAuditSustain}
                       setFilterToBulanAuditSustain={setFilterToBulanAuditSustain}
                       tahunOptions={tahunAuditSustainOptions}
+                      bulanOptions={bulanOptions}
+                    />
+                    <Button
+                      onClick={() => setActiveFilterSheet(null)}
+                      className="w-full"
+                    >
+                      OK
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Bulan Audit Filter */}
+              {activeFilterSheet === 'bulanAudit' && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-sm">Bulan Audit</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setActiveFilterSheet(null)}
+                      className="h-8 text-xs"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    <FilterBulanAudit
+                      filterTahunAudit={filterTahunAudit}
+                      setFilterTahunAudit={setFilterTahunAudit}
+                      filterFromBulanAudit={filterFromBulanAudit}
+                      setFilterFromBulanAudit={setFilterFromBulanAudit}
+                      filterToBulanAudit={filterToBulanAudit}
+                      setFilterToBulanAudit={setFilterToBulanAudit}
+                      tahunOptions={tahunAuditOptions}
                       bulanOptions={bulanOptions}
                     />
                     <Button
