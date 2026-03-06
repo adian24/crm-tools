@@ -2361,7 +2361,7 @@ export default function CrmDataManagementPage() {
                   setFilterTahunAuditSustain={setFilterTahunAuditSustain}
                   filterFromBulanAuditSustain={filterFromBulanAuditSustain}
                   setFilterFromBulanAuditSustain={setFilterFromBulanAuditSustain}
-                  filterToBulanAuditSustain={setFilterToBulanAuditSustain}
+                  filterToBulanAuditSustain={filterToBulanAuditSustain}
                   setFilterToBulanAuditSustain={setFilterToBulanAuditSustain}
                   tahunOptions={tahunAuditSustainOptions}
                   bulanOptions={bulanOptions}
