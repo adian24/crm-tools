@@ -1,6 +1,10 @@
 {
   "tahapan": [
     {
+      "kode": "IA",
+      "nama": "IA"
+    },
+    {
       "kode": "RC",
       "nama": "RC"
     },
@@ -19,6 +23,10 @@
     {
       "kode": "SV4",
       "nama": "SV4"
+    },
+    {
+      "kode": "GAP",
+      "nama": "GAP"
     }
   ]
 }

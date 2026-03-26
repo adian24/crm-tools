@@ -15,6 +15,7 @@ import masterSalesData from '@/data/master-sales.json';
 import masterStandarData from '@/data/master-standar.json';
 import masterEaCodeData from '@/data/master-ea-code.json';
 import masterAlasanData from '@/data/master-alasan.json';
+import masterTahapanData from '@/data/master-tahapan.json';
 
 interface EditFormData {
   tahun: string;
@@ -196,6 +197,7 @@ const EditCrmDialog = React.memo(function EditCrmDialog({
   const salesOptions = useMemo(() => masterSalesData.map(sales => sales.nama), []);
   const standarOptions = useMemo(() => masterStandarData.standar.map(std => std.nama), []);
   const eaCodeOptions = useMemo(() => masterEaCodeData.ea_code.map(ea => ({ id: ea.id, code: ea.ea_code })), []);
+  const tahapanOptions = useMemo(() => masterTahapanData.tahapan.map(t => t.nama), []);
 
   // Format harga for display
   const displayHargaKontrak = useMemo(() => formatNumber(formData.hargaKontrak), [formData.hargaKontrak]);
@@ -542,12 +544,9 @@ const EditCrmDialog = React.memo(function EditCrmDialog({
                       <SelectValue placeholder="Pilih" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="IA">IA</SelectItem>
-                      <SelectItem value="RC">RC</SelectItem>
-                      <SelectItem value="SV1">SV1</SelectItem>
-                      <SelectItem value="SV2">SV2</SelectItem>
-                      <SelectItem value="SV3">SV3</SelectItem>
-                      <SelectItem value="SV4">SV4</SelectItem>
+                      {tahapanOptions.map((tahap) => (
+                        <SelectItem key={tahap} value={tahap}>{tahap}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

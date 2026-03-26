@@ -23,6 +23,7 @@ import masterSalesData from '@/data/master-sales.json';
 import masterStandarData from '@/data/master-standar.json';
 import masterEaCodeData from '@/data/master-ea-code.json';
 import masterAlasanData from '@/data/master-alasan.json';
+import masterTahapanData from '@/data/master-tahapan.json';
 import { InfinityLoader } from '@/components/ui/infinity-loader';
 import { FilterSection } from '@/components/filters/FilterSection';
 import { FilterDateSection } from '@/components/filters/FilterDateSection';
@@ -135,6 +136,7 @@ interface FormDataRowProps {
   totalRows: number;
   staffUsers: any[];
   associates: any[];
+  tahapanOptions: Array<{ value: string; label: string }>;
 }
 
 // Helper functions to normalize provinsi and kota for flexible matching
@@ -159,7 +161,7 @@ const normalizeKota = (str: string): string => {
 };
 
 // FormDataRow Component for Excel-like table
-const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, staffUsers, associates }: FormDataRowProps) => {
+const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, staffUsers, associates, tahapanOptions }: FormDataRowProps) => {
   const handleChange = (field: keyof CrmFormData, value: string) => {
     onFieldChange(index, field, value);
   };
@@ -440,12 +442,9 @@ const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, staffUser
           className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
         >
           <option value="">- Pilih -</option>
-          <option value="IA">IA</option>
-          <option value="RC">RC</option>
-          <option value="SV1">SV1</option>
-          <option value="SV2">SV2</option>
-          <option value="SV3">SV3</option>
-          <option value="SV4">SV4</option>
+          {tahapanOptions.map((tahap) => (
+            <option key={tahap.value} value={tahap.value}>{tahap.label}</option>
+          ))}
         </select>
       </td>
       <td className="border border-border p-1 min-w-[100px]">
@@ -818,10 +817,8 @@ export default function CrmDataManagementPage() {
     ? [...new Set((indonesiaData as any)[filterProvinsi].kabupaten_kota)].sort() as string[] // Remove duplicates with Set
     : [];
 
-  // Tahapan Audit - Default options + dynamic from data
-  const defaultTahapanAudit = ['IA', 'SV1', 'SV2', 'SV3', 'SV4', 'RC'];
-  const tahapanAuditFromData = [...new Set(filteredCrmTargets?.map(t => t.tahapAudit).filter(Boolean) || [])];
-  const tahapanAuditOptions = [...new Set([...defaultTahapanAudit, ...tahapanAuditFromData])].sort() as string[];
+  // Tahapan Audit - From master-tahapan.json
+  const tahapanOptions = masterTahapanData.tahapan.map((t: any) => ({ value: t.kode, label: t.nama }));
 
   // Sales options
   const salesOptions = [...new Set(filteredCrmTargets?.map(t => t.sales).filter(Boolean) || [])].sort() as string[];
@@ -2718,73 +2715,36 @@ export default function CrmDataManagementPage() {
             {/* Tahapan Audit */}
             <div className="flex items-center">
               <span className="text-xs font-semibold text-gray-600 uppercase whitespace-nowrap w-44 hidden lg:block">🔍 Tahapan Audit:</span>
-              <div className="flex-1 grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-1.5">
-                <div
-                  className={`bg-indigo-50 rounded px-2 py-1 border border-indigo-200 text-center cursor-pointer hover:ring-2 hover:ring-indigo-400 transition-all ${
-                    quickFilter?.field === 'tahapAudit' && quickFilter?.value === 'IA' ? 'ring-2 ring-indigo-600' : ''
-                  }`}
-                  onClick={() => quickFilter?.field === 'tahapAudit' && quickFilter?.value === 'IA'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('tahapAudit', 'IA')
-                  }
-                >
-                  <p className="text-xs text-indigo-700 font-semibold">IA <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.tahapAudit && t.tahapAudit.toUpperCase() === 'IA').length})</span></p>
-                </div>
-                <div
-                  className={`bg-rose-50 rounded px-2 py-1 border border-rose-200 text-center cursor-pointer hover:ring-2 hover:ring-rose-400 transition-all ${
-                    quickFilter?.field === 'tahapAudit' && quickFilter?.value === 'RC' ? 'ring-2 ring-rose-600' : ''
-                  }`}
-                  onClick={() => quickFilter?.field === 'tahapAudit' && quickFilter?.value === 'RC'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('tahapAudit', 'RC')
-                  }
-                >
-                  <p className="text-xs text-rose-700 font-semibold">RC <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.tahapAudit && t.tahapAudit.toUpperCase() === 'RC').length})</span></p>
-                </div>
-                <div
-                  className={`bg-sky-50 rounded px-2 py-1 border border-sky-200 text-center cursor-pointer hover:ring-2 hover:ring-sky-400 transition-all ${
-                    quickFilter?.field === 'tahapAudit' && quickFilter?.value === 'SV1' ? 'ring-2 ring-sky-600' : ''
-                  }`}
-                  onClick={() => quickFilter?.field === 'tahapAudit' && quickFilter?.value === 'SV1'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('tahapAudit', 'SV1')
-                  }
-                >
-                  <p className="text-xs text-sky-700 font-semibold">SV1 <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.tahapAudit && t.tahapAudit.toUpperCase() === 'SV1').length})</span></p>
-                </div>
-                <div
-                  className={`bg-blue-50 rounded px-2 py-1 border border-blue-200 text-center cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all ${
-                    quickFilter?.field === 'tahapAudit' && quickFilter?.value === 'SV2' ? 'ring-2 ring-blue-600' : ''
-                  }`}
-                  onClick={() => quickFilter?.field === 'tahapAudit' && quickFilter?.value === 'SV2'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('tahapAudit', 'SV2')
-                  }
-                >
-                  <p className="text-xs text-blue-700 font-semibold">SV2 <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.tahapAudit && t.tahapAudit.toUpperCase() === 'SV2').length})</span></p>
-                </div>
-                <div
-                  className={`bg-sky-50 rounded px-2 py-1 border border-sky-200 text-center cursor-pointer hover:ring-2 hover:ring-sky-400 transition-all hidden sm:block ${
-                    quickFilter?.field === 'tahapAudit' && quickFilter?.value === 'SV3' ? 'ring-2 ring-sky-600' : ''
-                  }`}
-                  onClick={() => quickFilter?.field === 'tahapAudit' && quickFilter?.value === 'SV3'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('tahapAudit', 'SV3')
-                  }
-                >
-                  <p className="text-xs text-sky-700 font-semibold">SV3 <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.tahapAudit && t.tahapAudit.toUpperCase() === 'SV3').length})</span></p>
-                </div>
-                <div
-                  className={`bg-blue-50 rounded px-2 py-1 border border-blue-200 text-center cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all hidden sm:block ${
-                    quickFilter?.field === 'tahapAudit' && quickFilter?.value === 'SV4' ? 'ring-2 ring-blue-600' : ''
-                  }`}
-                  onClick={() => quickFilter?.field === 'tahapAudit' && quickFilter?.value === 'SV4'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('tahapAudit', 'SV4')
-                  }
-                >
-                  <p className="text-xs text-blue-700 font-semibold">SV4 <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.tahapAudit && t.tahapAudit.toUpperCase() === 'SV4').length})</span></p>
-                </div>
+              <div className="flex-1 grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-1.5">
+                {masterTahapanData.tahapan.map((tahap: any, idx: number) => {
+                  const colorClasses = [
+                    'bg-indigo-50 border-indigo-200 text-indigo-700 hover:ring-indigo-400 ring-indigo-600',
+                    'bg-rose-50 border-rose-200 text-rose-700 hover:ring-rose-400 ring-rose-600',
+                    'bg-sky-50 border-sky-200 text-sky-700 hover:ring-sky-400 ring-sky-600',
+                    'bg-blue-50 border-blue-200 text-blue-700 hover:ring-blue-400 ring-blue-600',
+                    'bg-cyan-50 border-cyan-200 text-cyan-700 hover:ring-cyan-400 ring-cyan-600',
+                    'bg-violet-50 border-violet-200 text-violet-700 hover:ring-violet-400 ring-violet-600',
+                    'bg-purple-50 border-purple-200 text-purple-700 hover:ring-purple-400 ring-purple-600',
+                  ];
+                  const colorClass = colorClasses[idx % colorClasses.length];
+                  const isActive = quickFilter?.field === 'tahapAudit' && quickFilter?.value === tahap.kode;
+                  const count = (filteredCrmTargets || []).filter(t => t.tahapAudit && t.tahapAudit.toUpperCase() === tahap.kode).length;
+
+                  return (
+                    <div
+                      key={tahap.kode}
+                      className={`rounded px-2 py-1 border text-center cursor-pointer hover:ring-2 transition-all ${colorClass} ${
+                        isActive ? 'ring-2' : ''
+                      }`}
+                      onClick={() => isActive
+                        ? clearQuickFilter()
+                        : handleQuickFilter('tahapAudit', tahap.kode)
+                      }
+                    >
+                      <p className="text-xs font-semibold">{tahap.kode} <span className="font-bold">({count})</span></p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -3332,6 +3292,7 @@ export default function CrmDataManagementPage() {
                         totalRows={excelFormData.length}
                         staffUsers={staffUsers}
                         associates={associates || []}
+                        tahapanOptions={tahapanOptions}
                       />
                     ))}
                   </tbody>
@@ -4067,19 +4028,19 @@ export default function CrmDataManagementPage() {
                     <div className="border rounded-lg p-3">
                       <h4 className="text-xs font-bold text-gray-700 mb-2">🔍 Tahapan Audit</h4>
                       <div className="grid grid-cols-3 gap-2">
-                        {['IA', 'SV1', 'SV2', 'SV3', 'SV4', 'RC'].map((tahap) => {
-                          const count = (filteredCrmTargets || []).filter(t => t.tahapAudit === tahap).length;
-                          const isActive = quickFilter?.field === 'tahapAudit' && quickFilter?.value === tahap;
+                        {masterTahapanData.tahapan.map((tahap: any) => {
+                          const count = (filteredCrmTargets || []).filter(t => t.tahapAudit === tahap.kode).length;
+                          const isActive = quickFilter?.field === 'tahapAudit' && quickFilter?.value === tahap.kode;
                           return (
                             <div
-                              key={tahap}
-                              onClick={() => isActive ? clearQuickFilter() : handleQuickFilter('tahapAudit', tahap)}
+                              key={tahap.kode}
+                              onClick={() => isActive ? clearQuickFilter() : handleQuickFilter('tahapAudit', tahap.kode)}
                               className={`bg-indigo-100 border-2 border-indigo-300 rounded-lg px-2 py-2 text-center cursor-pointer hover:shadow-md transition-all ${
                                 isActive ? 'ring-2 ring-offset-1 ring-indigo-500 shadow-md' : ''
                               }`}
                             >
                               <p className="text-base font-bold text-indigo-700">{count}</p>
-                              <p className="text-[8px] font-medium text-indigo-600 uppercase">{tahap}</p>
+                              <p className="text-[8px] font-medium text-indigo-600 uppercase">{tahap.kode}</p>
                             </div>
                           );
                         })}

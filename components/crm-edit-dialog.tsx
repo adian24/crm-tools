@@ -812,7 +812,6 @@ const EditCrmDialog = React.memo(({ open, onOpenChange, target, staffUsers, onSu
                           <SelectValue placeholder="Pilih" />
                         </SelectTrigger>
                         <SelectContent className="w-full">
-                          <SelectItem value="IA">IA</SelectItem>
                           {tahapanOptions.map((tahap) => (
                             <SelectItem key={tahap} value={tahap}>{tahap}</SelectItem>
                           ))}

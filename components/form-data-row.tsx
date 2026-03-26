@@ -221,7 +221,7 @@ export const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, st
           className="w-full px-2 py-1.5 text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary rounded"
         >
           <option value="">- Pilih -</option>
-          <option value="XMS">XMS</option>
+          <option value="ISO">ISO</option>
           <option value="SUSTAIN">SUSTAIN</option>
         </select>
       </td>

@@ -17,6 +17,7 @@ import masterSalesData from '@/data/master-sales.json';
 import masterStandarData from '@/data/master-standar.json';
 import masterEaCodeData from '@/data/master-ea-code.json';
 import masterAlasanData from '@/data/master-alasan.json';
+import masterTahapanData from '@/data/master-tahapan.json';
 import { ChartCardCrmData } from '@/components/chart-card-crm-data';
 import { ChartCardPencapaianMonthly } from '@/components/chart-card-pencapaian-monthly'
 import { ChartCardKuadranMonthly } from '@/components/chart-card-kuadran-monthly';
@@ -206,10 +207,8 @@ export default function CrmDataManagementPage() {
     ? [...new Set((indonesiaData as any)[filterProvinsi].kabupaten_kota)].sort() as string[]
     : [];
 
-  // Tahapan Audit - Default options + dynamic from data
-  const defaultTahapanAudit = ['IA', 'SV1', 'SV2', 'SV3', 'SV4', 'RC'];
-  const tahapanAuditFromData = [...new Set(crmTargets?.map(t => t.tahapAudit).filter(Boolean) || [])];
-  const tahapanAuditOptions = [...new Set([...defaultTahapanAudit, ...tahapanAuditFromData])].sort() as string[];
+  // Tahapan Audit - Data loaded from master-tahapan.json
+  // Used for filter validation and reference
 
   // Toggle filter section
   const toggleFilterSection = (section: string) => {
@@ -4212,9 +4211,18 @@ export default function CrmDataManagementPage() {
                     })
                     .sort((a, b) => b.total - a.total);
 
-                  // Generate colors for tahapan - Teal solid
+                  // Generate colors for tahapan - different colors for each tahap
                   const generateTahapColors = (index: number) => {
-                    return '#7de9e0'; // Teal 600 (teal tua) - same color for all
+                    const colors = [
+                      '#0D9488',  // Teal (IA)
+                      '#06B6D4',  // Cyan (RC)
+                      '#8B5CF6',  // Purple (SV1)
+                      '#D946EF',  // Fuchsia (SV2)
+                      '#F59E0B',  // Yellow (SV3)
+                      '#EF4444',  // Red (SV4)
+                      '#10B981',  // Emerald (GAP)
+                    ];
+                    return colors[index % colors.length];
                   };
 
                   const hasData = allTahapan.length > 0;
@@ -4264,16 +4272,16 @@ export default function CrmDataManagementPage() {
                                   <defs>
                                     {allTahapan.map((entry, index) => {
                                       const colors = [
-                                        ['#0D9488', '#02423b'],  // Teal
-                                        ['#06B6D4', '#055e6b'],  // Cyan
-                                        ['#8B5CF6', '#1e0569'],  // Purple
-                                        ['#D946EF', '#5a0468'],  // Fuchsia
-                                        ['#F59E0B', '#4d3c05'],  // Yellow
-                                        ['#EF4444', '#5c0606'],  // Red
-                                        // Tambahkan warna lain sesuai kebutuhan
+                                        ['#0D9488', '#02423b'],  // Teal (IA)
+                                        ['#06B6D4', '#055e6b'],  // Cyan (RC)
+                                        ['#8B5CF6', '#1e0569'],  // Purple (SV1)
+                                        ['#D946EF', '#5a0468'],  // Fuchsia (SV2)
+                                        ['#F59E0B', '#4d3c05'],  // Yellow (SV3)
+                                        ['#EF4444', '#5c0606'],  // Red (SV4)
+                                        ['#10B981', '#064e3b'],  // Emerald (GAP)
                                       ];
                                       const [startColor, endColor] = colors[index % colors.length];
-                                      
+
                                       return (
                                         <linearGradient key={`gradient-${index}`} id={`gradient${index}`} x1="0" y1="0" x2="1" y2="0">
                                           <stop offset="0%" stopColor={startColor} stopOpacity={0.8} />

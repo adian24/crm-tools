@@ -28,6 +28,7 @@ import masterEaCodeData from '@/data/master-ea-code.json';
 import masterAlasanData from '@/data/master-alasan.json';
 import masterKuadranData from '@/data/master-kuadran.json';
 import masterAkreditasiData from '@/data/master-akreditasi.json';
+import masterTahapanData from '@/data/master-tahapan.json';
 
 interface CrmTarget {
   _id: Id<"crmTargets">;
@@ -299,14 +300,10 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
   const standarOptions = React.useMemo(() => masterStandarData.standar.map(std => std.kode), []);
   const eaCodeOptions = React.useMemo(() => masterEaCodeData.ea_code.map(ea => ({ id: ea.id, code: ea.ea_code })), []);
   const kuadranOptions = React.useMemo(() => masterKuadranData.kuadran.map(k => ({ kode: k.kode, nama: k.nama })), []);
-  const tahapanOptions = [
-    { value: 'IA', label: 'IA' },
-    { value: 'RC', label: 'RC' },
-    { value: 'SV1', label: 'SV1' },
-    { value: 'SV2', label: 'SV2' },
-    { value: 'SV3', label: 'SV3' },
-    { value: 'SV4', label: 'SV4' },
-  ];
+  const tahapanOptions = React.useMemo(() =>
+    masterTahapanData.tahapan.map(t => ({ value: t.kode, label: t.nama })),
+    []
+  );
 
   // Format number to thousand separator (e.g., 1000 -> 1.000)
   const formatNumber = (value: string): string => {
