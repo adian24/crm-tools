@@ -261,7 +261,22 @@ export default function CrmDataManagementPage() {
       target.picCrm.toLowerCase().includes(searchTerm.toLowerCase());
 
     // Date section filters
-    const matchesTahun = filterTahun === 'all' || target.tahun === filterTahun;
+    // For DONE status with bulanTtdNotif, use year from bulanTtdNotif instead of target.tahun
+    let matchesTahun = filterTahun === 'all';
+    if (!matchesTahun) {
+      const isDoneStatus = target.status === 'DONE';
+      const hasBulanTtdNotif = target.bulanTtdNotif && target.bulanTtdNotif !== '';
+
+      if (isDoneStatus && hasBulanTtdNotif) {
+        // DONE with bulanTtdNotif: use year from bulanTtdNotif
+        const ttdDate = new Date(target.bulanTtdNotif!);
+        const ttdYear = ttdDate.getFullYear();
+        matchesTahun = ttdYear.toString() === filterTahun;
+      } else {
+        // Other cases: use target.tahun
+        matchesTahun = target.tahun === filterTahun;
+      }
+    }
 
     let matchesBulanExp = true;
     // Skip Bulan EXP filter for DONE status when Bulan TTD Notif filter is enabled (DONE uses bulanTtdNotif instead)
@@ -1624,26 +1639,25 @@ export default function CrmDataManagementPage() {
                     );
 
                     // DONE: filter with bulanTtdNotif + sertifikat + tahun (use display data)
+                    // For DONE with bulanTtdNotif, use year from bulanTtdNotif instead of t.tahun
                     const mrcDoneAmount = Math.round(
                       mrcDataBase
                         .filter(t => {
                           const isDone = t.status === 'DONE';
                           const isSertifikatMatch = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
                           const hasBulanTtdNotif = t.bulanTtdNotif && t.bulanTtdNotif !== '';
-                          const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
 
-                          let matchesTahunTtdNotif = false;
-                          if (hasBulanTtdNotif) {
-                            if (filterTahun === 'all') {
-                              matchesTahunTtdNotif = true;
-                            } else {
-                              const ttdDate = new Date(t.bulanTtdNotif!);
-                              const ttdYear = ttdDate.getFullYear();
-                              matchesTahunTtdNotif = ttdYear.toString() === filterTahun;
-                            }
+                          // For DONE with bulanTtdNotif, use year from bulanTtdNotif
+                          let matchesTahun = filterTahun === 'all';
+                          if (!matchesTahun && hasBulanTtdNotif) {
+                            const ttdDate = new Date(t.bulanTtdNotif!);
+                            const ttdYear = ttdDate.getFullYear();
+                            matchesTahun = ttdYear.toString() === filterTahun;
+                          } else if (!matchesTahun) {
+                            matchesTahun = t.tahun === filterTahun;
                           }
 
-                          return isDone && isSertifikatMatch && hasBulanTtdNotif && matchesTahun && matchesTahunTtdNotif;
+                          return isDone && isSertifikatMatch && hasBulanTtdNotif && matchesTahun;
                         })
                         .reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0)
                     );
@@ -1652,20 +1666,18 @@ export default function CrmDataManagementPage() {
                       const isDone = t.status === 'DONE';
                       const isSertifikatMatch = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
                       const hasBulanTtdNotif = t.bulanTtdNotif && t.bulanTtdNotif !== '';
-                      const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
 
-                      let matchesTahunTtdNotif = false;
-                      if (hasBulanTtdNotif) {
-                        if (filterTahun === 'all') {
-                          matchesTahunTtdNotif = true;
-                        } else {
-                          const ttdDate = new Date(t.bulanTtdNotif!);
-                          const ttdYear = ttdDate.getFullYear();
-                          matchesTahunTtdNotif = ttdYear.toString() === filterTahun;
-                        }
+                      // For DONE with bulanTtdNotif, use year from bulanTtdNotif
+                      let matchesTahun = filterTahun === 'all';
+                      if (!matchesTahun && hasBulanTtdNotif) {
+                        const ttdDate = new Date(t.bulanTtdNotif!);
+                        const ttdYear = ttdDate.getFullYear();
+                        matchesTahun = ttdYear.toString() === filterTahun;
+                      } else if (!matchesTahun) {
+                        matchesTahun = t.tahun === filterTahun;
                       }
 
-                      return isDone && isSertifikatMatch && hasBulanTtdNotif && matchesTahun && matchesTahunTtdNotif;
+                      return isDone && isSertifikatMatch && hasBulanTtdNotif && matchesTahun;
                     }).length;
 
                     const mrcProses = mrcDataBase.filter(t => t.status === 'PROSES').length;
@@ -1937,26 +1949,25 @@ export default function CrmDataManagementPage() {
                     );
 
                     // DONE: filter with bulanTtdNotif + sertifikat + tahun (use base data)
+                    // For DONE with bulanTtdNotif, use year from bulanTtdNotif instead of t.tahun
                     const dhaDoneAmount = Math.round(
                       dhaDataBase
                         .filter(t => {
                           const isDone = t.status === 'DONE';
                           const isSertifikatMatch = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
                           const hasBulanTtdNotif = t.bulanTtdNotif && t.bulanTtdNotif !== '';
-                          const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
 
-                          let matchesTahunTtdNotif = false;
-                          if (hasBulanTtdNotif) {
-                            if (filterTahun === 'all') {
-                              matchesTahunTtdNotif = true;
-                            } else {
-                              const ttdDate = new Date(t.bulanTtdNotif!);
-                              const ttdYear = ttdDate.getFullYear();
-                              matchesTahunTtdNotif = ttdYear.toString() === filterTahun;
-                            }
+                          // For DONE with bulanTtdNotif, use year from bulanTtdNotif
+                          let matchesTahun = filterTahun === 'all';
+                          if (!matchesTahun && hasBulanTtdNotif) {
+                            const ttdDate = new Date(t.bulanTtdNotif!);
+                            const ttdYear = ttdDate.getFullYear();
+                            matchesTahun = ttdYear.toString() === filterTahun;
+                          } else if (!matchesTahun) {
+                            matchesTahun = t.tahun === filterTahun;
                           }
 
-                          return isDone && isSertifikatMatch && hasBulanTtdNotif && matchesTahun && matchesTahunTtdNotif;
+                          return isDone && isSertifikatMatch && hasBulanTtdNotif && matchesTahun;
                         })
                         .reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0)
                     );
@@ -1965,20 +1976,18 @@ export default function CrmDataManagementPage() {
                       const isDone = t.status === 'DONE';
                       const isSertifikatMatch = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
                       const hasBulanTtdNotif = t.bulanTtdNotif && t.bulanTtdNotif !== '';
-                      const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
 
-                      let matchesTahunTtdNotif = false;
-                      if (hasBulanTtdNotif) {
-                        if (filterTahun === 'all') {
-                          matchesTahunTtdNotif = true;
-                        } else {
-                          const ttdDate = new Date(t.bulanTtdNotif!);
-                          const ttdYear = ttdDate.getFullYear();
-                          matchesTahunTtdNotif = ttdYear.toString() === filterTahun;
-                        }
+                      // For DONE with bulanTtdNotif, use year from bulanTtdNotif
+                      let matchesTahun = filterTahun === 'all';
+                      if (!matchesTahun && hasBulanTtdNotif) {
+                        const ttdDate = new Date(t.bulanTtdNotif!);
+                        const ttdYear = ttdDate.getFullYear();
+                        matchesTahun = ttdYear.toString() === filterTahun;
+                      } else if (!matchesTahun) {
+                        matchesTahun = t.tahun === filterTahun;
                       }
 
-                      return isDone && isSertifikatMatch && hasBulanTtdNotif && matchesTahun && matchesTahunTtdNotif;
+                      return isDone && isSertifikatMatch && hasBulanTtdNotif && matchesTahun;
                     }).length;
 
                     const dhaProses = dhaDataBase.filter(t => t.status === 'PROSES').length;
@@ -2444,17 +2453,16 @@ export default function CrmDataManagementPage() {
                             const isDone = t.status === 'DONE';
                             const isSertifikatMatch = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
                             const hasBulanTtdNotif = t.bulanTtdNotif && t.bulanTtdNotif !== '';
-                            let matchesTahunTtdNotif = false;
-                            if (hasBulanTtdNotif) {
-                              if (filterTahun === 'all') {
-                                matchesTahunTtdNotif = true;
-                              } else {
-                                const ttdDate = new Date(t.bulanTtdNotif!);
-                                const ttdYear = ttdDate.getFullYear();
-                                matchesTahunTtdNotif = ttdYear.toString() === filterTahun;
-                              }
+                            // For DONE with bulanTtdNotif, use year from bulanTtdNotif
+                            let matchesTahun = filterTahun === 'all';
+                            if (!matchesTahun && hasBulanTtdNotif) {
+                              const ttdDate = new Date(t.bulanTtdNotif!);
+                              const ttdYear = ttdDate.getFullYear();
+                              matchesTahun = ttdYear.toString() === filterTahun;
+                            } else if (!matchesTahun) {
+                              matchesTahun = t.tahun === filterTahun;
                             }
-                            return isDone && isSertifikatMatch && hasBulanTtdNotif && matchesTahunTtdNotif;
+                            return isDone && isSertifikatMatch && hasBulanTtdNotif && matchesTahun;
                           }).length} Sertifikat
                           <span className="hidden md:inline"> (base TTD NOTIF)</span>
                         </span>
