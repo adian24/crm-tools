@@ -220,17 +220,43 @@ export const createCrmTarget = mutation({
     statusKunjungan: v.optional(v.string()),
     catatanKunjungan: v.optional(v.string()),
     fotoBuktiKunjungan: v.optional(v.string()),
+    bulanAuditSebelumnyaSustain: v.optional(v.string()),
+    bulanAudit: v.optional(v.string()),
+    statusInvoice: v.optional(v.union(v.literal("Terbit"), v.literal("Belum Terbit"), v.null())),
+    statusPembayaran: v.optional(v.union(v.literal("Lunas"), v.literal("Belum Lunas"), v.literal("Sudah DP"), v.null())),
+    statusKomisi: v.optional(v.union(v.literal("Sudah Diajukan"), v.literal("Belum Diajukan"), v.literal("Tidak Ada"), v.null())),
+    // Contact fields (new)
+    noTelp: v.optional(v.string()),
+    email: v.optional(v.string()),
+    namaKonsultan: v.optional(v.string()),
+    noTelpKonsultan: v.optional(v.string()),
+    emailKonsultan: v.optional(v.string()),
     created_by: v.optional(v.id("users")),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
 
-    const crmTargetId = await ctx.db.insert("crmTargets", {
-      ...args,
+    // Filter out null values before insert (schema doesn't accept null)
+    const { created_by, statusInvoice, statusPembayaran, statusKomisi, ...rest } = args;
+    const data: any = {
+      ...rest,
       createdAt: now,
       updatedAt: now,
-      updated_by: args.created_by,
-    });
+      updated_by: created_by,
+    };
+
+    // Only add these fields if they're not null
+    if (statusInvoice !== null && statusInvoice !== undefined) {
+      data.statusInvoice = statusInvoice;
+    }
+    if (statusPembayaran !== null && statusPembayaran !== undefined) {
+      data.statusPembayaran = statusPembayaran;
+    }
+    if (statusKomisi !== null && statusKomisi !== undefined) {
+      data.statusKomisi = statusKomisi;
+    }
+
+    const crmTargetId = await ctx.db.insert("crmTargets", data);
 
     return crmTargetId;
   },
@@ -281,6 +307,12 @@ export const updateCrmTarget = mutation({
     statusInvoice: v.optional(v.union(v.string(), v.null())),
     statusPembayaran: v.optional(v.union(v.string(), v.null())),
     statusKomisi: v.optional(v.union(v.string(), v.null())),
+    // Contact fields (new)
+    noTelp: v.optional(v.union(v.string(), v.null())),
+    email: v.optional(v.union(v.string(), v.null())),
+    namaKonsultan: v.optional(v.union(v.string(), v.null())),
+    noTelpKonsultan: v.optional(v.union(v.string(), v.null())),
+    emailKonsultan: v.optional(v.union(v.string(), v.null())),
     updated_by: v.optional(v.id("users")),
   },
   handler: async (ctx, args) => {
@@ -386,6 +418,12 @@ export const bulkInsertCrmTargets = mutation({
         statusInvoice: v.optional(v.union(v.literal("Terbit"), v.literal("Belum Terbit"))),
         statusPembayaran: v.optional(v.union(v.literal("Lunas"), v.literal("Belum Lunas"), v.literal("Sudah DP"))),
         statusKomisi: v.optional(v.union(v.literal("Sudah Diajukan"), v.literal("Belum Diajukan"), v.literal("Tidak Ada"))),
+        // Contact fields (new)
+        noTelp: v.optional(v.string()),
+        email: v.optional(v.string()),
+        namaKonsultan: v.optional(v.string()),
+        noTelpKonsultan: v.optional(v.string()),
+        emailKonsultan: v.optional(v.string()),
         created_by: v.optional(v.id("users")),
       })
     ),

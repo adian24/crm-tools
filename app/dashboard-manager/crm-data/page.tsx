@@ -1517,9 +1517,9 @@ export default function CrmDataManagementPage() {
             // @ts-ignore - Fields exist in schema but types not updated yet
             bulanAuditSebelumnyaSustain: row.bulanAuditSebelumnyaSustain || undefined,
             bulanAudit: row.bulanAudit || undefined,
-            statusInvoice: row.statusInvoice || undefined,
-            statusPembayaran: row.statusPembayaran || undefined,
-            statusKomisi: row.statusKomisi || undefined,
+            statusInvoice: (row.statusInvoice === "Terbit" || row.statusInvoice === "Belum Terbit") ? row.statusInvoice : null,
+            statusPembayaran: (row.statusPembayaran === "Lunas" || row.statusPembayaran === "Belum Lunas" || row.statusPembayaran === "Sudah DP") ? row.statusPembayaran : null,
+            statusKomisi: (row.statusKomisi === "Sudah Diajukan" || row.statusKomisi === "Belum Diajukan" || row.statusKomisi === "Tidak Ada") ? row.statusKomisi : null,
             created_by: currentUser?._id as any, // Type assertion for Convex Id
           });
           successCount++;

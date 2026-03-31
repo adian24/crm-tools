@@ -20,6 +20,7 @@ import {
   IconArchive,
   IconPhoto,
   IconAlertCircle,
+  IconPhone,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -65,6 +66,11 @@ const getNavigationItems = (role: string) => {
         title: "CRM Data Management",
         url: "/dashboard-manager/crm-data",
         icon: IconTarget,
+      },
+      {
+        title: "Kontak",
+        url: "/dashboard-manager/kontak",
+        icon: IconPhone,
       },
       {
         title: "Kunjungan Engagement Partnership",
@@ -140,6 +146,11 @@ const getNavigationItems = (role: string) => {
         title: "CRM Data Management",
         url: "/dashboard-manager/crm-data",
         icon: IconTarget,
+      },
+      {
+        title: "Kontak",
+        url: "/dashboard-manager/kontak",
+        icon: IconPhone,
       },
       {
         title: "Master Data",
@@ -226,6 +237,11 @@ const getNavigationItems = (role: string) => {
       title: "CRM Data Management",
       url: "/dashboard-manager/crm-data",
       icon: IconTarget,
+    },
+    {
+      title: "Kontak",
+      url: "/dashboard-manager/kontak",
+      icon: IconPhone,
     },
     {
       title: "Master Data",
