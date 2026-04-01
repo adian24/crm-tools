@@ -100,7 +100,7 @@ export default function CrmDataManagementPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPicCrm, setFilterPicCrm] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedChartType, setSelectedChartType] = useState<string>('area');
   const [selectedAssociateChartType, setSelectedAssociateChartType] = useState<string>('area');
   const [selectedTopAssociateChartType, setSelectedTopAssociateChartType] = useState<string>('bar');
@@ -218,6 +218,12 @@ export default function CrmDataManagementPage() {
         ? prev.filter(s => s !== section)
         : [...prev, section]
     );
+  };
+
+  // Handle items per page change
+  const handleItemsPerPageChange = (value: number) => {
+    setItemsPerPage(value);
+    setCurrentPage(1); // Reset to first page
   };
 
   // Reset all filters
@@ -5145,27 +5151,105 @@ export default function CrmDataManagementPage() {
             </div>
 
             {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between px-6 py-4 border-t">
+            {totalPages > 0 && (
+              <div className="flex items-center justify-between px-6 py-4 border-t flex-wrap gap-4">
+                {/* Items per page selector */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Show</span>
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+                    className="border border-border rounded px-2 py-1 text-sm bg-background"
+                  >
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                  <span className="text-sm text-muted-foreground">per page</span>
+                </div>
+
+                {/* Page info */}
                 <div className="text-sm text-muted-foreground">
                   Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredTargets.length)} of {filteredTargets.length} results
                 </div>
-                <div className="flex gap-2">
+
+                {/* Pagination controls */}
+                <div className="flex items-center gap-1">
+                  {/* First page */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    className="w-9 p-0"
+                    title="First page"
+                  >
+                    ««
+                  </Button>
+
+                  {/* Previous page */}
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
+                    className="w-9 p-0"
+                    title="Previous page"
                   >
-                    Previous
+                    ‹
                   </Button>
+
+                  {/* Page numbers */}
+                  {(() => {
+                    const pages = [];
+                    const maxVisiblePages = 3;
+                    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+                    if (endPage - startPage + 1 < maxVisiblePages) {
+                      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                    }
+
+                    for (let i = startPage; i <= endPage; i++) {
+                      pages.push(
+                        <Button
+                          key={i}
+                          variant={currentPage === i ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(i)}
+                          className="w-9 p-0"
+                        >
+                          {i}
+                        </Button>
+                      );
+                    }
+
+                    return pages;
+                  })()}
+
+                  {/* Next page */}
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
+                    className="w-9 p-0"
+                    title="Next page"
                   >
-                    Next
+                    ›
+                  </Button>
+
+                  {/* Last page */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className="w-9 p-0"
+                    title="Last page"
+                  >
+                    »»
                   </Button>
                 </div>
               </div>
