@@ -255,11 +255,57 @@ export default function CrmDataManagementPage() {
     if (!crmTargets) return [];
 
     return crmTargets.filter(target => {
-    // Search filter
-    const matchesSearch = searchTerm === '' ||
-      target.namaPerusahaan.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      target.sales.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      target.picCrm.toLowerCase().includes(searchTerm.toLowerCase());
+    // Search filter - search across all important fields (optimized order)
+    if (searchTerm === '') return true;
+
+    const searchLower = searchTerm.toLowerCase();
+
+    // Quick check on most searched fields first
+    return (
+      (target.namaPerusahaan?.toLowerCase().includes(searchLower)) ||
+      (target.sales?.toLowerCase().includes(searchLower)) ||
+      (target.picCrm?.toLowerCase().includes(searchLower)) ||
+      (target.namaAssociate?.toLowerCase().includes(searchLower)) ||
+      (target.status?.toLowerCase().includes(searchLower)) ||
+      (target.alasan?.toLowerCase().includes(searchLower)) ||
+      (target.produk?.toLowerCase().includes(searchLower)) ||
+      (target.provinsi?.toLowerCase().includes(searchLower)) ||
+      (target.kota?.toLowerCase().includes(searchLower)) ||
+      (target.category?.toLowerCase().includes(searchLower)) ||
+      (target.kuadran?.toLowerCase().includes(searchLower)) ||
+      (target.directOrAssociate?.toLowerCase().includes(searchLower)) ||
+      (target.grup?.toLowerCase().includes(searchLower)) ||
+      (target.luarKota?.toLowerCase().includes(searchLower)) ||
+      (target.alamat?.toLowerCase().includes(searchLower)) ||
+      (target.akreditasi?.toLowerCase().includes(searchLower)) ||
+      (target.catAkre?.toLowerCase().includes(searchLower)) ||
+      (target.eaCode?.toLowerCase().includes(searchLower)) ||
+      (target.std?.toLowerCase().includes(searchLower)) ||
+      (target.tahapAudit?.toLowerCase().includes(searchLower)) ||
+      (target.terminPembayaran?.toLowerCase().includes(searchLower)) ||
+      (target.statusInvoice?.toLowerCase().includes(searchLower)) ||
+      (target.statusPembayaran?.toLowerCase().includes(searchLower)) ||
+      (target.statusKomisi?.toLowerCase().includes(searchLower)) ||
+      (target.statusSertifikat?.toLowerCase().includes(searchLower)) ||
+      (target.statusKunjungan?.toLowerCase().includes(searchLower)) ||
+      // Date fields (optional, less frequently searched)
+      (target.bulanExpDate?.toLowerCase().includes(searchLower)) ||
+      (target.iaDate?.toLowerCase().includes(searchLower)) ||
+      (target.bulanAuditSebelumnyaSustain?.toLowerCase().includes(searchLower)) ||
+      (target.expDate?.toLowerCase().includes(searchLower)) ||
+      (target.bulanTtdNotif?.toLowerCase().includes(searchLower)) ||
+      (target.bulanAudit?.toLowerCase().includes(searchLower)) ||
+      (target.tanggalKunjungan?.toLowerCase().includes(searchLower)) ||
+      // Number fields (convert to string)
+      (target.hargaKontrak?.toString().includes(searchLower)) ||
+      (target.hargaTerupdate?.toString().includes(searchLower)) ||
+      (target.trimmingValue?.toString().includes(searchLower)) ||
+      (target.lossValue?.toString().includes(searchLower)) ||
+      (target.cashback?.toString().includes(searchLower)) ||
+      // Other fields
+      (target.catatanKunjungan?.toLowerCase().includes(searchLower)) ||
+      (target.fotoBuktiKunjungan?.toLowerCase().includes(searchLower))
+    );
 
     // Date section filters
     // For DONE status with bulanTtdNotif, use year from bulanTtdNotif instead of target.tahun
@@ -4944,34 +4990,46 @@ export default function CrmDataManagementPage() {
                     <TableHead>PIC CRM</TableHead>
                     <TableHead>Sales</TableHead>
                     <TableHead>Nama Associate</TableHead>
+                    <TableHead>Direct/Assoc</TableHead>
+                    <TableHead>Grup</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Alasan</TableHead>
                     <TableHead>Category</TableHead>
+                    <TableHead>Kuadran</TableHead>
+                    <TableHead>Luar Kota</TableHead>
                     <TableHead>Provinsi</TableHead>
                     <TableHead>Kota</TableHead>
                     <TableHead>Alamat</TableHead>
                     <TableHead>Akreditasi</TableHead>
+                    <TableHead>Cat Akre</TableHead>
                     <TableHead>EA Code</TableHead>
                     <TableHead>STD</TableHead>
                     <TableHead>IA Date</TableHead>
+                    <TableHead>Bulan Audit Sblm</TableHead>
                     <TableHead>Exp Date</TableHead>
                     <TableHead>Tahap Audit</TableHead>
                     <TableHead>Harga Kontrak</TableHead>
                     <TableHead>Bulan TTD</TableHead>
+                    <TableHead>Bulan Audit</TableHead>
                     <TableHead>Harga Update</TableHead>
                     <TableHead>Trimming</TableHead>
                     <TableHead>Loss</TableHead>
                     <TableHead>Cashback</TableHead>
                     <TableHead>Termin</TableHead>
+                    <TableHead>Status Invoice</TableHead>
+                    <TableHead>Status Pembayaran</TableHead>
+                    <TableHead>Status Komisi</TableHead>
                     <TableHead>Status Sertifikat</TableHead>
                     <TableHead>Tgl Kunjungan</TableHead>
                     <TableHead>Status Kunjungan</TableHead>
+                    <TableHead>Catatan Kunjungan</TableHead>
+                    <TableHead>Foto Bukti</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {paginatedTargets.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={29} className="text-center py-8">
+                      <TableCell colSpan={43} className="text-center py-8">
                         No data found
                       </TableCell>
                     </TableRow>
@@ -4990,6 +5048,8 @@ export default function CrmDataManagementPage() {
                         <TableCell>{target.picCrm}</TableCell>
                         <TableCell>{target.sales}</TableCell>
                         <TableCell>{target.namaAssociate || '-'}</TableCell>
+                        <TableCell>{target.directOrAssociate || '-'}</TableCell>
+                        <TableCell>{target.grup || '-'}</TableCell>
                         <TableCell>
                           <Badge
                             variant={getStatusBadgeVariant(target.status)}
@@ -5009,13 +5069,17 @@ export default function CrmDataManagementPage() {
                             </Badge>
                           ) : '-'}
                         </TableCell>
+                        <TableCell>{target.kuadran || '-'}</TableCell>
+                        <TableCell>{target.luarKota || '-'}</TableCell>
                         <TableCell>{target.provinsi || '-'}</TableCell>
                         <TableCell>{target.kota || '-'}</TableCell>
                         <TableCell className="max-w-xs truncate" title={target.alamat}>{target.alamat || '-'}</TableCell>
                         <TableCell>{target.akreditasi || '-'}</TableCell>
+                        <TableCell>{target.catAkre || '-'}</TableCell>
                         <TableCell>{target.eaCode || '-'}</TableCell>
                         <TableCell>{target.std || '-'}</TableCell>
                         <TableCell>{target.iaDate || '-'}</TableCell>
+                        <TableCell>{target.bulanAuditSebelumnyaSustain ? formatDateToDayMonth(target.bulanAuditSebelumnyaSustain) : '-'}</TableCell>
                         <TableCell>{target.expDate || '-'}</TableCell>
                         <TableCell>{target.tahapAudit || '-'}</TableCell>
                         <TableCell>
@@ -5024,6 +5088,7 @@ export default function CrmDataManagementPage() {
                         <TableCell title={target.bulanTtdNotif || ''}>
                           {formatDateToDayMonth(target.bulanTtdNotif)}
                         </TableCell>
+                        <TableCell>{target.bulanAudit ? formatDateToDayMonth(target.bulanAudit) : '-'}</TableCell>
                         <TableCell>
                           {target.hargaTerupdate ? `Rp ${target.hargaTerupdate.toLocaleString('id-ID')}` : '-'}
                         </TableCell>
@@ -5037,6 +5102,9 @@ export default function CrmDataManagementPage() {
                           {target.cashback ? `Rp ${target.cashback.toLocaleString('id-ID')}` : '-'}
                         </TableCell>
                         <TableCell>{target.terminPembayaran || '-'}</TableCell>
+                        <TableCell>{target.statusInvoice || '-'}</TableCell>
+                        <TableCell>{target.statusPembayaran || '-'}</TableCell>
+                        <TableCell>{target.statusKomisi || '-'}</TableCell>
                         <TableCell>{target.statusSertifikat || '-'}</TableCell>
                         <TableCell>{formatTanggalKunjungan(target.tanggalKunjungan)}</TableCell>
                         <TableCell>
@@ -5049,6 +5117,8 @@ export default function CrmDataManagementPage() {
                             </Badge>
                           ) : '-'}
                         </TableCell>
+                        <TableCell className="max-w-xs truncate" title={target.catatanKunjungan}>{target.catatanKunjungan || '-'}</TableCell>
+                        <TableCell>{target.fotoBuktiKunjungan ? 'Ada' : '-'}</TableCell>
                       </TableRow>
                     ))
                   )}
