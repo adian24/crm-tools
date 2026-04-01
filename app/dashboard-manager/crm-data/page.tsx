@@ -7,7 +7,7 @@ import { Id } from '@/convex/_generated/dataModel';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -964,11 +964,51 @@ export default function CrmDataManagementPage() {
 
   // Filter and search
   const filteredTargets = filteredCrmTargets?.filter(target => {
-    // Search filter
-    const matchesSearch = searchTerm === '' ||
-      target.namaPerusahaan.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      target.sales.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      target.picCrm.toLowerCase().includes(searchTerm.toLowerCase());
+    // Search filter - search across all fields
+    const searchLower = searchTerm.toLowerCase();
+    const matchesSearch = searchTerm === '' || [
+      target.namaPerusahaan,
+      target.bulanExpDate,
+      target.produk,
+      target.picCrm,
+      target.sales,
+      target.namaAssociate,
+      target.directOrAssociate,
+      target.grup,
+      target.status,
+      target.alasan,
+      target.category,
+      target.kuadran,
+      target.luarKota,
+      target.provinsi,
+      target.kota,
+      target.alamat,
+      target.akreditasi,
+      target.catAkre,
+      target.eaCode,
+      target.std,
+      target.iaDate,
+      target.bulanAuditSebelumnyaSustain,
+      target.expDate,
+      target.tahapAudit,
+      target.hargaKontrak?.toString(),
+      target.bulanTtdNotif,
+      target.bulanAudit,
+      target.hargaTerupdate?.toString(),
+      target.trimmingValue?.toString(),
+      target.lossValue?.toString(),
+      target.cashback?.toString(),
+      target.terminPembayaran,
+      target.statusInvoice,
+      target.statusPembayaran,
+      target.statusKomisi,
+      target.statusSertifikat,
+      target.tanggalKunjungan,
+      target.statusKunjungan,
+      target.catatanKunjungan,
+      target.fotoBuktiKunjungan,
+      target.tahun
+    ].some(field => field && field.toString().toLowerCase().includes(searchLower));
 
     // Date section filters
     const matchesTahun = filterTahun === 'all' || target.tahun === filterTahun;
@@ -1146,6 +1186,16 @@ export default function CrmDataManagementPage() {
           break;
         case 'tahapAudit':
           matchesQuickFilter = Boolean(target.tahapAudit && target.tahapAudit.toUpperCase() === value.toUpperCase());
+          break;
+        case 'statusInvoice':
+          if (value === 'Terbit') {
+            matchesQuickFilter = Boolean(target.statusInvoice && target.statusInvoice.toString().trim().toUpperCase() === 'TERBIT');
+          } else if (value === 'Belum') {
+            matchesQuickFilter = Boolean(!target.statusInvoice || target.statusInvoice.toString().trim().toUpperCase().includes('BELUM'));
+          }
+          break;
+        case 'statusPembayaran':
+          matchesQuickFilter = Boolean(target.statusPembayaran && target.statusPembayaran.toString().trim().toUpperCase() === value.toUpperCase());
           break;
         default:
           matchesQuickFilter = true;
@@ -2235,7 +2285,7 @@ export default function CrmDataManagementPage() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Company, Sales, PIC..."
+                    placeholder="Search all fields..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -2776,6 +2826,87 @@ export default function CrmDataManagementPage() {
                 </div>
               </div>
             </div>
+
+            {/* Status Invoice */}
+            <div className="flex items-center">
+              <span className="text-xs font-semibold text-gray-600 uppercase whitespace-nowrap w-44 hidden lg:block">🧾 Status Invoice:</span>
+              <div className="flex-1 grid grid-cols-2 gap-1.5">
+                <div
+                  className={`bg-teal-50 rounded px-2 py-1 border border-teal-200 text-center cursor-pointer hover:ring-2 hover:ring-teal-400 transition-all ${
+                    quickFilter?.field === 'statusInvoice' && quickFilter?.value === 'Terbit' ? 'ring-2 ring-teal-600' : ''
+                  }`}
+                  onClick={() => quickFilter?.field === 'statusInvoice' && quickFilter?.value === 'Terbit'
+                    ? clearQuickFilter()
+                    : handleQuickFilter('statusInvoice', 'Terbit')
+                  }
+                >
+                  <p className="text-xs text-teal-700 font-semibold">Terbit <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.statusInvoice && t.statusInvoice.toString().trim().toUpperCase() === 'TERBIT').length})</span></p>
+                </div>
+                <div
+                  className={`bg-orange-50 rounded px-2 py-1 border border-orange-200 text-center cursor-pointer hover:ring-2 hover:ring-orange-400 transition-all ${
+                    quickFilter?.field === 'statusInvoice' && quickFilter?.value === 'Belum' ? 'ring-2 ring-orange-600' : ''
+                  }`}
+                  onClick={() => quickFilter?.field === 'statusInvoice' && quickFilter?.value === 'Belum'
+                    ? clearQuickFilter()
+                    : handleQuickFilter('statusInvoice', 'Belum')
+                  }
+                >
+                  <p className="text-xs text-orange-700 font-semibold">Belum Terbit <span className="font-bold">({(filteredCrmTargets || []).filter(t => !t.statusInvoice || t.statusInvoice.toString().trim().toUpperCase().includes('BELUM')).length})</span></p>
+                </div>
+              </div>
+            </div>
+
+            {/* Status Pembayaran */}
+            <div className="flex items-center">
+              <span className="text-xs font-semibold text-gray-600 uppercase whitespace-nowrap w-44 hidden lg:block">💰 Status Pembayaran:</span>
+              <div className="flex-1 grid grid-cols-3 gap-1.5">
+                <div
+                  className={`bg-emerald-50 rounded px-2 py-1 border border-emerald-200 text-center cursor-pointer hover:ring-2 hover:ring-emerald-400 transition-all ${
+                    quickFilter?.field === 'statusPembayaran' && quickFilter?.value === 'Lunas' ? 'ring-2 ring-emerald-600' : ''
+                  }`}
+                  onClick={() => quickFilter?.field === 'statusPembayaran' && quickFilter?.value === 'Lunas'
+                    ? clearQuickFilter()
+                    : handleQuickFilter('statusPembayaran', 'Lunas')
+                  }
+                >
+                  <p className="text-xs text-emerald-700 font-semibold">Lunas <span className="font-bold">({(filteredCrmTargets || []).filter(t => {
+                    if (!t.statusPembayaran) return false;
+                    const normalized = t.statusPembayaran.toString().trim().toUpperCase();
+                    return normalized === 'LUNAS';
+                  }).length})</span></p>
+                </div>
+                <div
+                  className={`bg-red-50 rounded px-2 py-1 border border-red-200 text-center cursor-pointer hover:ring-2 hover:ring-red-400 transition-all ${
+                    quickFilter?.field === 'statusPembayaran' && quickFilter?.value === 'Belum Lunas' ? 'ring-2 ring-red-600' : ''
+                  }`}
+                  onClick={() => quickFilter?.field === 'statusPembayaran' && quickFilter?.value === 'Belum Lunas'
+                    ? clearQuickFilter()
+                    : handleQuickFilter('statusPembayaran', 'Belum Lunas')
+                  }
+                >
+                  <p className="text-xs text-red-700 font-semibold">Belum Lunas <span className="font-bold">({(filteredCrmTargets || []).filter(t => {
+                    if (!t.statusPembayaran) return false;
+                    const normalized = t.statusPembayaran.toString().trim().toUpperCase();
+                    return normalized === 'BELUM LUNAS';
+                  }).length})</span></p>
+                </div>
+                <div
+                  className={`bg-yellow-50 rounded px-2 py-1 border border-yellow-200 text-center cursor-pointer hover:ring-2 hover:ring-yellow-400 transition-all ${
+                    quickFilter?.field === 'statusPembayaran' && quickFilter?.value === 'Sudah DP' ? 'ring-2 ring-yellow-600' : ''
+                  }`}
+                  onClick={() => quickFilter?.field === 'statusPembayaran' && quickFilter?.value === 'Sudah DP'
+                    ? clearQuickFilter()
+                    : handleQuickFilter('statusPembayaran', 'Sudah DP')
+                  }
+                >
+                  <p className="text-xs text-yellow-700 font-semibold">Sudah DP <span className="font-bold">({(filteredCrmTargets || []).filter(t => {
+                    if (!t.statusPembayaran) return false;
+                    const normalized = t.statusPembayaran.toString().trim().toUpperCase();
+                    return normalized === 'SUDAH DP';
+                  }).length})</span></p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -2814,6 +2945,8 @@ export default function CrmDataManagementPage() {
                 {quickFilter.field === 'catAkre' && `Akreditasi: ${quickFilter.value}`}
                 {quickFilter.field === 'statusSertifikat' && `Status Sertifikat: ${quickFilter.value === 'TERBIT' ? 'Terbit' : 'Belum Terbit'}`}
                 {quickFilter.field === 'tahapAudit' && `Tahap Audit: ${quickFilter.value}`}
+                {quickFilter.field === 'statusInvoice' && `Status Invoice: ${quickFilter.value === 'Terbit' ? 'Terbit' : 'Belum Terbit'}`}
+                {quickFilter.field === 'statusPembayaran' && `Status Pembayaran: ${quickFilter.value}`}
               </Badge>
               <span className="text-xs sm:text-sm text-gray-600">
                 <span className="font-bold text-blue-700">{filteredTargets.length}</span> data
@@ -3042,6 +3175,42 @@ export default function CrmDataManagementPage() {
                     ))
                   )}
                 </TableBody>
+
+                {/* Table Footer - Totals */}
+                <TableFooter>
+                  <TableRow className="bg-muted/50 font-semibold">
+                    <TableCell colSpan={canEdit ? 26 : 25} className="text-right">
+                      <span className="text-sm font-bold text-muted-foreground">TOTAL</span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className="text-sm font-bold text-blue-600">
+                        {sortedTargets.reduce((sum, t) => sum + (t.hargaKontrak || 0), 0).toLocaleString('id-ID')}
+                      </span>
+                    </TableCell>
+                    <TableCell colSpan={2}></TableCell>
+                    <TableCell className="text-right">
+                      <span className="text-sm font-bold text-purple-600">
+                        {sortedTargets.reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0).toLocaleString('id-ID')}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className="text-sm font-bold text-green-600">
+                        {sortedTargets.reduce((sum, t) => sum + (t.trimmingValue || 0), 0).toLocaleString('id-ID')}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className="text-sm font-bold text-red-600">
+                        {sortedTargets.reduce((sum, t) => sum + (t.lossValue || 0), 0).toLocaleString('id-ID')}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className="text-sm font-bold text-orange-600">
+                        {sortedTargets.reduce((sum, t) => sum + (t.cashback || 0), 0).toLocaleString('id-ID')}
+                      </span>
+                    </TableCell>
+                    <TableCell colSpan={canEdit ? 9 : 8}></TableCell>
+                  </TableRow>
+                </TableFooter>
               </Table>
             </div>
 
@@ -3684,7 +3853,7 @@ export default function CrmDataManagementPage() {
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         ref={searchInputRef}
-                        placeholder="Cari nama perusahaan, PIC, kota..."
+                        placeholder="Search all fields..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-10"
@@ -4095,6 +4264,65 @@ export default function CrmDataManagementPage() {
                             >
                               <p className={`text-base font-bold text-${type.color}-700`}>{count}</p>
                               <p className={`text-[8px] font-medium text-${type.color}-600 uppercase`}>{type.label}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Status Invoice */}
+                    <div className="border rounded-lg p-3">
+                      <h4 className="text-xs font-bold text-gray-700 mb-2">🧾 Status Invoice</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { key: 'Terbit', label: 'Terbit', color: 'teal' },
+                          { key: 'Belum', label: 'Belum', color: 'orange' },
+                        ].map((stat) => {
+                          const count = stat.key === 'Terbit'
+                            ? (filteredCrmTargets || []).filter(t => t.statusInvoice && t.statusInvoice.toString().trim().toUpperCase() === 'TERBIT').length
+                            : (filteredCrmTargets || []).filter(t => !t.statusInvoice || t.statusInvoice.toString().trim().toUpperCase().includes('BELUM')).length;
+                          const isActive = quickFilter?.field === 'statusInvoice' && quickFilter?.value === stat.key;
+                          return (
+                            <div
+                              key={stat.key}
+                              onClick={() => isActive ? clearQuickFilter() : handleQuickFilter('statusInvoice', stat.key)}
+                              className={`bg-${stat.color}-100 border-2 border-${stat.color}-300 rounded-lg px-2 py-2 text-center cursor-pointer hover:shadow-md transition-all ${
+                                isActive ? `ring-2 ring-offset-1 ring-${stat.color}-500 shadow-md` : ''
+                              }`}
+                            >
+                              <p className={`text-base font-bold text-${stat.color}-700`}>{count}</p>
+                              <p className={`text-[8px] font-medium text-${stat.color}-600 uppercase`}>{stat.label}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Status Pembayaran */}
+                    <div className="border rounded-lg p-3">
+                      <h4 className="text-xs font-bold text-gray-700 mb-2">💰 Status Pembayaran</h4>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { key: 'Lunas', label: 'Lunas', color: 'emerald', upperKey: 'LUNAS' },
+                          { key: 'Belum Lunas', label: 'Belum Lunas', color: 'red', upperKey: 'BELUM LUNAS' },
+                          { key: 'Sudah DP', label: 'Sudah DP', color: 'yellow', upperKey: 'SUDAH DP' },
+                        ].map((stat) => {
+                          const count = (filteredCrmTargets || []).filter(t => {
+                            if (!t.statusPembayaran) return false;
+                            const normalized = t.statusPembayaran.toString().trim().toUpperCase();
+                            return normalized === stat.upperKey;
+                          }).length;
+                          const isActive = quickFilter?.field === 'statusPembayaran' && quickFilter?.value === stat.key;
+                          return (
+                            <div
+                              key={stat.key}
+                              onClick={() => isActive ? clearQuickFilter() : handleQuickFilter('statusPembayaran', stat.key)}
+                              className={`bg-${stat.color}-100 border-2 border-${stat.color}-300 rounded-lg px-2 py-2 text-center cursor-pointer hover:shadow-md transition-all ${
+                                isActive ? `ring-2 ring-offset-1 ring-${stat.color}-500 shadow-md` : ''
+                              }`}
+                            >
+                              <p className={`text-base font-bold text-${stat.color}-700`}>{count}</p>
+                              <p className={`text-[8px] font-medium text-${stat.color}-600 uppercase`}>{stat.label}</p>
                             </div>
                           );
                         })}
