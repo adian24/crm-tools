@@ -42,20 +42,37 @@ interface ChartCardStandarDistributionProps {
   title: string
   data: any[]
   chartType?: string
+  filterStatus?: string
 }
 
 function ChartCardStandarDistribution({
   title,
   data,
-  chartType = 'bar'
+  chartType = 'bar',
+  filterStatus = 'all'
 }: ChartCardStandarDistributionProps) {
-  // Generate 15 different colors for standar
-  const colors = [
-    '#640654'
-  ];
+  // Color based on status filter
+  const getStatusColor = () => {
+    switch (filterStatus) {
+      case 'DONE':
+        return '#16a34a'; // Green
+      case 'PROSES':
+        return '#2563eb'; // Blue
+      case 'LOSS':
+        return '#dc2626'; // Red
+      case 'SUSPEND':
+        return '#f97316'; // Orange
+      case 'WAITING':
+        return '#6b7280'; // Gray
+      case 'all':
+      default:
+        return '#000000'; // Black
+    }
+  };
 
   const getStandarColor = (index: number) => {
-    return colors[index % colors.length];
+    // Use status color for all bars
+    return getStatusColor();
   };
 
   // Process data for chart

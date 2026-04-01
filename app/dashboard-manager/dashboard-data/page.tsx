@@ -4505,11 +4505,28 @@ export default function CrmDataManagementPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
-                  Chart Standar
-                </CardTitle>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5" />
+                    Chart Standar
+                  </CardTitle>
+                  {/* Status Badge */}
+                  {filterStatus !== 'all' && (
+                    <Badge
+                      className={`ml-2 text-xs font-semibold ${
+                        filterStatus === 'DONE' ? 'bg-green-600 hover:bg-green-700 text-white border-green-600' :
+                        filterStatus === 'PROSES' ? 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600' :
+                        filterStatus === 'LOSS' ? 'bg-red-600 hover:bg-red-700 text-white border-red-600' :
+                        filterStatus === 'SUSPEND' ? 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500' :
+                        filterStatus === 'WAITING' ? 'bg-gray-500 hover:bg-gray-600 text-white border-gray-500' :
+                        'bg-black hover:bg-gray-800 text-white border-black'
+                      }`}
+                    >
+                      {filterStatus.toUpperCase()}
+                    </Badge>
+                  )}
+                </div>
                 <CardDescription className="mt-1">
                   Distribusi standar berdasarkan jumlah sertifikat {filterStatus !== 'all' ? `- Status: ${filterStatus.toUpperCase()}` : '(Semua Status)'}
                 </CardDescription>
@@ -4629,6 +4646,7 @@ export default function CrmDataManagementPage() {
                   title="Distribusi Standar"
                   data={allStandar}
                   chartType={selectedStandarChartType}
+                  filterStatus={filterStatus}
                 />
               );
             })()}
