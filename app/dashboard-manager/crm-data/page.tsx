@@ -1197,6 +1197,20 @@ export default function CrmDataManagementPage() {
         case 'statusPembayaran':
           matchesQuickFilter = Boolean(target.statusPembayaran && target.statusPembayaran.toString().trim().toUpperCase() === value.toUpperCase());
           break;
+        case 'statusKomisi':
+          if (value === 'KOSONG') {
+            matchesQuickFilter = Boolean(!target.statusKomisi || target.statusKomisi.toString().trim() === '');
+          } else {
+            matchesQuickFilter = Boolean(target.statusKomisi && target.statusKomisi.toString().trim().toUpperCase() === value.toUpperCase());
+          }
+          break;
+        case 'trimming':
+          if (value === 'ADA') {
+            matchesQuickFilter = Boolean(target.trimmingValue && target.trimmingValue > 0);
+          } else if (value === 'KOSONG') {
+            matchesQuickFilter = Boolean(!target.trimmingValue || target.trimmingValue === 0);
+          }
+          break;
         default:
           matchesQuickFilter = true;
       }
@@ -2910,6 +2924,98 @@ export default function CrmDataManagementPage() {
                 </div>
               </div>
             </div>
+
+            {/* Status Komisi */}
+            <div className="flex items-center">
+              <span className="text-xs font-semibold text-gray-600 uppercase whitespace-nowrap w-44 hidden lg:block">🎯 Status Komisi:</span>
+              <div className="flex-1 grid grid-cols-4 gap-1.5">
+                <div
+                  className={`bg-indigo-50 rounded px-2 py-1 border border-indigo-200 text-center cursor-pointer hover:ring-2 hover:ring-indigo-400 transition-all ${
+                    quickFilter?.field === 'statusKomisi' && quickFilter?.value === 'Sudah Diajukan' ? 'ring-2 ring-indigo-600' : ''
+                  }`}
+                  onClick={() => quickFilter?.field === 'statusKomisi' && quickFilter?.value === 'Sudah Diajukan'
+                    ? clearQuickFilter()
+                    : handleQuickFilter('statusKomisi', 'Sudah Diajukan')
+                  }
+                >
+                  <p className="text-xs text-indigo-700 font-semibold">Sudah Diajukan <span className="font-bold">({(filteredCrmTargets || []).filter(t => {
+                    if (!t.statusKomisi) return false;
+                    const normalized = t.statusKomisi.toString().trim().toUpperCase();
+                    return normalized === 'SUDAH DIAJUKAN';
+                  }).length})</span></p>
+                </div>
+                <div
+                  className={`bg-purple-50 rounded px-2 py-1 border border-purple-200 text-center cursor-pointer hover:ring-2 hover:ring-purple-400 transition-all ${
+                    quickFilter?.field === 'statusKomisi' && quickFilter?.value === 'Belum Diajukan' ? 'ring-2 ring-purple-600' : ''
+                  }`}
+                  onClick={() => quickFilter?.field === 'statusKomisi' && quickFilter?.value === 'Belum Diajukan'
+                    ? clearQuickFilter()
+                    : handleQuickFilter('statusKomisi', 'Belum Diajukan')
+                  }
+                >
+                  <p className="text-xs text-purple-700 font-semibold">Belum Diajukan <span className="font-bold">({(filteredCrmTargets || []).filter(t => {
+                    if (!t.statusKomisi) return false;
+                    const normalized = t.statusKomisi.toString().trim().toUpperCase();
+                    return normalized === 'BELUM DIAJUKAN';
+                  }).length})</span></p>
+                </div>
+                <div
+                  className={`bg-gray-50 rounded px-2 py-1 border border-gray-200 text-center cursor-pointer hover:ring-2 hover:ring-gray-400 transition-all ${
+                    quickFilter?.field === 'statusKomisi' && quickFilter?.value === 'Tidak Ada' ? 'ring-2 ring-gray-600' : ''
+                  }`}
+                  onClick={() => quickFilter?.field === 'statusKomisi' && quickFilter?.value === 'Tidak Ada'
+                    ? clearQuickFilter()
+                    : handleQuickFilter('statusKomisi', 'Tidak Ada')
+                  }
+                >
+                  <p className="text-xs text-gray-700 font-semibold">Tidak Ada <span className="font-bold">({(filteredCrmTargets || []).filter(t => {
+                    if (!t.statusKomisi) return false;
+                    const normalized = t.statusKomisi.toString().trim().toUpperCase();
+                    return normalized === 'TIDAK ADA';
+                  }).length})</span></p>
+                </div>
+                <div
+                  className={`bg-slate-50 rounded px-2 py-1 border border-slate-200 text-center cursor-pointer hover:ring-2 hover:ring-slate-400 transition-all ${
+                    quickFilter?.field === 'statusKomisi' && quickFilter?.value === 'KOSONG' ? 'ring-2 ring-slate-600' : ''
+                  }`}
+                  onClick={() => quickFilter?.field === 'statusKomisi' && quickFilter?.value === 'KOSONG'
+                    ? clearQuickFilter()
+                    : handleQuickFilter('statusKomisi', 'KOSONG')
+                  }
+                >
+                  <p className="text-xs text-slate-700 font-semibold">Kosong <span className="font-bold">({(filteredCrmTargets || []).filter(t => !t.statusKomisi || t.statusKomisi.toString().trim() === '').length})</span></p>
+                </div>
+              </div>
+            </div>
+
+            {/* Trimming */}
+            <div className="flex items-center">
+              <span className="text-xs font-semibold text-gray-600 uppercase whitespace-nowrap w-44 hidden lg:block">📈 Trimming:</span>
+              <div className="flex-1 grid grid-cols-2 gap-1.5">
+                <div
+                  className={`bg-green-50 rounded px-2 py-1 border border-green-200 text-center cursor-pointer hover:ring-2 hover:ring-green-400 transition-all ${
+                    quickFilter?.field === 'trimming' && quickFilter?.value === 'ADA' ? 'ring-2 ring-green-600' : ''
+                  }`}
+                  onClick={() => quickFilter?.field === 'trimming' && quickFilter?.value === 'ADA'
+                    ? clearQuickFilter()
+                    : handleQuickFilter('trimming', 'ADA')
+                  }
+                >
+                  <p className="text-xs text-green-700 font-semibold">Ada Value <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.trimmingValue && t.trimmingValue > 0).length})</span></p>
+                </div>
+                <div
+                  className={`bg-slate-50 rounded px-2 py-1 border border-slate-200 text-center cursor-pointer hover:ring-2 hover:ring-slate-400 transition-all ${
+                    quickFilter?.field === 'trimming' && quickFilter?.value === 'KOSONG' ? 'ring-2 ring-slate-600' : ''
+                  }`}
+                  onClick={() => quickFilter?.field === 'trimming' && quickFilter?.value === 'KOSONG'
+                    ? clearQuickFilter()
+                    : handleQuickFilter('trimming', 'KOSONG')
+                  }
+                >
+                  <p className="text-xs text-slate-700 font-semibold">Kosong <span className="font-bold">({(filteredCrmTargets || []).filter(t => !t.trimmingValue || t.trimmingValue === 0).length})</span></p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -2950,6 +3056,8 @@ export default function CrmDataManagementPage() {
                 {quickFilter.field === 'tahapAudit' && `Tahap Audit: ${quickFilter.value}`}
                 {quickFilter.field === 'statusInvoice' && `Status Invoice: ${quickFilter.value === 'Terbit' ? 'Terbit' : 'Belum Terbit'}`}
                 {quickFilter.field === 'statusPembayaran' && `Status Pembayaran: ${quickFilter.value}`}
+                {quickFilter.field === 'statusKomisi' && `Status Komisi: ${quickFilter.value === 'KOSONG' ? 'Kosong' : quickFilter.value}`}
+                {quickFilter.field === 'trimming' && `Trimming: ${quickFilter.value === 'ADA' ? 'Ada Value' : 'Kosong'}`}
               </Badge>
               <span className="text-xs sm:text-sm text-gray-600">
                 <span className="font-bold text-blue-700">{filteredTargets.length}</span> data
@@ -4323,6 +4431,68 @@ export default function CrmDataManagementPage() {
                             <div
                               key={stat.key}
                               onClick={() => isActive ? clearQuickFilter() : handleQuickFilter('statusPembayaran', stat.key)}
+                              className={`bg-${stat.color}-100 border-2 border-${stat.color}-300 rounded-lg px-2 py-2 text-center cursor-pointer hover:shadow-md transition-all ${
+                                isActive ? `ring-2 ring-offset-1 ring-${stat.color}-500 shadow-md` : ''
+                              }`}
+                            >
+                              <p className={`text-base font-bold text-${stat.color}-700`}>{count}</p>
+                              <p className={`text-[8px] font-medium text-${stat.color}-600 uppercase`}>{stat.label}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Status Komisi */}
+                    <div className="border rounded-lg p-3">
+                      <h4 className="text-xs font-bold text-gray-700 mb-2">🎯 Status Komisi</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { key: 'Sudah Diajukan', label: 'Sudah', color: 'indigo', upperKey: 'SUDAH DIAJUKAN' },
+                          { key: 'Belum Diajukan', label: 'Belum', color: 'purple', upperKey: 'BELUM DIAJUKAN' },
+                          { key: 'Tidak Ada', label: 'Tidak Ada', color: 'gray', upperKey: 'TIDAK ADA' },
+                          { key: 'KOSONG', label: 'Kosong', color: 'slate', upperKey: 'KOSONG' },
+                        ].map((stat) => {
+                          const count = stat.key === 'KOSONG'
+                            ? (filteredCrmTargets || []).filter(t => !t.statusKomisi || t.statusKomisi.toString().trim() === '').length
+                            : (filteredCrmTargets || []).filter(t => {
+                                if (!t.statusKomisi) return false;
+                                const normalized = t.statusKomisi.toString().trim().toUpperCase();
+                                return normalized === stat.upperKey;
+                              }).length;
+                          const isActive = quickFilter?.field === 'statusKomisi' && quickFilter?.value === stat.key;
+                          return (
+                            <div
+                              key={stat.key}
+                              onClick={() => isActive ? clearQuickFilter() : handleQuickFilter('statusKomisi', stat.key)}
+                              className={`bg-${stat.color}-100 border-2 border-${stat.color}-300 rounded-lg px-2 py-2 text-center cursor-pointer hover:shadow-md transition-all ${
+                                isActive ? `ring-2 ring-offset-1 ring-${stat.color}-500 shadow-md` : ''
+                              }`}
+                            >
+                              <p className={`text-base font-bold text-${stat.color}-700`}>{count}</p>
+                              <p className={`text-[8px] font-medium text-${stat.color}-600 uppercase`}>{stat.label}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Trimming */}
+                    <div className="border rounded-lg p-3">
+                      <h4 className="text-xs font-bold text-gray-700 mb-2">📈 Trimming</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { key: 'ADA', label: 'Ada Value', color: 'green' },
+                          { key: 'KOSONG', label: 'Kosong', color: 'slate' },
+                        ].map((stat) => {
+                          const count = stat.key === 'ADA'
+                            ? (filteredCrmTargets || []).filter(t => t.trimmingValue && t.trimmingValue > 0).length
+                            : (filteredCrmTargets || []).filter(t => !t.trimmingValue || t.trimmingValue === 0).length;
+                          const isActive = quickFilter?.field === 'trimming' && quickFilter?.value === stat.key;
+                          return (
+                            <div
+                              key={stat.key}
+                              onClick={() => isActive ? clearQuickFilter() : handleQuickFilter('trimming', stat.key)}
                               className={`bg-${stat.color}-100 border-2 border-${stat.color}-300 rounded-lg px-2 py-2 text-center cursor-pointer hover:shadow-md transition-all ${
                                 isActive ? `ring-2 ring-offset-1 ring-${stat.color}-500 shadow-md` : ''
                               }`}

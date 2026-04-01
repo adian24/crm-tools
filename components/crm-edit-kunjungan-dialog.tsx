@@ -346,6 +346,15 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
       return;
     }
 
+    // Validation: Check if statusKomisi is required when status is DONE
+    if (formData.status === 'DONE' && !formData.statusKomisi) {
+      toast.error('❌ Status Komisi wajib diisi!', {
+        description: 'Status DONE memerlukan Status Komisi untuk diisi',
+        duration: 4000,
+      });
+      return;
+    }
+
     // Validation: Check if alasan is required when status is SUSPEND or LOSS
     if ((formData.status === 'SUSPEND' || formData.status === 'LOSS') && !formData.alasan) {
       toast.error('❌ Alasan wajib diisi!', {
@@ -1088,9 +1097,11 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
                       </div>
 
                       <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Status Komisi</Label>
+                        <Label className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                          Status Komisi {formData.status === 'DONE' && <span className="text-red-500">*</span>}
+                        </Label>
                         <Select value={formData.statusKomisi || undefined} onValueChange={(value) => updateFormField('statusKomisi', value)}>
-                          <SelectTrigger className="w-full border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-green-500 h-9 text-sm">
+                          <SelectTrigger className={`w-full border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-green-500 h-9 text-sm ${formData.status === 'DONE' && !formData.statusKomisi ? 'border-red-500' : ''}`}>
                             <SelectValue placeholder="Pilih" />
                           </SelectTrigger>
                           <SelectContent>
@@ -1099,6 +1110,9 @@ const EditKunjunganDialog = React.memo(({ open, onOpenChange, target, staffUsers
                             <SelectItem value="Tidak Ada">Tidak Ada</SelectItem>
                           </SelectContent>
                         </Select>
+                        {formData.status === 'DONE' && !formData.statusKomisi && (
+                          <p className="text-[9px] text-red-500 dark:text-red-400">Wajib diisi untuk status DONE</p>
+                        )}
                       </div>
                     </div>
 
