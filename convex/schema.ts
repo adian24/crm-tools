@@ -540,6 +540,27 @@ export default defineSchema({
   })
     .index("by_category", ["category"])
     .index("by_month_year", ["month", "year"])
-    .index("by_year", ["year"])
+    .index("by_year", ["year"]),
+
+  // Table Catatan Tambahan
+  catatanTambahan: defineTable({
+    judul: v.string(), // Judul catatan
+    isiCatatan: v.string(), // Deskripsi catatan
+    gambarBase64: v.string(), // Gambar dalam format base64
+    bulan: v.number(), // Bulan (1-12)
+    tahun: v.number(), // Tahun
+    status: v.union(v.literal("active"), v.literal("inactive")), // Status catatan
+
+    // Audit fields
+    created_by: v.optional(v.id("users")), // User yang membuat
+    updated_by: v.optional(v.id("users")), // User yang terakhir update
+    createdByName: v.string(), // Nama user yang membuat (denormalized for easier display)
+    updatedByName: v.optional(v.string()), // Nama user yang terakhir update
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_month_year", ["bulan", "tahun"])
+    .index("by_tahun", ["tahun"])
+    .index("by_status", ["status"])
     .index("by_created_by", ["created_by"]),
 });

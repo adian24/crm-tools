@@ -21,6 +21,7 @@ import {
   IconPhoto,
   IconAlertCircle,
   IconPhone,
+  IconFileText,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -143,6 +144,11 @@ const getNavigationItems = (role: string) => {
         icon: IconPhoto,
       },
       {
+        title: "Catatan Tambahan",
+        url: "/dashboard-manager/catatan-tambahan",
+        icon: IconFileText,
+      },
+      {
         title: "CRM Data Management",
         url: "/dashboard-manager/crm-data",
         icon: IconTarget,
@@ -232,6 +238,11 @@ const getNavigationItems = (role: string) => {
       title: "Isu & Kendala",
       url: "/dashboard-manager/isu-kendala",
       icon: IconPhoto,
+    },
+    {
+      title: "Catatan Tambahan",
+      url: "/dashboard-manager/catatan-tambahan",
+      icon: IconFileText,
     },
     {
       title: "CRM Data Management",

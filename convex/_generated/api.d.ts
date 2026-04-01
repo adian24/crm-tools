@@ -10,6 +10,7 @@
 
 import type * as associatesData from "../associatesData.js";
 import type * as auth from "../auth.js";
+import type * as catatanTambahan from "../catatanTambahan.js";
 import type * as cleanNps from "../cleanNps.js";
 import type * as clearAllConnections from "../clearAllConnections.js";
 import type * as crmNewClient from "../crmNewClient.js";
@@ -50,6 +51,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   associatesData: typeof associatesData;
   auth: typeof auth;
+  catatanTambahan: typeof catatanTambahan;
   cleanNps: typeof cleanNps;
   clearAllConnections: typeof clearAllConnections;
   crmNewClient: typeof crmNewClient;
