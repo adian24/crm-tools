@@ -186,7 +186,8 @@ export default function CrmDataManagementPage() {
     { value: '11', label: 'November' },
     { value: '12', label: 'Desember' },
   ];
-  const alasanOptions = [...new Set(crmTargets?.map(t => t.alasan).filter(Boolean) || [])].sort() as string[];
+  // Get alasan options from master-alasan.json
+  const alasanOptions = masterAlasanData.alasan.map((a: any) => a.alasan.trim()).sort();
   // Get standar options from master-standar.json
   const standarOptions = masterStandarData.standar.map((s: any) => s.kode).sort();
 
@@ -744,7 +745,10 @@ export default function CrmDataManagementPage() {
                   setFilterStatusSertifikatTerbit={setFilterStatusSertifikatTerbit}
                   filterStatus={filterStatus}
                   setFilterStatus={setFilterStatus}
+                  filterAlasan={filterAlasan}
+                  setFilterAlasan={setFilterAlasan}
                   standarOptions={standarOptions}
+                  alasanOptions={alasanOptions}
                 />
               </FilterSection>
             </CardContent>
@@ -836,7 +840,7 @@ export default function CrmDataManagementPage() {
                 <SlidersHorizontal className={`h-4 w-4 transition-transform duration-200 ${
                   activeFilterSheet === 'sertifikat' ? 'scale-110 text-white' : 'text-purple-800'
                 }`} />
-                {(filterStandar !== 'all' || filterAkreditasi !== 'all' || filterStatusSertifikatTerbit !== 'all' || filterStatus !== 'all') && (
+                {(filterStandar !== 'all' || filterAkreditasi !== 'all' || filterStatusSertifikatTerbit !== 'all' || filterStatus !== 'all' || filterAlasan !== 'all') && (
                   <span className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-white rounded-full border-2 border-purple-500 animate-pulse"></span>
                 )}
               </div>
@@ -1186,6 +1190,22 @@ export default function CrmDataManagementPage() {
                         </button>
                       ))}
                     </div>
+                  </div>
+
+                  {/* Alasan */}
+                  <div>
+                    <Label className="mb-1.5 block text-xs">Alasan</Label>
+                    <Select value={filterAlasan} onValueChange={setFilterAlasan}>
+                      <SelectTrigger className="w-full h-10">
+                        <SelectValue placeholder="All Alasan" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Alasan</SelectItem>
+                        {alasanOptions.map((alasan) => (
+                          <SelectItem key={alasan} value={alasan}>{alasan}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <button
@@ -4780,7 +4800,7 @@ export default function CrmDataManagementPage() {
                   Pareto Chart - Alasan
                 </CardTitle>
                 <CardDescription className="mt-1">
-                  Analisis 80/20 alasan berdasarkan jumlah {filterStatus !== 'all' ? `- Status: ${filterStatus.toUpperCase()}` : '(Semua Status)'}
+                  Analisis 80/20 alasan berdasarkan jumlah {filterStatus !== 'all' ? `- Status: ${filterStatus.toUpperCase()}` : '(Semua Status)'} {filterAlasan !== 'all' ? `- Alasan: ${filterAlasan}` : ''}
                 </CardDescription>
               </div>
             </div>
@@ -4817,7 +4837,14 @@ export default function CrmDataManagementPage() {
                   }
                 }
 
-                return matchesTahun && matchesStatus && matchesTipeProduk && matchesKategoriProduk;
+                // Filter Alasan
+                let matchesAlasan = true;
+                if (filterAlasan !== 'all') {
+                  const normalizedAlasan = (t.alasan || '').trim();
+                  matchesAlasan = normalizedAlasan === filterAlasan;
+                }
+
+                return matchesTahun && matchesStatus && matchesTipeProduk && matchesKategoriProduk && matchesAlasan;
               });
 
               // Get list of valid alasan from master

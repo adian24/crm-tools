@@ -150,7 +150,7 @@ function ChartCardParetoAlasan({
                 <Bar yAxisId="left" dataKey="count" fill="#7c3aed" radius={[2, 2, 0, 0]} name="Jumlah">
                   {chartData.map((entry, index) => {
                     const isTop3 = index < 3;
-                    return <Cell key={`cell-${index}`} fill={isTop3 ? "#5a0000" : "#1e0052"} />;
+                    return <Cell key={`cell-${index}`} fill={isTop3 ? "#5a0000" : "#67047a"} />;
                   })}
                   <LabelList
                     dataKey="count"

@@ -12,7 +12,10 @@ interface FilterSertifikatSectionProps {
   setFilterStatusSertifikatTerbit: (value: string) => void;
   filterStatus: string;
   setFilterStatus: (value: string) => void;
+  filterAlasan: string;
+  setFilterAlasan: (value: string) => void;
   standarOptions: string[];
+  alasanOptions: string[];
 }
 
 export function FilterSertifikatSection({
@@ -24,7 +27,10 @@ export function FilterSertifikatSection({
   setFilterStatusSertifikatTerbit,
   filterStatus,
   setFilterStatus,
+  filterAlasan,
+  setFilterAlasan,
   standarOptions,
+  alasanOptions,
 }: FilterSertifikatSectionProps) {
   return (
     <>
@@ -158,6 +164,24 @@ export function FilterSertifikatSection({
             </Button>
           ))}
         </div>
+      </div>
+
+      {/* Alasan */}
+      <div>
+        <Label className="mb-1.5 block text-xs">Alasan</Label>
+        <Select value={filterAlasan} onValueChange={setFilterAlasan}>
+          <SelectTrigger className="w-full h-8 text-xs">
+            <SelectValue placeholder="All Alasan" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Alasan</SelectItem>
+            {alasanOptions.map((alasan) => (
+              <SelectItem key={alasan} value={alasan}>
+                {alasan}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </>
   );
