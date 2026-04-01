@@ -7,7 +7,7 @@ import { Id } from '@/convex/_generated/dataModel';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -5278,6 +5278,43 @@ export default function CrmDataManagementPage() {
                     ))
                   )}
                 </TableBody>
+
+                {/* Table Footer - Totals */}
+                <TableFooter>
+                  <TableRow className="bg-muted/50 font-semibold">
+                    <TableCell colSpan={25} className="text-right">
+                      <span className="text-sm font-bold text-muted-foreground">TOTAL</span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className="text-sm font-bold text-blue-600">
+                        {filteredTargets.reduce((sum, t) => sum + (t.hargaKontrak || 0), 0).toLocaleString('id-ID')}
+                      </span>
+                    </TableCell>
+                    <TableCell></TableCell>
+                    <TableCell></TableCell>
+                    <TableCell className="text-right">
+                      <span className="text-sm font-bold text-purple-600">
+                        {filteredTargets.reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0).toLocaleString('id-ID')}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className="text-sm font-bold text-green-600">
+                        {filteredTargets.reduce((sum, t) => sum + (t.trimmingValue || 0), 0).toLocaleString('id-ID')}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className="text-sm font-bold text-red-600">
+                        {filteredTargets.reduce((sum, t) => sum + (t.lossValue || 0), 0).toLocaleString('id-ID')}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className="text-sm font-bold text-orange-600">
+                        {filteredTargets.reduce((sum, t) => sum + (t.cashback || 0), 0).toLocaleString('id-ID')}
+                      </span>
+                    </TableCell>
+                    <TableCell colSpan={10}></TableCell>
+                  </TableRow>
+                </TableFooter>
               </Table>
             </div>
 
