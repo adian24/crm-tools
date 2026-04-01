@@ -3073,7 +3073,7 @@ export default function CrmDataManagementPage() {
                   Kuadran Analytics - Monthly Trend
                 </CardTitle>
                 <CardDescription className="mt-1">
-                  Distribusi kuadran per bulan berdasarkan bulan EXP ( hargaTerupdate )
+                  Distribusi kuadran per bulan berdasarkan bulan TTD Notif (DONE: hargaTerupdate, lainnya: hargaKontrak)
                 </CardDescription>
               </div>
             </div>
@@ -3098,7 +3098,10 @@ export default function CrmDataManagementPage() {
                 }
 
                 const kuadran = target.kuadran || 'Unknown';
-                const amount = target.hargaTerupdate || 0;
+                // DONE status uses hargaTerupdate, others use hargaKontrak
+                const amount = target.status === 'DONE'
+                  ? (target.hargaTerupdate || 0)
+                  : (target.hargaKontrak || 0);
 
                 if (!monthlyKuadranData[bulan]) {
                   monthlyKuadranData[bulan] = {};
@@ -3160,8 +3163,79 @@ export default function CrmDataManagementPage() {
                 }
               };
 
+              // Calculate grand total amount
+              const grandTotalAmount = Object.values(monthlyKuadranData).reduce((sum, month) => {
+                return sum + Object.values(month).reduce((s, k) => s + k.total, 0);
+              }, 0);
+              const totalCount = dataWithKuadran.length;
+
+              // Determine color based on filter status
+              const getStatusColors = () => {
+                switch (filterStatus) {
+                  case 'DONE':
+                    return {
+                      bg: 'bg-gradient-to-r from-green-50 to-emerald-50',
+                      border: 'border-green-200',
+                      text: 'text-green-600',
+                      iconBg: 'bg-gradient-to-r from-green-500 to-emerald-500'
+                    };
+                  case 'PROSES':
+                    return {
+                      bg: 'bg-gradient-to-r from-blue-50 to-cyan-50',
+                      border: 'border-blue-200',
+                      text: 'text-blue-600',
+                      iconBg: 'bg-gradient-to-r from-blue-500 to-cyan-500'
+                    };
+                  case 'LOSS':
+                    return {
+                      bg: 'bg-gradient-to-r from-red-50 to-rose-50',
+                      border: 'border-red-200',
+                      text: 'text-red-600',
+                      iconBg: 'bg-gradient-to-r from-red-500 to-rose-500'
+                    };
+                  case 'SUSPEND':
+                    return {
+                      bg: 'bg-gradient-to-r from-orange-50 to-amber-50',
+                      border: 'border-orange-200',
+                      text: 'text-orange-600',
+                      iconBg: 'bg-gradient-to-r from-orange-500 to-amber-500'
+                    };
+                  case 'WAITING':
+                    return {
+                      bg: 'bg-gradient-to-r from-gray-50 to-slate-50',
+                      border: 'border-gray-200',
+                      text: 'text-gray-600',
+                      iconBg: 'bg-gradient-to-r from-gray-500 to-slate-500'
+                    };
+                  default:
+                    return {
+                      bg: 'bg-gradient-to-r from-indigo-50 to-purple-50',
+                      border: 'border-indigo-200',
+                      text: 'text-indigo-600',
+                      iconBg: 'bg-gradient-to-r from-indigo-500 to-purple-500'
+                    };
+                }
+              };
+
+              const statusColors = getStatusColors();
+
               return (
                 <div className="space-y-3 sm:space-y-6">
+                  {/* Total Summary */}
+                  <div className={`${statusColors.bg} rounded-lg border ${statusColors.border} p-3 sm:p-4`}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs sm:text-sm text-muted-foreground">Total: {totalCount} data</p>
+                        <p className={`text-lg sm:text-xl font-bold ${statusColors.text}`}>
+                          Rp {grandTotalAmount.toLocaleString('id-ID')}
+                        </p>
+                      </div>
+                      <div className={`h-10 w-10 sm:h-12 sm:w-12 rounded-full ${statusColors.iconBg} flex items-center justify-center shadow`}>
+                        <span className="text-white text-sm font-bold">∑</span>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Summary Cards per Kuadran - Compact */}
                   <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
                     {kuadranOrder.map(kuadran => {
@@ -3181,10 +3255,7 @@ export default function CrmDataManagementPage() {
                       const kuadranCompanyCount = kuadranCompanies.size;
 
                       const colors = kuadranColors[kuadran] || kuadranColors['K1'];
-                      const grandTotal = Object.values(monthlyKuadranData).reduce((sum, month) => {
-                        return sum + Object.values(month).reduce((s, k) => s + k.total, 0);
-                      }, 0);
-                      const percentage = grandTotal > 0 ? Math.round((kuadranTotal / grandTotal) * 100) : 0;
+                      const percentage = grandTotalAmount > 0 ? Math.round((kuadranTotal / grandTotalAmount) * 100) : 0;
 
                       return (
                         <div key={kuadran} className={`bg-gradient-to-br ${colors.bg} rounded-lg border ${colors.border} p-2 sm:p-4 shadow-sm`}>
@@ -4555,6 +4626,38 @@ export default function CrmDataManagementPage() {
                 // Filter by status - if 'all' show all data, otherwise filter by selected status
                 const matchesStatus = filterStatus === 'all' || t.status === filterStatus;
 
+                // Filter Bulan Exp Date
+                let matchesBulanExp = true;
+                const shouldApplyBulanExpToDone = !filterBulanTTDEnabled;
+                const isNotDoneStatus = t.status !== 'DONE';
+                const shouldFilterExp = (isNotDoneStatus || shouldApplyBulanExpToDone) && filterBulanExpEnabled && (filterFromBulanExp !== 'all' || filterToBulanExp !== 'all');
+
+                if (shouldFilterExp) {
+                  const bulanNameToNum: { [key: string]: number } = {
+                    'januari': 1, 'februari': 2, 'maret': 3, 'april': 4, 'mei': 5, 'juni': 6,
+                    'juli': 7, 'agustus': 8, 'september': 9, 'oktober': 10, 'november': 11, 'desember': 12,
+                    'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'may': 5, 'jun': 6,
+                    'jul': 7, 'aug': 8, 'sep': 9, 'oct': 10, 'nov': 11, 'dec': 12
+                  };
+
+                  let bulanExpNum = 0;
+                  const bulanExpLower = (t.bulanExpDate || '').toLowerCase().trim();
+
+                  if (bulanExpLower) {
+                    const parsedNum = parseInt(bulanExpLower);
+                    if (!isNaN(parsedNum)) {
+                      bulanExpNum = parsedNum;
+                    } else if (bulanNameToNum[bulanExpLower]) {
+                      bulanExpNum = bulanNameToNum[bulanExpLower];
+                    }
+                  }
+
+                  const fromMonth = filterFromBulanExp !== 'all' ? parseInt(filterFromBulanExp) : 1;
+                  const toMonth = filterToBulanExp !== 'all' ? parseInt(filterToBulanExp) : 12;
+
+                  matchesBulanExp = bulanExpNum > 0 && bulanExpNum >= fromMonth && bulanExpNum <= toMonth;
+                }
+
                 // Filter Tipe Produk
                 let matchesTipeProduk = true;
                 if (filterTipeProduk !== 'all') {
@@ -4578,7 +4681,7 @@ export default function CrmDataManagementPage() {
                   }
                 }
 
-                return matchesTahun && matchesStatus && matchesTipeProduk && matchesKategoriProduk;
+                return matchesTahun && matchesStatus && matchesBulanExp && matchesTipeProduk && matchesKategoriProduk;
               });
 
               // Group by std and get counts
@@ -4690,6 +4793,38 @@ export default function CrmDataManagementPage() {
                 // Filter by status - if 'all' show all data, otherwise filter by selected status
                 const matchesStatus = filterStatus === 'all' || t.status === filterStatus;
 
+                // Filter Bulan Exp Date
+                let matchesBulanExp = true;
+                const shouldApplyBulanExpToDone = !filterBulanTTDEnabled;
+                const isNotDoneStatus = t.status !== 'DONE';
+                const shouldFilterExp = (isNotDoneStatus || shouldApplyBulanExpToDone) && filterBulanExpEnabled && (filterFromBulanExp !== 'all' || filterToBulanExp !== 'all');
+
+                if (shouldFilterExp) {
+                  const bulanNameToNum: { [key: string]: number } = {
+                    'januari': 1, 'februari': 2, 'maret': 3, 'april': 4, 'mei': 5, 'juni': 6,
+                    'juli': 7, 'agustus': 8, 'september': 9, 'oktober': 10, 'november': 11, 'desember': 12,
+                    'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'may': 5, 'jun': 6,
+                    'jul': 7, 'aug': 8, 'sep': 9, 'oct': 10, 'nov': 11, 'dec': 12
+                  };
+
+                  let bulanExpNum = 0;
+                  const bulanExpLower = (t.bulanExpDate || '').toLowerCase().trim();
+
+                  if (bulanExpLower) {
+                    const parsedNum = parseInt(bulanExpLower);
+                    if (!isNaN(parsedNum)) {
+                      bulanExpNum = parsedNum;
+                    } else if (bulanNameToNum[bulanExpLower]) {
+                      bulanExpNum = bulanNameToNum[bulanExpLower];
+                    }
+                  }
+
+                  const fromMonth = filterFromBulanExp !== 'all' ? parseInt(filterFromBulanExp) : 1;
+                  const toMonth = filterToBulanExp !== 'all' ? parseInt(filterToBulanExp) : 12;
+
+                  matchesBulanExp = bulanExpNum > 0 && bulanExpNum >= fromMonth && bulanExpNum <= toMonth;
+                }
+
                 // Filter Tipe Produk
                 let matchesTipeProduk = true;
                 if (filterTipeProduk !== 'all') {
@@ -4713,7 +4848,7 @@ export default function CrmDataManagementPage() {
                   }
                 }
 
-                return matchesTahun && matchesStatus && matchesTipeProduk && matchesKategoriProduk;
+                return matchesTahun && matchesStatus && matchesBulanExp && matchesTipeProduk && matchesKategoriProduk;
               });
 
               // Get list of valid EA codes from master ea code - normalized
