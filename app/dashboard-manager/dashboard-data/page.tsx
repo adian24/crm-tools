@@ -5280,7 +5280,7 @@ export default function CrmDataManagementPage() {
                 </TableBody>
 
                 {/* Table Footer - Totals */}
-                <TableFooter>
+                {/* <TableFooter>
                   <TableRow className="bg-muted/50 font-semibold">
                     <TableCell colSpan={25} className="text-right">
                       <span className="text-sm font-bold text-muted-foreground">TOTAL</span>
@@ -5314,7 +5314,7 @@ export default function CrmDataManagementPage() {
                     </TableCell>
                     <TableCell colSpan={10}></TableCell>
                   </TableRow>
-                </TableFooter>
+                </TableFooter> */}
               </Table>
             </div>
 
