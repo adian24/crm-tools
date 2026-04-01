@@ -2376,7 +2376,10 @@ export default function CrmDataManagementPage() {
                   setFilterStatusSertifikatTerbit={setFilterStatusSertifikat}
                   filterStatus={filterStatus}
                   setFilterStatus={setFilterStatus}
+                  filterAlasan={filterAlasan}
+                  setFilterAlasan={setFilterAlasan}
                   standarOptions={standarOptions}
+                  alasanOptions={alasanOptions}
                 />
               </FilterSection>
 
@@ -4025,7 +4028,10 @@ export default function CrmDataManagementPage() {
                       setFilterStatusSertifikatTerbit={setFilterStatusSertifikat}
                       filterStatus={filterStatus}
                       setFilterStatus={setFilterStatus}
+                      filterAlasan={filterAlasan}
+                      setFilterAlasan={setFilterAlasan}
                       standarOptions={standarOptions}
+                      alasanOptions={alasanOptions}
                     />
 
                     {/* Kunjungan Filter */}

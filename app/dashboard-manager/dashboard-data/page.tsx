@@ -262,12 +262,8 @@ export default function CrmDataManagementPage() {
 
     return crmTargets.filter(target => {
     // Search filter - search across all important fields (optimized order)
-    if (searchTerm === '') return true;
-
     const searchLower = searchTerm.toLowerCase();
-
-    // Quick check on most searched fields first
-    return (
+    const matchesSearch = searchTerm === '' || (
       (target.namaPerusahaan?.toLowerCase().includes(searchLower)) ||
       (target.sales?.toLowerCase().includes(searchLower)) ||
       (target.picCrm?.toLowerCase().includes(searchLower)) ||
@@ -410,7 +406,7 @@ export default function CrmDataManagementPage() {
       const stdCode = (target.std || '').trim();
       const standar = masterStandarData.standar.find((s: any) => s.kode === stdCode);
       if (standar) {
-        matchesKategoriProduk = standar.kategori_produk === filterKategoriProduk;
+        matchesKategoriProduk = standar?.kategori_produk === filterKategoriProduk;
       } else {
         // If std not found in master, exclude it
         matchesKategoriProduk = false;
@@ -425,7 +421,7 @@ export default function CrmDataManagementPage() {
       const ttdDate = target.bulanTtdNotif;
       if (ttdDate) {
         // Data has bulanTtdNotif, check if year and month match the filter
-        const dateObj = new Date(ttdDate);
+        const dateObj = new Date(ttdDate!);
         const ttdYear = dateObj.getFullYear();
         const ttdMonth = dateObj.getMonth() + 1;
 
@@ -456,7 +452,7 @@ export default function CrmDataManagementPage() {
     if (filterFromKunjungan !== 'all' || filterToKunjungan !== 'all') {
       const visitDate = target.tanggalKunjungan;
       if (visitDate) {
-        const visitMonth = new Date(visitDate).getMonth() + 1;
+        const visitMonth = new Date(visitDate!).getMonth() + 1;
         const fromMonth = filterFromKunjungan !== 'all' ? parseInt(filterFromKunjungan) : 1;
         const toMonth = filterToKunjungan !== 'all' ? parseInt(filterToKunjungan) : 12;
         matchesKunjungan = visitMonth >= fromMonth && visitMonth <= toMonth;
