@@ -4825,8 +4825,8 @@ export default function CrmDataManagementPage() {
                 masterAlasanData.alasan.map((a: any) => a.alasan.trim())
               );
 
-              // Group by alasan and get counts
-              const alasanTotals: { [key: string]: { count: number; companies: Set<string> } } = {};
+              // Group by alasan and get counts + total nilai
+              const alasanTotals: { [key: string]: { count: number; companies: Set<string>; totalNilai: number } } = {};
 
               dataForAlasan.forEach(target => {
                 const rawAlasan = target.alasan;
@@ -4846,11 +4846,15 @@ export default function CrmDataManagementPage() {
                 if (!alasanTotals[normalizedAlasan]) {
                   alasanTotals[normalizedAlasan] = {
                     count: 0,
-                    companies: new Set()
+                    companies: new Set(),
+                    totalNilai: 0
                   };
                 }
 
                 alasanTotals[normalizedAlasan].count += 1;
+                // Gunakan hargaTerupdate jika ada, otherwise gunakan hargaKontrak
+                const harga = target.hargaTerupdate || target.hargaKontrak || 0;
+                alasanTotals[normalizedAlasan].totalNilai += harga;
               });
 
               // Ambil SEMUA alasan dari master dan isi dengan 0 jika tidak ada data
@@ -4860,7 +4864,8 @@ export default function CrmDataManagementPage() {
 
                 return {
                   alasan,
-                  count: existingData ? existingData.count : 0
+                  count: existingData ? existingData.count : 0,
+                  totalNilai: existingData ? existingData.totalNilai : 0
                 };
               }).sort((a, b) => b.count - a.count);
 

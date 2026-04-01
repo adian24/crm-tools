@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Bar, Line, ComposedChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, LabelList } from "recharts"
+import { Bar, Line, ComposedChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, LabelList, Cell } from "recharts"
 
 import {
   Card,
@@ -22,6 +22,7 @@ export const description = "Pareto Chart - Alasan Distribution"
 const chartConfig = {
   count: { label: "Jumlah" },
   cumulative: { label: "Persentase Kumulatif" },
+  totalNilai: { label: "Total Nilai" },
 } satisfies ChartConfig
 
 // Custom Tooltip Content
@@ -35,6 +36,11 @@ const CustomTooltip = ({ active, payload }: any) => {
             {entry.name}: {entry.value}
           </p>
         ))}
+        {payload[0].payload.totalNilai !== undefined && (
+          <p className="text-xs sm:text-sm font-semibold text-green-600 mt-1">
+            Total Nilai: Rp {payload[0].payload.totalNilai.toLocaleString('id-ID')}
+          </p>
+        )}
       </div>
     );
   }
@@ -54,13 +60,17 @@ function ChartCardParetoAlasan({
 
   // Calculate totals
   const totalRecords = data.reduce((sum, item) => sum + item.count, 0);
+  const totalNilai = data.reduce((sum, item) => sum + (item.totalNilai || 0), 0);
 
   // Calculate cumulative percentage
   const chartData = data.map((item, index) => {
     const cumulative = data.slice(0, index + 1).reduce((sum, d) => sum + d.count, 0);
     return {
       ...item,
-      cumulative: ((cumulative / totalRecords) * 100).toFixed(1)
+      cumulative: ((cumulative / totalRecords) * 100).toFixed(1),
+      // Add fill color based on index (top 3 are red)
+      fill: index < 3 ? "#DC2626" : "#7c3aed",
+      labelColor: index < 3 ? "#DC2626" : "#7a0658"
     };
   });
 
@@ -78,7 +88,7 @@ function ChartCardParetoAlasan({
       <CardHeader className="relative z-10 pb-2">
         <CardTitle className="text-sm font-semibold text-center">{title}</CardTitle>
         <CardDescription className="text-xs text-center font-semibold text-black/70 mt-1">
-          Total: <span className="font-bold text-purple-600">{totalRecords}</span> Alasan
+          Total: <span className="font-bold text-purple-600">{totalRecords}</span> Alasan | Nilai: <span className="font-bold text-green-600">Rp {(totalNilai / 1000000).toFixed(1)} Jt</span>
         </CardDescription>
       </CardHeader>
 
@@ -98,12 +108,6 @@ function ChartCardParetoAlasan({
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={chartData} margin={{ top: 50, right: 30, left: 20, bottom: 80 }}>
-                <defs>
-                  <linearGradient id="gradientPurple" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="50%" stopColor="#1b0352" stopOpacity={0.9}/>
-                    <stop offset="100%" stopColor="#A78BFA" stopOpacity={0.6}/>
-                  </linearGradient>
-                </defs>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis
                   dataKey="alasan"
@@ -143,13 +147,16 @@ function ChartCardParetoAlasan({
                   content={<CustomTooltip />}
                 />
                 <Legend verticalAlign="bottom" wrapperStyle={{ bottom: 0, paddingTop: '20px' }} />
-                <Bar yAxisId="left" dataKey="count" fill="url(#gradientPurple)" radius={[2, 2, 0, 0]} name="Jumlah">
+                <Bar yAxisId="left" dataKey="count" fill="#7c3aed" radius={[2, 2, 0, 0]} name="Jumlah">
+                  {chartData.map((entry, index) => {
+                    const isTop3 = index < 3;
+                    return <Cell key={`cell-${index}`} fill={isTop3 ? "#5a0000" : "#1e0052"} />;
+                  })}
                   <LabelList
                     dataKey="count"
                     position="top"
                     fontSize={17}
                     fontWeight="bold"
-                    fill="#7a0658"
                   />
                 </Bar>
                 <Line
