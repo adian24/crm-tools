@@ -3104,6 +3104,7 @@ export default function CrmDataManagementPage() {
                     <SortableTableHead field="grup">Grup</SortableTableHead>
                     <SortableTableHead field="status">Status</SortableTableHead>
                     <SortableTableHead field="alasan">Alasan</SortableTableHead>
+                    <TableHead>Catatan</TableHead>
                     <SortableTableHead field="category">Category</SortableTableHead>
                     <SortableTableHead field="kuadran">Kuadran</SortableTableHead>
                     <SortableTableHead field="luarKota">Luar Kota</SortableTableHead>
@@ -3132,7 +3133,6 @@ export default function CrmDataManagementPage() {
                     <SortableTableHead field="statusSertifikat">Status Sertifikat</SortableTableHead>
                     <SortableTableHead field="tanggalKunjungan">Tgl Kunjungan</SortableTableHead>
                     <SortableTableHead field="statusKunjungan">Status Kunjungan</SortableTableHead>
-                    <TableHead>Catatan Kunjungan</TableHead>
                     <TableHead>Foto Bukti</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -3203,6 +3203,7 @@ export default function CrmDataManagementPage() {
                           </Badge>
                         </TableCell>
                         <TableCell>{target.alasan || '-'}</TableCell>
+                        <TableCell className="max-w-xs truncate" title={target.catatanKunjungan}>{target.catatanKunjungan || '-'}</TableCell>
                         <TableCell>
                           {target.category ? (
                             <Badge
@@ -3279,7 +3280,6 @@ export default function CrmDataManagementPage() {
                             </Badge>
                           ) : '-'}
                         </TableCell>
-                        <TableCell className="max-w-xs truncate" title={target.catatanKunjungan}>{target.catatanKunjungan || '-'}</TableCell>
                         <TableCell className="max-w-xs truncate" title={target.fotoBuktiKunjungan}>{target.fotoBuktiKunjungan || '-'}</TableCell>
 
                       </TableRow>

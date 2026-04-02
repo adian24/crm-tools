@@ -5149,6 +5149,7 @@ export default function CrmDataManagementPage() {
                     <TableHead>Grup</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Alasan</TableHead>
+                    <TableHead>Catatan</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead>Kuadran</TableHead>
                     <TableHead>Luar Kota</TableHead>
@@ -5177,7 +5178,6 @@ export default function CrmDataManagementPage() {
                     <TableHead>Status Sertifikat</TableHead>
                     <TableHead>Tgl Kunjungan</TableHead>
                     <TableHead>Status Kunjungan</TableHead>
-                    <TableHead>Catatan Kunjungan</TableHead>
                     <TableHead>Foto Bukti</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -5214,6 +5214,7 @@ export default function CrmDataManagementPage() {
                           </Badge>
                         </TableCell>
                         <TableCell>{target.alasan || '-'}</TableCell>
+                        <TableCell className="max-w-xs truncate" title={target.catatanKunjungan}>{target.catatanKunjungan || '-'}</TableCell>
                         <TableCell>
                           {target.category ? (
                             <Badge
@@ -5272,7 +5273,6 @@ export default function CrmDataManagementPage() {
                             </Badge>
                           ) : '-'}
                         </TableCell>
-                        <TableCell className="max-w-xs truncate" title={target.catatanKunjungan}>{target.catatanKunjungan || '-'}</TableCell>
                         <TableCell>{target.fotoBuktiKunjungan ? 'Ada' : '-'}</TableCell>
                       </TableRow>
                     ))
