@@ -272,18 +272,18 @@ export default function CatatanTambahanPage() {
             </div>
           </Card>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6">
             {paginatedCatatan.map((catatan) => (
               <Card
                 key={catatan._id}
                 className="overflow-hidden bg-white dark:bg-slate-800 shadow-lg border-slate-200 dark:border-slate-700 hover:shadow-xl transition-shadow"
               >
                 {/* Image */}
-                <div className="relative aspect-video bg-slate-100 dark:bg-slate-900">
+                <div className="relative aspect-[5/3] bg-slate-100 dark:bg-slate-900">
                   <img
                     src={catatan.gambarBase64}
                     alt={catatan.judul}
-                    className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                    className="w-full h-full object-contain cursor-pointer hover:opacity-90 transition-opacity p-2"
                     onClick={() => handleImageClick(catatan.gambarBase64)}
                   />
                   <div className="absolute top-1 sm:top-2 right-1 sm:right-2">
