@@ -18,7 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Edit, Phone, Mail, User, Building, Save, X, Building2, Briefcase, ChevronDown, ChevronUp, Filter, Copy, Check } from 'lucide-react';
+import { Search, Edit, Phone, Mail, User, Building, Save, X, Building2, Briefcase, ChevronDown, ChevronUp, Filter, Copy, Check, Download, FileSpreadsheet, Upload, AlertCircle, CheckCircle2 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 import { getCurrentUser } from '@/lib/auth';
 import { InfinityLoader } from '@/components/ui/infinity-loader';
@@ -59,6 +60,14 @@ export default function KontakManagementPage() {
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [mobileFilterOpen, setMobileFilterOpen] = useState<'search' | 'pic' | null>(null);
   const [copiedItem, setCopiedItem] = useState<string | null>(null);
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [parsedData, setParsedData] = useState<any[]>([]);
+  const [isParsing, setIsParsing] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [skippedRowsCount, setSkippedRowsCount] = useState(0);
 
   // Copy to clipboard function
   const copyToClipboard = async (text: string, label: string) => {
@@ -73,6 +82,311 @@ export default function KontakManagementPage() {
       }, 2000);
     } catch (error) {
       toast.error('❌ Gagal menyalin ke clipboard');
+    }
+  };
+
+  // Download template function
+  const handleDownloadTemplate = async () => {
+    try {
+      toast.loading('📥 Mengunduh template...', { id: 'download-template' });
+
+      const response = await fetch('/api/download-template?type=kontak');
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Gagal mengunduh template');
+      }
+
+      // Get blob from response
+      const blob = await response.blob();
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `template-import-kontak-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success('✅ Template berhasil diunduh!', { id: 'download-template' });
+    } catch (error) {
+      console.error('Error downloading template:', error);
+      toast.error('❌ Gagal mengunduh template', { id: 'download-template' });
+    }
+  };
+
+  // Parse Excel file
+  const parseExcelFile = async (file: File) => {
+    setIsParsing(true);
+    setValidationErrors([]);
+
+    try {
+      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      toast.loading(`📊 Membaca file Excel (${fileSizeMB} MB)...`, { id: 'parse-excel' });
+
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+
+      // Get first sheet
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+
+      // Convert to JSON
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+        defval: '', // Default value for empty cells
+        raw: false, // Get formatted values
+      });
+
+      if (jsonData.length === 0) {
+        throw new Error('File Excel kosong atau tidak valid');
+      }
+
+      // Update toast with row count
+      toast.loading(`📊 Memvalidasi ${jsonData.length.toLocaleString('id-ID')} baris data...`, { id: 'parse-excel' });
+
+      // Validate data
+      const errors: string[] = [];
+      const validData: any[] = [];
+      let skippedEmptyRows = 0;
+
+      // Reset skipped rows count
+      setSkippedRowsCount(0);
+
+      // Get all unique company names from database (case insensitive map)
+      const companyNameMap = new Map<string, string>();
+      crmTargets?.forEach(target => {
+        if (target.namaPerusahaan) {
+          companyNameMap.set(target.namaPerusahaan.toLowerCase(), target.namaPerusahaan);
+        }
+      });
+
+      // Process in batches to avoid UI freeze for large files
+      const batchSize = 1000;
+      for (let i = 0; i < jsonData.length; i += batchSize) {
+        const batch = jsonData.slice(i, Math.min(i + batchSize, jsonData.length));
+
+        batch.forEach((row: any) => {
+          const rowNum = i + batch.indexOf(row) + 2; // Excel row number (header is row 1)
+
+          // Skip completely empty rows (all fields are empty/undefined)
+          const isEmpty = !row.namaPerusahaan &&
+                          !row.noTelp &&
+                          !row.email &&
+                          !row.namaKonsultan &&
+                          !row.noTelpKonsultan &&
+                          !row.emailKonsultan;
+
+          if (isEmpty) {
+            skippedEmptyRows++;
+            return; // Skip this row
+          }
+
+          // Check required fields
+          if (!row.namaPerusahaan || row.namaPerusahaan.trim() === '') {
+            errors.push(`Baris ${rowNum}: Kolom namaPerusahaan wajib diisi`);
+            return;
+          }
+
+          const inputCompanyName = row.namaPerusahaan.trim();
+          const inputCompanyNameLower = inputCompanyName.toLowerCase();
+
+          // Check if company exists in database (case insensitive)
+          if (!companyNameMap.has(inputCompanyNameLower)) {
+            errors.push(`Baris ${rowNum}: Perusahaan "${inputCompanyName}" tidak ditemukan di database`);
+            return;
+          }
+
+          // Get the actual company name from database (preserve original casing)
+          const actualCompanyName = companyNameMap.get(inputCompanyNameLower)!;
+
+          // Validate email format if provided
+          if (row.email && row.email.trim() !== '') {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(row.email.trim())) {
+              errors.push(`Baris ${rowNum}: Format email perusahaan tidak valid`);
+              return;
+            }
+          }
+
+          if (row.emailKonsultan && row.emailKonsultan.trim() !== '') {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(row.emailKonsultan.trim())) {
+              errors.push(`Baris ${rowNum}: Format email konsultan tidak valid`);
+              return;
+            }
+          }
+
+          // Valid data - use actual company name from database
+          validData.push({
+            namaPerusahaan: actualCompanyName,
+            inputNamaPerusahaan: inputCompanyName, // Store input for display
+            noTelp: row.noTelp?.trim() || '',
+            email: row.email?.trim() || '',
+            namaKonsultan: row.namaKonsultan?.trim() || '',
+            noTelpKonsultan: row.noTelpKonsultan?.trim() || '',
+            emailKonsultan: row.emailKonsultan?.trim() || '',
+          });
+        });
+
+        // Update progress every batch
+        if (jsonData.length > 1000) {
+          const processed = Math.min(i + batchSize, jsonData.length);
+          toast.loading(
+            `📊 Memvalidasi ${processed.toLocaleString('id-ID')} dari ${jsonData.length.toLocaleString('id-ID')} baris...`,
+            { id: 'parse-excel' }
+          );
+        }
+      }
+
+      setParsedData(validData);
+      setSkippedRowsCount(skippedEmptyRows);
+
+      if (errors.length > 0) {
+        setValidationErrors(errors);
+        const skippedMsg = skippedEmptyRows > 0 ? `, ${skippedEmptyRows.toLocaleString('id-ID')} baris kosong di-skip` : '';
+        toast.warning(
+          `⚠️ ${validData.length.toLocaleString('id-ID')} valid, ${errors.length} error${skippedMsg}`,
+          { id: 'parse-excel' }
+        );
+      } else if (validData.length === 0) {
+        toast.error('❌ Tidak ada data valid untuk diimport', { id: 'parse-excel' });
+      } else {
+        const skippedMsg = skippedEmptyRows > 0 ? ` (${skippedEmptyRows.toLocaleString('id-ID')} baris kosong di-skip)` : '';
+        toast.success(
+          `✅ Berhasil membaca ${validData.length.toLocaleString('id-ID')} data${skippedMsg}`,
+          { id: 'parse-excel' }
+        );
+      }
+    } catch (error) {
+      console.error('Error parsing Excel:', error);
+      toast.error('❌ Gagal membaca file Excel', { id: 'parse-excel' });
+      setParsedData([]);
+      setValidationErrors([]);
+    } finally {
+      setIsParsing(false);
+    }
+  };
+
+  // Handle file selection
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setUploadedFile(file);
+      parseExcelFile(file);
+    }
+  };
+
+  // Handle drag and drop
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const file = event.dataTransfer.files[0];
+    if (file && file.name.endsWith('.xlsx')) {
+      setUploadedFile(file);
+      parseExcelFile(file);
+    } else {
+      toast.error('❌ Harap upload file .xlsx');
+    }
+  };
+
+  // Handle drag over
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+  };
+
+  // Execute bulk update
+  const handleBulkUpdate = async () => {
+    if (parsedData.length === 0) {
+      toast.error('❌ Tidak ada data untuk diupdate');
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress({ current: 0, total: parsedData.length });
+
+    try {
+      let successCount = 0;
+      let errorCount = 0;
+
+      // Update in batches for better performance with large datasets
+      const batchSize = 10; // Process 10 companies at a time
+
+      for (let i = 0; i < parsedData.length; i += batchSize) {
+        const batch = parsedData.slice(i, Math.min(i + batchSize, parsedData.length));
+
+        // Process batch in parallel
+        await Promise.all(
+          batch.map(async (data) => {
+            try {
+              // Find all CRM targets with this company name
+              const targetsToUpdate = crmTargets?.filter(
+                target => target.namaPerusahaan === data.namaPerusahaan
+              ) || [];
+
+              if (targetsToUpdate.length === 0) {
+                errorCount++;
+                console.error(`No targets found for ${data.namaPerusahaan}`);
+                return;
+              }
+
+              // Update all targets with this company name in parallel
+              await Promise.all(
+                targetsToUpdate.map(target =>
+                  updateTargetMutation({
+                    id: target._id,
+                    noTelp: data.noTelp || null,
+                    email: data.email || null,
+                    namaKonsultan: data.namaKonsultan || null,
+                    noTelpKonsultan: data.noTelpKonsultan || null,
+                    emailKonsultan: data.emailKonsultan || null,
+                  })
+                )
+              );
+
+              successCount++;
+            } catch (error) {
+              console.error(`Error updating ${data.namaPerusahaan}:`, error);
+              errorCount++;
+            }
+          })
+        );
+
+        // Update progress
+        const processed = Math.min(i + batchSize, parsedData.length);
+        setUploadProgress({ current: processed, total: parsedData.length });
+
+        // Update toast for large datasets
+        if (parsedData.length > 100) {
+          const percentage = Math.round((processed / parsedData.length) * 100);
+          toast.loading(
+            `📊 Mengupdate ${processed.toLocaleString('id-ID')} dari ${parsedData.length.toLocaleString('id-ID')} perusahaan (${percentage}%)...`,
+            { id: 'bulk-update' }
+          );
+        }
+      }
+
+      if (successCount > 0) {
+        toast.success(
+          `✅ Berhasil update ${successCount.toLocaleString('id-ID')} perusahaan!${errorCount > 0 ? ` (${errorCount.toLocaleString('id-ID')} gagal)` : ''}`,
+          { id: 'bulk-update' }
+        );
+        setIsUploadDialogOpen(false);
+        setUploadedFile(null);
+        setParsedData([]);
+        setValidationErrors([]);
+        setSkippedRowsCount(0);
+      } else if (errorCount > 0) {
+        toast.error(`❌ Semua data gagal diupdate (${errorCount.toLocaleString('id-ID')} error)`, { id: 'bulk-update' });
+      }
+    } catch (error) {
+      console.error('Error in bulk update:', error);
+      toast.error('❌ Error melakukan bulk update', { id: 'bulk-update' });
+    } finally {
+      setIsUploading(false);
+      setUploadProgress({ current: 0, total: 0 });
     }
   };
 
@@ -579,6 +893,30 @@ export default function KontakManagementPage() {
             </div>
             {!isMobile && (
               <div className="flex items-center gap-2">
+                {/* Download Template Button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownloadTemplate}
+                  className="gap-2 cursor-pointer"
+                >
+                  <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                  <Download className="h-4 w-4" />
+                  <span>Template</span>
+                </Button>
+
+                {/* Upload Excel Button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsUploadDialogOpen(true)}
+                  className="gap-2 cursor-pointer"
+                >
+                  <Upload className="h-4 w-4 text-blue-600" />
+                  <FileSpreadsheet className="h-4 w-4 text-blue-600" />
+                  <span>Contact Bulk Update</span>
+                </Button>
+
                 <div className="relative w-full md:w-64">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
@@ -627,6 +965,57 @@ export default function KontakManagementPage() {
               </p>
             </div>
           </div>
+
+          {/* Download Template Mobile Banner */}
+          {isMobile && (
+            <div className="mb-4 flex flex-col gap-2">
+              <div className="p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-start gap-2 flex-1">
+                    <FileSpreadsheet className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 text-sm">
+                      <p className="font-medium text-green-900 dark:text-green-100">Template Import Kontak</p>
+                      <p className="text-green-700 dark:text-green-300 mt-1">
+                        Download template Excel
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownloadTemplate}
+                    className="shrink-0 gap-1 h-8 text-xs"
+                  >
+                    <Download className="h-3 w-3" />
+                    <span>Download</span>
+                  </Button>
+                </div>
+              </div>
+
+              <div className="p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-lg">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-start gap-2 flex-1">
+                    <Upload className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 text-sm">
+                      <p className="font-medium text-blue-900 dark:text-blue-100">Import Excel</p>
+                      <p className="text-blue-700 dark:text-blue-300 mt-1">
+                        Upload file untuk bulk update
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsUploadDialogOpen(true)}
+                    className="shrink-0 gap-1 h-8 text-xs"
+                  >
+                    <Upload className="h-3 w-3" />
+                    <span>Import</span>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {isMobile ? (
             // Mobile Grid View - 1 column
@@ -1102,6 +1491,245 @@ export default function KontakManagementPage() {
               isUpdating={isUpdating}
             />
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Upload Excel Dialog */}
+      <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+        <DialogContent
+          className="max-w-none w-[95vw] h-[90vh] max-h-[90vh] p-0"
+          style={{ maxWidth: '95vw', width: '95vw' }}
+        >
+          <div className="sticky top-0 bg-background border-b px-6 py-4 z-10 h-16 shrink-0">
+            <DialogHeader className="px-0 h-full flex flex-col justify-center">
+              <DialogTitle>Import Excel - Bulk Update Kontak</DialogTitle>
+              <DialogDescription>
+                Upload file Excel untuk update banyak kontak sekaligus
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+
+          <div className="px-6 pb-6 overflow-y-auto" style={{ height: 'calc(90vh - 8rem)' }}>
+
+          <div className="space-y-4">
+            {/* Upload Area */}
+            {parsedData.length === 0 && (
+              <div
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                className="border-2 border-dashed rounded-lg p-8 text-center hover:bg-muted/50 transition-colors cursor-pointer"
+              >
+                <input
+                  type="file"
+                  accept=".xlsx"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  id="excel-upload"
+                  disabled={isParsing}
+                />
+                <label htmlFor="excel-upload" className="cursor-pointer">
+                  <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-lg font-semibold mb-2">
+                    {isParsing ? 'Membaca file...' : 'Drag & drop atau klik untuk upload'}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Format file: .xlsx
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Belum punya template?{' '}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setIsUploadDialogOpen(false);
+                        handleDownloadTemplate();
+                      }}
+                      className="text-blue-600 hover:underline"
+                    >
+                      Download template
+                    </button>
+                  </p>
+                </label>
+              </div>
+            )}
+
+            {/* Validation Errors */}
+            {validationErrors.length > 0 && (
+              <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-lg p-4">
+                <div className="flex items-start gap-2 mb-2">
+                  <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-semibold text-red-900 dark:text-red-100">
+                      Error Validasi ({validationErrors.length})
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                  {validationErrors.map((error, index) => (
+                    <div key={index} className="text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 px-3 py-2 rounded">
+                      {error}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Preview Data */}
+            {parsedData.length > 0 && !isUploading && (
+              <div className="space-y-4">
+                {/* Summary */}
+                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-lg p-4">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    <div>
+                      <p className="font-semibold text-blue-900 dark:text-blue-100">
+                        {parsedData.length.toLocaleString('id-ID')} Data Siap Diupdate
+                      </p>
+                      <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                        File: {uploadedFile?.name} ({((uploadedFile?.size || 0) / (1024 * 1024)).toFixed(2)} MB)
+                        {skippedRowsCount > 0 && (
+                          <span className="ml-2">
+                            • {skippedRowsCount.toLocaleString('id-ID')} baris kosong di-skip
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Preview Table */}
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="bg-muted px-4 py-2 border-b">
+                    <p className="font-semibold text-sm">
+                      Preview Data {parsedData.length > 100 && `(100 pertama dari ${parsedData.length.toLocaleString('id-ID')} total)`}
+                    </p>
+                  </div>
+                  <div className="overflow-x-auto" style={{ maxHeight: 'calc(90vh - 30rem)' }}>
+                    <table className="w-full text-sm table-auto border-collapse">
+                      <thead className="bg-muted sticky top-0">
+                        <tr>
+                          <th className="px-4 py-3 text-left font-medium border-r w-16">No</th>
+                          <th className="px-4 py-3 text-left font-medium border-r min-w-[200px]">namaPerusahaan</th>
+                          <th className="px-4 py-3 text-left font-medium border-r min-w-[150px]">noTelp</th>
+                          <th className="px-4 py-3 text-left font-medium border-r min-w-[200px]">email</th>
+                          <th className="px-4 py-3 text-left font-medium border-r min-w-[150px]">namaKonsultan</th>
+                          <th className="px-4 py-3 text-left font-medium border-r min-w-[150px]">noTelpKonsultan</th>
+                          <th className="px-4 py-3 text-left font-medium min-w-[200px]">emailKonsultan</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {parsedData.slice(0, 100).map((row, index) => (
+                          <tr key={index} className="border-b hover:bg-muted/50">
+                            <td className="px-4 py-3 border-r align-top">{index + 1}</td>
+                            <td className="px-4 py-3 border-r align-top">
+                              <div>
+                                <div className="font-medium break-words">{row.namaPerusahaan}</div>
+                                {row.inputNamaPerusahaan !== row.namaPerusahaan && (
+                                  <div className="text-xs text-muted-foreground mt-1">
+                                    Input: "{row.inputNamaPerusahaan}"
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 border-r align-top break-all">{row.noTelp || '-'}</td>
+                            <td className="px-4 py-3 border-r align-top break-all">{row.email || '-'}</td>
+                            <td className="px-4 py-3 border-r align-top break-words">{row.namaKonsultan || '-'}</td>
+                            <td className="px-4 py-3 border-r align-top break-all">{row.noTelpKonsultan || '-'}</td>
+                            <td className="px-4 py-3 align-top break-all">{row.emailKonsultan || '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {parsedData.length > 100 && (
+                    <div className="bg-muted/50 px-4 py-3 border-t text-xs text-muted-foreground text-center">
+                      Menampilkan 100 dari {parsedData.length.toLocaleString('id-ID')} data. Semua data akan diproses.
+                    </div>
+                  )}
+                </div>
+
+                {/* Info */}
+                <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900 rounded-lg p-4">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 text-sm text-yellow-900 dark:text-yellow-100">
+                      <p className="font-semibold mb-1">Perhatian</p>
+                      <ul className="space-y-1 list-disc list-inside">
+                        <li>Pencocokan nama perusahaan <strong>TIDAK case-sensitive</strong> (huruf besar/kecil tidak berpengaruh)</li>
+                        <li>Update akan diterapkan ke <strong>SEMUA</strong> data CRM dengan nama perusahaan yang sama</li>
+                        <li>Kolom yang kosong akan menghapus data yang ada</li>
+                        <li>Pastikan data sudah benar sebelum konfirmasi</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Upload Progress */}
+            {isUploading && (
+              <div className="space-y-4">
+                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <InfinityLoader />
+                    <div className="flex-1">
+                      <p className="font-semibold text-blue-900 dark:text-blue-100">
+                        Sedang Mengupdate...
+                      </p>
+                      <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                        {uploadProgress.current.toLocaleString('id-ID')} dari {uploadProgress.total.toLocaleString('id-ID')} perusahaan
+                        ({Math.round((uploadProgress.current / uploadProgress.total) * 100)}%)
+                      </p>
+                    </div>
+                  </div>
+                  <div className="w-full bg-blue-200 dark:bg-blue-900 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      style={{
+                        width: `${(uploadProgress.current / uploadProgress.total) * 100}%`,
+                      }}
+                    />
+                  </div>
+                  {uploadProgress.total > 100 && (
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                      Estimasi waktu: {Math.ceil((uploadProgress.total - uploadProgress.current) / 10)} detik
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setIsUploadDialogOpen(false);
+                setUploadedFile(null);
+                setParsedData([]);
+                setValidationErrors([]);
+                setSkippedRowsCount(0);
+              }}
+              disabled={isUploading}
+              className='cursor-pointer'
+            >
+              <X className="h-4 w-4 mr-2" />
+              {parsedData.length > 0 ? 'Batal' : 'Tutup'}
+            </Button>
+            {parsedData.length > 0 && !isUploading && (
+              <Button
+                onClick={handleBulkUpdate}
+                disabled={validationErrors.length > 0}
+                className='cursor-pointer'
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Update {parsedData.length.toLocaleString('id-ID')} Data
+              </Button>
+            )}
+          </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
