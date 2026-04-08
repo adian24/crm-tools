@@ -34,7 +34,11 @@
       "Bash(npx kill-port:*)",
       "Bash(npx next build:*)",
       "Bash(cat:*)",
-      "Bash(start http://localhost:3000/dashboard-manager/struktur-divisi-crp-reactflow)"
+      "Bash(start http://localhost:3000/dashboard-manager/struktur-divisi-crp-reactflow)",
+      "Bash(tasklist:*)",
+      "Bash(PORT=3213 npx convex dev:*)",
+      "Bash(awk:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
