@@ -174,6 +174,7 @@ export default defineSchema({
     namaKonsultan: v.optional(v.string()), // Nama Konsultan
     noTelpKonsultan: v.optional(v.string()), // No Telp Konsultan
     emailKonsultan: v.optional(v.string()), // Email Konsultan
+    picDirect: v.optional(v.string()), // PIC Direct
     // Audit fields (sesuai request)
     created_by: v.optional(v.id("users")), // CREATED BY - User yang membuat data
     createdAt: v.number(), // CREATED AT - Timestamp pembuatan

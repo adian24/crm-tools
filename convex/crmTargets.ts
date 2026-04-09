@@ -231,6 +231,7 @@ export const createCrmTarget = mutation({
     namaKonsultan: v.optional(v.string()),
     noTelpKonsultan: v.optional(v.string()),
     emailKonsultan: v.optional(v.string()),
+    picDirect: v.optional(v.string()),
     created_by: v.optional(v.id("users")),
   },
   handler: async (ctx, args) => {
@@ -313,6 +314,7 @@ export const updateCrmTarget = mutation({
     namaKonsultan: v.optional(v.union(v.string(), v.null())),
     noTelpKonsultan: v.optional(v.union(v.string(), v.null())),
     emailKonsultan: v.optional(v.union(v.string(), v.null())),
+    picDirect: v.optional(v.union(v.string(), v.null())),
     updated_by: v.optional(v.id("users")),
   },
   handler: async (ctx, args) => {

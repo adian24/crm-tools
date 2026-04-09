@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
         namaKonsultan: 'Budi Santoso',
         noTelpKonsultan: '08123456789',
         emailKonsultan: 'budi.santoso@contohsejahtera.co.id',
+        picDirect: 'Dewi Lestari',
       },
       {
         namaPerusahaan: 'CV MAJU JAYA',
@@ -39,6 +40,7 @@ export async function GET(request: NextRequest) {
         namaKonsultan: 'Siti Aminah',
         noTelpKonsultan: '08234567890',
         emailKonsultan: 'siti@majujaya.com',
+        picDirect: 'Rudi Hartono',
       },
       {
         namaPerusahaan: 'PT BERKAH ABADI',
@@ -47,6 +49,7 @@ export async function GET(request: NextRequest) {
         namaKonsultan: 'Ahmad Rahman',
         noTelpKonsultan: '08345678901',
         emailKonsultan: 'ahmad.rahman@berkahabadi.co.id',
+        picDirect: 'Maya Sari',
       },
       {
         namaPerusahaan: '',
@@ -55,6 +58,7 @@ export async function GET(request: NextRequest) {
         namaKonsultan: '',
         noTelpKonsultan: '',
         emailKonsultan: '',
+        picDirect: '',
       },
     ];
 
@@ -74,6 +78,7 @@ export async function GET(request: NextRequest) {
       ['- namaKonsultan - Nama konsultan', ''],
       ['- noTelpKonsultan - Nomor telepon konsultan', ''],
       ['- emailKonsultan - Email konsultan', ''],
+      ['- picDirect - Nama PIC Direct', ''],
       ['- Baris kosong akan otomatis di-skip oleh sistem', ''],
       ['', ''],
       ['3. PENCOCOKAN NAMA PERUSAHAAN', ''],
@@ -112,6 +117,7 @@ export async function GET(request: NextRequest) {
         'namaKonsultan',
         'noTelpKonsultan',
         'emailKonsultan',
+        'picDirect',
       ],
     });
 
@@ -123,6 +129,7 @@ export async function GET(request: NextRequest) {
       { wch: 30 }, // namaKonsultan
       { wch: 20 }, // noTelpKonsultan
       { wch: 35 }, // emailKonsultan
+      { wch: 30 }, // picDirect
     ];
 
     // Add sheet to workbook

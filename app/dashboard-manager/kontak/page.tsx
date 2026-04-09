@@ -33,6 +33,7 @@ interface ContactData {
   namaKonsultan?: string;
   noTelpKonsultan?: string;
   emailKonsultan?: string;
+  picDirect?: string;
   picCrm: string;
   provinsi: string;
   kota: string;
@@ -229,6 +230,7 @@ export default function KontakManagementPage() {
             namaKonsultan: row.namaKonsultan?.trim() || '',
             noTelpKonsultan: row.noTelpKonsultan?.trim() || '',
             emailKonsultan: row.emailKonsultan?.trim() || '',
+            picDirect: row.picDirect?.trim() || '',
           });
         });
 
@@ -342,6 +344,7 @@ export default function KontakManagementPage() {
                     namaKonsultan: data.namaKonsultan || null,
                     noTelpKonsultan: data.noTelpKonsultan || null,
                     emailKonsultan: data.emailKonsultan || null,
+                    picDirect: data.picDirect || null,
                   })
                 )
               );
@@ -500,6 +503,7 @@ export default function KontakManagementPage() {
         namaKonsultan: target.namaKonsultan,
         noTelpKonsultan: target.noTelpKonsultan,
         emailKonsultan: target.emailKonsultan,
+        picDirect: target.picDirect,
         picCrm: target.picCrm || '-',
         provinsi: target.provinsi || '-',
         kota: target.kota || '-',
@@ -579,6 +583,7 @@ export default function KontakManagementPage() {
             namaKonsultan: data.namaKonsultan?.trim() || null,
             noTelpKonsultan: data.noTelpKonsultan?.trim() || null,
             emailKonsultan: data.emailKonsultan?.trim() || null,
+            picDirect: data.picDirect?.trim() || null,
           });
           successCount++;
         } catch (error) {
@@ -800,6 +805,20 @@ export default function KontakManagementPage() {
                 className="flex-1"
                 iconClassName="text-purple-500"
               />
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
+
+            {/* Row 7: PIC Direct */}
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground font-medium w-16 shrink-0">Direct:</span>
+              <div className="flex items-center gap-1 flex-1">
+                <Briefcase className="h-3 w-3 text-muted-foreground" />
+                <span className={`text-sm ${!contact.picDirect ? 'text-muted-foreground italic' : ''}`}>
+                  {contact.picDirect || <span className="text-muted-foreground italic">Belum diisi</span>}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -1045,13 +1064,14 @@ export default function KontakManagementPage() {
                     <TableHead>Konsultan</TableHead>
                     <TableHead>Telp Konsultan</TableHead>
                     <TableHead>Email Konsultan</TableHead>
+                    <TableHead>PIC Direct</TableHead>
                     <TableHead className="text-center">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {paginatedGroups.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                         {searchTerm ? 'Tidak ada data yang cocok dengan pencarian' : 'Belum ada data kontak'}
                       </TableCell>
                     </TableRow>
@@ -1136,6 +1156,14 @@ export default function KontakManagementPage() {
                               label={`Email Konsultan ${contact.namaPerusahaan}`}
                               iconClassName="text-purple-500"
                             />
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <Briefcase className="h-3 w-3 text-muted-foreground" />
+                              <span className={`text-sm ${!contact.picDirect ? 'text-muted-foreground italic' : ''}`}>
+                                {contact.picDirect || '(belum diisi)'}
+                              </span>
+                            </div>
                           </TableCell>
                           <TableCell className="text-center">
                             <Button
@@ -1614,7 +1642,8 @@ export default function KontakManagementPage() {
                           <th className="px-4 py-3 text-left font-medium border-r min-w-[200px]">email</th>
                           <th className="px-4 py-3 text-left font-medium border-r min-w-[150px]">namaKonsultan</th>
                           <th className="px-4 py-3 text-left font-medium border-r min-w-[150px]">noTelpKonsultan</th>
-                          <th className="px-4 py-3 text-left font-medium min-w-[200px]">emailKonsultan</th>
+                          <th className="px-4 py-3 text-left font-medium border-r min-w-[200px]">emailKonsultan</th>
+                          <th className="px-4 py-3 text-left font-medium min-w-[150px]">picDirect</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1635,7 +1664,8 @@ export default function KontakManagementPage() {
                             <td className="px-4 py-3 border-r align-top break-all">{row.email || '-'}</td>
                             <td className="px-4 py-3 border-r align-top break-words">{row.namaKonsultan || '-'}</td>
                             <td className="px-4 py-3 border-r align-top break-all">{row.noTelpKonsultan || '-'}</td>
-                            <td className="px-4 py-3 align-top break-all">{row.emailKonsultan || '-'}</td>
+                            <td className="px-4 py-3 border-r align-top break-all">{row.emailKonsultan || '-'}</td>
+                            <td className="px-4 py-3 align-top break-words">{row.picDirect || '-'}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -1751,6 +1781,7 @@ function EditContactForm({ contact, onSubmit, onCancel, isUpdating }: EditContac
     namaKonsultan: contact.namaKonsultan || '',
     noTelpKonsultan: contact.noTelpKonsultan || '',
     emailKonsultan: contact.emailKonsultan || '',
+    picDirect: contact.picDirect || '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -1833,6 +1864,28 @@ function EditContactForm({ contact, onSubmit, onCancel, isUpdating }: EditContac
               value={formData.emailKonsultan}
               onChange={(e) => setFormData({ ...formData, emailKonsultan: e.target.value })}
               placeholder="Contoh: konsultan@example.com"
+              className="bg-white dark:bg-gray-900"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* PIC Direct Info */}
+      <div className="space-y-4 p-4 rounded-lg border-2 border-amber-200 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/20">
+        <div className="flex items-center gap-2">
+          <Briefcase className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+          <h3 className="text-base font-semibold text-amber-900 dark:text-amber-100">PIC Direct</h3>
+        </div>
+        <p className="text-xs text-amber-600/70 dark:text-amber-400/70 pl-7">Nama PIC Direct untuk perusahaan</p>
+
+        <div className="grid gap-3 pl-7">
+          <div className="grid gap-2">
+            <Label htmlFor="picDirect" className="text-sm font-medium">Nama PIC Direct</Label>
+            <Input
+              id="picDirect"
+              value={formData.picDirect}
+              onChange={(e) => setFormData({ ...formData, picDirect: e.target.value })}
+              placeholder="Nama lengkap PIC Direct"
               className="bg-white dark:bg-gray-900"
             />
           </div>
