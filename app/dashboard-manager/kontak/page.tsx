@@ -687,7 +687,7 @@ export default function KontakManagementPage() {
     if (!hasText) {
       return (
         <span className={className}>
-          <span className="text-muted-foreground italic">Belum diisi</span>
+          <span className="text-muted-foreground italic">-</span>
         </span>
       );
     }
@@ -1137,7 +1137,7 @@ export default function KontakManagementPage() {
                             <div className="flex items-center gap-1">
                               <User className="h-3 w-3 text-muted-foreground" />
                               <span className={`text-sm ${!contact.namaKonsultan ? 'text-muted-foreground italic' : ''}`}>
-                                {contact.namaKonsultan || '(belum diisi)'}
+                                {contact.namaKonsultan || '-'}
                               </span>
                             </div>
                           </TableCell>
@@ -1161,7 +1161,7 @@ export default function KontakManagementPage() {
                             <div className="flex items-center gap-1">
                               <Briefcase className="h-3 w-3 text-muted-foreground" />
                               <span className={`text-sm ${!contact.picDirect ? 'text-muted-foreground italic' : ''}`}>
-                                {contact.picDirect || '(belum diisi)'}
+                                {contact.picDirect || '-'}
                               </span>
                             </div>
                           </TableCell>

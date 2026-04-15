@@ -698,8 +698,8 @@ export default function CrmDataManagementPage() {
   const [filterPicSales, setFilterPicSales] = useState<string>('all');
   const [filterTipeProduk, setFilterTipeProduk] = useState<string>('all');
 
-  // Quick filter from statistics cards
-  const [quickFilter, setQuickFilter] = useState<{ field: string; value: string } | null>(null);
+  // Quick filter from statistics cards - support multiple filters
+  const [quickFilters, setQuickFilters] = useState<Array<{ field: string; value: string }>>([]);
 
   // Mobile filter sheet state
   const [activeFilterSheet, setActiveFilterSheet] = useState<string | null>(null);
@@ -886,18 +886,45 @@ export default function CrmDataManagementPage() {
     setFilterPicSales('all');
     setFilterTipeProduk('all');
     setSearchTerm('');
-    setQuickFilter(null);
+    setQuickFilters([]);
   };
 
-  // Quick filter handler for statistics cards
+  // Quick filter handler for statistics cards - toggle multiple filters
   const handleQuickFilter = (field: string, value: string) => {
-    setQuickFilter({ field, value });
+    setQuickFilters(prevFilters => {
+      // Check if this filter already exists
+      const existingIndex = prevFilters.findIndex(f => f.field === field && f.value === value);
+
+      if (existingIndex !== -1) {
+        // Remove filter if it exists (toggle off)
+        return prevFilters.filter(f => f.field !== field || f.value !== value);
+      } else {
+        // Add new filter (toggle on)
+        return [...prevFilters, { field, value }];
+      }
+    });
     setCurrentPage(1); // Reset to first page when applying quick filter
   };
 
-  // Clear quick filter
-  const clearQuickFilter = () => {
-    setQuickFilter(null);
+  // Clear specific quick filter
+  const clearQuickFilter = (field?: string, value?: string) => {
+    if (field && value) {
+      // Clear specific filter
+      setQuickFilters(prevFilters => prevFilters.filter(f => !(f.field === field && f.value === value)));
+    } else {
+      // Clear all quick filters
+      setQuickFilters([]);
+    }
+  };
+
+  // Check if a specific filter is active
+  const isQuickFilterActive = (field: string, value: string): boolean => {
+    return quickFilters.some(f => f.field === field && f.value === value);
+  };
+
+  // Get all active filters for a specific field
+  const getActiveFiltersForField = (field: string): string[] => {
+    return quickFilters.filter(f => f.field === field).map(f => f.value);
   };
 
   // Handle sort
@@ -1152,68 +1179,74 @@ export default function CrmDataManagementPage() {
       }
     }
 
-    // Quick filter from statistics cards
+    // Quick filter from statistics cards - support multiple filters with OR logic
     let matchesQuickFilter = true;
-    if (quickFilter) {
-      const { field, value } = quickFilter;
+    if (quickFilters.length > 0) {
+      // Group filters by field for OR logic within same field, AND logic between different fields
+      const filtersByField: { [key: string]: string[] } = {};
+      quickFilters.forEach(filter => {
+        if (!filtersByField[filter.field]) {
+          filtersByField[filter.field] = [];
+        }
+        filtersByField[filter.field].push(filter.value);
+      });
 
-      switch (field) {
-        case 'status':
-          matchesQuickFilter = Boolean(target.status && target.status.toUpperCase() === value.toUpperCase());
-          break;
-        case 'directOrAssociate':
-          matchesQuickFilter = Boolean(target.directOrAssociate && target.directOrAssociate.toUpperCase() === value.toUpperCase());
-          break;
-        case 'kuadran':
-          matchesQuickFilter = Boolean(target.kuadran && target.kuadran.toUpperCase() === value.toUpperCase());
-          break;
-        case 'luarKota':
-          if (value === 'LUAR') {
-            matchesQuickFilter = Boolean(target.luarKota && target.luarKota.toUpperCase().includes('LUAR'));
-          } else if (value === 'DALAM') {
-            matchesQuickFilter = Boolean(!target.luarKota || !target.luarKota.toUpperCase().includes('LUAR'));
+      // Check if target matches ALL field groups (AND logic between fields)
+      matchesQuickFilter = Object.entries(filtersByField).every(([field, values]) => {
+        // For each field, check if target matches ANY of the values (OR logic within field)
+        return values.some(value => {
+          switch (field) {
+            case 'status':
+              return Boolean(target.status && target.status.toUpperCase() === value.toUpperCase());
+            case 'directOrAssociate':
+              return Boolean(target.directOrAssociate && target.directOrAssociate.toUpperCase() === value.toUpperCase());
+            case 'kuadran':
+              return Boolean(target.kuadran && target.kuadran.toUpperCase() === value.toUpperCase());
+            case 'luarKota':
+              if (value === 'LUAR') {
+                return Boolean(target.luarKota && target.luarKota.toUpperCase().includes('LUAR'));
+              } else if (value === 'DALAM') {
+                return Boolean(!target.luarKota || !target.luarKota.toUpperCase().includes('LUAR'));
+              }
+              return true;
+            case 'catAkre':
+              return Boolean(target.catAkre && target.catAkre.toUpperCase() === value.toUpperCase());
+            case 'statusSertifikat':
+              if (value === 'TERBIT') {
+                return Boolean(target.statusSertifikat && target.statusSertifikat.toUpperCase() === 'TERBIT');
+              } else if (value === 'BELUM') {
+                return Boolean(!target.statusSertifikat || target.statusSertifikat.toUpperCase().includes('BELUM'));
+              }
+              return true;
+            case 'tahapAudit':
+              return Boolean(target.tahapAudit && target.tahapAudit.toUpperCase() === value.toUpperCase());
+            case 'statusInvoice':
+              if (value === 'Terbit') {
+                return Boolean(target.statusInvoice && target.statusInvoice.toString().trim().toUpperCase() === 'TERBIT');
+              } else if (value === 'Belum') {
+                return Boolean(!target.statusInvoice || target.statusInvoice.toString().trim().toUpperCase().includes('BELUM'));
+              }
+              return true;
+            case 'statusPembayaran':
+              return Boolean(target.statusPembayaran && target.statusPembayaran.toString().trim().toUpperCase() === value.toUpperCase());
+            case 'statusKomisi':
+              if (value === 'KOSONG') {
+                return Boolean(!target.statusKomisi || target.statusKomisi.toString().trim() === '');
+              } else {
+                return Boolean(target.statusKomisi && target.statusKomisi.toString().trim().toUpperCase() === value.toUpperCase());
+              }
+            case 'trimming':
+              if (value === 'ADA') {
+                return Boolean(target.trimmingValue && target.trimmingValue > 0);
+              } else if (value === 'KOSONG') {
+                return Boolean(!target.trimmingValue || target.trimmingValue === 0);
+              }
+              return true;
+            default:
+              return true;
           }
-          break;
-        case 'catAkre':
-          matchesQuickFilter = Boolean(target.catAkre && target.catAkre.toUpperCase() === value.toUpperCase());
-          break;
-        case 'statusSertifikat':
-          if (value === 'TERBIT') {
-            matchesQuickFilter = Boolean(target.statusSertifikat && target.statusSertifikat.toUpperCase() === 'TERBIT');
-          } else if (value === 'BELUM') {
-            matchesQuickFilter = Boolean(!target.statusSertifikat || target.statusSertifikat.toUpperCase().includes('BELUM'));
-          }
-          break;
-        case 'tahapAudit':
-          matchesQuickFilter = Boolean(target.tahapAudit && target.tahapAudit.toUpperCase() === value.toUpperCase());
-          break;
-        case 'statusInvoice':
-          if (value === 'Terbit') {
-            matchesQuickFilter = Boolean(target.statusInvoice && target.statusInvoice.toString().trim().toUpperCase() === 'TERBIT');
-          } else if (value === 'Belum') {
-            matchesQuickFilter = Boolean(!target.statusInvoice || target.statusInvoice.toString().trim().toUpperCase().includes('BELUM'));
-          }
-          break;
-        case 'statusPembayaran':
-          matchesQuickFilter = Boolean(target.statusPembayaran && target.statusPembayaran.toString().trim().toUpperCase() === value.toUpperCase());
-          break;
-        case 'statusKomisi':
-          if (value === 'KOSONG') {
-            matchesQuickFilter = Boolean(!target.statusKomisi || target.statusKomisi.toString().trim() === '');
-          } else {
-            matchesQuickFilter = Boolean(target.statusKomisi && target.statusKomisi.toString().trim().toUpperCase() === value.toUpperCase());
-          }
-          break;
-        case 'trimming':
-          if (value === 'ADA') {
-            matchesQuickFilter = Boolean(target.trimmingValue && target.trimmingValue > 0);
-          } else if (value === 'KOSONG') {
-            matchesQuickFilter = Boolean(!target.trimmingValue || target.trimmingValue === 0);
-          }
-          break;
-        default:
-          matchesQuickFilter = true;
-      }
+        });
+      });
     }
 
     return matchesSearch && matchesTahun && matchesBulanExp && matchesPicCrm &&
@@ -2569,56 +2602,46 @@ export default function CrmDataManagementPage() {
               <div className="flex-1 grid grid-cols-5 gap-1.5">
                 <div
                   className={`bg-purple-50 rounded px-2 py-1 border border-purple-200 text-center cursor-pointer hover:ring-2 hover:ring-purple-400 transition-all ${
-                    quickFilter?.field === 'status' && quickFilter?.value === 'DONE' ? 'ring-2 ring-purple-600' : ''
+                    isQuickFilterActive('status', 'DONE') ? 'ring-2 ring-purple-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'status' && quickFilter?.value === 'DONE'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('status', 'DONE')
-                  }
+                  onClick={() => handleQuickFilter('status', 'DONE')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-purple-700 font-semibold">DONE <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.status && t.status.toUpperCase() === 'DONE').length})</span></p>
                 </div>
                 <div
                   className={`bg-blue-50 rounded px-2 py-1 border border-blue-200 text-center cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all ${
-                    quickFilter?.field === 'status' && quickFilter?.value === 'PROSES' ? 'ring-2 ring-blue-600' : ''
+                    isQuickFilterActive('status', 'PROSES') ? 'ring-2 ring-blue-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'status' && quickFilter?.value === 'PROSES'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('status', 'PROSES')
-                  }
+                  onClick={() => handleQuickFilter('status', 'PROSES')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-blue-700 font-semibold">PROSES <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.status && t.status.toUpperCase() === 'PROSES').length})</span></p>
                 </div>
                 <div
                   className={`bg-orange-50 rounded px-2 py-1 border border-orange-200 text-center cursor-pointer hover:ring-2 hover:ring-orange-400 transition-all ${
-                    quickFilter?.field === 'status' && quickFilter?.value === 'SUSPEND' ? 'ring-2 ring-orange-600' : ''
+                    isQuickFilterActive('status', 'SUSPEND') ? 'ring-2 ring-orange-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'status' && quickFilter?.value === 'SUSPEND'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('status', 'SUSPEND')
-                  }
+                  onClick={() => handleQuickFilter('status', 'SUSPEND')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-orange-700 font-semibold">SUSPEND <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.status && t.status.toUpperCase() === 'SUSPEND').length})</span></p>
                 </div>
                 <div
                   className={`bg-red-50 rounded px-2 py-1 border border-red-200 text-center cursor-pointer hover:ring-2 hover:ring-red-400 transition-all ${
-                    quickFilter?.field === 'status' && quickFilter?.value === 'LOSS' ? 'ring-2 ring-red-600' : ''
+                    isQuickFilterActive('status', 'LOSS') ? 'ring-2 ring-red-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'status' && quickFilter?.value === 'LOSS'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('status', 'LOSS')
-                  }
+                  onClick={() => handleQuickFilter('status', 'LOSS')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-red-700 font-semibold">LOSS <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.status && t.status.toUpperCase() === 'LOSS').length})</span></p>
                 </div>
                 <div
                   className={`bg-gray-50 rounded px-2 py-1 border border-gray-200 text-center cursor-pointer hover:ring-2 hover:ring-gray-400 transition-all ${
-                    quickFilter?.field === 'status' && quickFilter?.value === 'WAITING' ? 'ring-2 ring-gray-600' : ''
+                    isQuickFilterActive('status', 'WAITING') ? 'ring-2 ring-gray-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'status' && quickFilter?.value === 'WAITING'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('status', 'WAITING')
-                  }
+                  onClick={() => handleQuickFilter('status', 'WAITING')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-gray-700 font-semibold">WAITING <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.status && t.status.toUpperCase() === 'WAITING').length})</span></p>
                 </div>
@@ -2631,45 +2654,37 @@ export default function CrmDataManagementPage() {
               <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                 <div
                   className={`bg-violet-50 rounded px-2 py-1 border border-violet-200 text-center cursor-pointer hover:ring-2 hover:ring-violet-400 transition-all ${
-                    quickFilter?.field === 'kuadran' && quickFilter?.value === 'K1' ? 'ring-2 ring-violet-600' : ''
+                    isQuickFilterActive('kuadran', 'K1') ? 'ring-2 ring-violet-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'kuadran' && quickFilter?.value === 'K1'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('kuadran', 'K1')
-                  }
+                  onClick={() => handleQuickFilter('kuadran', 'K1')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-violet-700 font-semibold">K1 <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.kuadran && t.kuadran.toUpperCase() === 'K1').length})</span></p>
                 </div>
                 <div
                   className={`bg-fuchsia-50 rounded px-2 py-1 border border-fuchsia-200 text-center cursor-pointer hover:ring-2 hover:ring-fuchsia-400 transition-all ${
-                    quickFilter?.field === 'kuadran' && quickFilter?.value === 'K2' ? 'ring-2 ring-fuchsia-600' : ''
+                    isQuickFilterActive('kuadran', 'K2') ? 'ring-2 ring-fuchsia-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'kuadran' && quickFilter?.value === 'K2'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('kuadran', 'K2')
-                  }
+                  onClick={() => handleQuickFilter('kuadran', 'K2')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-fuchsia-700 font-semibold">K2 <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.kuadran && t.kuadran.toUpperCase() === 'K2').length})</span></p>
                 </div>
                 <div
                   className={`bg-violet-50 rounded px-2 py-1 border border-violet-200 text-center cursor-pointer hover:ring-2 hover:ring-violet-400 transition-all hidden sm:block ${
-                    quickFilter?.field === 'kuadran' && quickFilter?.value === 'K3' ? 'ring-2 ring-violet-600' : ''
+                    isQuickFilterActive('kuadran', 'K3') ? 'ring-2 ring-violet-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'kuadran' && quickFilter?.value === 'K3'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('kuadran', 'K3')
-                  }
+                  onClick={() => handleQuickFilter('kuadran', 'K3')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-violet-700 font-semibold">K3 <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.kuadran && t.kuadran.toUpperCase() === 'K3').length})</span></p>
                 </div>
                 <div
                   className={`bg-fuchsia-50 rounded px-2 py-1 border border-fuchsia-200 text-center cursor-pointer hover:ring-2 hover:ring-fuchsia-400 transition-all hidden sm:block ${
-                    quickFilter?.field === 'kuadran' && quickFilter?.value === 'K4' ? 'ring-2 ring-fuchsia-600' : ''
+                    isQuickFilterActive('kuadran', 'K4') ? 'ring-2 ring-fuchsia-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'kuadran' && quickFilter?.value === 'K4'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('kuadran', 'K4')
-                  }
+                  onClick={() => handleQuickFilter('kuadran', 'K4')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-fuchsia-700 font-semibold">K4 <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.kuadran && t.kuadran.toUpperCase() === 'K4').length})</span></p>
                 </div>
@@ -2682,23 +2697,19 @@ export default function CrmDataManagementPage() {
               <div className="flex-1 grid grid-cols-2 gap-1.5">
                 <div
                   className={`bg-amber-50 rounded px-2 py-1 border border-amber-200 text-center cursor-pointer hover:ring-2 hover:ring-amber-400 transition-all ${
-                    quickFilter?.field === 'luarKota' && quickFilter?.value === 'LUAR' ? 'ring-2 ring-amber-600' : ''
+                    isQuickFilterActive('luarKota', 'LUAR') ? 'ring-2 ring-amber-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'luarKota' && quickFilter?.value === 'LUAR'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('luarKota', 'LUAR')
-                  }
+                  onClick={() => handleQuickFilter('luarKota', 'LUAR')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-amber-700 font-semibold">Luar Kota <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.luarKota && t.luarKota.toUpperCase().includes('LUAR')).length})</span></p>
                 </div>
                 <div
                   className={`bg-yellow-50 rounded px-2 py-1 border border-yellow-200 text-center cursor-pointer hover:ring-2 hover:ring-yellow-400 transition-all ${
-                    quickFilter?.field === 'luarKota' && quickFilter?.value === 'DALAM' ? 'ring-2 ring-yellow-600' : ''
+                    isQuickFilterActive('luarKota', 'DALAM') ? 'ring-2 ring-yellow-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'luarKota' && quickFilter?.value === 'DALAM'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('luarKota', 'DALAM')
-                  }
+                  onClick={() => handleQuickFilter('luarKota', 'DALAM')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-yellow-700 font-semibold">Dalam Kota <span className="font-bold">({(filteredCrmTargets || []).filter(t => !t.luarKota || !t.luarKota.toUpperCase().includes('LUAR')).length})</span></p>
                 </div>
@@ -2716,34 +2727,28 @@ export default function CrmDataManagementPage() {
               <div className="flex-1 grid grid-cols-3 gap-1.5">
                 <div
                   className={`bg-emerald-50 rounded px-2 py-1 border border-emerald-200 text-center cursor-pointer hover:ring-2 hover:ring-emerald-400 transition-all ${
-                    quickFilter?.field === 'catAkre' && quickFilter?.value === 'KAN' ? 'ring-2 ring-emerald-600' : ''
+                    isQuickFilterActive('catAkre', 'KAN') ? 'ring-2 ring-emerald-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'catAkre' && quickFilter?.value === 'KAN'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('catAkre', 'KAN')
-                  }
+                  onClick={() => handleQuickFilter('catAkre', 'KAN')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-emerald-700 font-semibold">KAN <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.catAkre && t.catAkre.toUpperCase() === 'KAN').length})</span></p>
                 </div>
                 <div
                   className={`bg-slate-50 rounded px-2 py-1 border border-slate-200 text-center cursor-pointer hover:ring-2 hover:ring-slate-400 transition-all ${
-                    quickFilter?.field === 'catAkre' && quickFilter?.value === 'NON AKRE' ? 'ring-2 ring-slate-600' : ''
+                    isQuickFilterActive('catAkre', 'NON AKRE') ? 'ring-2 ring-slate-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'catAkre' && quickFilter?.value === 'NON AKRE'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('catAkre', 'NON AKRE')
-                  }
+                  onClick={() => handleQuickFilter('catAkre', 'NON AKRE')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-slate-700 font-semibold">NON AKRE <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.catAkre && t.catAkre.toUpperCase() === 'NON AKRE').length})</span></p>
                 </div>
                 <div
                   className={`bg-blue-50 rounded px-2 py-1 border border-blue-200 text-center cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all ${
-                    quickFilter?.field === 'catAkre' && quickFilter?.value === 'INTERNASIONAL' ? 'ring-2 ring-blue-600' : ''
+                    isQuickFilterActive('catAkre', 'INTERNASIONAL') ? 'ring-2 ring-blue-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'catAkre' && quickFilter?.value === 'INTERNASIONAL'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('catAkre', 'INTERNASIONAL')
-                  }
+                  onClick={() => handleQuickFilter('catAkre', 'INTERNASIONAL')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-blue-900 font-semibold">INTERNASIONAL <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.catAkre && t.catAkre.toUpperCase() === 'INTERNASIONAL').length})</span></p>
                 </div>
@@ -2756,23 +2761,19 @@ export default function CrmDataManagementPage() {
               <div className="flex-1 grid grid-cols-2 gap-1.5">
                 <div
                   className={`bg-green-50 rounded px-2 py-1 border border-green-200 text-center cursor-pointer hover:ring-2 hover:ring-green-400 transition-all ${
-                    quickFilter?.field === 'statusSertifikat' && quickFilter?.value === 'TERBIT' ? 'ring-2 ring-green-600' : ''
+                    isQuickFilterActive('statusSertifikat', 'TERBIT') ? 'ring-2 ring-green-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'statusSertifikat' && quickFilter?.value === 'TERBIT'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('statusSertifikat', 'TERBIT')
-                  }
+                  onClick={() => handleQuickFilter('statusSertifikat', 'TERBIT')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-green-700 font-semibold">Terbit <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.statusSertifikat && t.statusSertifikat.toUpperCase() === 'TERBIT').length})</span></p>
                 </div>
                 <div
                   className={`bg-red-50 rounded px-2 py-1 border border-red-200 text-center cursor-pointer hover:ring-2 hover:ring-red-400 transition-all ${
-                    quickFilter?.field === 'statusSertifikat' && quickFilter?.value === 'BELUM' ? 'ring-2 ring-red-600' : ''
+                    isQuickFilterActive('statusSertifikat', 'BELUM') ? 'ring-2 ring-red-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'statusSertifikat' && quickFilter?.value === 'BELUM'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('statusSertifikat', 'BELUM')
-                  }
+                  onClick={() => handleQuickFilter('statusSertifikat', 'BELUM')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-red-700 font-semibold">Belum <span className="font-bold">({(filteredCrmTargets || []).filter(t => !t.statusSertifikat || t.statusSertifikat.toUpperCase().includes('BELUM')).length})</span></p>
                 </div>
@@ -2794,7 +2795,7 @@ export default function CrmDataManagementPage() {
                     'bg-purple-50 border-purple-200 text-purple-700 hover:ring-purple-400 ring-purple-600',
                   ];
                   const colorClass = colorClasses[idx % colorClasses.length];
-                  const isActive = quickFilter?.field === 'tahapAudit' && quickFilter?.value === tahap.kode;
+                  const isActive = isQuickFilterActive('tahapAudit', tahap.kode);
                   const count = (filteredCrmTargets || []).filter(t => t.tahapAudit && t.tahapAudit.toUpperCase() === tahap.kode).length;
 
                   return (
@@ -2803,10 +2804,8 @@ export default function CrmDataManagementPage() {
                       className={`rounded px-2 py-1 border text-center cursor-pointer hover:ring-2 transition-all ${colorClass} ${
                         isActive ? 'ring-2' : ''
                       }`}
-                      onClick={() => isActive
-                        ? clearQuickFilter()
-                        : handleQuickFilter('tahapAudit', tahap.kode)
-                      }
+                      onClick={() => handleQuickFilter('tahapAudit', tahap.kode)}
+                      title="Click to toggle filter"
                     >
                       <p className="text-xs font-semibold">{tahap.kode} <span className="font-bold">({count})</span></p>
                     </div>
@@ -2821,23 +2820,19 @@ export default function CrmDataManagementPage() {
               <div className="flex-1 grid grid-cols-2 gap-1.5">
                 <div
                   className={`bg-cyan-50 rounded px-2 py-1 border border-cyan-200 text-center cursor-pointer hover:ring-2 hover:ring-cyan-400 transition-all ${
-                    quickFilter?.field === 'directOrAssociate' && quickFilter?.value === 'DIRECT' ? 'ring-2 ring-cyan-600' : ''
+                    isQuickFilterActive('directOrAssociate', 'DIRECT') ? 'ring-2 ring-cyan-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'directOrAssociate' && quickFilter?.value === 'DIRECT'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('directOrAssociate', 'DIRECT')
-                  }
+                  onClick={() => handleQuickFilter('directOrAssociate', 'DIRECT')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-cyan-700 font-semibold">Direct <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.directOrAssociate && t.directOrAssociate.toUpperCase() === 'DIRECT').length})</span></p>
                 </div>
                 <div
                   className={`bg-pink-50 rounded px-2 py-1 border border-pink-200 text-center cursor-pointer hover:ring-2 hover:ring-pink-400 transition-all ${
-                    quickFilter?.field === 'directOrAssociate' && quickFilter?.value === 'ASSOCIATE' ? 'ring-2 ring-pink-600' : ''
+                    isQuickFilterActive('directOrAssociate', 'ASSOCIATE') ? 'ring-2 ring-pink-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'directOrAssociate' && quickFilter?.value === 'ASSOCIATE'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('directOrAssociate', 'ASSOCIATE')
-                  }
+                  onClick={() => handleQuickFilter('directOrAssociate', 'ASSOCIATE')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-pink-700 font-semibold">Associate <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.directOrAssociate && t.directOrAssociate.toUpperCase() === 'ASSOCIATE').length})</span></p>
                 </div>
@@ -2850,23 +2845,19 @@ export default function CrmDataManagementPage() {
               <div className="flex-1 grid grid-cols-2 gap-1.5">
                 <div
                   className={`bg-teal-50 rounded px-2 py-1 border border-teal-200 text-center cursor-pointer hover:ring-2 hover:ring-teal-400 transition-all ${
-                    quickFilter?.field === 'statusInvoice' && quickFilter?.value === 'Terbit' ? 'ring-2 ring-teal-600' : ''
+                    isQuickFilterActive('statusInvoice', 'Terbit') ? 'ring-2 ring-teal-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'statusInvoice' && quickFilter?.value === 'Terbit'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('statusInvoice', 'Terbit')
-                  }
+                  onClick={() => handleQuickFilter('statusInvoice', 'Terbit')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-teal-700 font-semibold">Terbit <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.statusInvoice && t.statusInvoice.toString().trim().toUpperCase() === 'TERBIT').length})</span></p>
                 </div>
                 <div
                   className={`bg-orange-50 rounded px-2 py-1 border border-orange-200 text-center cursor-pointer hover:ring-2 hover:ring-orange-400 transition-all ${
-                    quickFilter?.field === 'statusInvoice' && quickFilter?.value === 'Belum' ? 'ring-2 ring-orange-600' : ''
+                    isQuickFilterActive('statusInvoice', 'Belum') ? 'ring-2 ring-orange-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'statusInvoice' && quickFilter?.value === 'Belum'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('statusInvoice', 'Belum')
-                  }
+                  onClick={() => handleQuickFilter('statusInvoice', 'Belum')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-orange-700 font-semibold">Belum Terbit <span className="font-bold">({(filteredCrmTargets || []).filter(t => !t.statusInvoice || t.statusInvoice.toString().trim().toUpperCase().includes('BELUM')).length})</span></p>
                 </div>
@@ -2879,12 +2870,10 @@ export default function CrmDataManagementPage() {
               <div className="flex-1 grid grid-cols-3 gap-1.5">
                 <div
                   className={`bg-emerald-50 rounded px-2 py-1 border border-emerald-200 text-center cursor-pointer hover:ring-2 hover:ring-emerald-400 transition-all ${
-                    quickFilter?.field === 'statusPembayaran' && quickFilter?.value === 'Lunas' ? 'ring-2 ring-emerald-600' : ''
+                    isQuickFilterActive('statusPembayaran', 'Lunas') ? 'ring-2 ring-emerald-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'statusPembayaran' && quickFilter?.value === 'Lunas'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('statusPembayaran', 'Lunas')
-                  }
+                  onClick={() => handleQuickFilter('statusPembayaran', 'Lunas')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-emerald-700 font-semibold">Lunas <span className="font-bold">({(filteredCrmTargets || []).filter(t => {
                     if (!t.statusPembayaran) return false;
@@ -2894,12 +2883,10 @@ export default function CrmDataManagementPage() {
                 </div>
                 <div
                   className={`bg-red-50 rounded px-2 py-1 border border-red-200 text-center cursor-pointer hover:ring-2 hover:ring-red-400 transition-all ${
-                    quickFilter?.field === 'statusPembayaran' && quickFilter?.value === 'Belum Lunas' ? 'ring-2 ring-red-600' : ''
+                    isQuickFilterActive('statusPembayaran', 'Belum Lunas') ? 'ring-2 ring-red-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'statusPembayaran' && quickFilter?.value === 'Belum Lunas'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('statusPembayaran', 'Belum Lunas')
-                  }
+                  onClick={() => handleQuickFilter('statusPembayaran', 'Belum Lunas')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-red-700 font-semibold">Belum Lunas <span className="font-bold">({(filteredCrmTargets || []).filter(t => {
                     if (!t.statusPembayaran) return false;
@@ -2909,12 +2896,10 @@ export default function CrmDataManagementPage() {
                 </div>
                 <div
                   className={`bg-yellow-50 rounded px-2 py-1 border border-yellow-200 text-center cursor-pointer hover:ring-2 hover:ring-yellow-400 transition-all ${
-                    quickFilter?.field === 'statusPembayaran' && quickFilter?.value === 'Sudah DP' ? 'ring-2 ring-yellow-600' : ''
+                    isQuickFilterActive('statusPembayaran', 'Sudah DP') ? 'ring-2 ring-yellow-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'statusPembayaran' && quickFilter?.value === 'Sudah DP'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('statusPembayaran', 'Sudah DP')
-                  }
+                  onClick={() => handleQuickFilter('statusPembayaran', 'Sudah DP')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-yellow-700 font-semibold">Sudah DP <span className="font-bold">({(filteredCrmTargets || []).filter(t => {
                     if (!t.statusPembayaran) return false;
@@ -2931,12 +2916,10 @@ export default function CrmDataManagementPage() {
               <div className="flex-1 grid grid-cols-4 gap-1.5">
                 <div
                   className={`bg-indigo-50 rounded px-2 py-1 border border-indigo-200 text-center cursor-pointer hover:ring-2 hover:ring-indigo-400 transition-all ${
-                    quickFilter?.field === 'statusKomisi' && quickFilter?.value === 'Sudah Diajukan' ? 'ring-2 ring-indigo-600' : ''
+                    isQuickFilterActive('statusKomisi', 'Sudah Diajukan') ? 'ring-2 ring-indigo-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'statusKomisi' && quickFilter?.value === 'Sudah Diajukan'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('statusKomisi', 'Sudah Diajukan')
-                  }
+                  onClick={() => handleQuickFilter('statusKomisi', 'Sudah Diajukan')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-indigo-700 font-semibold">Sudah Diajukan <span className="font-bold">({(filteredCrmTargets || []).filter(t => {
                     if (!t.statusKomisi) return false;
@@ -2946,12 +2929,10 @@ export default function CrmDataManagementPage() {
                 </div>
                 <div
                   className={`bg-purple-50 rounded px-2 py-1 border border-purple-200 text-center cursor-pointer hover:ring-2 hover:ring-purple-400 transition-all ${
-                    quickFilter?.field === 'statusKomisi' && quickFilter?.value === 'Belum Diajukan' ? 'ring-2 ring-purple-600' : ''
+                    isQuickFilterActive('statusKomisi', 'Belum Diajukan') ? 'ring-2 ring-purple-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'statusKomisi' && quickFilter?.value === 'Belum Diajukan'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('statusKomisi', 'Belum Diajukan')
-                  }
+                  onClick={() => handleQuickFilter('statusKomisi', 'Belum Diajukan')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-purple-700 font-semibold">Belum Diajukan <span className="font-bold">({(filteredCrmTargets || []).filter(t => {
                     if (!t.statusKomisi) return false;
@@ -2961,12 +2942,10 @@ export default function CrmDataManagementPage() {
                 </div>
                 <div
                   className={`bg-gray-50 rounded px-2 py-1 border border-gray-200 text-center cursor-pointer hover:ring-2 hover:ring-gray-400 transition-all ${
-                    quickFilter?.field === 'statusKomisi' && quickFilter?.value === 'Tidak Ada' ? 'ring-2 ring-gray-600' : ''
+                    isQuickFilterActive('statusKomisi', 'Tidak Ada') ? 'ring-2 ring-gray-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'statusKomisi' && quickFilter?.value === 'Tidak Ada'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('statusKomisi', 'Tidak Ada')
-                  }
+                  onClick={() => handleQuickFilter('statusKomisi', 'Tidak Ada')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-gray-700 font-semibold">Tidak Ada <span className="font-bold">({(filteredCrmTargets || []).filter(t => {
                     if (!t.statusKomisi) return false;
@@ -2976,12 +2955,10 @@ export default function CrmDataManagementPage() {
                 </div>
                 <div
                   className={`bg-slate-50 rounded px-2 py-1 border border-slate-200 text-center cursor-pointer hover:ring-2 hover:ring-slate-400 transition-all ${
-                    quickFilter?.field === 'statusKomisi' && quickFilter?.value === 'KOSONG' ? 'ring-2 ring-slate-600' : ''
+                    isQuickFilterActive('statusKomisi', 'KOSONG') ? 'ring-2 ring-slate-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'statusKomisi' && quickFilter?.value === 'KOSONG'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('statusKomisi', 'KOSONG')
-                  }
+                  onClick={() => handleQuickFilter('statusKomisi', 'KOSONG')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-slate-700 font-semibold">Kosong <span className="font-bold">({(filteredCrmTargets || []).filter(t => !t.statusKomisi || t.statusKomisi.toString().trim() === '').length})</span></p>
                 </div>
@@ -2994,23 +2971,19 @@ export default function CrmDataManagementPage() {
               <div className="flex-1 grid grid-cols-2 gap-1.5">
                 <div
                   className={`bg-green-50 rounded px-2 py-1 border border-green-200 text-center cursor-pointer hover:ring-2 hover:ring-green-400 transition-all ${
-                    quickFilter?.field === 'trimming' && quickFilter?.value === 'ADA' ? 'ring-2 ring-green-600' : ''
+                    isQuickFilterActive('trimming', 'ADA') ? 'ring-2 ring-green-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'trimming' && quickFilter?.value === 'ADA'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('trimming', 'ADA')
-                  }
+                  onClick={() => handleQuickFilter('trimming', 'ADA')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-green-700 font-semibold">Ada Value <span className="font-bold">({(filteredCrmTargets || []).filter(t => t.trimmingValue && t.trimmingValue > 0).length})</span></p>
                 </div>
                 <div
                   className={`bg-slate-50 rounded px-2 py-1 border border-slate-200 text-center cursor-pointer hover:ring-2 hover:ring-slate-400 transition-all ${
-                    quickFilter?.field === 'trimming' && quickFilter?.value === 'KOSONG' ? 'ring-2 ring-slate-600' : ''
+                    isQuickFilterActive('trimming', 'KOSONG') ? 'ring-2 ring-slate-600' : ''
                   }`}
-                  onClick={() => quickFilter?.field === 'trimming' && quickFilter?.value === 'KOSONG'
-                    ? clearQuickFilter()
-                    : handleQuickFilter('trimming', 'KOSONG')
-                  }
+                  onClick={() => handleQuickFilter('trimming', 'KOSONG')}
+                  title="Click to toggle filter"
                 >
                   <p className="text-xs text-slate-700 font-semibold">Kosong <span className="font-bold">({(filteredCrmTargets || []).filter(t => !t.trimmingValue || t.trimmingValue === 0).length})</span></p>
                 </div>
@@ -3040,37 +3013,55 @@ export default function CrmDataManagementPage() {
         )}
 
         {/* Active Filter Indicator */}
-        {quickFilter && (
-          <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs sm:text-sm font-semibold text-blue-800">
+        {quickFilters.length > 0 && (
+          <div className="mb-4 flex flex-col sm:flex-row sm:items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start gap-2 flex-wrap">
+              <span className="text-xs sm:text-sm font-semibold text-blue-800 mt-1">
                 Filter Aktif:
               </span>
-              <Badge className="bg-blue-600 text-white px-2 sm:px-3 py-1 text-[10px] sm:text-xs">
-                {quickFilter.field === 'status' && `Status: ${quickFilter.value}`}
-                {quickFilter.field === 'directOrAssociate' && `Tipe: ${quickFilter.value}`}
-                {quickFilter.field === 'kuadran' && `Kuadran: ${quickFilter.value}`}
-                {quickFilter.field === 'luarKota' && `Lokasi: ${quickFilter.value === 'LUAR' ? 'Luar Kota' : 'Dalam Kota'}`}
-                {quickFilter.field === 'catAkre' && `Akreditasi: ${quickFilter.value}`}
-                {quickFilter.field === 'statusSertifikat' && `Status Sertifikat: ${quickFilter.value === 'TERBIT' ? 'Terbit' : 'Belum Terbit'}`}
-                {quickFilter.field === 'tahapAudit' && `Tahap Audit: ${quickFilter.value}`}
-                {quickFilter.field === 'statusInvoice' && `Status Invoice: ${quickFilter.value === 'Terbit' ? 'Terbit' : 'Belum Terbit'}`}
-                {quickFilter.field === 'statusPembayaran' && `Status Pembayaran: ${quickFilter.value}`}
-                {quickFilter.field === 'statusKomisi' && `Status Komisi: ${quickFilter.value === 'KOSONG' ? 'Kosong' : quickFilter.value}`}
-                {quickFilter.field === 'trimming' && `Trimming: ${quickFilter.value === 'ADA' ? 'Ada Value' : 'Kosong'}`}
-              </Badge>
-              <span className="text-xs sm:text-sm text-gray-600">
+              <div className="flex flex-wrap gap-1.5">
+                {quickFilters.map((filter, index) => {
+                  const getFilterLabel = () => {
+                    switch (filter.field) {
+                      case 'status': return `Status: ${filter.value}`;
+                      case 'directOrAssociate': return `Tipe: ${filter.value}`;
+                      case 'kuadran': return `Kuadran: ${filter.value}`;
+                      case 'luarKota': return `Lokasi: ${filter.value === 'LUAR' ? 'Luar Kota' : 'Dalam Kota'}`;
+                      case 'catAkre': return `Akreditasi: ${filter.value}`;
+                      case 'statusSertifikat': return `Sertifikat: ${filter.value === 'TERBIT' ? 'Terbit' : 'Belum'}`;
+                      case 'tahapAudit': return `Tahap: ${filter.value}`;
+                      case 'statusInvoice': return `Invoice: ${filter.value === 'Terbit' ? 'Terbit' : 'Belum'}`;
+                      case 'statusPembayaran': return `Pembayaran: ${filter.value}`;
+                      case 'statusKomisi': return `Komisi: ${filter.value === 'KOSONG' ? 'Kosong' : filter.value}`;
+                      case 'trimming': return `Trimming: ${filter.value === 'ADA' ? 'Ada' : 'Kosong'}`;
+                      default: return `${filter.field}: ${filter.value}`;
+                    }
+                  };
+                  return (
+                    <Badge
+                      key={index}
+                      className="bg-blue-600 text-white px-2 sm:px-3 py-1 text-[10px] sm:text-xs cursor-pointer hover:bg-blue-700"
+                      onClick={() => clearQuickFilter(filter.field, filter.value)}
+                      title="Klik untuk hapus filter ini"
+                    >
+                      {getFilterLabel()}
+                      <X className="h-3 w-3 ml-1 inline" />
+                    </Badge>
+                  );
+                })}
+              </div>
+              <span className="text-xs sm:text-sm text-gray-600 mt-1">
                 <span className="font-bold text-blue-700">{filteredTargets.length}</span> data
               </span>
             </div>
             <Button
-              onClick={clearQuickFilter}
+              onClick={() => clearQuickFilter()}
               variant="outline"
               size="sm"
               className="w-full sm:w-auto sm:ml-auto h-8 border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 text-xs"
             >
               <X className="h-4 w-4 mr-1" />
-              Hapus Filter
+              Hapus Semua Filter
             </Button>
           </div>
         )}
@@ -3290,7 +3281,7 @@ export default function CrmDataManagementPage() {
                 {/* Table Footer - Totals */}
                 <TableFooter>
                   <TableRow className="bg-muted/50 font-semibold">
-                    <TableCell colSpan={canEdit ? 26 : 25} className="text-right">
+                    <TableCell colSpan={canEdit ? 27 : 25} className="text-right">
                       <span className="text-sm font-bold text-muted-foreground">TOTAL</span>
                     </TableCell>
                     <TableCell className="text-right">
@@ -4206,11 +4197,11 @@ export default function CrmDataManagementPage() {
                       <div className="grid grid-cols-2 gap-2">
                         {['DONE', 'PROSES', 'LOSS', 'SUSPEND', 'WAITING'].map((status) => {
                           const count = (filteredCrmTargets || []).filter(t => t.status === status).length;
-                          const isActive = quickFilter?.field === 'status' && quickFilter?.value === status;
+                          const isActive = isQuickFilterActive('status', status);
                           return (
                             <div
                               key={status}
-                              onClick={() => isActive ? clearQuickFilter() : handleQuickFilter('status', status)}
+                              onClick={() => handleQuickFilter('status', status)}
                               className={`rounded-lg px-2 py-2 text-center cursor-pointer transition-all ${
                                 isActive ? 'ring-2 ring-offset-1 shadow-md' : 'hover:shadow-md'
                               } ${
@@ -4220,6 +4211,7 @@ export default function CrmDataManagementPage() {
                                 status === 'SUSPEND' ? 'bg-orange-100 border-2 border-orange-300 ring-orange-500' :
                                 'bg-gray-100 border-2 border-gray-300 ring-gray-500'
                               }`}
+                              title="Click to toggle filter"
                             >
                               <p className="text-base font-bold">{count}</p>
                               <p className="text-[8px] font-medium uppercase">{status}</p>
@@ -4235,14 +4227,15 @@ export default function CrmDataManagementPage() {
                       <div className="grid grid-cols-2 gap-2">
                         {['K1', 'K2', 'K3', 'K4'].map((kuadran) => {
                           const count = (filteredCrmTargets || []).filter(t => t.kuadran === kuadran).length;
-                          const isActive = quickFilter?.field === 'kuadran' && quickFilter?.value === kuadran;
+                          const isActive = isQuickFilterActive('kuadran', kuadran);
                           return (
                             <div
                               key={kuadran}
-                              onClick={() => isActive ? clearQuickFilter() : handleQuickFilter('kuadran', kuadran)}
+                              onClick={() => handleQuickFilter('kuadran', kuadran)}
                               className={`bg-violet-100 border-2 border-violet-300 rounded-lg px-2 py-2 text-center cursor-pointer hover:shadow-md transition-all ${
                                 isActive ? 'ring-2 ring-offset-1 ring-violet-500 shadow-md' : ''
                               }`}
+                              title="Click to toggle filter"
                             >
                               <p className="text-base font-bold text-violet-700">{count}</p>
                               <p className="text-[8px] font-medium text-violet-600 uppercase">{kuadran}</p>
@@ -4263,14 +4256,15 @@ export default function CrmDataManagementPage() {
                           const count = loc.key === 'LUAR'
                             ? (filteredCrmTargets || []).filter(t => t.luarKota && t.luarKota.toUpperCase().includes('LUAR')).length
                             : (filteredCrmTargets || []).filter(t => !t.luarKota || !t.luarKota.toUpperCase().includes('LUAR')).length;
-                          const isActive = quickFilter?.field === 'luarKota' && quickFilter?.value === loc.value;
+                          const isActive = isQuickFilterActive('luarKota', loc.value);
                           return (
                             <div
                               key={loc.key}
-                              onClick={() => isActive ? clearQuickFilter() : handleQuickFilter('luarKota', loc.value)}
+                              onClick={() => handleQuickFilter('luarKota', loc.value)}
                               className={`bg-${loc.color}-100 border-2 border-${loc.color}-300 rounded-lg px-2 py-2 text-center cursor-pointer hover:shadow-md transition-all ${
                                 isActive ? `ring-2 ring-offset-1 ring-${loc.color}-500 shadow-md` : ''
                               }`}
+                              title="Click to toggle filter"
                             >
                               <p className={`text-base font-bold text-${loc.color}-700`}>{count}</p>
                               <p className={`text-[8px] font-medium text-${loc.color}-600 uppercase`}>{loc.label}</p>
@@ -4290,14 +4284,15 @@ export default function CrmDataManagementPage() {
                           { key: 'INTERNASIONAL', label: 'INTERNASIONAL', color: 'blue' },
                         ].map((kat) => {
                           const count = (filteredCrmTargets || []).filter(t => t.catAkre && t.catAkre.toUpperCase() === kat.key).length;
-                          const isActive = quickFilter?.field === 'catAkre' && quickFilter?.value === kat.key;
+                          const isActive = isQuickFilterActive('catAkre', kat.key);
                           return (
                             <div
                               key={kat.key}
-                              onClick={() => isActive ? clearQuickFilter() : handleQuickFilter('catAkre', kat.key)}
+                              onClick={() => handleQuickFilter('catAkre', kat.key)}
                               className={`bg-${kat.color}-100 border-2 border-${kat.color}-300 rounded-lg px-2 py-2 text-center cursor-pointer hover:shadow-md transition-all ${
                                 isActive ? `ring-2 ring-offset-1 ring-${kat.color}-500 shadow-md` : ''
                               }`}
+                              title="Click to toggle filter"
                             >
                               <p className={`text-base font-bold text-${kat.color === 'blue' ? 'blue-900' : kat.color + '-700'}`}>{count}</p>
                               <p className={`text-[8px] font-medium text-${kat.color === 'blue' ? 'blue-900' : kat.color + '-600'} uppercase`}>{kat.label}</p>
@@ -4313,14 +4308,15 @@ export default function CrmDataManagementPage() {
                       <div className="grid grid-cols-3 gap-2">
                         {masterTahapanData.tahapan.map((tahap: any) => {
                           const count = (filteredCrmTargets || []).filter(t => t.tahapAudit === tahap.kode).length;
-                          const isActive = quickFilter?.field === 'tahapAudit' && quickFilter?.value === tahap.kode;
+                          const isActive = isQuickFilterActive('tahapAudit', tahap.kode);
                           return (
                             <div
                               key={tahap.kode}
-                              onClick={() => isActive ? clearQuickFilter() : handleQuickFilter('tahapAudit', tahap.kode)}
+                              onClick={() => handleQuickFilter('tahapAudit', tahap.kode)}
                               className={`bg-indigo-100 border-2 border-indigo-300 rounded-lg px-2 py-2 text-center cursor-pointer hover:shadow-md transition-all ${
                                 isActive ? 'ring-2 ring-offset-1 ring-indigo-500 shadow-md' : ''
                               }`}
+                              title="Click to toggle filter"
                             >
                               <p className="text-base font-bold text-indigo-700">{count}</p>
                               <p className="text-[8px] font-medium text-indigo-600 uppercase">{tahap.kode}</p>
@@ -4341,14 +4337,15 @@ export default function CrmDataManagementPage() {
                           const count = stat.key === 'TERBIT'
                             ? (filteredCrmTargets || []).filter(t => t.statusSertifikat && t.statusSertifikat.toUpperCase() === 'TERBIT').length
                             : (filteredCrmTargets || []).filter(t => !t.statusSertifikat || t.statusSertifikat.toUpperCase().includes('BELUM')).length;
-                          const isActive = quickFilter?.field === 'statusSertifikat' && quickFilter?.value === stat.key;
+                          const isActive = isQuickFilterActive('statusSertifikat', stat.key);
                           return (
                             <div
                               key={stat.key}
-                              onClick={() => isActive ? clearQuickFilter() : handleQuickFilter('statusSertifikat', stat.key)}
+                              onClick={() => handleQuickFilter('statusSertifikat', stat.key)}
                               className={`bg-${stat.color}-100 border-2 border-${stat.color}-300 rounded-lg px-2 py-2 text-center cursor-pointer hover:shadow-md transition-all ${
                                 isActive ? `ring-2 ring-offset-1 ring-${stat.color}-500 shadow-md` : ''
                               }`}
+                              title="Click to toggle filter"
                             >
                               <p className={`text-base font-bold text-${stat.color}-700`}>{count}</p>
                               <p className={`text-[8px] font-medium text-${stat.color}-600 uppercase`}>{stat.label}</p>
@@ -4367,14 +4364,15 @@ export default function CrmDataManagementPage() {
                           { key: 'ASSOCIATE', label: 'Associate', color: 'pink' },
                         ].map((type) => {
                           const count = (filteredCrmTargets || []).filter(t => t.directOrAssociate && t.directOrAssociate.toUpperCase() === type.key).length;
-                          const isActive = quickFilter?.field === 'directOrAssociate' && quickFilter?.value === type.key;
+                          const isActive = isQuickFilterActive('directOrAssociate', type.key);
                           return (
                             <div
                               key={type.key}
-                              onClick={() => isActive ? clearQuickFilter() : handleQuickFilter('directOrAssociate', type.key)}
+                              onClick={() => handleQuickFilter('directOrAssociate', type.key)}
                               className={`bg-${type.color}-100 border-2 border-${type.color}-300 rounded-lg px-2 py-2 text-center cursor-pointer hover:shadow-md transition-all ${
                                 isActive ? `ring-2 ring-offset-1 ring-${type.color}-500 shadow-md` : ''
                               }`}
+                              title="Click to toggle filter"
                             >
                               <p className={`text-base font-bold text-${type.color}-700`}>{count}</p>
                               <p className={`text-[8px] font-medium text-${type.color}-600 uppercase`}>{type.label}</p>
@@ -4395,14 +4393,15 @@ export default function CrmDataManagementPage() {
                           const count = stat.key === 'Terbit'
                             ? (filteredCrmTargets || []).filter(t => t.statusInvoice && t.statusInvoice.toString().trim().toUpperCase() === 'TERBIT').length
                             : (filteredCrmTargets || []).filter(t => !t.statusInvoice || t.statusInvoice.toString().trim().toUpperCase().includes('BELUM')).length;
-                          const isActive = quickFilter?.field === 'statusInvoice' && quickFilter?.value === stat.key;
+                          const isActive = isQuickFilterActive('statusInvoice', stat.key);
                           return (
                             <div
                               key={stat.key}
-                              onClick={() => isActive ? clearQuickFilter() : handleQuickFilter('statusInvoice', stat.key)}
+                              onClick={() => handleQuickFilter('statusInvoice', stat.key)}
                               className={`bg-${stat.color}-100 border-2 border-${stat.color}-300 rounded-lg px-2 py-2 text-center cursor-pointer hover:shadow-md transition-all ${
                                 isActive ? `ring-2 ring-offset-1 ring-${stat.color}-500 shadow-md` : ''
                               }`}
+                              title="Click to toggle filter"
                             >
                               <p className={`text-base font-bold text-${stat.color}-700`}>{count}</p>
                               <p className={`text-[8px] font-medium text-${stat.color}-600 uppercase`}>{stat.label}</p>
@@ -4426,14 +4425,15 @@ export default function CrmDataManagementPage() {
                             const normalized = t.statusPembayaran.toString().trim().toUpperCase();
                             return normalized === stat.upperKey;
                           }).length;
-                          const isActive = quickFilter?.field === 'statusPembayaran' && quickFilter?.value === stat.key;
+                          const isActive = isQuickFilterActive('statusPembayaran', stat.key);
                           return (
                             <div
                               key={stat.key}
-                              onClick={() => isActive ? clearQuickFilter() : handleQuickFilter('statusPembayaran', stat.key)}
+                              onClick={() => handleQuickFilter('statusPembayaran', stat.key)}
                               className={`bg-${stat.color}-100 border-2 border-${stat.color}-300 rounded-lg px-2 py-2 text-center cursor-pointer hover:shadow-md transition-all ${
                                 isActive ? `ring-2 ring-offset-1 ring-${stat.color}-500 shadow-md` : ''
                               }`}
+                              title="Click to toggle filter"
                             >
                               <p className={`text-base font-bold text-${stat.color}-700`}>{count}</p>
                               <p className={`text-[8px] font-medium text-${stat.color}-600 uppercase`}>{stat.label}</p>
@@ -4460,14 +4460,15 @@ export default function CrmDataManagementPage() {
                                 const normalized = t.statusKomisi.toString().trim().toUpperCase();
                                 return normalized === stat.upperKey;
                               }).length;
-                          const isActive = quickFilter?.field === 'statusKomisi' && quickFilter?.value === stat.key;
+                          const isActive = isQuickFilterActive('statusKomisi', stat.key);
                           return (
                             <div
                               key={stat.key}
-                              onClick={() => isActive ? clearQuickFilter() : handleQuickFilter('statusKomisi', stat.key)}
+                              onClick={() => handleQuickFilter('statusKomisi', stat.key)}
                               className={`bg-${stat.color}-100 border-2 border-${stat.color}-300 rounded-lg px-2 py-2 text-center cursor-pointer hover:shadow-md transition-all ${
                                 isActive ? `ring-2 ring-offset-1 ring-${stat.color}-500 shadow-md` : ''
                               }`}
+                              title="Click to toggle filter"
                             >
                               <p className={`text-base font-bold text-${stat.color}-700`}>{count}</p>
                               <p className={`text-[8px] font-medium text-${stat.color}-600 uppercase`}>{stat.label}</p>
@@ -4488,14 +4489,15 @@ export default function CrmDataManagementPage() {
                           const count = stat.key === 'ADA'
                             ? (filteredCrmTargets || []).filter(t => t.trimmingValue && t.trimmingValue > 0).length
                             : (filteredCrmTargets || []).filter(t => !t.trimmingValue || t.trimmingValue === 0).length;
-                          const isActive = quickFilter?.field === 'trimming' && quickFilter?.value === stat.key;
+                          const isActive = isQuickFilterActive('trimming', stat.key);
                           return (
                             <div
                               key={stat.key}
-                              onClick={() => isActive ? clearQuickFilter() : handleQuickFilter('trimming', stat.key)}
+                              onClick={() => handleQuickFilter('trimming', stat.key)}
                               className={`bg-${stat.color}-100 border-2 border-${stat.color}-300 rounded-lg px-2 py-2 text-center cursor-pointer hover:shadow-md transition-all ${
                                 isActive ? `ring-2 ring-offset-1 ring-${stat.color}-500 shadow-md` : ''
                               }`}
+                              title="Click to toggle filter"
                             >
                               <p className={`text-base font-bold text-${stat.color}-700`}>{count}</p>
                               <p className={`text-[8px] font-medium text-${stat.color}-600 uppercase`}>{stat.label}</p>
