@@ -3484,10 +3484,16 @@ export default function CrmDataManagementPage() {
 
                       <div className="relative z-10">
                     {(() => {
-                      // Group by namaAssociate and get totals
+                      // Group by namaAssociate and get totals (ONLY Associate, exclude Direct)
                       const associateTotals: { [key: string]: { total: number; count: number; companies: Set<string> } } = {};
 
                       dataWithAssociate.forEach(target => {
+                        // Filter: ONLY include Associate (case-insensitive), exclude Direct
+                        const directOrAssociateUpper = (target.directOrAssociate || '').toUpperCase();
+                        if (directOrAssociateUpper !== 'ASSOCIATE') {
+                          return; // Skip Direct and empty/undefined
+                        }
+
                         const associate = target.namaAssociate || 'Unknown';
                         const amount = target.hargaTerupdate || 0;
                         const company = target.namaPerusahaan;
