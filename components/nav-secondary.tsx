@@ -33,12 +33,18 @@ export function NavSecondary({
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
               {item.url === "#" ? (
-                <SidebarMenuButton onClick={() => onItemClick?.(item)} className="cursor-pointer">
+                <SidebarMenuButton
+                  onClick={() => onItemClick?.(item)}
+                  className="cursor-pointer h-9 text-[13px] font-medium tracking-wide text-purple-300/50 hover:text-purple-200 hover:bg-white/[0.05] transition-colors duration-150 [&_svg]:h-[17px] [&_svg]:w-[17px] [&_svg]:text-purple-400/40 hover:[&_svg]:text-purple-300/70"
+                >
                   <item.icon />
                   <span>{item.title}</span>
                 </SidebarMenuButton>
               ) : (
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton
+                  asChild
+                  className="h-9 text-[13px] font-medium tracking-wide text-purple-300/50 hover:text-purple-200 hover:bg-white/[0.05] transition-colors duration-150 [&_svg]:h-[17px] [&_svg]:w-[17px] [&_svg]:text-purple-400/40 hover:[&_svg]:text-purple-300/70"
+                >
                   <Link href={item.url}>
                     <item.icon />
                     <span>{item.title}</span>

@@ -817,7 +817,7 @@ export default function DashboardKunjunganPage() {
         {/* Header */}
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard Kunjungan</h1>
+            <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">Dashboard Kunjungan</h1>
             {currentUser?.role === 'staff' && (
               <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-300">
                 PIC: {currentUser.name}

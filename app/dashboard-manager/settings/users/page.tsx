@@ -248,7 +248,7 @@ export default function UsersManagementPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Manajemen User</h1>
+          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">Manajemen User</h1>
           <p className="text-muted-foreground mt-1">Kelola user dan hak akses sistem</p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>

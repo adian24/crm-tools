@@ -681,7 +681,7 @@ export default function KolaborasiCrmPage() {
         <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
           <div className="flex-1">
             <div className="flex items-center gap-2 sm:gap-3 mb-2">
-              <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-100">
+              <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
                 Kolaborasi CRM
               </h1>
               <div className="hidden sm:flex items-center gap-2">

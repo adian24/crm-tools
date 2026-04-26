@@ -1936,7 +1936,7 @@ export default function CrmDataManagementPage() {
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-purple-700 to-purple-400 bg-clip-text text-transparent">
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
                   CRM Data Management
                 </h1>
                 {currentUser?.role === 'staff' && !canEdit && (

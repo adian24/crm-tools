@@ -847,7 +847,7 @@ export default function KontakManagementPage() {
     <div className="space-y-6 px-4 lg:px-6 pt-4">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Manajemen Kontak</h1>
+        <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">Manajemen Kontak</h1>
         <p className="text-muted-foreground mt-2">
           Kelola informasi kontak perusahaan dan konsultan
         </p>

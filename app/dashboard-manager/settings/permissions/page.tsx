@@ -298,7 +298,7 @@ export default function PermissionsManagementPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Manajemen Roles & Permissions</h1>
+          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">Manajemen Roles & Permissions</h1>
           <p className="text-muted-foreground mt-1">Kelola hak akses dan permissions untuk setiap role</p>
         </div>
         <div className="flex gap-2">

@@ -1301,7 +1301,7 @@ export default function CrmDataManagementPage() {
             {/* Header - Desktop Only */}
             <div className="hidden lg:flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">
+            <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
               CRM Dashboard Pencapaian
               {filterTahun !== 'all' && (
                 <span className="ml-3 text-lg sm:text-2xl font-semibold text-primary">

@@ -178,7 +178,7 @@ export default function MasterAssociatePage() {
             <Users className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
+            <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
               Master Associate
             </h1>
             <p className="text-sm text-slate-600 dark:text-slate-400">

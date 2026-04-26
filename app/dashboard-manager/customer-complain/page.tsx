@@ -252,7 +252,7 @@ export default function CustomerComplainPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Customer Complain</h2>
+            <h2 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">Customer Complain</h2>
             <p className="text-sm sm:text-base text-muted-foreground">
               Catat dan kelola komplain dari customer per bulan
             </p>

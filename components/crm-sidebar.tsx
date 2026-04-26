@@ -4,24 +4,31 @@ import * as React from "react"
 import Link from "next/link"
 import {
   IconUsers,
-  IconCalendar,
   IconTarget,
   IconTrendingUp,
   IconSettings,
   IconHelp,
   IconSearch,
   IconActivity,
-  IconLogout,
   IconDatabase,
   IconChartBar,
-  IconCalendarTime,
+  IconCalendar,
   IconKey,
-  IconAward,
-  IconArchive,
   IconPhoto,
-  IconAlertCircle,
   IconPhone,
   IconFileText,
+  IconSitemap,
+  IconUsersGroup,
+  IconHeartHandshake,
+  IconStar,
+  IconMessageCircle,
+  IconAlertTriangle,
+  IconNotes,
+  IconAddressBook,
+  IconShieldCheck,
+  IconReport,
+  IconChartPie,
+  IconUserCheck,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -53,280 +60,85 @@ export interface CRMSidebarProps extends React.ComponentProps<typeof Sidebar> {
 const getNavigationItems = (role: string) => {
   if (role === 'staff') {
     return [
-      {
-        title: "Dashboard Kunjungan",
-        url: "/dashboard-manager/dashboard-kunjungan",
-        icon: IconCalendarTime,
-      },
-      {
-        title: "Laporan Kunjungan",
-        url: "/dashboard-manager/laporan-kunjungan",
-        icon: IconChartBar,
-      },
-      {
-        title: "CRM Data Management",
-        url: "/dashboard-manager/crm-data",
-        icon: IconTarget,
-      },
-      {
-        title: "Kontak",
-        url: "/dashboard-manager/kontak",
-        icon: IconPhone,
-      },
-      {
-        title: "Kunjungan Engagement Partnership",
-        url: "/dashboard-manager/kunjungan-engagement-partnership",
-        icon: IconUsers,
-      },
+      { title: "Jadwal Kunjungan",              url: "/dashboard-manager/dashboard-kunjungan",            icon: IconCalendar },
+      { title: "Laporan Kunjungan",             url: "/dashboard-manager/laporan-kunjungan",              icon: IconReport },
+      { title: "CRM Data Management",           url: "/dashboard-manager/crm-data",                       icon: IconTarget },
+      { title: "Kontak",                        url: "/dashboard-manager/kontak",                         icon: IconAddressBook },
+      { title: "Engagement & Partnership",      url: "/dashboard-manager/kunjungan-engagement-partnership", icon: IconHeartHandshake},
     ];
   }
 
   if (role === 'manager') {
     return [
-      {
-        title: "KPI",
-        url: "/dashboard-manager/kpi",
-        icon: IconAward,
-      },
-      {
-        title: "Struktur Divisi CRP",
-        url: "/dashboard-manager/struktur-divisi-crp",
-        icon: IconAward,
-      },
-      {
-        title: "Kolaborasi CRM",
-        url: "/dashboard-manager/kolaborasi-crm",
-        icon: IconAward,
-      },
-      {
-        title: "Pencapaian CRM",
-        url: "/dashboard-manager/dashboard-data",
-        icon: IconDatabase,
-      },
-      {
-        title: "Pencapaian PRM & Referral",
-        url: "/dashboard-manager/pencapaian-prm-referral",
-        icon: IconCalendarTime,
-      },
-      {
-        title: "Jadwal Kunjungan",
-        url: "/dashboard-manager/dashboard-kunjungan",
-        icon: IconCalendarTime,
-      },
-      {
-        title: "Laporan Kunjungan",
-        url: "/dashboard-manager/laporan-kunjungan",
-        icon: IconChartBar,
-      },
-      {
-        title: "Kunjungan Engagement Partnership",
-        url: "/dashboard-manager/kunjungan-engagement-partnership",
-        icon: IconUsers,
-      },
-      {
-        title: "NPS",
-        url: "/dashboard-manager/nps",
-        icon: IconAward,
-      },
-      {
-        title: "Flyer",
-        url: "/dashboard-manager/flyer",
-        icon: IconPhoto,
-      },
-      {
-        title: "Customer Complain",
-        url: "/dashboard-manager/customer-complain",
-        icon: IconAlertCircle,
-      },
-      {
-        title: "Isu & Kendala",
-        url: "/dashboard-manager/isu-kendala",
-        icon: IconPhoto,
-      },
-      {
-        title: "Catatan Tambahan",
-        url: "/dashboard-manager/catatan-tambahan",
-        icon: IconFileText,
-      },
-      {
-        title: "CRM Data Management",
-        url: "/dashboard-manager/crm-data",
-        icon: IconTarget,
-      },
-      {
-        title: "Kontak",
-        url: "/dashboard-manager/kontak",
-        icon: IconPhone,
-      },
+      { title: "KPI",                           url: "/dashboard-manager/kpi",                            icon: IconTrendingUp },
+      { title: "Struktur Divisi CRP",           url: "/dashboard-manager/struktur-divisi-crp",            icon: IconSitemap },
+      { title: "Kolaborasi CRM",                url: "/dashboard-manager/kolaborasi-crm",                 icon: IconUsersGroup },
+      { title: "Pencapaian CRM",                url: "/dashboard-manager/dashboard-data",                 icon: IconChartPie },
+      { title: "Pencapaian PRM & Referral",     url: "/dashboard-manager/pencapaian-prm-referral",        icon: IconChartBar },
+      { title: "Jadwal Kunjungan",              url: "/dashboard-manager/dashboard-kunjungan",            icon: IconCalendar },
+      { title: "Laporan Kunjungan",             url: "/dashboard-manager/laporan-kunjungan",              icon: IconReport },
+      { title: "Engagement & Partnership",      url: "/dashboard-manager/kunjungan-engagement-partnership", icon: IconHeartHandshake},
+      { title: "NPS",                           url: "/dashboard-manager/nps",                            icon: IconStar },
+      { title: "Flyer",                         url: "/dashboard-manager/flyer",                          icon: IconPhoto },
+      { title: "Customer Complain",             url: "/dashboard-manager/customer-complain",              icon: IconMessageCircle },
+      { title: "Isu & Kendala",                 url: "/dashboard-manager/isu-kendala",                    icon: IconAlertTriangle },
+      { title: "Catatan Tambahan",              url: "/dashboard-manager/catatan-tambahan",               icon: IconNotes },
+      { title: "CRM Data Management",           url: "/dashboard-manager/crm-data",                       icon: IconTarget },
+      { title: "Kontak",                        url: "/dashboard-manager/kontak",                         icon: IconAddressBook },
       {
         title: "Master Data",
-        icon: IconArchive,
+        icon: IconDatabase,
         items: [
-          {
-            title: "Data Associate",
-            url: "/dashboard-manager/master-associate",
-            icon: IconUsers,
-          },
+          { title: "Data Associate", url: "/dashboard-manager/master-associate", icon: IconUserCheck },
         ],
       },
     ];
   }
 
-  // Super admin sees all items - Dashboard Manager is the main dashboard
   return [
-    // {
-    //   title: "Dashboard Manager",
-    //   url: "/dashboard-manager",
-    //   icon: IconChartBar,
-    // },
-    {
-      title: "KPI",
-      url: "/dashboard-manager/kpi",
-      icon: IconAward,
-    },
-    {
-      title: "Struktur Divisi CRP",
-      url: "/dashboard-manager/struktur-divisi-crp",
-      icon: IconAward,
-    },
-    {
-      title: "Kolaborasi CRM",
-      url: "/dashboard-manager/kolaborasi-crm",
-      icon: IconAward,
-    },
-    {
-      title: "Pencapaian CRM",
-      url: "/dashboard-manager/dashboard-data",
-      icon: IconDatabase,
-    },
-    {
-      title: "Pencapaian PRM",
-      url: "/dashboard-manager/pencapaian-prm-referral",
-      icon: IconCalendarTime,
-    },
-    {
-      title: "Jadwal Kunjungan",
-      url: "/dashboard-manager/dashboard-kunjungan",
-      icon: IconCalendarTime,
-    },
-    {
-      title: "Laporan Kunjungan",
-      url: "/dashboard-manager/laporan-kunjungan",
-      icon: IconChartBar,
-    },
-    {
-      title: "Kunjungan Engagement Partnership",
-      url: "/dashboard-manager/kunjungan-engagement-partnership",
-      icon: IconUsers,
-    },
-    {
-      title: "NPS",
-      url: "/dashboard-manager/nps",
-      icon: IconAward,
-    },
-    {
-      title: "Flyer",
-      url: "/dashboard-manager/flyer",
-      icon: IconPhoto,
-    },
-    {
-      title: "Customer Complain",
-      url: "/dashboard-manager/customer-complain",
-      icon: IconAlertCircle,
-    },
-    {
-      title: "Isu & Kendala",
-      url: "/dashboard-manager/isu-kendala",
-      icon: IconPhoto,
-    },
-    {
-      title: "Catatan Tambahan",
-      url: "/dashboard-manager/catatan-tambahan",
-      icon: IconFileText,
-    },
-    {
-      title: "CRM Data Management",
-      url: "/dashboard-manager/crm-data",
-      icon: IconTarget,
-    },
-    {
-      title: "Kontak",
-      url: "/dashboard-manager/kontak",
-      icon: IconPhone,
-    },
+    { title: "KPI",                           url: "/dashboard-manager/kpi",                            icon: IconTrendingUp },
+    { title: "Struktur Divisi CRP",           url: "/dashboard-manager/struktur-divisi-crp",            icon: IconSitemap },
+    { title: "Kolaborasi CRM",                url: "/dashboard-manager/kolaborasi-crm",                 icon: IconUsersGroup },
+    { title: "Pencapaian CRM",                url: "/dashboard-manager/dashboard-data",                 icon: IconChartPie },
+    { title: "Pencapaian PRM & Referral",     url: "/dashboard-manager/pencapaian-prm-referral",        icon: IconChartBar },
+    { title: "Jadwal Kunjungan",              url: "/dashboard-manager/dashboard-kunjungan",            icon: IconCalendar },
+    { title: "Laporan Kunjungan",             url: "/dashboard-manager/laporan-kunjungan",              icon: IconReport },
+    { title: "Engagement & Partnership",      url: "/dashboard-manager/kunjungan-engagement-partnership", icon: IconHeartHandshake},
+    { title: "NPS",                           url: "/dashboard-manager/nps",                            icon: IconStar },
+    { title: "Flyer",                         url: "/dashboard-manager/flyer",                          icon: IconPhoto },
+    { title: "Customer Complain",             url: "/dashboard-manager/customer-complain",              icon: IconMessageCircle },
+    { title: "Isu & Kendala",                 url: "/dashboard-manager/isu-kendala",                    icon: IconAlertTriangle },
+    { title: "Catatan Tambahan",              url: "/dashboard-manager/catatan-tambahan",               icon: IconNotes },
+    { title: "CRM Data Management",           url: "/dashboard-manager/crm-data",                       icon: IconTarget },
+    { title: "Kontak",                        url: "/dashboard-manager/kontak",                         icon: IconAddressBook },
     {
       title: "Master Data",
-      icon: IconArchive,
+      icon: IconDatabase,
       items: [
-        {
-          title: "Data Associate",
-          url: "/dashboard-manager/master-associate",
-          icon: IconUsers,
-        },
+        { title: "Data Associate", url: "/dashboard-manager/master-associate", icon: IconUserCheck },
       ],
-    },    
+    },
     {
       title: "Settings",
       icon: IconSettings,
       items: [
-        {
-          title: "Users",
-          url: "/dashboard-manager/settings/users",
-          icon: IconUsers,
-        },
-        {
-          title: "Roles & Permissions",
-          url: "/dashboard-manager/settings/permissions",
-          icon: IconKey,
-        }
-      ]
-    }
+        { title: "Users",               url: "/dashboard-manager/settings/users",       icon: IconUsers },
+        { title: "Roles & Permissions", url: "/dashboard-manager/settings/permissions", icon: IconShieldCheck },
+      ],
+    },
   ];
 };
 
 const getSecondaryItems = (role: string) => {
-  const items = [];
-
-  if (role === 'staff') {
-    items.push(
-      {
-        title: "Get Help",
-        url: "#",
-        icon: IconHelp,
-        action: "help",
-      },
-      {
-        title: "Search",
-        url: "#",
-        icon: IconSearch,
-      }
-    );
-  } else if (role === 'manager') {
-    items.push(
-      {
-        title: "Get Help",
-        url: "#",
-        icon: IconHelp,
-        action: "help",
-      },
-      {
-        title: "Search",
-        url: "#",
-        icon: IconSearch,
-      }
-    );
+  const items: any[] = [];
+  if (role === 'super_admin') {
+    items.push({ title: "Get Help", url: "#", icon: IconHelp, action: "help" });
   } else {
-    // Super admin
     items.push(
-      {
-        title: "Get Help",
-        url: "#",
-        icon: IconHelp,
-        action: "help",
-      }
+      { title: "Get Help", url: "#", icon: IconHelp, action: "help" },
+      { title: "Search", url: "#", icon: IconSearch },
     );
   }
-
   return items;
 };
 
@@ -336,9 +148,7 @@ export function CRMSidebar({ user, ...props }: CRMSidebarProps) {
   const [helpDialogOpen, setHelpDialogOpen] = React.useState(false);
 
   const handleSecondaryItemClick = (item: any) => {
-    if (item.action === 'help') {
-      setHelpDialogOpen(true);
-    }
+    if (item.action === 'help') setHelpDialogOpen(true);
   };
 
   return (
@@ -347,31 +157,39 @@ export function CRMSidebar({ user, ...props }: CRMSidebarProps) {
         {...props}
         collapsible="icon"
         variant="sidebar"
-        className="relative overflow-hidden"
+        className="relative overflow-hidden border-r border-purple-900/50"
+        style={{
+          fontFamily: "var(--font-jakarta, 'Plus Jakarta Sans', sans-serif)",
+          "--sidebar-background": "#130a22",
+          "--sidebar-foreground": "#e9d5ff",
+          "--sidebar-accent": "rgba(124, 58, 237, 0.25)",
+          "--sidebar-accent-foreground": "#ffffff",
+          "--sidebar-border": "rgba(109, 40, 217, 0.3)",
+          "--sidebar-ring": "#7c3aed",
+          "--sidebar-primary": "#7c3aed",
+          "--sidebar-primary-foreground": "#ffffff",
+          "--sidebar-muted-foreground": "rgba(216, 180, 254, 0.5)",
+        } as React.CSSProperties}
       >
-        {/* Gradient overlay for futuristic effect */}
-        <div className="absolute inset-0 bg-gradient-to-b from-purple-700/10 via-blue-600/10 to-purple-900/5 pointer-events-none" />
+        {/* Background layers */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#1e0b3a] via-[#130a22] to-[#0d0718] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_40%_at_50%_0%,rgba(139,92,246,0.12),transparent)] pointer-events-none" />
 
-        <SidebarHeader className="relative border-b border-sidebar-border/50 bg-gradient-to-r from-purple-600/10 via-blue-600/10 to-purple-600/10 backdrop-blur-sm">
+        {/* Header */}
+        <SidebarHeader className="relative border-b border-purple-800/30 py-4">
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                size="lg"
-              >
-                <Link href={
-                  user.role === 'staff'
-                    ? '/dashboard-manager/dashboard-kunjungan'
-                    : user.role === 'manager'
-                    ? '/dashboard-manager/dashboard-data'
-                    : '/dashboard-manager/dashboard-data'
-                } className="flex items-center gap-3 group">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/20 group-hover:shadow-blue-500/40 transition-shadow duration-300 flex-shrink-0">
-                    <IconActivity className="h-5 w-5" />
+              <SidebarMenuButton asChild size="lg" className="hover:bg-white/5">
+                <Link
+                  href={user.role === 'staff' ? '/dashboard-manager/dashboard-kunjungan' : '/dashboard-manager/dashboard-data'}
+                  className="flex items-center gap-3"
+                >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-violet-700 shadow-lg shadow-purple-900/60 flex-shrink-0 ring-1 ring-purple-400/20">
+                    <IconActivity className="h-5 w-5 text-white" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-base font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">CRM Tools</span>
-                    <span className="text-xs text-muted-foreground">Management System</span>
+                    <span className="text-[15px] font-bold text-white tracking-wide">CRM Tools</span>
+                    <span className="text-[11.5px] text-purple-300/60 font-normal tracking-wide">Management System</span>
                   </div>
                 </Link>
               </SidebarMenuButton>
@@ -379,27 +197,17 @@ export function CRMSidebar({ user, ...props }: CRMSidebarProps) {
           </SidebarMenu>
         </SidebarHeader>
 
-        <SidebarContent className="relative gap-4 py-6">
+        <SidebarContent className="relative py-4 gap-2">
           <NavMain items={navItems} />
           <NavSecondary items={secondaryItems} className="mt-auto" onItemClick={handleSecondaryItemClick} />
         </SidebarContent>
 
-        <SidebarFooter className="relative border-t border-sidebar-border/50 bg-background/50 backdrop-blur-sm">
-          <NavUser
-            user={{
-              name: user.name,
-              email: user.email,
-              avatar: user.avatar || ""
-            }}
-          />
+        <SidebarFooter className="relative border-t border-purple-800/30">
+          <NavUser user={{ name: user.name, email: user.email, avatar: user.avatar || "" }} />
         </SidebarFooter>
       </Sidebar>
 
-      {/* Dashboard Info Dialog */}
-      <DashboardInfoDialog
-        open={helpDialogOpen}
-        onOpenChange={setHelpDialogOpen}
-      />
+      <DashboardInfoDialog open={helpDialogOpen} onOpenChange={setHelpDialogOpen} />
     </>
-  )
+  );
 }
