@@ -612,6 +612,7 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
   const staffUsers = allUsers?.filter((u: { role: string }) => u.role === "staff") ?? [];
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
 
   useEffect(() => {
@@ -848,8 +849,8 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
         id: "select",
         header: ({ table }) => (
           <Checkbox
-            checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
-            onCheckedChange={v => table.toggleAllPageRowsSelected(!!v)}
+            checked={table.getIsAllRowsSelected() || (table.getIsSomeRowsSelected() && "indeterminate")}
+            onCheckedChange={v => table.toggleAllRowsSelected(!!v)}
             aria-label="Select all" className="cursor-pointer"
           />
         ),
@@ -1276,22 +1277,42 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
       />
 
       {/* ── Bulk Delete Dialog ── */}
-      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Hapus {selectedRowIds.length} Data?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tindakan ini tidak dapat dibatalkan. {selectedRowIds.length} data CRM akan dihapus secara permanen.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isBulkDeleting} className="cursor-pointer">Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={handleBulkDelete} disabled={isBulkDeleting} className="cursor-pointer bg-destructive hover:bg-destructive/90">
-              {isBulkDeleting ? "Menghapus..." : `Hapus ${selectedRowIds.length} Data`}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {(() => {
+        const isDeleteAll = table.getIsAllRowsSelected();
+        const CONFIRM_PHRASE = "saya yakin dan sadar akan menghapus semua data ini";
+        const confirmOk = !isDeleteAll || deleteConfirmText.trim().toLowerCase() === CONFIRM_PHRASE;
+        return (
+          <AlertDialog open={bulkDeleteOpen} onOpenChange={open => { setBulkDeleteOpen(open); if (!open) setDeleteConfirmText(""); }}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Hapus {selectedRowIds.length} Data?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Tindakan ini tidak dapat dibatalkan. {selectedRowIds.length} data CRM akan dihapus secara permanen.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              {isDeleteAll && (
+                <div className="flex flex-col gap-2 py-1">
+                  <p className="text-sm text-destructive font-medium">Anda akan menghapus <strong>semua data</strong>. Ketik kalimat berikut untuk konfirmasi:</p>
+                  <p className="text-xs font-mono bg-muted rounded px-3 py-2 select-none pointer-events-none text-muted-foreground">{CONFIRM_PHRASE}</p>
+                  <Input
+                    placeholder="Ketik kalimat konfirmasi di sini..."
+                    value={deleteConfirmText}
+                    onChange={e => setDeleteConfirmText(e.target.value)}
+                    className={`text-sm ${deleteConfirmText && !confirmOk ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                    disabled={isBulkDeleting}
+                  />
+                </div>
+              )}
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isBulkDeleting} className="cursor-pointer" onClick={() => setDeleteConfirmText("")}>Batal</AlertDialogCancel>
+                <AlertDialogAction onClick={handleBulkDelete} disabled={isBulkDeleting || !confirmOk} className="cursor-pointer bg-destructive hover:bg-destructive/90 disabled:opacity-50">
+                  {isBulkDeleting ? "Menghapus..." : `Hapus ${selectedRowIds.length} Data`}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        );
+      })()}
 
       {/* Bulk edit dialog */}
       <CrmBulkEditDialog
