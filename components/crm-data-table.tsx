@@ -175,6 +175,12 @@ const DEFAULT_COLUMN_PINNING: ColumnPinningState = {
   left: ["select", "no", "namaPerusahaan"],
 };
 
+const BULAN_ORDER: Record<string, number> = {
+  januari: 1, februari: 2, maret: 3, april: 4,
+  mei: 5, juni: 6, juli: 7, agustus: 8,
+  september: 9, oktober: 10, november: 11, desember: 12,
+};
+
 const GROUPABLE_COLUMNS = [
   { id: "namaPerusahaan", label: "Perusahaan" },
   { id: "tahun", label: "Tahun" },
@@ -202,6 +208,14 @@ const GROUPABLE_COLUMNS = [
   { id: "statusKomisi", label: "Status Komisi" },
   { id: "statusSertifikat", label: "Status Sertifikat" },
   { id: "statusKunjungan", label: "Status Kunjungan" },
+  { id: "eaCode", label: "EA Code" },
+  { id: "iaDate", label: "IA Date" },
+  { id: "bulanAuditSebelumnyaSustain", label: "Bln Audit Sblm" },
+  { id: "expDate", label: "Exp Date" },
+  { id: "tahapAudit", label: "Tahap Audit" },
+  { id: "bulanTtdNotif", label: "Bulan TTD" },
+  { id: "bulanAudit", label: "Bulan Audit" },
+  { id: "tanggalKunjungan", label: "Tgl Kunjungan" },
 ];
 
 const BASE_COLUMN_IDS = [
@@ -279,9 +293,15 @@ function fmtDateFull(ds: string | undefined): string {
   if (m2) return `${parseInt(m2[1])} ${months[parseInt(m2[2])-1]} ${m2[3]}`;
   return c;
 }
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function getPinStyles(_column: Column<CrmTarget>, _isHeader = false): React.CSSProperties {
-  return {};
+function getPinStyles(column: Column<CrmTarget>, isHeader = false): React.CSSProperties {
+  const p = column.getIsPinned();
+  if (!p) return {};
+  return {
+    position: "sticky",
+    left: p === "left" ? `${column.getStart("left")}px` : undefined,
+    right: p === "right" ? `${column.getAfter("right")}px` : undefined,
+    zIndex: isHeader ? 4 : 2,
+  };
 }
 
 // ── Custom filter fn ──────────────────────────────────────────────────────────
@@ -320,7 +340,7 @@ function ColumnFilterPopover({ column, title }: { column: Column<CrmTarget>; tit
     <Popover>
       <PopoverTrigger asChild>
         <button className="relative ml-1 inline-flex items-center rounded p-0.5 hover:bg-accent" onClick={e => e.stopPropagation()}>
-          <IconFilter className={`h-3 w-3 ${isActive ? "text-destructive" : "text-muted-foreground/50"}`} />
+          <IconFilter className={`h-3 w-3 ${isActive ? "text-yellow-300" : "text-white/60"}`} />
           {isActive && (
             <span className="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-destructive text-[8px] font-bold text-white leading-none">
               {currentFilter.length}
@@ -369,9 +389,9 @@ function ColHead({ column, title }: { column: Column<CrmTarget>; title: string }
         <button className="flex items-center gap-1 hover:text-foreground"
           onClick={e => { e.stopPropagation(); column.getToggleSortingHandler()?.(e); }}>
           {title}
-          {sortDir === "asc" ? <IconSortAscending className="h-3 w-3 text-primary" />
-           : sortDir === "desc" ? <IconSortDescending className="h-3 w-3 text-primary" />
-           : <IconSelector className="h-3 w-3 opacity-30" />}
+          {sortDir === "asc" ? <IconSortAscending className="h-3 w-3 text-yellow-300" />
+           : sortDir === "desc" ? <IconSortDescending className="h-3 w-3 text-yellow-300" />
+           : <IconSelector className="h-3 w-3 text-white/40" />}
         </button>
       ) : <span>{title}</span>}
       {column.getCanFilter() && <ColumnFilterPopover column={column} title={title} />}
@@ -392,9 +412,9 @@ function GroupByBar({ grouping, onGroupingChange }: { grouping: string[]; onGrou
       {grouping.map((g, i) => (
         <React.Fragment key={g}>
           {i > 0 && <span className="text-muted-foreground text-xs">›</span>}
-          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-purple-700 h-8 px-3 text-xs font-medium text-white">
             {getLabel(g)}
-            <button onClick={() => onGroupingChange(grouping.filter(x => x !== g))} className="hover:opacity-60 cursor-pointer">
+            <button onClick={() => onGroupingChange(grouping.filter(x => x !== g))} className="hover:opacity-70 cursor-pointer">
               <IconX className="h-2.5 w-2.5" />
             </button>
           </span>
@@ -638,6 +658,14 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
   // Apply grouping: reorder + pin + show grouped cols
   const applyGrouping = useCallback((newGrouping: GroupingState) => {
     setGrouping(newGrouping);
+    // Auto-sort bulanExpDate by month order when grouped by it
+    setSorting(prev => {
+      const withoutBulan = prev.filter(s => s.id !== "bulanExpDate");
+      if (newGrouping.includes("bulanExpDate")) {
+        return [{ id: "bulanExpDate", desc: false }, ...withoutBulan];
+      }
+      return withoutBulan;
+    });
     if (newGrouping.length === 0) {
       setColumnPinning(canEdit ? DEFAULT_COLUMN_PINNING : { left: ["no", "namaPerusahaan"] });
       setColumnOrder([]);
@@ -695,10 +723,17 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
 
     const baseColumns: ColumnDef<CrmTarget>[] = [
       mkCol("namaPerusahaan", "Company", v => (
-        <span className="font-medium break-words leading-snug">{String(v ?? "-")}</span>
-      ), { size: 200 }),
+        <span className="font-medium leading-snug block whitespace-normal break-words" style={{ width: 200, maxWidth: 200 }}>{String(v ?? "-")}</span>
+      ), { size: 200, minSize: 200, maxSize: 200, enableResizing: false }),
       mkCol("tahun", "Tahun", undefined, { size: 70, meta: {} }),
-      mkCol("bulanExpDate", "Bulan Exp", undefined, { size: 100 }),
+      mkCol("bulanExpDate", "Bulan Exp", undefined, {
+        size: 100,
+        sortingFn: (a, b, colId) => {
+          const aVal = BULAN_ORDER[(String(a.getValue(colId) ?? "")).toLowerCase()] ?? 99;
+          const bVal = BULAN_ORDER[(String(b.getValue(colId) ?? "")).toLowerCase()] ?? 99;
+          return aVal - bVal;
+        },
+      }),
       mkCol("produk", "Produk", undefined, { size: 75 }),
       mkCol("picCrm", "PIC CRM", undefined, { size: 85 }),
       mkCol("sales", "Sales", undefined, { size: 85 }),
@@ -730,15 +765,15 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
       ), { enableColumnFilter: false, enableGrouping: false, size: 180 }),
       mkCol("akreditasi", "Akreditasi", undefined, { size: 90 }),
       mkCol("catAkre", "Cat Akre", undefined, { size: 80 }),
-      mkCol("eaCode", "EA Code", undefined, { enableColumnFilter: false, enableGrouping: false, size: 80 }),
+      mkCol("eaCode", "EA Code", undefined, { size: 80 }),
       mkCol("std", "STD", undefined, { size: 70 }),
-      mkCol("iaDate", "IA Date", undefined, { enableColumnFilter: false, size: 90 }),
-      mkCol("bulanAuditSebelumnyaSustain", "Bln Audit Sblm", undefined, { enableColumnFilter: false, size: 120 }),
-      mkCol("expDate", "Exp Date", undefined, { enableColumnFilter: false, size: 90 }),
+      mkCol("iaDate", "IA Date", undefined, { size: 90 }),
+      mkCol("bulanAuditSebelumnyaSustain", "Bln Audit Sblm", undefined, { size: 120 }),
+      mkCol("expDate", "Exp Date", undefined, { size: 90 }),
       mkCol("tahapAudit", "Tahap Audit", undefined, { size: 100 }),
       mkNum("hargaKontrak", "Harga Kontrak", "text-blue-600"),
-      mkCol("bulanTtdNotif", "Bulan TTD", v => fmtDateShort(String(v ?? "")), { enableColumnFilter: false, size: 100 }),
-      mkCol("bulanAudit", "Bulan Audit", undefined, { enableColumnFilter: false, size: 100 }),
+      mkCol("bulanTtdNotif", "Bulan TTD", v => fmtDateShort(String(v ?? "")), { size: 100 }),
+      mkCol("bulanAudit", "Bulan Audit", undefined, { size: 100 }),
       mkNum("hargaTerupdate", "Harga Update", "text-purple-600"),
       mkNum("trimmingValue", "Trimming", "text-green-600"),
       mkNum("lossValue", "Loss", "text-red-600"),
@@ -754,7 +789,7 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
         <Badge variant="outline" className="text-[10px]">{String(v)}</Badge>
       ) : "-", { size: 110 }),
       mkCol("statusSertifikat", "Status Sertifikat", undefined, { size: 120 }),
-      mkCol("tanggalKunjungan", "Tgl Kunjungan", v => fmtDateFull(String(v ?? "")), { enableColumnFilter: false, size: 110 }),
+      mkCol("tanggalKunjungan", "Tgl Kunjungan", v => fmtDateFull(String(v ?? "")), { size: 110 }),
       mkCol("statusKunjungan", "Status Kunjungan", v => v ? (
         <Badge variant="outline" className={`text-[10px] ${getStatusKunjunganBadgeStyle(String(v))}`}>{String(v)}</Badge>
       ) : "-", { size: 120 }),
@@ -979,112 +1014,108 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
           />
         </div>
       ) : (
-        <div className="rounded-lg border overflow-hidden">
-          <div className="overflow-auto max-h-[calc(100vh-300px)]">
-            <Table className="text-xs" style={{ tableLayout: "fixed", width: "max-content", minWidth: "100%" }}>
-              <TableHeader className="sticky top-0 z-10">
+        <div className="rounded-lg border overflow-auto max-h-[calc(100vh-300px)]">
+            <table className="text-xs caption-bottom border-separate border-spacing-0" style={{ tableLayout: "fixed", width: "max-content", minWidth: "100%" }}>
+              <thead style={{ position: "sticky", top: 0, zIndex: 10 }}>
                 {table.getHeaderGroups().map(hg => (
-                  <TableRow key={hg.id} className="bg-muted/60 hover:bg-muted/60">
+                  <tr key={hg.id}>
                     {hg.headers.map(header => {
                       const isPinned = header.column.getIsPinned();
+                      const pinStyle = isPinned ? { position: "sticky" as const, left: isPinned === "left" ? header.column.getStart("left") : undefined, zIndex: 11 } : {};
                       return (
-                        <TableHead
+                        <th
                           key={header.id}
-                          style={{ ...getPinStyles(header.column, true), width: header.getSize() }}
-                          className={`py-2 px-3 text-[11px] font-semibold ${isPinned ? "bg-muted/90" : ""} ${isPinned === "left" && header.column.id === "namaPerusahaan" ? "border-r" : ""}`}
+                          style={{ ...pinStyle, width: header.getSize() }}
+                          className={`py-2 px-3 text-[11px] font-semibold text-white bg-purple-700 text-left align-middle border-b border-purple-600 ${isPinned === "left" && header.column.id === "namaPerusahaan" ? "border-r border-purple-500" : ""}`}
                         >
                           {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                        </TableHead>
+                        </th>
                       );
                     })}
-                  </TableRow>
+                  </tr>
                 ))}
-              </TableHeader>
+              </thead>
 
-              <TableBody>
+              <tbody className="[&_tr:last-child]:border-0">
                 {table.getRowModel().rows.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={columns.length} className="py-16 text-center text-muted-foreground">
+                  <tr>
+                    <td colSpan={columns.length} className="py-16 text-center text-muted-foreground">
                       <div className="flex flex-col items-center gap-2">
                         <IconSearch className="h-8 w-8 opacity-30" />
                         <p className="font-medium">Tidak ada data</p>
                         <p className="text-xs">Coba ubah filter atau kata pencarian</p>
                       </div>
-                    </TableCell>
-                  </TableRow>
+                    </td>
+                  </tr>
                 ) : (
-                  table.getRowModel().rows.map(row => {
+                  table.getRowModel().rows.map((row, rowIdx) => {
                     const isGrouped = row.getIsGrouped();
                     const isSelected = row.getIsSelected();
+                    const isEven = rowIdx % 2 === 0;
                     return (
-                      <TableRow
+                      <tr
                         key={row.id}
-                        data-state={isSelected ? "selected" : undefined}
-                        className={`
-                          ${isGrouped ? "bg-muted/30 font-medium hover:bg-muted/40" : "hover:bg-muted/30 cursor-pointer"}
-                          ${isSelected ? "bg-primary/5" : ""}
+                        className={`border-b transition-colors cursor-pointer
+                          ${isGrouped ? "bg-purple-50 font-medium hover:bg-purple-100" : isSelected ? "bg-primary/10 hover:bg-primary/15" : isEven ? "bg-white hover:bg-purple-50" : "bg-purple-50/40 hover:bg-purple-100/60"}
                         `}
                         onClick={() => {
-                          if (!isGrouped) { setDrawerTarget(row.original); setDrawerOpen(true); }
+                          if (isGrouped) { row.getToggleExpandedHandler()(); }
+                          else { setDrawerTarget(row.original); setDrawerOpen(true); }
                         }}
                       >
                         {row.getVisibleCells().map(cell => {
                           const isPinned = cell.column.getIsPinned();
                           const isLastLeftPin = isPinned === "left" && cell.column.id === "namaPerusahaan";
-                          const pinBg = isPinned ? (isSelected ? "bg-primary/5" : isGrouped ? "bg-muted/30" : "bg-background") : "";
+                          const pinBg = isPinned ? (isSelected ? "bg-purple-100" : isGrouped ? "bg-purple-50" : "bg-white") : "";
 
                           if (cell.getIsGrouped()) {
                             return (
-                              <TableCell key={cell.id} style={{ ...getPinStyles(cell.column), width: cell.column.getSize() }}
-                                className={`py-2 px-3 align-top ${pinBg} ${isLastLeftPin ? "border-r" : ""}`}
-                                colSpan={1}>
+                              <td key={cell.id} style={{ ...getPinStyles(cell.column), width: cell.column.getSize() }}
+                                className={`py-2 px-3 align-top ${pinBg} ${isLastLeftPin ? "border-r" : ""}`}>
                                 <div className="flex items-center gap-2">
-                                  <button
-                                    onClick={e => { e.stopPropagation(); row.getToggleExpandedHandler()(); }}
-                                    className="cursor-pointer hover:text-primary">
+                                  <span className="pointer-events-none">
                                     {row.getIsExpanded() ? <IconChevronDown className="h-3.5 w-3.5" /> : <IconChevronRight className="h-3.5 w-3.5" />}
-                                  </button>
+                                  </span>
                                   <span className="font-medium text-purple-900">{String(cell.getValue() ?? "") || "-"}</span>
-                                  <Badge variant="secondary" className="text-[9px] h-4 px-1.5">{row.subRows.length}</Badge>
+                                  <span className="inline-flex items-center justify-center rounded-full bg-purple-700 text-white text-[10px] font-semibold h-5 min-w-5 px-1.5">{row.subRows.length}</span>
                                 </div>
-                              </TableCell>
+                              </td>
                             );
                           }
                           if (cell.getIsAggregated()) {
                             return (
-                              <TableCell key={cell.id} style={{ ...getPinStyles(cell.column), width: cell.column.getSize() }}
+                              <td key={cell.id} style={{ ...getPinStyles(cell.column), width: cell.column.getSize() }}
                                 className={`py-2 px-3 align-top text-right ${pinBg}`}>
                                 {flexRender(cell.column.columnDef.aggregatedCell ?? cell.column.columnDef.cell, cell.getContext())}
-                              </TableCell>
+                              </td>
                             );
                           }
                           if (cell.getIsPlaceholder()) {
-                            // leaf row inside a group: still show the cell value
                             return (
-                              <TableCell key={cell.id} style={{ ...getPinStyles(cell.column), width: cell.column.getSize() }}
+                              <td key={cell.id} style={{ ...getPinStyles(cell.column), width: cell.column.getSize() }}
                                 className={`py-2 px-3 align-top ${pinBg} ${isLastLeftPin ? "border-r" : ""}`}>
                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                              </TableCell>
+                              </td>
                             );
                           }
                           return (
-                            <TableCell key={cell.id} style={{ ...getPinStyles(cell.column), width: cell.column.getSize() }}
-                              className={`py-2 px-3 ${pinBg} ${isLastLeftPin ? "border-r" : ""}`}>
+                            <td key={cell.id} style={{ ...getPinStyles(cell.column), width: cell.column.getSize() }}
+                              className={`py-2 px-3 align-top ${pinBg} ${isLastLeftPin ? "border-r" : ""}`}>
                               {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                            </TableCell>
+                            </td>
                           );
                         })}
-                      </TableRow>
+                      </tr>
                     );
                   })
                 )}
-              </TableBody>
+              </tbody>
 
               {/* Footer totals */}
               {filteredRows.length > 0 && (
-                <TableFooter className="sticky bottom-0 z-10">
-                  <TableRow className="bg-muted/80 font-semibold">
-                    {table.getVisibleFlatColumns().map((column, i) => {
+                <tfoot className="bg-muted/50 border-t font-medium sticky bottom-0 z-10">
+                  <tr>
+                    {table.getVisibleFlatColumns().map((column) => {
                       const isNumeric = column.columnDef.meta?.isNumeric;
                       const colorClass = column.columnDef.meta?.footerColorClass ?? "";
                       const isPinned = column.getIsPinned();
@@ -1092,29 +1123,27 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
 
                       if (column.id === "namaPerusahaan") {
                         return (
-                          <TableCell key={column.id} style={{ ...getPinStyles(column), width: column.getSize() }}
+                          <td key={column.id} style={{ ...getPinStyles(column), width: column.getSize() }}
                             className={`py-2 px-3 bg-muted/80 ${isLastLeftPin ? "border-r" : ""}`}>
                             <span className="text-[10px] font-bold text-muted-foreground">Total ({filteredRows.length} data)</span>
-                          </TableCell>
+                          </td>
                         );
                       }
                       if (isNumeric) {
-                        const key = column.id as keyof typeof totals;
-                        const val = totals[key as keyof typeof totals];
+                        const val = totals[column.id as keyof typeof totals];
                         return (
-                          <TableCell key={column.id} style={{ width: column.getSize() }} className="py-2 px-3 text-right">
+                          <td key={column.id} style={{ width: column.getSize() }} className="py-2 px-3 text-right">
                             <span className={`text-[10px] font-bold ${colorClass}`}>{fmtCurrency(val)}</span>
-                          </TableCell>
+                          </td>
                         );
                       }
-                      return <TableCell key={column.id} style={{ ...getPinStyles(column), width: column.getSize() }}
+                      return <td key={column.id} style={{ ...getPinStyles(column), width: column.getSize() }}
                         className={`py-2 px-3 ${isPinned ? "bg-muted/80" : ""}`} />;
                     })}
-                  </TableRow>
-                </TableFooter>
+                  </tr>
+                </tfoot>
               )}
-            </Table>
-          </div>
+            </table>
         </div>
       )}
 
