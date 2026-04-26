@@ -530,7 +530,7 @@ export function CrmBulkEditDialog({ open, onOpenChange, rows, onSaved }: CrmBulk
                     <td style={{ position:"sticky", left:0, zIndex:2, width:44 }}
                       className={cn(
                         "text-center text-[10px] text-muted-foreground border-b border-gray-200 border-r border-gray-200 py-0",
-                        rowDirty ? "bg-amber-50" : stripe ? "bg-purple-50/30" : "bg-white",
+                        rowDirty ? "bg-amber-50" : stripe ? "bg-purple-50" : "bg-white",
                       )}>
                       {rowIdx + 1}
                     </td>
@@ -539,7 +539,7 @@ export function CrmBulkEditDialog({ open, onOpenChange, rows, onSaved }: CrmBulk
                     <td style={{ position:"sticky", left:44, zIndex:2, width:200 }}
                       className={cn(
                         "px-2 py-1 border-b border-gray-200 border-r border-gray-300 text-[11px] font-medium",
-                        rowDirty ? "bg-amber-50" : stripe ? "bg-purple-50/30" : "bg-white",
+                        rowDirty ? "bg-amber-50" : stripe ? "bg-purple-50" : "bg-white",
                       )}>
                       <div className="truncate max-w-[188px]" title={row.namaPerusahaan}>
                         {row.namaPerusahaan}
