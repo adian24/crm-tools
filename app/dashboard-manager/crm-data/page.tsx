@@ -35,6 +35,7 @@ import { FilterKunjunganSection } from '@/components/filters/FilterKunjunganSect
 import { FilterBulanAuditSustain } from '@/components/filters/FilterBulanAuditSustain';
 import { FilterBulanAudit } from '@/components/filters/FilterBulanAudit';
 import { EditCrmDialog } from '@/components/crm-edit-dialog';
+import { CrmDataTable } from '@/components/crm-data-table';
 
 interface CrmTarget {
   _id: Id<"crmTargets">;
@@ -647,26 +648,13 @@ const FormDataRow = ({ row, index, onFieldChange, onRemove, totalRows, staffUser
 
 export default function CrmDataManagementPage() {
   // State variables
-  const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPicCrm, setFilterPicCrm] = useState<string>('all');
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
-  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [showExcelFormModal, setShowExcelFormModal] = useState(false);
   const [selectedTarget, setSelectedTarget] = useState<CrmTarget | null>(null);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [currentPage, setCurrentPage] = useState(1);
   const [isImporting, setIsImporting] = useState(false);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-
-  // Sorting state
-  const [sortField, setSortField] = useState<string>('createdAt');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-
-  // Ref for select all checkbox
-  const selectAllCheckboxRef = React.useRef<any>(null);
 
   // Comprehensive Filters
   const [expandedFilterSections, setExpandedFilterSections] = useState<string[]>([]);
@@ -703,17 +691,6 @@ export default function CrmDataManagementPage() {
 
   // Mobile filter sheet state
   const [activeFilterSheet, setActiveFilterSheet] = useState<string | null>(null);
-  const searchInputRef = React.useRef<HTMLInputElement>(null);
-
-  // Auto focus search input when search sheet opens
-  React.useEffect(() => {
-    if (activeFilterSheet === 'search' && searchInputRef.current) {
-      setTimeout(() => {
-        searchInputRef.current?.focus();
-      }, 100);
-    }
-  }, [activeFilterSheet]);
-
   // Fetch CRM targets and user permissions
   const crmTargets = useQuery(api.crmTargets.getCrmTargets);
   const allUsers = useQuery(api.auth.getAllUsers);
@@ -885,7 +862,6 @@ export default function CrmDataManagementPage() {
     setFilterStatusKunjungan('all');
     setFilterPicSales('all');
     setFilterTipeProduk('all');
-    setSearchTerm('');
     setQuickFilters([]);
   };
 
@@ -903,7 +879,6 @@ export default function CrmDataManagementPage() {
         return [...prevFilters, { field, value }];
       }
     });
-    setCurrentPage(1); // Reset to first page when applying quick filter
   };
 
   // Clear specific quick filter
@@ -925,24 +900,6 @@ export default function CrmDataManagementPage() {
   // Get all active filters for a specific field
   const getActiveFiltersForField = (field: string): string[] => {
     return quickFilters.filter(f => f.field === field).map(f => f.value);
-  };
-
-  // Handle sort
-  const handleSort = (field: string) => {
-    if (sortField === field) {
-      // Toggle direction if same field
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      // New field, set to desc by default
-      setSortField(field);
-      setSortDirection('desc');
-    }
-  };
-
-  // Handle items per page change
-  const handleItemsPerPageChange = (value: number) => {
-    setItemsPerPage(value);
-    setCurrentPage(1); // Reset to first page
   };
 
   // Excel-like Form state (multiple rows)
@@ -989,53 +946,9 @@ export default function CrmDataManagementPage() {
   }]);
   const [isSubmittingExcel, setIsSubmittingExcel] = useState(false);
 
-  // Filter and search
+  // Filter
   const filteredTargets = filteredCrmTargets?.filter(target => {
-    // Search filter - search across all fields
-    const searchLower = searchTerm.toLowerCase();
-    const matchesSearch = searchTerm === '' || [
-      target.namaPerusahaan,
-      target.bulanExpDate,
-      target.produk,
-      target.picCrm,
-      target.sales,
-      target.namaAssociate,
-      target.directOrAssociate,
-      target.grup,
-      target.status,
-      target.alasan,
-      target.category,
-      target.kuadran,
-      target.luarKota,
-      target.provinsi,
-      target.kota,
-      target.alamat,
-      target.akreditasi,
-      target.catAkre,
-      target.eaCode,
-      target.std,
-      target.iaDate,
-      target.bulanAuditSebelumnyaSustain,
-      target.expDate,
-      target.tahapAudit,
-      target.hargaKontrak?.toString(),
-      target.bulanTtdNotif,
-      target.bulanAudit,
-      target.hargaTerupdate?.toString(),
-      target.trimmingValue?.toString(),
-      target.lossValue?.toString(),
-      target.cashback?.toString(),
-      target.terminPembayaran,
-      target.statusInvoice,
-      target.statusPembayaran,
-      target.statusKomisi,
-      target.statusSertifikat,
-      target.tanggalKunjungan,
-      target.statusKunjungan,
-      target.catatanKunjungan,
-      target.fotoBuktiKunjungan,
-      target.tahun
-    ].some(field => field && field.toString().toLowerCase().includes(searchLower));
+    const matchesSearch = true;
 
     // Date section filters
     const matchesTahun = filterTahun === 'all' || target.tahun === filterTahun;
@@ -1257,74 +1170,9 @@ export default function CrmDataManagementPage() {
   }) || [];
 
   // Sort targets based on current sort field and direction
-  const sortedTargets = [...filteredTargets].sort((a, b) => {
-    let comparison = 0;
-
-    // Get values for sorting
-    const aValue = a[sortField as keyof CrmTarget];
-    const bValue = b[sortField as keyof CrmTarget];
-
-    // Handle different data types
-    if (aValue === undefined || aValue === null) return 1;
-    if (bValue === undefined || bValue === null) return -1;
-
-    if (typeof aValue === 'string' && typeof bValue === 'string') {
-      comparison = aValue.localeCompare(bValue);
-    } else if (typeof aValue === 'number' && typeof bValue === 'number') {
-      comparison = aValue - bValue;
-    } else {
-      // Fallback to string comparison
-      comparison = String(aValue).localeCompare(String(bValue));
-    }
-
-    // Apply direction
-    return sortDirection === 'asc' ? comparison : -comparison;
-  });
-
-  // Pagination
-  const totalPages = Math.ceil(sortedTargets.length / itemsPerPage);
-  const paginatedTargets = sortedTargets.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  // Check if all rows on current page are selected
-  const isAllSelected = paginatedTargets.length > 0 &&
-    paginatedTargets.every(target => selectedIds.has(target._id));
-
-  // Check if some (but not all) rows on current page are selected
-  const isSomeSelected = paginatedTargets.some(target => selectedIds.has(target._id));
-
-  // Update indeterminate state when selection changes
-  React.useEffect(() => {
-    if (selectAllCheckboxRef.current) {
-      selectAllCheckboxRef.current.indeterminate = isSomeSelected && !isAllSelected;
-    }
-  }, [isAllSelected, isSomeSelected]);
-
   // Get unique values for filters
   const uniqueStatuses = [...new Set(filteredCrmTargets?.map(t => t.status) || [])].sort();
   const uniquePicCrms = [...new Set(filteredCrmTargets?.map(t => t.picCrm) || [])].sort();
-
-  // Helper component for sortable table header
-  const SortableTableHead = ({ children, field, className }: { children: React.ReactNode; field: string; className?: string }) => {
-    const isActive = sortField === field;
-    return (
-      <TableHead
-        className={`cursor-pointer hover:bg-muted/50 transition-colors select-none ${isActive ? 'bg-muted' : ''} ${className || ''}`}
-        onClick={() => handleSort(field)}
-      >
-        <div className="flex items-center gap-1">
-          {children}
-          {isActive && (
-            <span className="ml-1">
-              {sortDirection === 'asc' ? '▲' : '▼'}
-            </span>
-          )}
-        </div>
-      </TableHead>
-    );
-  };
 
   // Helper function to get status badge variant
   const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
@@ -1412,63 +1260,25 @@ export default function CrmDataManagementPage() {
     }
   };
 
-  // Handle checkbox selection
-  const handleSelectRow = (id: string, checked: boolean) => {
-    const newSelectedIds = new Set(selectedIds);
-    if (checked) {
-      newSelectedIds.add(id);
-    } else {
-      newSelectedIds.delete(id);
-    }
-    setSelectedIds(newSelectedIds);
-  };
-
-  // Handle select all on current page
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      const allPageIds = new Set(paginatedTargets.map(t => t._id));
-      setSelectedIds(allPageIds);
-    } else {
-      setSelectedIds(new Set());
-    }
-  };
-
-  // Handle bulk delete
-  const handleBulkDelete = async () => {
-    if (selectedIds.size === 0) return;
-
-    setIsBulkDeleting(true);
-    try {
-      let successCount = 0;
-      let errorCount = 0;
-
-      // Delete all selected items
-      for (const id of selectedIds) {
-        try {
-          await deleteTarget({ id: id as Id<"crmTargets"> });
-          successCount++;
-        } catch (error) {
-          console.error(`Failed to delete ${id}:`, error);
-          errorCount++;
-        }
+  // Handle bulk delete (called from DataTable)
+  const handleBulkDelete = async (ids: string[]) => {
+    let successCount = 0;
+    let errorCount = 0;
+    for (const id of ids) {
+      try {
+        await deleteTarget({ id: id as Id<"crmTargets"> });
+        successCount++;
+      } catch (error) {
+        console.error(`Failed to delete ${id}:`, error);
+        errorCount++;
       }
-
-      // Show appropriate message
-      if (successCount > 0 && errorCount === 0) {
-        toast.success(`Successfully deleted ${successCount} CRM targets!`);
-      } else if (successCount > 0 && errorCount > 0) {
-        toast.success(`Deleted ${successCount} targets, ${errorCount} failed (already deleted)`);
-      } else if (errorCount > 0) {
-        toast.error(`Failed to delete ${errorCount} targets (they may have been already deleted)`);
-      }
-
-      setSelectedIds(new Set());
-      setIsBulkDeleteDialogOpen(false);
-    } catch (error) {
-      toast.error('Error deleting CRM Targets');
-      console.error(error);
-    } finally {
-      setIsBulkDeleting(false);
+    }
+    if (successCount > 0 && errorCount === 0) {
+      toast.success(`${successCount} data berhasil dihapus!`);
+    } else if (successCount > 0 && errorCount > 0) {
+      toast.success(`${successCount} dihapus, ${errorCount} gagal`);
+    } else {
+      toast.error(`Gagal menghapus data`);
     }
   };
 
@@ -2094,177 +1904,7 @@ export default function CrmDataManagementPage() {
   // Bulk insert mutation
   const createBulkInsert = useMutation(api.crmTargets.bulkInsertCrmTargets);
 
-  // Handle Excel export
-  const handleExcelExport = () => {
-    if (!sortedTargets || sortedTargets.length === 0) {
-      toast.error('No data to export');
-      return;
-    }
-
-    // Helper function to truncate long text (Excel max 32767 chars)
-    const truncateText = (text: any, maxLength: number = 10000): string => {
-      if (!text) return '';
-      const str = String(text);
-      if (str.length > maxLength) {
-        return str.substring(0, maxLength) + '... [TRUNCATED]';
-      }
-      return str;
-    };
-
-    // Define Excel headers (matching field names in Convex schema)
-    const headers = [
-      'tahun',
-      'bulanExpDate',
-      'produk',
-      'picCrm',
-      'sales',
-      'namaAssociate',
-      'directOrAssociate',
-      'grup',
-      'namaPerusahaan',
-      'status',
-      'alasan',
-      'category',
-      'kuadran',
-      'luarKota',
-      'provinsi',
-      'kota',
-      'alamat',
-      'akreditasi',
-      'catAkre',
-      'eaCode',
-      'std',
-      'iaDate',
-      'bulanAuditSebelumnyaSustain',
-      'expDate',
-      'tahapAudit',
-      'hargaKontrak',
-      'bulanTtdNotif',
-      'bulanAudit',
-      'hargaTerupdate',
-      'trimmingValue',
-      'lossValue',
-      'cashback',
-      'terminPembayaran',
-      'statusInvoice',
-      'statusPembayaran',
-      'statusKomisi',
-      'statusSertifikat',
-      'tanggalKunjungan',
-      'statusKunjungan',
-      'catatanKunjungan',
-      'fotoBuktiKunjungan',
-    ];
-
-    // Convert data to Excel format
-    const excelData = [
-      headers,
-      ...sortedTargets.map(target => [
-        target.tahun || '',
-        target.bulanExpDate || '',
-        target.produk || '',
-        target.picCrm || '',
-        target.sales || '',
-        target.namaAssociate || '',
-        target.directOrAssociate || '',
-        target.grup || '',
-        target.namaPerusahaan,
-        target.status || '',
-        target.alasan || '',
-        target.category || '',
-        target.kuadran || '',
-        target.luarKota || '',
-        target.provinsi || '',
-        target.kota || '',
-        target.alamat || '',
-        target.akreditasi || '',
-        target.catAkre || '',
-        target.eaCode || '',
-        target.std || '',
-        target.iaDate || '',
-        target.bulanAuditSebelumnyaSustain || '',
-        target.expDate || '',
-        target.tahapAudit || '',
-        target.hargaKontrak || '',
-        target.bulanTtdNotif || '',
-        target.bulanAudit || '',
-        target.hargaTerupdate || '',
-        target.trimmingValue || '',
-        target.lossValue || '',
-        target.cashback || '',
-        target.terminPembayaran || '',
-        target.statusInvoice || '',
-        target.statusPembayaran || '',
-        target.statusKomisi || '',
-        target.statusSertifikat || '',
-        target.tanggalKunjungan || '',
-        target.statusKunjungan || '',
-        truncateText(target.catatanKunjungan, 5000), // Max 5000 chars for notes
-        truncateText(target.fotoBuktiKunjungan, 1000), // Max 1000 chars for photo URL (base64 will be truncated)
-      ])
-    ];
-
-    // Create worksheet
-    const worksheet = XLSX.utils.aoa_to_sheet(excelData);
-
-    // Set column widths
-    const colWidths = [
-      { wch: 10 }, // tahun
-      { wch: 15 }, // bulanExpDate
-      { wch: 10 }, // produk
-      { wch: 10 }, // picCrm
-      { wch: 10 }, // sales
-      { wch: 15 }, // namaAssociate
-      { wch: 18 }, // directOrAssociate
-      { wch: 15 }, // grup
-      { wch: 40 }, // namaPerusahaan
-      { wch: 12 }, // status
-      { wch: 30 }, // alasan
-      { wch: 10 }, // category
-      { wch: 10 }, // kuadran
-      { wch: 12 }, // luarKota
-      { wch: 15 }, // provinsi
-      { wch: 20 }, // kota
-      { wch: 50 }, // alamat
-      { wch: 12 }, // akreditasi
-      { wch: 10 }, // catAkre
-      { wch: 10 }, // eaCode
-      { wch: 10 }, // std
-      { wch: 12 }, // iaDate
-      { wch: 18 }, // bulanAuditSebelumnyaSustain
-      { wch: 12 }, // expDate
-      { wch: 12 }, // tahapAudit
-      { wch: 15 }, // hargaKontrak
-      { wch: 15 }, // bulanTtdNotif
-      { wch: 15 }, // bulanAudit
-      { wch: 15 }, // hargaTerupdate
-      { wch: 15 }, // trimmingValue
-      { wch: 12 }, // lossValue
-      { wch: 12 }, // cashback
-      { wch: 18 }, // terminPembayaran
-      { wch: 15 }, // statusInvoice
-      { wch: 18 }, // statusPembayaran
-      { wch: 18 }, // statusKomisi
-      { wch: 15 }, // statusSertifikat
-      { wch: 15 }, // tanggalKunjungan
-      { wch: 15 }, // statusKunjungan
-      { wch: 30 }, // catatanKunjungan
-      { wch: 40 }, // fotoBuktiKunjungan
-    ];
-    worksheet['!cols'] = colWidths;
-
-    // Create workbook
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'CRM Data');
-
-    // Generate file name with timestamp
-    const fileName = `crm-data-${new Date().toISOString().split('T')[0]}.xlsx`;
-
-    // Download file
-    XLSX.writeFile(workbook, fileName);
-
-    toast.success(`Successfully exported ${filteredCrmTargets.length} records to Excel!`);
-  };
+  // Excel export is now handled by CrmDataTable component
 
   // Show loading indicator while data is being fetched
   if (isLoading) {
@@ -2293,13 +1933,13 @@ export default function CrmDataManagementPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <p className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                    {sortedTargets.length}
+                    {filteredTargets.length}
                   </p>
                   <p className="text-xs text-muted-foreground">Total Data</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                    {sortedTargets.filter(t => t.status === 'DONE').length}
+                    {filteredTargets.filter(t => t.status === 'DONE').length}
                   </p>
                   <p className="text-xs text-muted-foreground">Completed</p>
                 </div>
@@ -2326,20 +1966,6 @@ export default function CrmDataManagementPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {/* Search */}
-              <div>
-                <Label className="mb-2 block">Search</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search all fields..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-
               {/* Section Date */}
               <FilterSection
                 title="Filter Date"
@@ -2511,9 +2137,7 @@ export default function CrmDataManagementPage() {
               )}
             </div>
             <p className="text-muted-foreground mt-1">
-              {selectedIds.size > 0
-                ? `${selectedIds.size} item${selectedIds.size > 1 ? 's' : ''} selected`
-                : currentUser?.role === 'staff'
+              {currentUser?.role === 'staff'
                 ? !canEdit
                   ? `Menampilkan ${filteredTargets.length} dari ${filteredCrmTargets.length} data milik ${currentUser.name} (View Only)`
                   : `Menampilkan ${filteredTargets.length} dari ${filteredCrmTargets.length} data milik ${currentUser.name}`
@@ -2523,33 +2147,11 @@ export default function CrmDataManagementPage() {
           </div>
           {canEdit && (
             <div className="flex gap-2">
-              {selectedIds.size > 0 && (
-                <Button
-                  onClick={() => setIsBulkDeleteDialogOpen(true)}
-                  variant="destructive"
-                  size="sm"
-                  className='cursor-pointer'
-                  disabled={isImporting}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete ({selectedIds.size})
-                </Button>
-              )}
-              <Button
-                onClick={handleExcelExport}
-                variant="outline"
-                size="sm"
-                disabled={isImporting || selectedIds.size > 0}
-                className="border-green-600 text-green-600 hover:bg-green-50 hover:border-green-700 hover:text-green-700 cursor-pointer"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Download
-              </Button>
               <Button
                 variant="outline"
                 size="sm"
                 asChild
-                disabled={isImporting || selectedIds.size > 0}
+                disabled={isImporting}
                 className="border-blue-600 text-blue-600 hover:bg-blue-50 hover:border-blue-700 hover:text-blue-700"
               >
                 <label htmlFor="excel-upload" className={`cursor-pointer ${isImporting ? 'opacity-50 cursor-not-allowed' : ''}`}>
@@ -2565,7 +2167,7 @@ export default function CrmDataManagementPage() {
                   />
                 </label>
               </Button>
-              <Button onClick={() => setShowExcelFormModal(true)} size="sm" disabled={isImporting || selectedIds.size > 0} className='h-7 text-xs bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 cursor-pointer'>
+              <Button onClick={() => setShowExcelFormModal(true)} size="sm" disabled={isImporting} className='h-7 text-xs bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 cursor-pointer'>
                 <FileSpreadsheet className="h-4 w-4 mr-2" />
                 Add
               </Button>
@@ -3066,362 +2668,17 @@ export default function CrmDataManagementPage() {
           </div>
         )}
 
-        {/* TABLE - Desktop & Mobile with horizontal scroll */}
-        <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto relative">
-              <Table className="[&_th]:text-[10px] sm:[&_th]:text-[14px] [&_td]:text-[10px] sm:[&_td]:text-[14px] [&_th]:py-2 [&_td]:py-2 sm:[&_th]:py-3 sm:[&_td]:py-3 [&_.badge]:text-[9px] sm:[&_.badge]:text-[10px] [&_.badge]:px-1.5 sm:[&_.badge]:px-2 [&_.badge]:py-0 sm:[&_.badge]:py-0.5">
-                <TableHeader>
-                  <TableRow>
-                    {canEdit && (
-                      <TableHead className="w-12 lg:sticky lg:left-0 bg-white lg:z-10">
-                        <Checkbox
-                          ref={selectAllCheckboxRef}
-                          checked={isAllSelected}
-                          className='cursor-pointer'
-                          onCheckedChange={handleSelectAll}
-                          aria-label="Select all"
-                        />
-                      </TableHead>
-                    )}
-                    <TableHead className={`w-12 ${canEdit ? 'lg:sticky lg:left-[1.5rem]' : 'lg:sticky lg:left-0'} bg-white lg:z-10`}>No</TableHead>
-                    <SortableTableHead field="namaPerusahaan" className={`${canEdit ? 'lg:sticky lg:left-[3.5rem]' : 'lg:sticky lg:left-[2rem]'} bg-white lg:z-10 border-r border-border w-64`}>Company</SortableTableHead>
-                    <SortableTableHead field="bulanExpDate">Bulan Exp</SortableTableHead>
-                    <SortableTableHead field="produk">Produk</SortableTableHead>
-                    <SortableTableHead field="picCrm">PIC CRM</SortableTableHead>
-                    <SortableTableHead field="sales">Sales</SortableTableHead>
-                    <SortableTableHead field="namaAssociate">Nama Associate</SortableTableHead>
-                    <SortableTableHead field="directOrAssociate">Direct/Assoc</SortableTableHead>
-                    <SortableTableHead field="grup">Grup</SortableTableHead>
-                    <SortableTableHead field="status">Status</SortableTableHead>
-                    <SortableTableHead field="alasan">Alasan</SortableTableHead>
-                    <TableHead>Catatan</TableHead>
-                    <SortableTableHead field="category">Category</SortableTableHead>
-                    <SortableTableHead field="kuadran">Kuadran</SortableTableHead>
-                    <SortableTableHead field="luarKota">Luar Kota</SortableTableHead>
-                    <SortableTableHead field="provinsi">Provinsi</SortableTableHead>
-                    <SortableTableHead field="kota">Kota</SortableTableHead>
-                    <TableHead>Alamat</TableHead>
-                    <TableHead>Akreditasi</TableHead>
-                    <SortableTableHead field="catAkre">Cat Akre</SortableTableHead>
-                    <TableHead>EA Code</TableHead>
-                    <TableHead>STD</TableHead>
-                    <TableHead>IA Date</TableHead>
-                    <TableHead>Bulan Audit Sblm</TableHead>
-                    <TableHead>Exp Date</TableHead>
-                    <SortableTableHead field="tahapAudit">Tahap Audit</SortableTableHead>
-                    <SortableTableHead field="hargaKontrak">Harga Kontrak</SortableTableHead>
-                    <TableHead>Bulan TTD</TableHead>
-                    <TableHead>Bulan Audit</TableHead>
-                    <SortableTableHead field="hargaTerupdate">Harga Update</SortableTableHead>
-                    <TableHead>Trimming</TableHead>
-                    <TableHead>Loss</TableHead>
-                    <TableHead>Cashback</TableHead>
-                    <TableHead>Termin</TableHead>
-                    <TableHead>Status Invoice</TableHead>
-                    <TableHead>Status Pembayaran</TableHead>
-                    <TableHead>Status Komisi</TableHead>
-                    <SortableTableHead field="statusSertifikat">Status Sertifikat</SortableTableHead>
-                    <SortableTableHead field="tanggalKunjungan">Tgl Kunjungan</SortableTableHead>
-                    <SortableTableHead field="statusKunjungan">Status Kunjungan</SortableTableHead>
-                    <TableHead>Foto Bukti</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedTargets.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={canEdit ? 41 : 40} className="text-center py-12">
-                        <div className="flex flex-col items-center justify-center space-y-3">
-                          <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-                            <Search className="h-6 w-6 text-muted-foreground" />
-                          </div>
-                          <div>
-                            <p className="font-semibold text-lg">No Data Found</p>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {searchTerm || filterStatus !== 'all' || filterPicCrm !== 'all'
-                                ? 'Try adjusting your filters or search terms'
-                                : currentUser?.role === 'staff'
-                                ? 'No CRM data assigned to you yet'
-                                : 'No CRM data available. Start by adding new data.'}
-                            </p>
-                          </div>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    paginatedTargets.map((target, index) => (
-                      <TableRow
-                        key={target._id}
-                        className={`${
-                          canEdit && "cursor-pointer hover:bg-muted/50"
-                        }`}
-                        onClick={() => {
-                          if (canEdit) {
-                            setSelectedTarget(target);
-                            setIsEditDialogOpen(true);
-                          }
-                        }}
-                      >
-                        {canEdit && (
-                          <TableCell onClick={(e) => e.stopPropagation()} className="lg:sticky lg:left-0 bg-white lg:z-10 border-border">
-                            <Checkbox
-                              checked={selectedIds.has(target._id)}
-                              onCheckedChange={(checked) => handleSelectRow(target._id, checked === true)}
-                              aria-label={`Select ${target.namaPerusahaan}`}
-                              className='cursor-pointer'
-                            />
-                          </TableCell>
-                        )}
-                        <TableCell className="font-medium lg:sticky bg-white lg:z-10 border-border" style={{
-                          left: canEdit ? '1.5rem' : '0'
-                        }}>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
-                        <TableCell className="font-medium lg:sticky bg-white lg:z-10 border-r border-border w-64 truncate" style={{
-                          left: canEdit ? '3.5rem' : '2rem'
-                        }} title={target.namaPerusahaan}>{target.namaPerusahaan}</TableCell>
-                        <TableCell>{target.bulanExpDate || '-'}</TableCell>
-                        <TableCell>{target.produk || '-'}</TableCell>
-                        <TableCell>{target.picCrm}</TableCell>
-                        <TableCell>{target.sales}</TableCell>
-                        <TableCell>{target.namaAssociate || '-'}</TableCell>
-                        <TableCell>{target.directOrAssociate || '-'}</TableCell>
-                        <TableCell>{target.grup || '-'}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={getStatusBadgeVariant(target.status)}
-                            className={getStatusBadgeColor(target.status)}
-                          >
-                            {target.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{target.alasan || '-'}</TableCell>
-                        <TableCell className="max-w-xs truncate" title={target.catatanKunjungan}>{target.catatanKunjungan || '-'}</TableCell>
-                        <TableCell>
-                          {target.category ? (
-                            <Badge
-                              variant="outline"
-                              className={getCategoryBadgeStyle(target.category)}
-                            >
-                              {target.category}
-                            </Badge>
-                          ) : '-'}
-                        </TableCell>
-                        <TableCell>{target.kuadran || '-'}</TableCell>
-                        <TableCell>{target.luarKota || '-'}</TableCell>
-                        <TableCell>{target.provinsi || '-'}</TableCell>
-                        <TableCell>{target.kota || '-'}</TableCell>
-                        <TableCell className="max-w-xs truncate" title={target.alamat}>{target.alamat || '-'}</TableCell>
-                        <TableCell>{target.akreditasi || '-'}</TableCell>
-                        <TableCell>{target.catAkre || '-'}</TableCell>
-                        <TableCell>{target.eaCode || '-'}</TableCell>
-                        <TableCell>{target.std || '-'}</TableCell>
-                        <TableCell>{target.iaDate || '-'}</TableCell>
-                        <TableCell>{target.bulanAuditSebelumnyaSustain || '-'}</TableCell>
-                        <TableCell>{target.expDate || '-'}</TableCell>
-                        <TableCell>{target.tahapAudit || '-'}</TableCell>
-                        <TableCell>
-                          {target.hargaKontrak ? `Rp ${target.hargaKontrak.toLocaleString('id-ID')}` : '-'}
-                        </TableCell>
-                        <TableCell title={target.bulanTtdNotif || ''}>
-                          {formatDateToDayMonth(target.bulanTtdNotif)}
-                        </TableCell>
-                        <TableCell>{target.bulanAudit || '-'}</TableCell>
-                        <TableCell>
-                          {target.hargaTerupdate ? `Rp ${target.hargaTerupdate.toLocaleString('id-ID')}` : '-'}
-                        </TableCell>
-                        <TableCell>
-                          {target.trimmingValue ? `Rp ${target.trimmingValue.toLocaleString('id-ID')}` : '-'}
-                        </TableCell>
-                        <TableCell>
-                          {target.lossValue ? `Rp ${target.lossValue.toLocaleString('id-ID')}` : '-'}
-                        </TableCell>
-                        <TableCell>
-                          {target.cashback ? `Rp ${target.cashback.toLocaleString('id-ID')}` : '-'}
-                        </TableCell>
-                        <TableCell>{target.terminPembayaran || '-'}</TableCell>
-                        <TableCell>
-                          {target.statusInvoice ? (
-                            <Badge variant={target.statusInvoice === 'Terbit' ? 'default' : 'secondary'}>
-                              {target.statusInvoice}
-                            </Badge>
-                          ) : '-'}
-                        </TableCell>
-                        <TableCell>
-                          {target.statusPembayaran ? (
-                            <Badge variant={target.statusPembayaran === 'Lunas' ? 'default' : 'secondary'}>
-                              {target.statusPembayaran}
-                            </Badge>
-                          ) : '-'}
-                        </TableCell>
-                        <TableCell>
-                          {target.statusKomisi ? (
-                            <Badge variant="outline">
-                              {target.statusKomisi}
-                            </Badge>
-                          ) : '-'}
-                        </TableCell>
-                        <TableCell>{target.statusSertifikat || '-'}</TableCell>
-                        <TableCell>{formatTanggalKunjungan(target.tanggalKunjungan)}</TableCell>
-                        <TableCell>
-                          {target.statusKunjungan ? (
-                            <Badge
-                              variant="outline"
-                              className={getStatusKunjunganBadgeStyle(target.statusKunjungan)}
-                            >
-                              {target.statusKunjungan}
-                            </Badge>
-                          ) : '-'}
-                        </TableCell>
-                        <TableCell className="max-w-xs truncate" title={target.fotoBuktiKunjungan}>{target.fotoBuktiKunjungan || '-'}</TableCell>
-
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-
-                {/* Table Footer - Totals */}
-                <TableFooter>
-                  <TableRow className="bg-muted/50 font-semibold">
-                    <TableCell colSpan={canEdit ? 27 : 25} className="text-right">
-                      <span className="text-sm font-bold text-muted-foreground">TOTAL</span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <span className="text-sm font-bold text-blue-600">
-                        {sortedTargets.reduce((sum, t) => sum + (t.hargaKontrak || 0), 0).toLocaleString('id-ID')}
-                      </span>
-                    </TableCell>
-                    <TableCell colSpan={2}></TableCell>
-                    <TableCell className="text-right">
-                      <span className="text-sm font-bold text-purple-600">
-                        {sortedTargets.reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0).toLocaleString('id-ID')}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <span className="text-sm font-bold text-green-600">
-                        {sortedTargets.reduce((sum, t) => sum + (t.trimmingValue || 0), 0).toLocaleString('id-ID')}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <span className="text-sm font-bold text-red-600">
-                        {sortedTargets.reduce((sum, t) => sum + (t.lossValue || 0), 0).toLocaleString('id-ID')}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <span className="text-sm font-bold text-orange-600">
-                        {sortedTargets.reduce((sum, t) => sum + (t.cashback || 0), 0).toLocaleString('id-ID')}
-                      </span>
-                    </TableCell>
-                    <TableCell colSpan={canEdit ? 9 : 8}></TableCell>
-                  </TableRow>
-                </TableFooter>
-              </Table>
-            </div>
-
-            {/* Pagination */}
-            {sortedTargets.length > 0 && (
-              <div className="flex items-center justify-between px-6 py-4 border-t flex-wrap gap-4">
-                {/* Items per page selector */}
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Show</span>
-                  <select
-                    value={itemsPerPage}
-                    onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-                    className="border border-border rounded px-2 py-1 text-sm bg-background"
-                  >
-                    <option value={10}>10</option>
-                    <option value={25}>25</option>
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
-                  </select>
-                  <span className="text-sm text-muted-foreground">per page</span>
-                </div>
-
-                {/* Page info */}
-                <div className="text-sm text-muted-foreground">
-                  Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, sortedTargets.length)} of {sortedTargets.length} results
-                </div>
-
-                {/* Pagination controls */}
-                <div className="flex items-center gap-1">
-                  {/* First page */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(1)}
-                    disabled={currentPage === 1}
-                    className="w-9 p-0"
-                    title="First page"
-                  >
-                    ««
-                  </Button>
-
-                  {/* Previous page */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={currentPage === 1}
-                    className="w-9 p-0"
-                    title="Previous page"
-                  >
-                    ‹
-                  </Button>
-
-                  {/* Page numbers */}
-                  {(() => {
-                    const pages = [];
-                    const maxVisiblePages = 3;
-                    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-                    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-                    if (endPage - startPage + 1 < maxVisiblePages) {
-                      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-                    }
-
-                    for (let i = startPage; i <= endPage; i++) {
-                      pages.push(
-                        <Button
-                          key={i}
-                          variant={currentPage === i ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setCurrentPage(i)}
-                          className="w-9 p-0"
-                        >
-                          {i}
-                        </Button>
-                      );
-                    }
-
-                    return pages;
-                  })()}
-
-                  {/* Next page */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                    disabled={currentPage === totalPages}
-                    className="w-9 p-0"
-                    title="Next page"
-                  >
-                    ›
-                  </Button>
-
-                  {/* Last page */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(totalPages)}
-                    disabled={currentPage === totalPages}
-                    className="w-9 p-0"
-                    title="Last page"
-                  >
-                    »»
-                  </Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* CRM DataTable */}
+        <CrmDataTable
+          data={filteredTargets}
+          canEdit={canEdit}
+          onEdit={(target) => { setSelectedTarget(target); setIsEditDialogOpen(true); }}
+          onDelete={async (id) => {
+            await deleteTarget({ id: id as Id<"crmTargets"> });
+            toast.success('Data berhasil dihapus');
+          }}
+          onBulkDelete={handleBulkDelete}
+        />
       </div>
 
       {/* Edit Dialog - Optimized Component */}
@@ -3447,31 +2704,6 @@ export default function CrmDataManagementPage() {
           <div className="flex justify-end gap-2">
             <Button variant="outline" className='cursor-pointer' onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
             <Button variant="destructive" className='cursor-pointer' onClick={handleDelete}>Delete</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Bulk Delete Dialog */}
-      <Dialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Multiple CRM Targets</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete {selectedIds.size} item{selectedIds.size > 1 ? 's' : ''}? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" className='cursor-pointer' onClick={() => setIsBulkDeleteDialogOpen(false)} disabled={isBulkDeleting}>Cancel</Button>
-            <Button variant="destructive" className='cursor-pointer' onClick={handleBulkDelete} disabled={isBulkDeleting}>
-              {isBulkDeleting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Deleting...
-                </>
-              ) : (
-                <>Delete {selectedIds.size} Item{selectedIds.size > 1 ? 's' : ''}</>
-              )}
-            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -3811,17 +3043,6 @@ export default function CrmDataManagementPage() {
       {/* Mobile Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border lg:hidden">
         <div className="flex gap-1 p-2 overflow-x-auto snap-x hide-scrollbar">
-          {/* Search Tab */}
-          <button
-            onClick={() => setActiveFilterSheet(activeFilterSheet === 'search' ? null : 'search')}
-            className={`flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-colors min-w-[70px] snap-start shrink-0 ${
-              activeFilterSheet === 'search' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
-            }`}
-          >
-            <Search className="h-5 w-5 mb-1" />
-            <span className="text-[10px] font-medium">Search</span>
-          </button>
-
           {/* Date Filter Tab */}
           <button
             onClick={() => setActiveFilterSheet(activeFilterSheet === 'date' ? null : 'date')}
@@ -3936,58 +3157,7 @@ export default function CrmDataManagementPage() {
 
             {/* Filter Content */}
             <div className="p-4 space-y-4">
-              {/* Search Filter */}
-              {activeFilterSheet === 'search' && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-sm">Search</h3>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setActiveFilterSheet(null)}
-                      className="h-8 text-xs"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        ref={searchInputRef}
-                        placeholder="Search all fields..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            setActiveFilterSheet(null);
-                          }
-                        }}
-                      />
-                    </div>
-                    {searchTerm && (
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>Found: {sortedTargets.length} results</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSearchTerm('')}
-                          className="h-7 text-xs"
-                        >
-                          Clear
-                        </Button>
-                      </div>
-                    )}
-                    <Button
-                      onClick={() => setActiveFilterSheet(null)}
-                      className="w-full"
-                    >
-                      OK
-                    </Button>
-                  </div>
-                </div>
-              )}
+              {/* Search is now in the DataTable toolbar */}
 
               {/* Date Filter */}
               {activeFilterSheet === 'date' && (
