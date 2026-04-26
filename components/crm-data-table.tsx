@@ -89,6 +89,8 @@ import {
 } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Id } from "@/convex/_generated/dataModel";
+import { CrmTarget } from "@/lib/crm-types";
+import { CrmBulkEditDialog } from "@/components/crm-bulk-edit-dialog";
 
 // ── Module augmentation ──────────────────────────────────────────────────────
 declare module "@tanstack/react-table" {
@@ -101,52 +103,7 @@ declare module "@tanstack/react-table" {
 }
 
 // ── Types ────────────────────────────────────────────────────────────────────
-export interface CrmTarget {
-  _id: Id<"crmTargets">;
-  tahun?: string;
-  bulanExpDate: string;
-  produk: string;
-  picCrm: string;
-  sales: string;
-  namaAssociate: string;
-  directOrAssociate?: string;
-  grup?: string;
-  namaPerusahaan: string;
-  status: string;
-  alasan?: string;
-  category?: string;
-  kuadran?: string;
-  luarKota?: string;
-  provinsi: string;
-  kota: string;
-  alamat: string;
-  akreditasi?: string;
-  catAkre?: string;
-  eaCode?: string;
-  std?: string;
-  iaDate?: string;
-  bulanAuditSebelumnyaSustain?: string;
-  expDate?: string;
-  tahapAudit?: string;
-  hargaKontrak?: number;
-  bulanTtdNotif?: string;
-  bulanAudit?: string;
-  hargaTerupdate?: number;
-  trimmingValue?: number;
-  lossValue?: number;
-  cashback?: number;
-  terminPembayaran?: string;
-  statusInvoice?: string;
-  statusPembayaran?: string;
-  statusKomisi?: string;
-  statusSertifikat?: string;
-  tanggalKunjungan?: string;
-  statusKunjungan?: string;
-  catatanKunjungan?: string;
-  fotoBuktiKunjungan?: string;
-  createdAt: number;
-  updatedAt: number;
-}
+export type { CrmTarget } from "@/lib/crm-types";
 
 export interface CrmDataTableProps {
   data: CrmTarget[];
@@ -650,6 +607,7 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(columnVisibility));
@@ -975,6 +933,16 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
               </Button>
             )}
 
+            {/* Bulk edit */}
+            {canEdit && (
+              <Button variant="outline" size="sm"
+                className="h-8 gap-1.5 text-xs cursor-pointer border-purple-600 text-purple-700 hover:bg-purple-50"
+                onClick={() => setBulkEditOpen(true)}>
+                <IconRowInsertBottom className="h-3.5 w-3.5" />
+                Edit Cepat{selectedRowIds.length > 0 ? ` (${selectedRowIds.length})` : ` (${filteredRows.length})`}
+              </Button>
+            )}
+
             {/* Export */}
             <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs cursor-pointer border-green-600 text-green-600 hover:bg-green-50"
               onClick={handleExport}>
@@ -1218,6 +1186,18 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bulk edit dialog */}
+      <CrmBulkEditDialog
+        open={bulkEditOpen}
+        onOpenChange={setBulkEditOpen}
+        rows={
+          selectedRowIds.length > 0
+            ? filteredRows.filter(r => selectedRowIds.includes(r.id)).map(r => r.original)
+            : filteredRows.filter(r => !r.getIsGrouped()).map(r => r.original)
+        }
+        onSaved={() => setRowSelection({})}
+      />
     </div>
   );
 }

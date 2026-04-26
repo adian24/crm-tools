@@ -1,0 +1,48 @@
+import { Id } from "@/convex/_generated/dataModel";
+
+export interface CrmTarget {
+  _id: Id<"crmTargets">;
+  tahun?: string;
+  bulanExpDate: string;
+  produk: string;
+  picCrm: string;
+  sales: string;
+  namaAssociate: string;
+  directOrAssociate?: string;
+  grup?: string;
+  namaPerusahaan: string;
+  status: string;
+  alasan?: string;
+  category?: string;
+  kuadran?: string;
+  luarKota?: string;
+  provinsi: string;
+  kota: string;
+  alamat: string;
+  akreditasi?: string;
+  catAkre?: string;
+  eaCode?: string;
+  std?: string;
+  iaDate?: string;
+  bulanAuditSebelumnyaSustain?: string;
+  expDate?: string;
+  tahapAudit?: string;
+  hargaKontrak?: number;
+  bulanTtdNotif?: string;
+  bulanAudit?: string;
+  hargaTerupdate?: number;
+  trimmingValue?: number;
+  lossValue?: number;
+  cashback?: number;
+  terminPembayaran?: string;
+  statusInvoice?: string;
+  statusPembayaran?: string;
+  statusKomisi?: string;
+  statusSertifikat?: string;
+  tanggalKunjungan?: string;
+  statusKunjungan?: string;
+  catatanKunjungan?: string;
+  fotoBuktiKunjungan?: string;
+  createdAt: number;
+  updatedAt: number;
+}
