@@ -88,9 +88,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { CrmTarget } from "@/lib/crm-types";
 import { CrmBulkEditDialog } from "@/components/crm-bulk-edit-dialog";
+import { EditCrmDialog } from "@/components/crm-edit-dialog";
 
 // ── Module augmentation ──────────────────────────────────────────────────────
 declare module "@tanstack/react-table" {
@@ -190,13 +193,13 @@ const BASE_COLUMN_IDS = [
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function getStatusBadgeColor(s: string): string {
   switch ((s ?? "").toUpperCase()) {
-    case "PROSES": return "bg-blue-600 text-white border-blue-600";
-    case "LANJUT": return "bg-green-600 text-white border-green-600";
-    case "LOSS": return "bg-red-600 text-white border-red-600";
+    case "DONE":    return "bg-green-600 text-white border-green-600";
+    case "PROSES":  return "bg-blue-600 text-white border-blue-600";
+    case "LANJUT":  return "bg-blue-400 text-white border-blue-400";
+    case "LOSS":    return "bg-red-600 text-white border-red-600";
     case "SUSPEND": return "bg-orange-500 text-white border-orange-500";
-    case "WAITING": return "bg-gray-500 text-white border-gray-500";
-    case "DONE": return "bg-purple-600 text-white border-purple-600";
-    default: return "bg-gray-500 text-white border-gray-500";
+    case "WAITING": return "bg-gray-400 text-white border-gray-400";
+    default:        return "bg-gray-400 text-white border-gray-400";
   }
 }
 function getCategoryBadgeStyle(c: string): string {
@@ -603,8 +606,10 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
       return s ? JSON.parse(s) : DEFAULT_COLUMN_VISIBILITY;
     } catch { return DEFAULT_COLUMN_VISIBILITY; }
   });
-  const [drawerTarget, setDrawerTarget] = useState<CrmTarget | null>(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editDialogTarget, setEditDialogTarget] = useState<CrmTarget | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const allUsers = useQuery(api.auth.getAllUsers);
+  const staffUsers = allUsers?.filter((u: { role: string }) => u.role === "staff") ?? [];
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
@@ -667,11 +672,13 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
 
     const mkNum = (key: keyof CrmTarget, title: string, colorClass: string, size = 120): ColumnDef<CrmTarget> => ({
       accessorKey: key,
-      header: ({ column }) => <ColHead column={column} title={title} />,
-      cell: ({ getValue, row }) => row.getIsGrouped() ? null : fmtCurrency(getValue() as number | undefined),
+      header: ({ column }) => <div className="flex justify-end w-full"><ColHead column={column} title={title} /></div>,
+      cell: ({ getValue, row }) => row.getIsGrouped() ? null : (
+        <span className={`block text-right tabular-nums ${colorClass}`}>{fmtCurrency(getValue() as number | undefined)}</span>
+      ),
       aggregationFn: "sum",
       aggregatedCell: ({ getValue }) => (
-        <span className={`text-xs font-bold ${colorClass}`}>{fmtCurrency(getValue() as number | undefined)}</span>
+        <span className={`block text-right tabular-nums text-xs font-bold ${colorClass}`}>{fmtCurrency(getValue() as number | undefined)}</span>
       ),
       enableGrouping: false,
       enableColumnFilter: false,
@@ -692,13 +699,40 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
           return aVal - bVal;
         },
       }),
-      mkCol("produk", "Produk", undefined, { size: 75 }),
-      mkCol("picCrm", "PIC CRM", undefined, { size: 85 }),
+      mkCol("produk", "Produk", v => {
+        const val = String(v ?? "");
+        if (!val) return "-";
+        const style = val === "ISO"
+          ? "bg-blue-100 text-blue-700 border-blue-200"
+          : val === "SUSTAIN"
+          ? "bg-green-100 text-green-700 border-green-200"
+          : "bg-gray-100 text-gray-600 border-gray-200";
+        return <Badge variant="outline" className={`text-[10px] font-semibold ${style}`}>{val}</Badge>;
+      }, { size: 85 }),
+      mkCol("picCrm", "PIC CRM", v => {
+        const val = String(v ?? "");
+        if (!val) return "-";
+        const style = val === "DHA"
+          ? "bg-red-100 text-red-700 border-red-200"
+          : val === "MRC"
+          ? "bg-purple-100 text-purple-700 border-purple-200"
+          : "bg-gray-100 text-gray-600 border-gray-200";
+        return <Badge variant="outline" className={`text-[10px] font-semibold ${style}`}>{val}</Badge>;
+      }, { size: 75 }),
       mkCol("sales", "Sales", undefined, { size: 85 }),
       mkCol("namaAssociate", "Associate", v => (
         <span className="break-words leading-snug">{String(v ?? "-")}</span>
       ), { size: 150 }),
-      mkCol("directOrAssociate", "Direct/Assoc", undefined, { size: 105 }),
+      mkCol("directOrAssociate", "Direct/Assoc", v => {
+        const val = String(v ?? "");
+        if (!val) return "-";
+        const style = val === "Direct"
+          ? "bg-blue-100 text-blue-700 border-blue-200"
+          : val === "Associate"
+          ? "bg-orange-100 text-orange-700 border-orange-200"
+          : "bg-gray-100 text-gray-600 border-gray-200";
+        return <Badge variant="outline" className={`text-[10px] font-semibold ${style}`}>{val}</Badge>;
+      }, { size: 105 }),
       mkCol("grup", "Grup", undefined, { size: 90 }),
       mkCol("status", "Status", v => v ? (
         <Badge variant="outline" className={`text-[10px] ${getStatusBadgeColor(String(v))}`}>{String(v)}</Badge>
@@ -722,20 +756,62 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
         <span className="break-words leading-snug">{String(v ?? "") || "-"}</span>
       ), { enableColumnFilter: false, enableGrouping: false, size: 180 }),
       mkCol("akreditasi", "Akreditasi", undefined, { size: 90 }),
-      mkCol("catAkre", "Cat Akre", undefined, { size: 80 }),
+      mkCol("catAkre", "Cat Akre", v => {
+        const val = String(v ?? "");
+        if (!val) return "-";
+        const style = val === "KAN"
+          ? "bg-blue-100 text-blue-700 border-blue-200"
+          : val === "NON AKRE"
+          ? "bg-gray-100 text-gray-600 border-gray-200"
+          : val === "INTERNASIONAL"
+          ? "bg-orange-100 text-orange-700 border-orange-200"
+          : "bg-gray-100 text-gray-600 border-gray-200";
+        return <Badge variant="outline" className={`text-[10px] font-semibold ${style}`}>{val}</Badge>;
+      }, { size: 100 }),
       mkCol("eaCode", "EA Code", undefined, { size: 80 }),
-      mkCol("std", "STD", undefined, { size: 70 }),
+      mkCol("std", "STD", v => {
+        const val = String(v ?? "");
+        if (!val) return "-";
+        const STD_COLORS: Record<string, string> = {
+          "9001":        "bg-blue-100 text-blue-700 border-blue-200",
+          "14001":       "bg-green-100 text-green-700 border-green-200",
+          "27001":       "bg-purple-100 text-purple-700 border-purple-200",
+          "45001":       "bg-orange-100 text-orange-700 border-orange-200",
+          "22000":       "bg-teal-100 text-teal-700 border-teal-200",
+          "21000":       "bg-indigo-100 text-indigo-700 border-indigo-200",
+          "22301":       "bg-cyan-100 text-cyan-700 border-cyan-200",
+          "27701":       "bg-violet-100 text-violet-700 border-violet-200",
+          "37001":       "bg-rose-100 text-rose-700 border-rose-200",
+          "37301":       "bg-pink-100 text-pink-700 border-pink-200",
+          "20000-1":     "bg-sky-100 text-sky-700 border-sky-200",
+          "31000":       "bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200",
+          "13485":       "bg-amber-100 text-amber-700 border-amber-200",
+          "56001":       "bg-yellow-100 text-yellow-700 border-yellow-200",
+          "9994":        "bg-slate-200 text-slate-700 border-slate-300",
+          "SMK3":        "bg-red-100 text-red-700 border-red-200",
+          "ISPO":        "bg-emerald-100 text-emerald-700 border-emerald-200",
+          "ISCC":        "bg-lime-100 text-lime-700 border-lime-200",
+          "HACCP":       "bg-zinc-200 text-zinc-700 border-zinc-300",
+          "GMP":         "bg-orange-600 text-white border-orange-600",
+          "GDP":         "bg-amber-600 text-white border-amber-600",
+          "ISCC PLUS":   "bg-emerald-600 text-white border-emerald-600",
+          "ISCC EU":     "bg-lime-600 text-white border-lime-600",
+          "ISCC CORSIA": "bg-teal-600 text-white border-teal-600",
+        };
+        const style = STD_COLORS[val] ?? "bg-gray-100 text-gray-600 border-gray-200";
+        return <Badge variant="outline" className={`text-[10px] font-semibold ${style}`}>{val}</Badge>;
+      }, { size: 100 }),
       mkCol("iaDate", "IA Date", undefined, { size: 90 }),
       mkCol("bulanAuditSebelumnyaSustain", "Bln Audit Sblm", undefined, { size: 120 }),
       mkCol("expDate", "Exp Date", undefined, { size: 90 }),
       mkCol("tahapAudit", "Tahap Audit", undefined, { size: 100 }),
-      mkNum("hargaKontrak", "Harga Kontrak", "text-blue-600"),
+      mkNum("hargaKontrak", "Harga Kontrak", "text-blue-600", 180),
       mkCol("bulanTtdNotif", "Bulan TTD", v => fmtDateShort(String(v ?? "")), { size: 100 }),
       mkCol("bulanAudit", "Bulan Audit", undefined, { size: 100 }),
-      mkNum("hargaTerupdate", "Harga Update", "text-purple-600"),
-      mkNum("trimmingValue", "Trimming", "text-green-600"),
-      mkNum("lossValue", "Loss", "text-red-600"),
-      mkNum("cashback", "Cashback", "text-orange-600"),
+      mkNum("hargaTerupdate", "Harga Update", "text-purple-600", 180),
+      mkNum("trimmingValue", "Trimming", "text-green-600", 160),
+      mkNum("lossValue", "Loss", "text-red-600", 160),
+      mkNum("cashback", "Cashback", "text-orange-600", 160),
       mkCol("terminPembayaran", "Termin", undefined, { size: 100 }),
       mkCol("statusInvoice", "Status Invoice", v => v ? (
         <Badge variant={(v === "Terbit") ? "default" : "secondary"} className="text-[10px]">{String(v)}</Badge>
@@ -793,7 +869,7 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
     data,
     columns,
     filterFns: { multiSelect: multiSelectFilter },
-    state: { sorting, columnFilters, globalFilter, grouping, expanded, rowSelection, columnOrder, columnPinning, pagination, columnVisibility },
+    state: { sorting, columnFilters, globalFilter, grouping, expanded, rowSelection, columnOrder, columnPinning: isMobile ? {} : columnPinning, pagination, columnVisibility },
     autoResetExpanded: false,
     groupedColumnMode: false,
     enableRowSelection: row => !row.getIsGrouped(),
@@ -890,72 +966,100 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
     <div className="flex flex-col gap-2">
       {/* ── Toolbar ── */}
       <div className="flex flex-col gap-2 rounded-lg border bg-card px-3 py-2.5">
-        {/* Row 1: search + group by + actions */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Global search */}
-          <div className="relative min-w-[160px] max-w-[260px]">
+
+        {/* Row 1: search + actions */}
+        <div className="flex items-center gap-2">
+          {/* Search */}
+          <div className="relative flex-1 sm:flex-none sm:min-w-[160px] sm:max-w-[260px]">
             <IconSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               placeholder="Cari data..."
               value={globalFilter}
               onChange={e => setGlobalFilter(e.target.value)}
-              className="pl-8 h-8 text-xs"
+              className="pl-8 h-8 text-xs w-full"
             />
           </div>
 
-          {/* Group by — inline next to search */}
-          <GroupByBar grouping={grouping} onGroupingChange={applyGrouping} />
+          {/* Desktop: GroupBy inline */}
+          <div className="hidden sm:flex flex-1">
+            <GroupByBar grouping={grouping} onGroupingChange={applyGrouping} />
+          </div>
 
-          <div className="flex items-center gap-1.5 ml-auto flex-wrap">
-            {/* Counter */}
+          {/* Desktop: action buttons */}
+          <div className="hidden sm:flex items-center gap-1.5 ml-auto flex-wrap">
             <span className="text-xs text-muted-foreground whitespace-nowrap">
-              {selectedRowIds.length > 0 ? (
-                <span className="font-medium text-primary">{selectedRowIds.length} dipilih / </span>
-              ) : null}
+              {selectedRowIds.length > 0 && <span className="font-medium text-primary">{selectedRowIds.length} dipilih / </span>}
               {filteredRows.length} data
             </span>
-
-            {/* Reset filter */}
             {hasActiveFilters && (
               <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs cursor-pointer border-destructive text-destructive hover:bg-destructive/10"
                 onClick={() => { setColumnFilters([]); setGlobalFilter(""); }}>
-                <IconFilterOff className="h-3.5 w-3.5" />
-                Reset Filter
+                <IconFilterOff className="h-3.5 w-3.5" />Reset Filter
               </Button>
             )}
-
-            {/* Bulk delete */}
             {canEdit && selectedRowIds.length > 0 && (
               <Button variant="destructive" size="sm" className="h-8 gap-1.5 text-xs cursor-pointer"
                 onClick={() => setBulkDeleteOpen(true)}>
-                <IconTrash className="h-3.5 w-3.5" />
-                Hapus ({selectedRowIds.length})
+                <IconTrash className="h-3.5 w-3.5" />Hapus ({selectedRowIds.length})
               </Button>
             )}
-
-            {/* Bulk edit */}
             {canEdit && (
-              <Button variant="outline" size="sm"
-                className="h-8 gap-1.5 text-xs cursor-pointer border-purple-600 text-purple-700 hover:bg-purple-50"
+              <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs cursor-pointer border-purple-600 text-purple-700 hover:bg-purple-50"
                 onClick={() => setBulkEditOpen(true)}>
                 <IconRowInsertBottom className="h-3.5 w-3.5" />
                 Edit Cepat{selectedRowIds.length > 0 ? ` (${selectedRowIds.length})` : ` (${filteredRows.length})`}
               </Button>
             )}
-
-            {/* Export */}
             <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs cursor-pointer border-green-600 text-green-600 hover:bg-green-50"
               onClick={handleExport}>
-              <IconDownload className="h-3.5 w-3.5" />
-              Export
+              <IconDownload className="h-3.5 w-3.5" />Export
             </Button>
-
-            {/* Columns visibility */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs cursor-pointer">
+                  <IconLayoutColumns className="h-3.5 w-3.5" />Columns
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52 z-50" onCloseAutoFocus={e => e.preventDefault()}>
+                <DropdownMenuLabel className="text-xs">Toggle Kolom</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <div className="px-2 py-1">
+                  <ScrollArea className="h-72">
+                    <ColVisibilityPanel table={table} />
+                  </ScrollArea>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Mobile: icon-only action buttons */}
+          <div className="flex sm:hidden items-center gap-1 ml-auto">
+            {hasActiveFilters && (
+              <Button variant="outline" size="icon" className="h-8 w-8 cursor-pointer border-destructive text-destructive hover:bg-destructive/10"
+                title="Reset Filter" onClick={() => { setColumnFilters([]); setGlobalFilter(""); }}>
+                <IconFilterOff className="h-3.5 w-3.5" />
+              </Button>
+            )}
+            {canEdit && selectedRowIds.length > 0 && (
+              <Button variant="destructive" size="icon" className="h-8 w-8 cursor-pointer"
+                title={`Hapus (${selectedRowIds.length})`} onClick={() => setBulkDeleteOpen(true)}>
+                <IconTrash className="h-3.5 w-3.5" />
+              </Button>
+            )}
+            {canEdit && (
+              <Button variant="outline" size="icon" className="h-8 w-8 cursor-pointer border-purple-600 text-purple-700 hover:bg-purple-50"
+                title="Edit Cepat" onClick={() => setBulkEditOpen(true)}>
+                <IconRowInsertBottom className="h-3.5 w-3.5" />
+              </Button>
+            )}
+            <Button variant="outline" size="icon" className="h-8 w-8 cursor-pointer border-green-600 text-green-600 hover:bg-green-50"
+              title="Export" onClick={handleExport}>
+              <IconDownload className="h-3.5 w-3.5" />
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" className="h-8 w-8 cursor-pointer" title="Kolom">
                   <IconLayoutColumns className="h-3.5 w-3.5" />
-                  Columns
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52 z-50" onCloseAutoFocus={e => e.preventDefault()}>
@@ -971,17 +1075,21 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
           </div>
         </div>
 
+        {/* Row 2 (mobile only): GroupBy + counter */}
+        <div className="flex sm:hidden items-center justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <GroupByBar grouping={grouping} onGroupingChange={applyGrouping} />
+          </div>
+          <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
+            {selectedRowIds.length > 0 && <span className="font-medium text-primary">{selectedRowIds.length} / </span>}
+            {filteredRows.length} data
+          </span>
+        </div>
+
       </div>
 
-      {/* ── Table or Mobile Cards ── */}
-      {isMobile ? (
-        <div>
-          <MobileCardList
-            rows={table.getRowModel().rows}
-            onRowClick={t => { setDrawerTarget(t); setDrawerOpen(true); }}
-          />
-        </div>
-      ) : (
+      {/* ── Table ── */}
+      {(
         <div className="rounded-lg border overflow-auto max-h-[calc(100vh-300px)]">
             <table className="text-xs caption-bottom border-separate border-spacing-0" style={{ tableLayout: "fixed", width: "max-content", minWidth: "100%" }}>
               <thead style={{ position: "sticky", top: 0, zIndex: 10 }}>
@@ -994,7 +1102,7 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
                         <th
                           key={header.id}
                           style={{ ...pinStyle, width: header.getSize() }}
-                          className={`py-2 px-3 text-[11px] font-semibold text-white bg-purple-700 text-left align-middle border-b border-purple-600 ${isPinned === "left" && header.column.id === "namaPerusahaan" ? "border-r border-purple-500" : ""}`}
+                          className={`py-2 px-3 text-[11px] font-semibold text-white bg-purple-700 text-left align-middle border-b border-purple-600 ${isPinned === "left" ? "border-r border-purple-500" : ""}`}
                         >
                           {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                         </th>
@@ -1028,7 +1136,7 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
                         `}
                         onClick={() => {
                           if (isGrouped) { row.getToggleExpandedHandler()(); }
-                          else { setDrawerTarget(row.original); setDrawerOpen(true); }
+                          else { setEditDialogTarget(row.original); setEditDialogOpen(true); }
                         }}
                       >
                         {row.getVisibleCells().map(cell => {
@@ -1040,13 +1148,13 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
                           if (cell.getIsGrouped()) {
                             return (
                               <td key={cell.id} style={{ ...getPinStyles(cell.column), width: cell.column.getSize() }}
-                                className={`py-2 px-3 align-top ${pinBg} ${pinBorder} ${isLastLeftPin ? "border-r" : ""}`}>
-                                <div className="flex items-center gap-2">
-                                  <span className="pointer-events-none">
+                                className={`py-2 px-3 align-top overflow-hidden ${pinBg} ${pinBorder} ${isPinned === "left" ? "border-r border-gray-200" : ""}`}>
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                  <span className="pointer-events-none flex-shrink-0">
                                     {row.getIsExpanded() ? <IconChevronDown className="h-3.5 w-3.5" /> : <IconChevronRight className="h-3.5 w-3.5" />}
                                   </span>
-                                  <span className="font-medium text-purple-900">{String(cell.getValue() ?? "") || "-"}</span>
-                                  <span className="inline-flex items-center justify-center rounded-full bg-purple-700 text-white text-[10px] font-semibold h-5 min-w-5 px-1.5">{row.subRows.length}</span>
+                                  <span className="inline-flex flex-shrink-0 items-center justify-center rounded-full bg-purple-700 text-white text-[10px] font-semibold h-5 min-w-5 px-1.5">{row.subRows.length}</span>
+                                  <span className="font-medium text-purple-900 truncate">{String(cell.getValue() ?? "") || "-"}</span>
                                 </div>
                               </td>
                             );
@@ -1054,7 +1162,7 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
                           if (cell.getIsAggregated()) {
                             return (
                               <td key={cell.id} style={{ ...getPinStyles(cell.column), width: cell.column.getSize() }}
-                                className={`py-2 px-3 align-top text-right ${pinBg} ${pinBorder}`}>
+                                className={`py-2 px-3 align-top text-right ${pinBg} ${pinBorder} ${isPinned === "left" ? "border-r border-gray-200" : ""}`}>
                                 {flexRender(cell.column.columnDef.aggregatedCell ?? cell.column.columnDef.cell, cell.getContext())}
                               </td>
                             );
@@ -1062,14 +1170,14 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
                           if (cell.getIsPlaceholder()) {
                             return (
                               <td key={cell.id} style={{ ...getPinStyles(cell.column), width: cell.column.getSize() }}
-                                className={`py-2 px-3 align-top ${pinBg} ${pinBorder} ${isLastLeftPin ? "border-r" : ""}`}>
+                                className={`py-2 px-3 align-top ${pinBg} ${pinBorder} ${isPinned === "left" ? "border-r border-gray-200" : ""}`}>
                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
                               </td>
                             );
                           }
                           return (
                             <td key={cell.id} style={{ ...getPinStyles(cell.column), width: cell.column.getSize() }}
-                              className={`py-2 px-3 align-top border-b border-gray-200 ${pinBg} ${isLastLeftPin ? "border-r" : ""}`}>
+                              className={`py-2 px-3 align-top border-b border-gray-200 ${pinBg} ${isPinned === "left" ? "border-r border-gray-200" : ""}`}>
                               {flexRender(cell.column.columnDef.cell, cell.getContext())}
                             </td>
                           );
@@ -1093,7 +1201,7 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
                       if (column.id === "namaPerusahaan") {
                         return (
                           <td key={column.id} style={{ ...getPinStyles(column), width: column.getSize() }}
-                            className={`py-2 px-3 bg-muted/80 ${isLastLeftPin ? "border-r" : ""}`}>
+                            className={`py-2 px-3 bg-muted/80 ${isPinned === "left" ? "border-r border-gray-200" : ""}`}>
                             <span className="text-[10px] font-bold text-muted-foreground">Total ({filteredRows.length} data)</span>
                           </td>
                         );
@@ -1102,7 +1210,7 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
                         const val = totals[column.id as keyof typeof totals];
                         return (
                           <td key={column.id} style={{ width: column.getSize() }} className="py-2 px-3 text-right">
-                            <span className={`text-[10px] font-bold ${colorClass}`}>{fmtCurrency(val)}</span>
+                            <span className={`text-xs font-bold tabular-nums ${colorClass}`}>{fmtCurrency(val)}</span>
                           </td>
                         );
                       }
@@ -1115,7 +1223,6 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
             </table>
         </div>
       )}
-
       {/* ── Pagination ── */}
       <div className="flex flex-wrap items-center justify-between gap-3 px-1 py-1">
         <div className="flex items-center gap-2">
@@ -1159,14 +1266,13 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
         </div>
       </div>
 
-      {/* ── Detail Drawer ── */}
-      <DetailDrawer
-        target={drawerTarget}
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        onEdit={onEdit}
-        canEdit={canEdit}
-        isMobile={isMobile}
+      {/* ── Edit Dialog ── */}
+      <EditCrmDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        target={editDialogTarget}
+        staffUsers={staffUsers}
+        onSuccess={() => {}}
       />
 
       {/* ── Bulk Delete Dialog ── */}
