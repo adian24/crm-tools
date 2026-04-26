@@ -1192,6 +1192,7 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
                     const isGrouped = row.getIsGrouped();
                     const isSelected = row.getIsSelected();
                     const isEven = rowIdx % 2 === 0;
+
                     return (
                       <tr
                         key={row.id}
@@ -1212,13 +1213,13 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
                           if (cell.getIsGrouped()) {
                             return (
                               <td key={cell.id} style={{ ...getPinStyles(cell.column), width: cell.column.getSize() }}
-                                className={`py-2 px-3 align-top overflow-hidden ${pinBg} ${pinBorder} ${isPinned === "left" ? "border-r border-gray-200" : ""}`}>
-                                <div className="flex items-center gap-1.5 min-w-0">
-                                  <span className="pointer-events-none flex-shrink-0">
+                                className={`py-2 px-3 align-top ${pinBg} ${pinBorder} ${isPinned === "left" ? "border-r border-gray-200" : ""}`}>
+                                <div className="flex items-start gap-1.5">
+                                  <span className="pointer-events-none flex-shrink-0 mt-0.5">
                                     {row.getIsExpanded() ? <IconChevronDown className="h-3.5 w-3.5" /> : <IconChevronRight className="h-3.5 w-3.5" />}
                                   </span>
-                                  <span className="inline-flex flex-shrink-0 items-center justify-center rounded-full bg-purple-700 text-white text-[10px] font-semibold h-5 min-w-5 px-1.5">{row.subRows.length}</span>
-                                  <span className="font-medium text-purple-900 truncate">{String(cell.getValue() ?? "") || "-"}</span>
+                                  <span className="inline-flex flex-shrink-0 items-center justify-center rounded-full bg-purple-700 text-white text-[10px] font-semibold h-5 min-w-5 px-1.5 mt-0.5">{row.subRows.length}</span>
+                                  <span className="font-medium text-purple-900 break-words whitespace-normal leading-snug">{String(cell.getValue() ?? "") || "-"}</span>
                                 </div>
                               </td>
                             );
