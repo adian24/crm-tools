@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Pencil, Trash2, Upload, Download, Search, Filter, X, Save, FileSpreadsheet, ChevronDown, ChevronRight, Calendar, CalendarClock, Building, MapPin, Shield, Clock, FileClock } from 'lucide-react';
+import { Plus, Pencil, Trash2, Upload, Download, Search, Filter, X, Save, FileSpreadsheet, ChevronDown, ChevronRight, Calendar, CalendarClock, Building, MapPin, Shield, Clock, FileClock, Database } from 'lucide-react';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { getCurrentUser } from '@/lib/auth';
@@ -691,6 +691,7 @@ export default function CrmDataManagementPage() {
 
   // Mobile filter sheet state
   const [activeFilterSheet, setActiveFilterSheet] = useState<string | null>(null);
+  const [statsOpen, setStatsOpen] = useState(false);
   // Fetch CRM targets and user permissions
   const crmTargets = useQuery(api.crmTargets.getCrmTargets);
   const allUsers = useQuery(api.auth.getAllUsers);
@@ -1928,33 +1929,34 @@ export default function CrmDataManagementPage() {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl sm:text-3xl font-bold">CRM Data Management</h1>
-              {currentUser?.role === 'staff' && !canEdit && (
-                <>
-                  <Badge variant="secondary" className="bg-amber-100 text-amber-700 border-amber-300">
-                    👁️ View Only Mode
+          <div className="flex items-center gap-4">
+            {/* Icon block */}
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-purple-700 shadow-md">
+              <Database className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-purple-700 to-purple-400 bg-clip-text text-transparent">
+                  CRM Data Management
+                </h1>
+                {currentUser?.role === 'staff' && !canEdit && (
+                  <Badge variant="secondary" className="bg-amber-100 text-amber-700 border-amber-300 text-[10px]">
+                    👁️ View Only
                   </Badge>
-                  <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-300">
+                )}
+                {currentUser?.role === 'staff' && (
+                  <Badge variant="secondary" className="bg-purple-100 text-purple-700 border-purple-300 text-[10px]">
                     PIC: {currentUser.name}
                   </Badge>
-                </>
-              )}
-              {currentUser?.role === 'staff' && canEdit && (
-                <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-300">
-                  PIC: {currentUser.name}
-                </Badge>
-              )}
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {currentUser?.role === 'staff'
+                  ? `Menampilkan ${filteredTargets.length} dari ${filteredCrmTargets.length} data milik ${currentUser.name}`
+                  : `${filteredTargets.length} dari ${filteredCrmTargets.length} data ditampilkan`
+                }
+              </p>
             </div>
-            <p className="text-muted-foreground mt-1">
-              {currentUser?.role === 'staff'
-                ? !canEdit
-                  ? `Menampilkan ${filteredTargets.length} dari ${filteredCrmTargets.length} data milik ${currentUser.name} (View Only)`
-                  : `Menampilkan ${filteredTargets.length} dari ${filteredCrmTargets.length} data milik ${currentUser.name}`
-                : `${filteredTargets.length} records found`
-              }
-            </p>
           </div>
           {canEdit && (
             <div className="flex gap-2">
@@ -1963,11 +1965,11 @@ export default function CrmDataManagementPage() {
                 size="sm"
                 asChild
                 disabled={isImporting}
-                className="border-blue-600 text-blue-600 hover:bg-blue-50 hover:border-blue-700 hover:text-blue-700"
+                className="h-9 gap-1.5 text-xs border-blue-600 text-blue-600 hover:bg-blue-50 hover:border-blue-700 hover:text-blue-700"
               >
                 <label htmlFor="excel-upload" className={`cursor-pointer ${isImporting ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                  <Upload className="h-4 w-4 mr-2" />
-                  {isImporting ? '...' : 'Import'}
+                  <Upload className="h-4 w-4" />
+                  {isImporting ? 'Importing...' : 'Import'}
                   <input
                     id="excel-upload"
                     type="file"
@@ -1978,16 +1980,29 @@ export default function CrmDataManagementPage() {
                   />
                 </label>
               </Button>
-              <Button onClick={() => setShowExcelFormModal(true)} size="sm" disabled={isImporting} className='h-7 text-xs bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 cursor-pointer'>
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Add
+              <Button onClick={() => setShowExcelFormModal(true)} size="sm" disabled={isImporting} className="h-9 gap-1.5 text-xs bg-purple-700 hover:bg-purple-800 cursor-pointer">
+                <Plus className="h-4 w-4" />
+                Tambah Data
               </Button>
             </div>
           )}
         </div>
 
-        {/* Statistics Cards - Desktop only (mobile has accordion version) */}
-        <div className="hidden lg:grid lg:grid-cols-2 lg:gap-2">
+        {/* Statistics Cards - collapsible accordion */}
+        <div className="rounded-lg border bg-card overflow-hidden">
+          <button
+            onClick={() => setStatsOpen(o => !o)}
+            className="cursor-pointer w-full flex items-center justify-between px-4 py-3 text-sm font-medium hover:bg-muted/50 transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              <span>📊</span>
+              <span>Statistik & Filter Cepat ( Click here )</span>
+            </span>
+            <svg className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${statsOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+          </button>
+          {statsOpen && (
+          <div className="border-t px-4 py-3">
+        <div className="lg:grid lg:grid-cols-2 lg:gap-2 pb-2">
           {/* Desktop Statistics - Full Layout */}
           <div className="lg:contents">
             {/* Main Metrics */}
@@ -2403,6 +2418,9 @@ export default function CrmDataManagementPage() {
               </div>
             </div>
           </div>
+        </div>
+          </div>
+          )}
         </div>
 
         {/* View-Only Mode Banner */}

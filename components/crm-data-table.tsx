@@ -1067,11 +1067,12 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
                           const isPinned = cell.column.getIsPinned();
                           const isLastLeftPin = isPinned === "left" && cell.column.id === "namaPerusahaan";
                           const pinBg = isPinned ? (isSelected ? "bg-purple-100" : isGrouped ? "bg-purple-50" : "bg-white") : "";
+                          const pinBorder = "border-b border-gray-200";
 
                           if (cell.getIsGrouped()) {
                             return (
                               <td key={cell.id} style={{ ...getPinStyles(cell.column), width: cell.column.getSize() }}
-                                className={`py-2 px-3 align-top ${pinBg} ${isLastLeftPin ? "border-r" : ""}`}>
+                                className={`py-2 px-3 align-top ${pinBg} ${pinBorder} ${isLastLeftPin ? "border-r" : ""}`}>
                                 <div className="flex items-center gap-2">
                                   <span className="pointer-events-none">
                                     {row.getIsExpanded() ? <IconChevronDown className="h-3.5 w-3.5" /> : <IconChevronRight className="h-3.5 w-3.5" />}
@@ -1085,7 +1086,7 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
                           if (cell.getIsAggregated()) {
                             return (
                               <td key={cell.id} style={{ ...getPinStyles(cell.column), width: cell.column.getSize() }}
-                                className={`py-2 px-3 align-top text-right ${pinBg}`}>
+                                className={`py-2 px-3 align-top text-right ${pinBg} ${pinBorder}`}>
                                 {flexRender(cell.column.columnDef.aggregatedCell ?? cell.column.columnDef.cell, cell.getContext())}
                               </td>
                             );
@@ -1093,14 +1094,14 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
                           if (cell.getIsPlaceholder()) {
                             return (
                               <td key={cell.id} style={{ ...getPinStyles(cell.column), width: cell.column.getSize() }}
-                                className={`py-2 px-3 align-top ${pinBg} ${isLastLeftPin ? "border-r" : ""}`}>
+                                className={`py-2 px-3 align-top ${pinBg} ${pinBorder} ${isLastLeftPin ? "border-r" : ""}`}>
                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
                               </td>
                             );
                           }
                           return (
                             <td key={cell.id} style={{ ...getPinStyles(cell.column), width: cell.column.getSize() }}
-                              className={`py-2 px-3 align-top ${pinBg} ${isLastLeftPin ? "border-r" : ""}`}>
+                              className={`py-2 px-3 align-top border-b border-gray-200 ${pinBg} ${isLastLeftPin ? "border-r" : ""}`}>
                               {flexRender(cell.column.columnDef.cell, cell.getContext())}
                             </td>
                           );
