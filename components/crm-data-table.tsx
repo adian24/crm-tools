@@ -116,6 +116,7 @@ export type { CrmTarget } from "@/lib/crm-types";
 export interface CrmDataTableProps {
   data: CrmTarget[];
   canEdit?: boolean;
+  showExport?: boolean;
   onEdit?: (target: CrmTarget) => void;
   onDelete?: (id: string) => Promise<void>;
   onBulkDelete?: (ids: string[]) => Promise<void>;
@@ -589,7 +590,7 @@ function ColVisibilityPanel({ table }: { table: ReturnType<typeof useReactTable<
 }
 
 // ── CrmDataTable (main) ───────────────────────────────────────────────────────
-export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDelete, onFilteredRowsChange }: CrmDataTableProps) {
+export function CrmDataTable({ data, canEdit = false, showExport = true, onEdit, onDelete, onBulkDelete, onFilteredRowsChange }: CrmDataTableProps) {
   const isMobile = useIsMobile();
 
   // State
@@ -1055,10 +1056,12 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
                 Bulk Edit{selectedRowIds.length > 0 ? ` (${selectedRowIds.length})` : ` (${filteredRows.length})`}
               </Button>
             )}
-            <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs cursor-pointer border-green-600 text-green-600 hover:bg-green-50"
-              onClick={handleExport}>
-              <IconDownload className="h-3.5 w-3.5" />Export
-            </Button>
+            {showExport && (
+              <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs cursor-pointer border-green-600 text-green-600 hover:bg-green-50"
+                onClick={handleExport}>
+                <IconDownload className="h-3.5 w-3.5" />Export
+              </Button>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs cursor-pointer">
@@ -1097,10 +1100,12 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
                 <IconRowInsertBottom className="h-3.5 w-3.5" />
               </Button>
             )}
-            <Button variant="outline" size="icon" className="h-8 w-8 cursor-pointer border-green-600 text-green-600 hover:bg-green-50"
-              title="Export" onClick={handleExport}>
-              <IconDownload className="h-3.5 w-3.5" />
-            </Button>
+            {showExport && (
+              <Button variant="outline" size="icon" className="h-8 w-8 cursor-pointer border-green-600 text-green-600 hover:bg-green-50"
+                title="Export" onClick={handleExport}>
+                <IconDownload className="h-3.5 w-3.5" />
+              </Button>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon" className="h-8 w-8 cursor-pointer" title="Kolom">
