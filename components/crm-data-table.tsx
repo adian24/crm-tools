@@ -43,6 +43,7 @@ import {
   IconTrash,
   IconX,
   IconPlus,
+  IconCalendar,
 } from "@tabler/icons-react";
 import * as XLSX from "xlsx";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -88,6 +89,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Calendar } from "@/components/ui/calendar";
+import { type DateRange } from "react-day-picker";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -613,6 +618,7 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
 
   useEffect(() => {
@@ -865,9 +871,21 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
     ];
   }, [canEdit]);
 
+  // Date range pre-filter
+  const dateFilteredData = useMemo(() => {
+    if (!dateRange?.from && !dateRange?.to) return data;
+    const from = dateRange.from ? new Date(dateRange.from).setHours(0, 0, 0, 0) : null;
+    const to = dateRange.to ? new Date(dateRange.to).setHours(23, 59, 59, 999) : null;
+    return data.filter(row => {
+      if (from && row.createdAt < from) return false;
+      if (to && row.createdAt > to) return false;
+      return true;
+    });
+  }, [data, dateRange]);
+
   // Table instance
   const table = useReactTable({
-    data,
+    data: dateFilteredData,
     columns,
     filterFns: { multiSelect: multiSelectFilter },
     state: { sorting, columnFilters, globalFilter, grouping, expanded, rowSelection, columnOrder, columnPinning: isMobile ? {} : columnPinning, pagination, columnVisibility },
@@ -900,7 +918,7 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
   // Derived
   const filteredRows = table.getFilteredRowModel().rows;
   const selectedRowIds = Object.keys(rowSelection).filter(k => rowSelection[k]);
-  const hasActiveFilters = columnFilters.length > 0 || globalFilter;
+  const hasActiveFilters = columnFilters.length > 0 || !!globalFilter || !!dateRange?.from || !!dateRange?.to;
 
   useEffect(() => { onFilteredRowsChange?.(filteredRows.length); }, [filteredRows.length, onFilteredRowsChange]);
 
@@ -981,9 +999,35 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
             />
           </div>
 
-          {/* Desktop: GroupBy inline */}
-          <div className="hidden sm:flex flex-1">
+          {/* Desktop: GroupBy + date filter inline */}
+          <div className="hidden sm:flex flex-1 items-center gap-2">
             <GroupByBar grouping={grouping} onGroupingChange={applyGrouping} />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={`h-8 gap-1.5 text-xs cursor-pointer justify-start whitespace-nowrap transition-all ${
+                  dateRange?.from
+                    ? "bg-purple-600 hover:bg-purple-700 text-white border-purple-600 shadow-sm"
+                    : "bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200 text-purple-700 hover:from-purple-100 hover:to-blue-100 hover:border-purple-400"
+                }`}>
+                  <IconCalendar className="h-3.5 w-3.5 flex-shrink-0" />
+                  {dateRange?.from
+                    ? dateRange.to
+                      ? `${format(dateRange.from, "d MMM yyyy", { locale: localeId })} – ${format(dateRange.to, "d MMM yyyy", { locale: localeId })}`
+                      : `Dari ${format(dateRange.from, "d MMM yyyy", { locale: localeId })}`
+                    : "Cek Data Baru Ditambahkan"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="range" selected={dateRange} onSelect={setDateRange} captionLayout="dropdown" numberOfMonths={2} initialFocus />
+              </PopoverContent>
+            </Popover>
+            {dateRange?.from && (
+              <button onClick={() => setDateRange(undefined)}
+                className="flex items-center justify-center h-6 w-6 rounded-full bg-purple-100 text-purple-600 hover:bg-red-100 hover:text-red-600 cursor-pointer transition-colors"
+                title="Hapus filter tanggal">
+                <IconX className="h-3 w-3" />
+              </button>
+            )}
           </div>
 
           {/* Desktop: action buttons */}
@@ -994,7 +1038,7 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
             </span>
             {hasActiveFilters && (
               <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs cursor-pointer border-destructive text-destructive hover:bg-destructive/10"
-                onClick={() => { setColumnFilters([]); setGlobalFilter(""); }}>
+                onClick={() => { setColumnFilters([]); setGlobalFilter(""); setDateRange(undefined); }}>
                 <IconFilterOff className="h-3.5 w-3.5" />Reset Filter
               </Button>
             )}
@@ -1005,10 +1049,10 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
               </Button>
             )}
             {canEdit && (
-              <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs cursor-pointer border-purple-600 text-purple-700 hover:bg-purple-50"
+              <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs cursor-pointer border-purple-600 text-purple-700 hover:bg-purple-50" title="Filter data yang diinginkan dahulu, lalu klik Bulk Edit.."
                 onClick={() => setBulkEditOpen(true)}>
                 <IconRowInsertBottom className="h-3.5 w-3.5" />
-                Edit Cepat{selectedRowIds.length > 0 ? ` (${selectedRowIds.length})` : ` (${filteredRows.length})`}
+                Bulk Edit{selectedRowIds.length > 0 ? ` (${selectedRowIds.length})` : ` (${filteredRows.length})`}
               </Button>
             )}
             <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs cursor-pointer border-green-600 text-green-600 hover:bg-green-50"
@@ -1037,7 +1081,7 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
           <div className="flex sm:hidden items-center gap-1 ml-auto">
             {hasActiveFilters && (
               <Button variant="outline" size="icon" className="h-8 w-8 cursor-pointer border-destructive text-destructive hover:bg-destructive/10"
-                title="Reset Filter" onClick={() => { setColumnFilters([]); setGlobalFilter(""); }}>
+                title="Reset Filter" onClick={() => { setColumnFilters([]); setGlobalFilter(""); setDateRange(undefined); }}>
                 <IconFilterOff className="h-3.5 w-3.5" />
               </Button>
             )}
@@ -1076,11 +1120,30 @@ export function CrmDataTable({ data, canEdit = false, onEdit, onDelete, onBulkDe
           </div>
         </div>
 
-        {/* Row 2 (mobile only): GroupBy + counter */}
-        <div className="flex sm:hidden items-center justify-between gap-2">
+        {/* Row 2 (mobile only): GroupBy + date filter + counter */}
+        <div className="flex sm:hidden items-center gap-2">
           <div className="flex-1 min-w-0">
             <GroupByBar grouping={grouping} onGroupingChange={applyGrouping} />
           </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="icon" className={`h-8 w-8 flex-shrink-0 cursor-pointer transition-all ${
+                dateRange?.from
+                  ? "bg-purple-600 hover:bg-purple-700 text-white border-purple-600"
+                  : "bg-gradient-to-br from-purple-50 to-blue-50 border-purple-200 text-purple-600 hover:border-purple-400"
+              }`} title="Filter tanggal">
+                <IconCalendar className="h-3.5 w-3.5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar mode="range" selected={dateRange} onSelect={setDateRange} captionLayout="dropdown" numberOfMonths={1} initialFocus />
+            </PopoverContent>
+          </Popover>
+          {dateRange?.from && (
+            <button onClick={() => setDateRange(undefined)} className="text-muted-foreground hover:text-destructive cursor-pointer flex-shrink-0" title="Hapus filter tanggal">
+              <IconX className="h-3.5 w-3.5" />
+            </button>
+          )}
           <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
             {selectedRowIds.length > 0 && <span className="font-medium text-primary">{selectedRowIds.length} / </span>}
             {filteredRows.length} data
