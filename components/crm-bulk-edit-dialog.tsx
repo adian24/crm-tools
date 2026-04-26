@@ -270,52 +270,53 @@ export function CrmBulkEditDialog({ open, onOpenChange, rows, onSaved }: CrmBulk
 
   const colDefs = useMemo<ColDef[]>(() => [
     // ── Identitas ──────────────────────────────────────────────────────────
-    { key:"status",            header:"Status",           width:100, type:"combobox", options:STATUS_OPTIONS },
+    { key:"tahun",             header:"Tahun",            width:70,  type:"text" },
+    { key:"bulanExpDate",      header:"Bulan Exp",        width:110, type:"combobox", options:MONTHS },
+    { key:"produk",            header:"Produk",           width:100, type:"text" },
     { key:"picCrm",            header:"PIC CRM",          width:80,  type:"combobox", options:PIC_CRM_OPTIONS },
     { key:"sales",             header:"Sales",            width:130, type:"combobox", options:salesOptions },
-    { key:"produk",            header:"Produk",           width:100, type:"text" },
     { key:"namaAssociate",     header:"Associate",        width:140, type:"combobox", options:associateOptions },
     { key:"directOrAssociate", header:"Direct/Assoc",     width:100, type:"combobox", options:DIRECT_ASSOC_OPTIONS },
     { key:"grup",              header:"Grup",             width:90,  type:"text" },
+    // ── Status ────────────────────────────────────────────────────────────
+    { key:"status",            header:"Status",           width:100, type:"combobox", options:STATUS_OPTIONS },
+    { key:"alasan",            header:"Alasan",           width:160, type:"combobox", options:alasanOptions },
+    { key:"catatanKunjungan",  header:"Catatan",          width:180, type:"text" },
     // ── Kategori ──────────────────────────────────────────────────────────
     { key:"category",          header:"Category",         width:90,  type:"combobox", options:CATEGORY_OPTIONS },
     { key:"kuadran",           header:"Kuadran",          width:80,  type:"combobox", options:kuadranOptions },
-    { key:"alasan",            header:"Alasan",           width:160, type:"combobox", options:alasanOptions },
     // ── Lokasi ────────────────────────────────────────────────────────────
     { key:"luarKota",          header:"Luar Kota",        width:100, type:"combobox", options:LUAR_KOTA_OPTIONS },
     { key:"provinsi",          header:"Provinsi",         width:130, type:"combobox", options:provinsiOptions },
     { key:"kota",              header:"Kota",             width:130, type:"combobox", options:allKotaOptions },
     { key:"alamat",            header:"Alamat",           width:180, type:"text" },
-    // ── Standar & Akreditasi ───────────────────────────────────────────────
+    // ── Standar & Akreditasi ──────────────────────────────────────────────
     { key:"akreditasi",        header:"Akreditasi",       width:100, type:"combobox", options:akreditasiOptions },
     { key:"catAkre",           header:"Cat Akre",         width:90,  type:"text" },
     { key:"eaCode",            header:"EA Code",          width:80,  type:"combobox", options:eaCodeOptions },
-    { key:"std",               header:"Standar",          width:90,  type:"combobox", options:stdOptions },
-    // ── Tanggal & Bulan ───────────────────────────────────────────────────
-    { key:"bulanExpDate",      header:"Bulan Exp",        width:110, type:"combobox", options:MONTHS },
-    { key:"tahun",             header:"Tahun",            width:70,  type:"text" },
-    { key:"tahapAudit",        header:"Tahap Audit",      width:120, type:"combobox", options:tahapanOptions },
+    { key:"std",               header:"STD",              width:90,  type:"combobox", options:stdOptions },
+    // ── Tanggal & Audit ───────────────────────────────────────────────────
     { key:"iaDate",            header:"IA Date",          width:110, type:"text" },
     { key:"bulanAuditSebelumnyaSustain", header:"Bulan Audit Sblm", width:130, type:"combobox", options:MONTHS },
     { key:"expDate",           header:"Exp Date",         width:110, type:"text" },
-    { key:"bulanTtdNotif",     header:"Bulan TTD Notif",  width:120, type:"combobox", options:MONTHS },
-    { key:"bulanAudit",        header:"Bulan Audit",      width:110, type:"text" },
-    { key:"tanggalKunjungan",  header:"Tgl Kunjungan",    width:120, type:"text" },
+    { key:"tahapAudit",        header:"Tahap Audit",      width:120, type:"combobox", options:tahapanOptions },
     // ── Keuangan ──────────────────────────────────────────────────────────
     { key:"hargaKontrak",      header:"Harga Kontrak",    width:140, type:"number", isCurrency:true },
+    { key:"bulanTtdNotif",     header:"Bulan TTD",        width:110, type:"combobox", options:MONTHS },
+    { key:"bulanAudit",        header:"Bulan Audit",      width:110, type:"text" },
     { key:"hargaTerupdate",    header:"Harga Terupdate",  width:140, type:"number", isCurrency:true },
     { key:"trimmingValue",     header:"Trimming",         width:120, type:"calc" },
     { key:"lossValue",         header:"Loss",             width:120, type:"calc" },
     { key:"cashback",          header:"Cashback",         width:120, type:"number", isCurrency:true },
     { key:"terminPembayaran",  header:"Termin",           width:120, type:"combobox", options:TERMIN_OPTIONS },
-    // ── Status Pembayaran ─────────────────────────────────────────────────
-    { key:"statusInvoice",     header:"Invoice",          width:100, type:"combobox", options:STATUS_INVOICE_OPTIONS },
-    { key:"statusPembayaran",  header:"Pembayaran",       width:110, type:"combobox", options:STATUS_PEMBAYARAN_OPTIONS },
-    { key:"statusKomisi",      header:"Komisi",           width:130, type:"combobox", options:STATUS_KOMISI_OPTIONS },
-    { key:"statusSertifikat",  header:"Sertifikat",       width:100, type:"combobox", options:STATUS_SERTIFIKAT_OPTIONS },
+    // ── Status Transaksi ──────────────────────────────────────────────────
+    { key:"statusInvoice",     header:"Status Invoice",   width:110, type:"combobox", options:STATUS_INVOICE_OPTIONS },
+    { key:"statusPembayaran",  header:"Status Pembayaran",width:130, type:"combobox", options:STATUS_PEMBAYARAN_OPTIONS },
+    { key:"statusKomisi",      header:"Status Komisi",    width:130, type:"combobox", options:STATUS_KOMISI_OPTIONS },
+    { key:"statusSertifikat",  header:"Status Sertifikat",width:120, type:"combobox", options:STATUS_SERTIFIKAT_OPTIONS },
     // ── Kunjungan ─────────────────────────────────────────────────────────
+    { key:"tanggalKunjungan",  header:"Tgl Kunjungan",    width:120, type:"text" },
     { key:"statusKunjungan",   header:"Status Kunjungan", width:120, type:"combobox", options:STATUS_KUNJUNGAN_OPTIONS },
-    { key:"catatanKunjungan",  header:"Catatan Kunjungan",width:180, type:"text" },
   ], [salesOptions, associateOptions, tahapanOptions, kuadranOptions, alasanOptions,
       akreditasiOptions, eaCodeOptions, stdOptions, provinsiOptions, allKotaOptions]);
 
@@ -372,6 +373,28 @@ export function CrmBulkEditDialog({ open, onOpenChange, rows, onSaved }: CrmBulk
   const isDirtyRow = useCallback((rowId: string) =>
     Object.keys(edits[rowId] ?? {}).length > 0, [edits]);
 
+  const isRequiredError = useCallback((row: CrmTarget, field: EditableField): boolean => {
+    const status = getValue(row, "status");
+    const val    = getValue(row, field);
+    if (!val) {
+      if (field === "bulanTtdNotif"  && status === "DONE") return true;
+      if (field === "hargaTerupdate" && status === "DONE") return true;
+      if (field === "statusKomisi"   && status === "DONE") return true;
+      if (field === "alasan" && (status === "SUSPEND" || status === "LOSS")) return true;
+    }
+    return false;
+  }, [getValue]);
+
+  const hasRequiredErrors = useMemo(
+    () => localRows.some(row =>
+      isRequiredError(row, "bulanTtdNotif")  ||
+      isRequiredError(row, "hargaTerupdate") ||
+      isRequiredError(row, "statusKomisi")   ||
+      isRequiredError(row, "alasan")
+    ),
+    [localRows, isRequiredError],
+  );
+
   const setCellValue = useCallback((rowId: string, field: EditableField, value: string) => {
     setEdits(prev => ({ ...prev, [rowId]: { ...(prev[rowId] ?? {}), [field]: value } }));
   }, []);
@@ -388,6 +411,39 @@ export function CrmBulkEditDialog({ open, onOpenChange, rows, onSaved }: CrmBulk
   // ── Save ───────────────────────────────────────────────────────────────────
   const handleSave = async () => {
     if (dirtyCount === 0) return;
+
+    // Validate all dirty rows before saving
+    const errors: string[] = [];
+    for (const rowId of dirtyRowIds) {
+      const row = localRows.find(r => r._id === rowId);
+      if (!row) continue;
+      const status         = getValue(row, "status");
+      const bulanTtdNotif  = getValue(row, "bulanTtdNotif");
+      const hargaTerupdate = getValue(row, "hargaTerupdate");
+      const statusKomisi   = getValue(row, "statusKomisi");
+      const alasan         = getValue(row, "alasan");
+      const name           = row.namaPerusahaan;
+
+      if (status === "DONE" && !bulanTtdNotif)
+        errors.push(`${name}: Bulan TTD Notif wajib diisi (status DONE)`);
+      if (status === "DONE" && !hargaTerupdate)
+        errors.push(`${name}: Harga Terupdate wajib diisi (status DONE)`);
+      if (status === "DONE" && !statusKomisi)
+        errors.push(`${name}: Status Komisi wajib diisi (status DONE)`);
+      if ((status === "SUSPEND" || status === "LOSS") && !alasan)
+        errors.push(`${name}: Alasan wajib diisi (status ${status})`);
+    }
+
+    if (errors.length > 0) {
+      toast.error(`Validasi gagal — ${errors.length} error`, {
+        description: errors.slice(0, 3).join(" · ") + (errors.length > 3 ? ` +${errors.length - 3} lainnya` : ""),
+        duration: 6000,
+        style: { background: "#dc2626", color: "#ffffff", border: "1px solid #b91c1c" },
+        descriptionClassName: "!text-red-100",
+      });
+      return;
+    }
+
     setSaving(true);
     let ok = 0, fail = 0;
 
@@ -500,16 +556,28 @@ export function CrmBulkEditDialog({ open, onOpenChange, rows, onSaved }: CrmBulk
                   Nama Perusahaan
                 </th>
                 {/* Editable + calc columns */}
-                {colDefs.map(col => (
-                  <th key={col.key} style={{ width: col.width }}
-                    className={cn(
-                      "bg-purple-700 text-white text-[10px] font-semibold px-2 py-2 text-left border-b border-purple-600 border-r border-purple-800/20 whitespace-nowrap",
-                      col.type === "calc" && "bg-purple-800/80",
-                    )}>
-                    {col.header}
-                    {col.type === "calc" && <span className="ml-1 text-purple-300 text-[9px]">auto</span>}
-                  </th>
-                ))}
+                {colDefs.map(col => {
+                  const conditionalLabel =
+                    col.key === "bulanTtdNotif"  ? "wajib jika DONE" :
+                    col.key === "hargaTerupdate" ? "wajib jika DONE" :
+                    col.key === "statusKomisi"   ? "wajib jika DONE" :
+                    col.key === "alasan"         ? "wajib jika SUSPEND/LOSS" : null;
+                  return (
+                    <th key={col.key} style={{ width: col.width }}
+                      className={cn(
+                        "bg-purple-700 text-white text-[10px] font-semibold px-2 py-2 text-left border-b border-purple-600 border-r border-purple-800/20 whitespace-nowrap",
+                        col.type === "calc" && "bg-purple-800/80",
+                      )}>
+                      <span className="flex items-center gap-1">
+                        {col.header}
+                        {conditionalLabel && (
+                          <span className="text-red-300 text-[9px] font-normal italic" title={conditionalLabel}>*</span>
+                        )}
+                        {col.type === "calc" && <span className="text-purple-300 text-[9px]">auto</span>}
+                      </span>
+                    </th>
+                  );
+                })}
                 {/* Actions */}
                 <th style={{ width:68 }}
                   className="bg-purple-700 text-white text-[10px] font-semibold px-2 py-2 text-center border-b border-purple-600 whitespace-nowrap">
@@ -561,13 +629,17 @@ export function CrmBulkEditDialog({ open, onOpenChange, rows, onSaved }: CrmBulk
                       const field     = col.key as EditableField;
                       const val       = getValue(row, field);
                       const cellDirty = isDirtyCell(row._id, field);
+                      const reqError  = isRequiredError(row, field);
                       const refKey    = `${rowIdx}-${colIdx}`;
 
                       return (
                         <td key={col.key} style={{ width: col.width }}
                           className={cn(
-                            "border-b border-r border-gray-200 p-0 h-8 focus-within:ring-1 focus-within:ring-purple-400 focus-within:ring-inset",
-                            cellDirty && "bg-amber-50",
+                            "border-b border-r border-gray-200 p-0 h-8 focus-within:ring-1 focus-within:ring-inset",
+                            reqError
+                              ? "bg-red-50 border-red-500 ring-1 ring-inset ring-red-500 focus-within:ring-red-600"
+                              : "focus-within:ring-purple-400",
+                            cellDirty && !reqError && "bg-amber-50",
                           )}>
                           {col.type === "combobox" ? (
                             <CellCombobox
@@ -643,8 +715,12 @@ export function CrmBulkEditDialog({ open, onOpenChange, rows, onSaved }: CrmBulk
               onClick={() => onOpenChange(false)} disabled={saving}>
               Batal
             </Button>
-            <Button size="sm" className="h-8 text-xs bg-purple-700 hover:bg-purple-800 gap-1.5"
-              onClick={handleSave} disabled={dirtyCount === 0 || saving}>
+            <Button size="sm"
+              className="h-8 text-xs bg-purple-700 hover:bg-purple-800 gap-1.5"
+              onClick={handleSave}
+              disabled={dirtyCount === 0 || saving || hasRequiredErrors}
+              title={hasRequiredErrors ? "Masih ada kolom wajib yang belum diisi (ditandai merah)" : undefined}
+            >
               {saving
                 ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 : <Save className="h-3.5 w-3.5" />
