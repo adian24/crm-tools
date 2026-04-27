@@ -28,6 +28,7 @@ import { ChartCardStandarDistribution } from '@/components/chart-card-standar-di
 import { ChartCardEaCodeDistribution } from '@/components/chart-card-ea-code-distribution';
 import { ChartCardTr } from '@/components/chart-card-tr';
 import { ChartCardParetoAlasan } from '@/components/chart-card-pareto-alasan';
+import { TrenBulananChart } from '@/components/TrenBulananChart';
 import { InfinityLoader } from '@/components/ui/infinity-loader';
 import { DashboardSkeleton } from '@/components/dashboard-skeleton';
 import { AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip, Legend, LabelList } from 'recharts';
@@ -5081,6 +5082,12 @@ export default function CrmDataManagementPage() {
           </CardContent>
         </Card>
 
+
+        {/* Tren Penjualan Bulanan 2024-2026 */}
+        <TrenBulananChart
+          crmData={filteredTargets}
+          kategoriProduk={filterKategoriProduk !== 'SEMUA' ? filterKategoriProduk : undefined}
+        />
 
         {/* Table */}
         <CrmDataTable data={filteredTargets as CrmTarget[]} canEdit={false} showExport={false} />

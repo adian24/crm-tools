@@ -29,6 +29,7 @@ import {
   IconReport,
   IconChartPie,
   IconUserCheck,
+  IconClipboardData,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -84,6 +85,7 @@ const getNavigationItems = (role: string) => {
       { title: "Isu & Kendala",                 url: "/dashboard-manager/isu-kendala",                    icon: IconAlertTriangle },
       { title: "Catatan Tambahan",              url: "/dashboard-manager/catatan-tambahan",               icon: IconNotes },
       { title: "CRM Data Management",           url: "/dashboard-manager/crm-data",                       icon: IconTarget },
+      { title: "Data Historis 2024-2025",       url: "/dashboard-manager/monthly-input",                  icon: IconClipboardData },
       { title: "Kontak",                        url: "/dashboard-manager/kontak",                         icon: IconAddressBook },
       {
         title: "Master Data",
@@ -110,6 +112,7 @@ const getNavigationItems = (role: string) => {
     { title: "Isu & Kendala",                 url: "/dashboard-manager/isu-kendala",                    icon: IconAlertTriangle },
     { title: "Catatan Tambahan",              url: "/dashboard-manager/catatan-tambahan",               icon: IconNotes },
     { title: "CRM Data Management",           url: "/dashboard-manager/crm-data",                       icon: IconTarget },
+    { title: "Data Historis 2024-2025",       url: "/dashboard-manager/monthly-input",                  icon: IconClipboardData },
     { title: "Kontak",                        url: "/dashboard-manager/kontak",                         icon: IconAddressBook },
     {
       title: "Master Data",

@@ -543,6 +543,24 @@ export default defineSchema({
     .index("by_month_year", ["month", "year"])
     .index("by_year", ["year"]),
 
+  // Table Monthly Summary (historis penjualan 2024/2025, manual input)
+  monthly_summary: defineTable({
+    tahun: v.number(),
+    bulan: v.union(
+      v.literal("Januari"), v.literal("Februari"), v.literal("Maret"),
+      v.literal("April"), v.literal("Mei"), v.literal("Juni"),
+      v.literal("Juli"), v.literal("Agustus"), v.literal("September"),
+      v.literal("Oktober"), v.literal("November"), v.literal("Desember")
+    ),
+    kategori_produk: v.string(),
+    nilai_bersih: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_tahun", ["tahun"])
+    .index("by_tahun_bulan", ["tahun", "bulan"])
+    .index("by_tahun_bulan_kategori", ["tahun", "bulan", "kategori_produk"]),
+
   // Table Catatan Tambahan
   catatanTambahan: defineTable({
     judul: v.string(), // Judul catatan
