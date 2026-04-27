@@ -234,6 +234,35 @@ function getStatusKunjunganBadgeStyle(s: string | undefined): string {
 function fmtCurrency(v: number | undefined): string {
   return v ? `Rp ${v.toLocaleString("id-ID")}` : "-";
 }
+const MONTH_FULL = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+const MONTH_SHORT_MAP: Record<string, number> = {
+  jan: 0, feb: 1, mar: 2, apr: 3, mei: 4, jun: 5,
+  jul: 6, agu: 7, sep: 8, okt: 9, nov: 10, des: 11,
+};
+const MONTH_FULL_ORDER: Record<string, number> = Object.fromEntries(
+  MONTH_FULL.map((m, i) => [m.toLowerCase(), i + 1])
+);
+
+function extractMonthYear(ds: string | undefined): string {
+  if (!ds?.trim() || ds.trim() === "-") return "-";
+  const c = ds.trim();
+  const n = parseFloat(c);
+  if (!isNaN(n) && n > 10000) {
+    const d = new Date(new Date(1900, 0, 1).getTime() + (n - 2) * 86400000);
+    return `${MONTH_FULL[d.getMonth()]} ${d.getFullYear()}`;
+  }
+  const m1 = c.match(/^(\d{4})-?(\d{2})-?(\d{2})$/);
+  if (m1) return `${MONTH_FULL[parseInt(m1[2]) - 1]} ${m1[1]}`;
+  const m2 = c.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (m2) return `${MONTH_FULL[parseInt(m2[2]) - 1]} ${m2[3]}`;
+  const m3 = c.match(/^\d{1,2}\s+(\w+)$/);
+  if (m3) {
+    const idx = MONTH_SHORT_MAP[m3[1].toLowerCase().substring(0, 3)];
+    if (idx !== undefined) return MONTH_FULL[idx];
+  }
+  return c;
+}
+
 function fmtDateShort(ds: string | undefined): string {
   if (!ds?.trim() || ds.trim() === "-") return "-";
   const months = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
@@ -640,13 +669,12 @@ export function CrmDataTable({ data, canEdit = false, showExport = true, onEdit,
   // Apply grouping: reorder + pin + show grouped cols
   const applyGrouping = useCallback((newGrouping: GroupingState) => {
     setGrouping(newGrouping);
-    // Auto-sort bulanExpDate by month order when grouped by it
+    // Auto-sort bulanExpDate / bulanTtdNotif by month order when grouped by them
     setSorting(prev => {
-      const withoutBulan = prev.filter(s => s.id !== "bulanExpDate");
-      if (newGrouping.includes("bulanExpDate")) {
-        return [{ id: "bulanExpDate", desc: false }, ...withoutBulan];
-      }
-      return withoutBulan;
+      const MONTH_COLS = ["bulanExpDate", "bulanTtdNotif", "bulanAudit", "tanggalKunjungan", "iaDate", "bulanAuditSebelumnyaSustain", "expDate"];
+      let next = prev.filter(s => !MONTH_COLS.includes(s.id));
+      const monthGrouped = MONTH_COLS.filter(id => newGrouping.includes(id));
+      return [...monthGrouped.map(id => ({ id, desc: false })), ...next];
     });
     if (newGrouping.length === 0) {
       setColumnPinning(canEdit ? DEFAULT_COLUMN_PINNING : { left: ["no", "namaPerusahaan"] });
@@ -820,13 +848,83 @@ export function CrmDataTable({ data, canEdit = false, showExport = true, onEdit,
         const style = STD_COLORS[val] ?? "bg-gray-100 text-gray-600 border-gray-200";
         return <Badge variant="outline" className={`text-[10px] font-semibold ${style}`}>{val}</Badge>;
       }, { size: 100 }),
-      mkCol("iaDate", "IA Date", undefined, { size: 90 }),
-      mkCol("bulanAuditSebelumnyaSustain", "Bln Audit Sblm", undefined, { size: 120 }),
-      mkCol("expDate", "Exp Date", undefined, { size: 90 }),
+      mkCol("iaDate", "IA Date", v => fmtDateShort(String(v ?? "")), {
+        size: 90,
+        getGroupingValue: (row: CrmTarget) => extractMonthYear(row.iaDate),
+        sortingFn: (a, b, colId) => {
+          const parseOrder = (val: string) => {
+            const parts = String(val ?? "").trim().split(" ");
+            const monthOrder = MONTH_FULL_ORDER[parts[0].toLowerCase()] ?? 99;
+            const year = parts.length > 1 ? parseInt(parts[1]) || 0 : 0;
+            return year * 100 + monthOrder;
+          };
+          const aVal = String(a.getGroupingValue(colId) ?? extractMonthYear(String(a.getValue(colId) ?? "")));
+          const bVal = String(b.getGroupingValue(colId) ?? extractMonthYear(String(b.getValue(colId) ?? "")));
+          return parseOrder(aVal) - parseOrder(bVal);
+        },
+      }),
+      mkCol("bulanAuditSebelumnyaSustain", "Bln Audit Sblm", v => fmtDateShort(String(v ?? "")), {
+        size: 120,
+        getGroupingValue: (row: CrmTarget) => extractMonthYear(row.bulanAuditSebelumnyaSustain),
+        sortingFn: (a, b, colId) => {
+          const parseOrder = (val: string) => {
+            const parts = String(val ?? "").trim().split(" ");
+            const monthOrder = MONTH_FULL_ORDER[parts[0].toLowerCase()] ?? 99;
+            const year = parts.length > 1 ? parseInt(parts[1]) || 0 : 0;
+            return year * 100 + monthOrder;
+          };
+          const aVal = String(a.getGroupingValue(colId) ?? extractMonthYear(String(a.getValue(colId) ?? "")));
+          const bVal = String(b.getGroupingValue(colId) ?? extractMonthYear(String(b.getValue(colId) ?? "")));
+          return parseOrder(aVal) - parseOrder(bVal);
+        },
+      }),
+      mkCol("expDate", "Exp Date", v => fmtDateShort(String(v ?? "")), {
+        size: 90,
+        getGroupingValue: (row: CrmTarget) => extractMonthYear(row.expDate),
+        sortingFn: (a, b, colId) => {
+          const parseOrder = (val: string) => {
+            const parts = String(val ?? "").trim().split(" ");
+            const monthOrder = MONTH_FULL_ORDER[parts[0].toLowerCase()] ?? 99;
+            const year = parts.length > 1 ? parseInt(parts[1]) || 0 : 0;
+            return year * 100 + monthOrder;
+          };
+          const aVal = String(a.getGroupingValue(colId) ?? extractMonthYear(String(a.getValue(colId) ?? "")));
+          const bVal = String(b.getGroupingValue(colId) ?? extractMonthYear(String(b.getValue(colId) ?? "")));
+          return parseOrder(aVal) - parseOrder(bVal);
+        },
+      }),
       mkCol("tahapAudit", "Tahap Audit", undefined, { size: 100 }),
       mkNum("hargaKontrak", "Harga Kontrak", "text-blue-600", 180),
-      mkCol("bulanTtdNotif", "Bulan TTD", v => fmtDateShort(String(v ?? "")), { size: 100 }),
-      mkCol("bulanAudit", "Bulan Audit", undefined, { size: 100 }),
+      mkCol("bulanTtdNotif", "Bulan TTD", v => fmtDateShort(String(v ?? "")), {
+        size: 100,
+        getGroupingValue: (row: CrmTarget) => extractMonthYear(row.bulanTtdNotif),
+        sortingFn: (a, b, colId) => {
+          const parseOrder = (val: string) => {
+            const parts = String(val ?? "").trim().split(" ");
+            const monthOrder = MONTH_FULL_ORDER[parts[0].toLowerCase()] ?? 99;
+            const year = parts.length > 1 ? parseInt(parts[1]) || 0 : 0;
+            return year * 100 + monthOrder;
+          };
+          const aVal = String(a.getGroupingValue(colId) ?? extractMonthYear(String(a.getValue(colId) ?? "")));
+          const bVal = String(b.getGroupingValue(colId) ?? extractMonthYear(String(b.getValue(colId) ?? "")));
+          return parseOrder(aVal) - parseOrder(bVal);
+        },
+      }),
+      mkCol("bulanAudit", "Bulan Audit", v => fmtDateShort(String(v ?? "")), {
+        size: 100,
+        getGroupingValue: (row: CrmTarget) => extractMonthYear(row.bulanAudit),
+        sortingFn: (a, b, colId) => {
+          const parseOrder = (val: string) => {
+            const parts = String(val ?? "").trim().split(" ");
+            const monthOrder = MONTH_FULL_ORDER[parts[0].toLowerCase()] ?? 99;
+            const year = parts.length > 1 ? parseInt(parts[1]) || 0 : 0;
+            return year * 100 + monthOrder;
+          };
+          const aVal = String(a.getGroupingValue(colId) ?? extractMonthYear(String(a.getValue(colId) ?? "")));
+          const bVal = String(b.getGroupingValue(colId) ?? extractMonthYear(String(b.getValue(colId) ?? "")));
+          return parseOrder(aVal) - parseOrder(bVal);
+        },
+      }),
       mkNum("hargaTerupdate", "Harga Update", "text-purple-600", 180),
       mkNum("trimmingValue", "Trimming", "text-green-600", 160),
       mkNum("lossValue", "Loss", "text-red-600", 160),
@@ -842,7 +940,21 @@ export function CrmDataTable({ data, canEdit = false, showExport = true, onEdit,
         <Badge variant="outline" className="text-[10px]">{String(v)}</Badge>
       ) : "-", { size: 110 }),
       mkCol("statusSertifikat", "Status Sertifikat", undefined, { size: 120 }),
-      mkCol("tanggalKunjungan", "Tgl Kunjungan", v => fmtDateFull(String(v ?? "")), { size: 110 }),
+      mkCol("tanggalKunjungan", "Tgl Kunjungan", v => fmtDateFull(String(v ?? "")), {
+        size: 110,
+        getGroupingValue: (row: CrmTarget) => extractMonthYear(row.tanggalKunjungan),
+        sortingFn: (a, b, colId) => {
+          const parseOrder = (val: string) => {
+            const parts = String(val ?? "").trim().split(" ");
+            const monthOrder = MONTH_FULL_ORDER[parts[0].toLowerCase()] ?? 99;
+            const year = parts.length > 1 ? parseInt(parts[1]) || 0 : 0;
+            return year * 100 + monthOrder;
+          };
+          const aVal = String(a.getGroupingValue(colId) ?? extractMonthYear(String(a.getValue(colId) ?? "")));
+          const bVal = String(b.getGroupingValue(colId) ?? extractMonthYear(String(b.getValue(colId) ?? "")));
+          return parseOrder(aVal) - parseOrder(bVal);
+        },
+      }),
       mkCol("statusKunjungan", "Status Kunjungan", v => v ? (
         <Badge variant="outline" className={`text-[10px] ${getStatusKunjunganBadgeStyle(String(v))}`}>{String(v)}</Badge>
       ) : "-", { size: 120 }),
@@ -1235,8 +1347,8 @@ export function CrmDataTable({ data, canEdit = false, showExport = true, onEdit,
                                   <span className="pointer-events-none flex-shrink-0 mt-0.5">
                                     {row.getIsExpanded() ? <IconChevronDown className="h-3.5 w-3.5" /> : <IconChevronRight className="h-3.5 w-3.5" />}
                                   </span>
+                                  <span className="font-medium text-purple-900 break-words whitespace-normal leading-snug">{String(row.getGroupingValue(cell.column.id) ?? cell.getValue() ?? "") || "-"}</span>
                                   <span className="inline-flex flex-shrink-0 items-center justify-center rounded-full bg-purple-700 text-white text-[10px] font-semibold h-5 min-w-5 px-1.5 mt-0.5">{row.subRows.length}</span>
-                                  <span className="font-medium text-purple-900 break-words whitespace-normal leading-snug">{String(cell.getValue() ?? "") || "-"}</span>
                                 </div>
                               </td>
                             );
