@@ -192,10 +192,10 @@ export function TrenBulananChart({ crmData, kategoriProduk }: TrenBulananChartPr
           <div className="mt-5 overflow-x-auto rounded-lg border border-gray-100">
             <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="text-left font-semibold text-gray-500 px-3 py-2 w-20 sticky left-0 bg-gray-50">Tahun</th>
+                <tr className="bg-purple-50 border-b border-purple-200">
+                  <th className="text-left font-semibold text-purple-700 px-3 py-2 w-20 sticky left-0 bg-purple-50">Tahun</th>
                   {BULAN_SHORT.map(b => (
-                    <th key={b} className="text-right font-semibold text-gray-500 px-3 py-2 min-w-[110px]">{b}</th>
+                    <th key={b} className="text-right font-semibold text-purple-700 px-3 py-2 min-w-[110px]">{b}</th>
                   ))}
                 </tr>
               </thead>

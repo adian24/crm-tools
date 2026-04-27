@@ -247,14 +247,14 @@ export default function MonthlyInputPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-gray-50">
-                  <th className="text-left py-2.5 px-3 font-semibold text-gray-600 w-36">Bulan</th>
-                  {KATEGORI_LIST.map(k => (
-                    <th key={k} className="text-right py-2.5 px-3 font-semibold text-gray-600 min-w-[200px]">
+                <tr className="bg-purple-700 text-white">
+                  <th className="text-center py-3 px-3 font-semibold text-sm w-36 rounded-tl-lg">Bulan</th>
+                  {KATEGORI_LIST.map((k, i) => (
+                    <th key={k} className="text-center py-3 px-3 font-semibold text-sm min-w-[200px]">
                       {k}
                     </th>
                   ))}
-                  <th className="w-28" />
+                  <th className="text-center py-3 px-3 font-semibold text-sm w-28 rounded-tr-lg">Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -263,7 +263,7 @@ export default function MonthlyInputPage() {
                   const rowSaved  = isRowSaved(bulan);
                   return (
                     <tr key={bulan} className="border-b hover:bg-gray-50/50">
-                      <td className="py-2 px-3 font-medium text-gray-700">{bulan}</td>
+                      <td className="py-2 px-3 font-medium text-gray-700 text-center">{bulan}</td>
                       {KATEGORI_LIST.map(k => {
                         const key: Key = `${tahun}-${bulan}-${k}`;
                         return (
@@ -273,7 +273,7 @@ export default function MonthlyInputPage() {
                                 value={values[key] ?? ""}
                                 onChange={e => handleChange(key, e.target.value)}
                                 placeholder="0"
-                                className={`text-right pr-8 h-8 text-sm ${saved[key] ? "border-emerald-400" : ""}`}
+                                className={`text-center pr-8 h-8 text-sm ${saved[key] ? "border-emerald-400" : ""}`}
                               />
                               {saved[key] && (
                                 <CheckCircle2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
@@ -282,7 +282,7 @@ export default function MonthlyInputPage() {
                           </td>
                         );
                       })}
-                      <td className="py-1.5 px-2">
+                      <td className="py-1.5 px-2 text-center">
                         <Button
                           size="sm"
                           variant={rowSaved ? "outline" : "default"}
