@@ -712,8 +712,7 @@ const MassUpdateKunjunganDialog = React.memo(({
     <ImagePreviewDialog
       open={previewImageOpen}
       onOpenChange={setPreviewImageOpen}
-      imageUrl={previewImageUrl}
-      alt="Bukti Kunjungan"
+      images={previewImageUrl ? [{ url: previewImageUrl }] : []}
     />
     </>
   );

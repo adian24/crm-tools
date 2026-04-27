@@ -94,8 +94,9 @@ export default function IsuKendalaPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [mobileFilterOpen, setMobileFilterOpen] = useState<'search' | 'date' | null>(null);
-  const [imageModalOpen, setImageModalOpen] = useState(false);
-  const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
+  const [previewImageOpen, setPreviewImageOpen] = useState(false);
+  const [previewImages, setPreviewImages] = useState<{ url: string; title?: string; description?: string }[]>([]);
+  const [previewImageIndex, setPreviewImageIndex] = useState(0);
 
   // Generate year options (current year - 2 to current year + 5)
   const currentYear = new Date().getFullYear();
@@ -189,9 +190,18 @@ export default function IsuKendalaPage() {
     setViewDetailOpen(true);
   };
 
-  const handleImageClick = (imgSrc: string) => {
-    setCurrentImageUrl(imgSrc);
-    setImageModalOpen(true);
+  const handleImageClick = (isu: IsuKendala, imgSrc: string) => {
+    const allImages = isu.points.flatMap((p) =>
+      (p.images || []).map((img) => ({
+        url: img,
+        title: isu.title,
+        description: p.text,
+      }))
+    );
+    const idx = allImages.findIndex((i) => i.url === imgSrc);
+    setPreviewImages(allImages);
+    setPreviewImageIndex(idx >= 0 ? idx : 0);
+    setPreviewImageOpen(true);
   };
 
   const getPriorityColor = (priority: string) => {
@@ -230,96 +240,66 @@ export default function IsuKendalaPage() {
 
   return (
     <>
-      <div className="flex-1 space-y-4 sm:space-y-6 p-4 sm:p-8 pt-6 pb-20 sm:pb-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">Isu Kendala</h2>
-            <p className="text-sm sm:text-base text-muted-foreground">
-              Catat dan kelola isu atau kendala yang terjadi per bulan
-            </p>
-          </div>
-          <div className="hidden sm:flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <Button
-              onClick={() => setViewMode(viewMode === "grid" ? "table" : "grid")}
-              variant="outline"
-              className="cursor-pointer border-slate-200 dark:border-slate-700 w-full sm:w-auto"
-            >
-              {viewMode === "grid" ? (
-                <>
-                  <TableIcon className="mr-2 h-4 w-4" />
-                  Table View
-                </>
-              ) : (
-                <>
-                  <LayoutGrid className="mr-2 h-4 w-4" />
-                  Grid View
-                </>
-              )}
-            </Button>
-            <Button
-              onClick={handleAdd}
-              className="cursor-pointer bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg w-full sm:w-auto"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Tambah Isu
-            </Button>
-          </div>
-        </div>
-
-        {/* Filters - Desktop */}
-        <Card className="hidden sm:block p-4 sm:p-6 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950 border-slate-200 dark:border-slate-800">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                Bulan
-              </Label>
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-30 px-4 sm:px-8 pt-3 pb-2">
+        <div className="bg-white/95 backdrop-blur-sm border border-slate-200 rounded-xl px-4 py-3 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex-shrink-0">
+              <h2 className="text-xl font-bold text-slate-900">Isu Kendala</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Catat dan kelola isu atau kendala yang terjadi per bulan</p>
+            </div>
+            <div className="hidden sm:flex items-center gap-2 ml-auto flex-wrap">
               <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
-                <SelectTrigger className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500">
-                  <SelectValue placeholder="Pilih bulan" />
+                <SelectTrigger className="h-9 w-36 text-xs font-semibold border-2 border-purple-400 bg-purple-50 text-purple-700 focus:ring-purple-400 rounded-lg">
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {MONTHS.map((month, idx) => (
-                    <SelectItem key={idx} value={(idx + 1).toString()}>
-                      {month}
-                    </SelectItem>
+                    <SelectItem key={idx} value={(idx + 1).toString()}>{month}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                Tahun
-              </Label>
               <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                <SelectTrigger className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500">
-                  <SelectValue placeholder="Pilih tahun" />
+                <SelectTrigger className="h-9 w-24 text-xs font-semibold border-2 border-blue-400 bg-blue-50 text-blue-700 focus:ring-blue-400 rounded-lg">
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {yearOptions.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
+                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                Cari
-              </Label>
-              <Input
-                placeholder="Cari isu kendala..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500"
-              />
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                <Input
+                  placeholder="Cari isu kendala..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="h-9 pl-8 w-48 text-xs border-slate-300 focus:ring-slate-400"
+                />
+              </div>
+              <Button
+                onClick={() => setViewMode(viewMode === "grid" ? "table" : "grid")}
+                variant="outline"
+                size="sm"
+                className="h-9 cursor-pointer border-slate-300"
+              >
+                {viewMode === "grid" ? <TableIcon className="h-3.5 w-3.5" /> : <LayoutGrid className="h-3.5 w-3.5" />}
+              </Button>
+              <Button
+                onClick={handleAdd}
+                size="sm"
+                className="h-9 cursor-pointer bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+              >
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                Tambah Isu
+              </Button>
             </div>
           </div>
-        </Card>
+        </div>
+      </div>
 
+      <div className="flex-1 space-y-4 sm:space-y-6 px-4 sm:px-8 pb-20 sm:pb-8 pt-2">
         {/* Total Data Info */}
         {sortedIsuKendala.length > 0 && (
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm">
@@ -430,7 +410,7 @@ export default function IsuKendalaPage() {
                                       src={img}
                                       alt={`Point ${idx + 1} - Gambar ${imgIdx + 1}`}
                                       className="w-16 h-16 object-cover rounded-lg border border-slate-300 cursor-pointer hover:scale-105 transition-transform"
-                                      onClick={() => handleImageClick(img)}
+                                      onClick={() => handleImageClick(isu, img)}
                                     />
                                   ))}
                                   {point.images.length > 3 && (
@@ -855,7 +835,7 @@ export default function IsuKendalaPage() {
                                   src={img}
                                   alt={`Point ${idx + 1} - Gambar ${imgIdx + 1}`}
                                   className="w-full h-24 object-cover rounded-lg border border-slate-300 cursor-pointer hover:scale-105 transition-transform"
-                                  onClick={() => handleImageClick(img)}
+                                  onClick={() => viewingIsu && handleImageClick(viewingIsu, img)}
                                 />
                               ))}
                             </div>
@@ -913,10 +893,10 @@ export default function IsuKendalaPage() {
 
       {/* Image Preview Dialog */}
       <ImagePreviewDialog
-        open={imageModalOpen}
-        onOpenChange={setImageModalOpen}
-        imageUrl={currentImageUrl}
-        alt="Preview Gambar Isu Kendala"
+        open={previewImageOpen}
+        onOpenChange={setPreviewImageOpen}
+        images={previewImages}
+        initialIndex={previewImageIndex}
       />
 
       {/* Mobile Bottom Navigation */}

@@ -851,8 +851,7 @@ const TambahKunjunganDialog = ({ open, onOpenChange, onSuccess }: TambahKunjunga
       <ImagePreviewDialog
         open={previewImageOpen}
         onOpenChange={setPreviewImageOpen}
-        imageUrl={previewImageUrl}
-        alt="Bukti Kunjungan"
+        images={previewImageUrl ? [{ url: previewImageUrl }] : []}
       />
     </>
   );

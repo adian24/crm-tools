@@ -702,8 +702,7 @@ export function LaporanKunjunganDialog({ open, onOpenChange, targets, onSuccess 
     <ImagePreviewDialog
       open={previewImageOpen}
       onOpenChange={setPreviewImageOpen}
-      imageUrl={previewImageUrl}
-      alt="Bukti Kunjungan"
+      images={previewImageUrl ? [{ url: previewImageUrl }] : []}
     />
   </>
   );

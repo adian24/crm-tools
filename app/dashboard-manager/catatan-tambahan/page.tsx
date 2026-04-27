@@ -43,8 +43,10 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Heart,
 } from 'lucide-react';
 import { ImagePreviewDialog } from '@/components/image-preview-dialog';
+import { TerimaKasihDrawer } from '@/components/TerimaKasihDrawer';
 
 interface CatatanTambahan {
   _id: Id<"catatanTambahan">;
@@ -81,12 +83,13 @@ export default function CatatanTambahanPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingCatatan, setDeletingCatatan] = useState<CatatanTambahan | null>(null);
   const [previewImageOpen, setPreviewImageOpen] = useState(false);
-  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [previewImageIndex, setPreviewImageIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [mobileFilterOpen, setMobileFilterOpen] = useState<'search' | 'date' | null>(null);
+  const [terimaKasihOpen, setTerimaKasihOpen] = useState(false);
 
   // Generate year options (current year - 2 to current year + 5)
   const currentYear = new Date().getFullYear();
@@ -154,8 +157,15 @@ export default function CatatanTambahanPage() {
     }
   };
 
-  const handleImageClick = (imageUrl: string) => {
-    setPreviewImageUrl(imageUrl);
+  const previewImages = sortedCatatan.map((c) => ({
+    url: c.gambarBase64,
+    title: c.judul,
+    description: c.isiCatatan || undefined,
+  }));
+
+  const handleImageClick = (catatan: CatatanTambahan) => {
+    const idx = sortedCatatan.findIndex((c) => c._id === catatan._id);
+    setPreviewImageIndex(idx >= 0 ? idx : 0);
     setPreviewImageOpen(true);
   };
 
@@ -166,78 +176,74 @@ export default function CatatanTambahanPage() {
 
   return (
     <>
-      <div className="flex-1 space-y-4 sm:space-y-6 p-4 sm:p-8 pt-6 pb-20 sm:pb-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">Catatan Tambahan</h2>
-            <p className="text-sm sm:text-base text-muted-foreground">
-              Upload dan kelola catatan tambahan per bulan
-            </p>
+      {/* Sticky header */}
+      <div className="sticky top-0 z-30 px-4 sm:px-8 pt-3 pb-2">
+        <div className="bg-white/95 backdrop-blur-sm border border-slate-200 rounded-xl px-4 py-3 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          {/* Title */}
+          <div className="flex-shrink-0">
+            <h2 className="text-xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent leading-tight">
+              Catatan Tambahan
+            </h2>
+            <p className="text-xs text-muted-foreground">Upload dan kelola catatan tambahan per bulan</p>
           </div>
-          <div className="hidden sm:flex">
-            <Button
-              onClick={handleAddNew}
-              className="cursor-pointer bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Tambah Catatan
-            </Button>
-          </div>
-        </div>
 
-        {/* Filters - Desktop */}
-        <Card className="hidden sm:block p-4 sm:p-6 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950 border-slate-200 dark:border-slate-800">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                Bulan
-              </Label>
-              <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
-                <SelectTrigger className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500">
-                  <SelectValue placeholder="Pilih bulan" />
-                </SelectTrigger>
-                <SelectContent>
-                  {MONTHS.map((month, idx) => (
-                    <SelectItem key={idx} value={(idx + 1).toString()}>
-                      {month}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Filters + Tambah — desktop */}
+          <div className="hidden sm:flex items-center gap-2 ml-auto flex-wrap">
+            {/* Bulan */}
+            <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
+              <SelectTrigger className="h-9 w-36 text-xs font-semibold border-2 border-purple-400 bg-purple-50 text-purple-700 focus:ring-2 focus:ring-purple-500 hover:bg-purple-100 transition-colors">
+                <SelectValue placeholder="Bulan" />
+              </SelectTrigger>
+              <SelectContent>
+                {MONTHS.map((month, idx) => (
+                  <SelectItem key={idx} value={(idx + 1).toString()} className="text-xs">
+                    {month}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                Tahun
-              </Label>
-              <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                <SelectTrigger className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500">
-                  <SelectValue placeholder="Pilih tahun" />
-                </SelectTrigger>
-                <SelectContent>
-                  {yearOptions.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Tahun */}
+            <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+              <SelectTrigger className="h-9 w-24 text-xs font-semibold border-2 border-blue-400 bg-blue-50 text-blue-700 focus:ring-2 focus:ring-blue-500 hover:bg-blue-100 transition-colors">
+                <SelectValue placeholder="Tahun" />
+              </SelectTrigger>
+              <SelectContent>
+                {yearOptions.map((year) => (
+                  <SelectItem key={year} value={year.toString()} className="text-xs">
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                Cari
-              </Label>
+            {/* Cari */}
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 placeholder="Cari catatan..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500"
+                className="h-9 pl-8 w-48 text-xs border-slate-200 focus:ring-2 focus:ring-blue-500"
               />
             </div>
+
+            {/* Tambah */}
+            <Button
+              onClick={handleAddNew}
+              size="sm"
+              className="cursor-pointer h-9 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md"
+            >
+              <Plus className="mr-1.5 h-4 w-4" />
+              Tambah Catatan
+            </Button>
           </div>
-        </Card>
+        </div>
+        </div>
+      </div>
+
+      <div className="flex-1 space-y-4 p-4 sm:px-8 sm:py-6 pb-44 sm:pb-32 lg:pb-20">
 
         {/* Total Data Info */}
         {sortedCatatan.length > 0 && (
@@ -284,7 +290,7 @@ export default function CatatanTambahanPage() {
                     src={catatan.gambarBase64}
                     alt={catatan.judul}
                     className="w-full h-full object-contain cursor-pointer hover:opacity-90 transition-opacity p-2"
-                    onClick={() => handleImageClick(catatan.gambarBase64)}
+                    onClick={() => handleImageClick(catatan)}
                   />
                   <div className="absolute top-1 sm:top-2 right-1 sm:right-2">
                     <Badge
@@ -329,7 +335,7 @@ export default function CatatanTambahanPage() {
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => handleImageClick(catatan.gambarBase64)}
+                    onClick={() => handleImageClick(catatan)}
                     className="cursor-pointer flex-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 h-7 sm:h-8 px-1 sm:px-2"
                     disabled={isUpdatingStatus}
                   >
@@ -519,13 +525,13 @@ export default function CatatanTambahanPage() {
       <ImagePreviewDialog
         open={previewImageOpen}
         onOpenChange={setPreviewImageOpen}
-        imageUrl={previewImageUrl}
-        alt="Catatan Tambahan"
+        images={previewImages}
+        initialIndex={previewImageIndex}
       />
 
       {/* Mobile Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border lg:hidden">
-        <div className="grid grid-cols-4 gap-1 p-2">
+        <div className="grid grid-cols-3 gap-1 p-2">
           {/* Search Tab */}
           <button
             onClick={() => setMobileFilterOpen(mobileFilterOpen === 'search' ? null : 'search')}
@@ -556,17 +562,22 @@ export default function CatatanTambahanPage() {
             <Plus className="h-5 w-5 mb-1" />
             <span className="text-[10px] font-medium">Tambah</span>
           </button>
-
-          {/* Grid Toggle - Dummy button since there's no table view for catatan */}
-          <button
-            className="flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-colors bg-muted opacity-50 cursor-not-allowed"
-            disabled
-          >
-            <LayoutGrid className="h-5 w-5 mb-1" />
-            <span className="text-[10px] font-medium">Grid</span>
-          </button>
         </div>
       </div>
+
+      {/* Sticky full-width Terima Kasih button — above mobile nav, at bottom on desktop */}
+      {/* <div className="fixed bottom-[68px] lg:bottom-0 left-0 right-0 z-40 px-4 py-3 lg:px-8 lg:py-4">
+        <button
+          onClick={() => setTerimaKasihOpen(true)}
+          className="cursor-pointer w-full flex items-center justify-center gap-2.5 py-3 rounded-xl text-white font-semibold text-sm tracking-wide shadow-lg transition-all hover:scale-[1.01] active:scale-[0.99]"
+          style={{ background: "linear-gradient(135deg, #7c3aed 0%, #a8089b 60%, #420530 100%)" }}
+        >
+          Click here... See you next month !
+        </button>
+      </div> */}
+
+      {/* Terima Kasih Drawer */}
+      <TerimaKasihDrawer open={terimaKasihOpen} onClose={() => setTerimaKasihOpen(false)} />
 
       {/* Mobile Filter Sheet Overlay */}
       {mobileFilterOpen && (
