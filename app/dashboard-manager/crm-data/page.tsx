@@ -1958,34 +1958,48 @@ export default function CrmDataManagementPage() {
               </p>
             </div>
           </div>
-          {canEdit && (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                asChild
-                disabled={isImporting}
-                className="h-9 gap-1.5 text-xs border-blue-600 text-blue-600 hover:bg-blue-50 hover:border-blue-700 hover:text-blue-700"
-              >
-                <label htmlFor="excel-upload" className={`cursor-pointer ${isImporting ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                  <Upload className="h-4 w-4" />
-                  {isImporting ? 'Importing...' : 'Import'}
-                  <input
-                    id="excel-upload"
-                    type="file"
-                    accept=".xlsx,.xls"
-                    className="hidden"
-                    onChange={handleExcelImport}
-                    disabled={isImporting}
-                  />
-                </label>
-              </Button>
-              <Button onClick={() => setShowExcelFormModal(true)} size="sm" disabled={isImporting} className="h-9 gap-1.5 text-xs bg-purple-700 hover:bg-purple-800 cursor-pointer">
-                <Plus className="h-4 w-4" />
-                Tambah Data
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <Select value={filterTahun} onValueChange={setFilterTahun}>
+              <SelectTrigger className="h-9 w-36 text-xs font-semibold border-2 border-indigo-500 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 focus:ring-indigo-500">
+                <Calendar className="h-3.5 w-3.5 mr-1 text-indigo-500" />
+                <SelectValue placeholder="Tahun" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="text-xs">Semua Tahun</SelectItem>
+                {Array.from({ length: 2030 - 2023 + 1 }, (_, i) => (2023 + i).toString()).map((year) => (
+                  <SelectItem key={year} value={year} className="text-xs">{year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {canEdit && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  asChild
+                  disabled={isImporting}
+                  className="h-9 gap-1.5 text-xs border-blue-600 text-blue-600 hover:bg-blue-50 hover:border-blue-700 hover:text-blue-700"
+                >
+                  <label htmlFor="excel-upload" className={`cursor-pointer ${isImporting ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                    <Upload className="h-4 w-4" />
+                    {isImporting ? 'Importing...' : 'Import'}
+                    <input
+                      id="excel-upload"
+                      type="file"
+                      accept=".xlsx,.xls"
+                      className="hidden"
+                      onChange={handleExcelImport}
+                      disabled={isImporting}
+                    />
+                  </label>
+                </Button>
+                <Button onClick={() => setShowExcelFormModal(true)} size="sm" disabled={isImporting} className="h-9 gap-1.5 text-xs bg-purple-700 hover:bg-purple-800 cursor-pointer">
+                  <Plus className="h-4 w-4" />
+                  Tambah Data
+                </Button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Statistics Cards - collapsible accordion */}

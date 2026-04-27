@@ -278,6 +278,17 @@ const multiSelectFilter: FilterFn<CrmTarget> = (row, columnId, filterValue: stri
 };
 multiSelectFilter.autoRemove = (v: string[]) => !v?.length;
 
+const EXCLUDED_KEYS = new Set(["_id", "createdAt", "updatedAt"]);
+const globalSearchFilter: FilterFn<CrmTarget> = (row, _columnId, filterValue) => {
+  const search = String(filterValue ?? "").toLowerCase().trim();
+  if (!search) return true;
+  return Object.entries(row.original).some(([key, val]) => {
+    if (EXCLUDED_KEYS.has(key)) return false;
+    return String(val ?? "").toLowerCase().includes(search);
+  });
+};
+globalSearchFilter.autoRemove = (v: string) => !v?.trim();
+
 // ── ColumnFilterPopover ───────────────────────────────────────────────────────
 function ColumnFilterPopover({ column, title }: { column: Column<CrmTarget>; title: string }) {
   const [search, setSearch] = useState("");
@@ -889,6 +900,7 @@ export function CrmDataTable({ data, canEdit = false, showExport = true, onEdit,
     data: dateFilteredData,
     columns,
     filterFns: { multiSelect: multiSelectFilter },
+    globalFilterFn: globalSearchFilter,
     state: { sorting, columnFilters, globalFilter, grouping, expanded, rowSelection, columnOrder, columnPinning: isMobile ? {} : columnPinning, pagination, columnVisibility },
     autoResetExpanded: false,
     groupedColumnMode: false,
