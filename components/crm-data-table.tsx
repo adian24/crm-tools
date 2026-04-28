@@ -1011,6 +1011,7 @@ export function CrmDataTable({ data, canEdit = false, showExport = true, onEdit,
   const table = useReactTable({
     data: dateFilteredData,
     columns,
+    getRowId: (row) => row._id,
     filterFns: { multiSelect: multiSelectFilter },
     globalFilterFn: globalSearchFilter,
     state: { sorting, columnFilters, globalFilter, grouping, expanded, rowSelection, columnOrder, columnPinning: isMobile ? {} : columnPinning, pagination, columnVisibility },

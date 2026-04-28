@@ -1535,8 +1535,28 @@ export default function CrmDataManagementPage() {
           return;
         }
 
-        // Get headers from first row
-        const headers = jsonData[0].map((h: any) => String(h).trim());
+        // Get headers from first row, normalizing export-format labels to camelCase field names
+        const HEADER_MAP: Record<string, string> = {
+          'Nama Perusahaan': 'namaPerusahaan', 'Tahun': 'tahun', 'Bulan Exp': 'bulanExpDate',
+          'Produk': 'produk', 'PIC CRM': 'picCrm', 'Sales': 'sales',
+          'Associate': 'namaAssociate', 'Direct/Assoc': 'directOrAssociate', 'Grup': 'grup',
+          'Status': 'status', 'Alasan': 'alasan', 'Catatan': 'catatanKunjungan',
+          'Category': 'category', 'Kuadran': 'kuadran', 'Luar Kota': 'luarKota',
+          'Provinsi': 'provinsi', 'Kota': 'kota', 'Alamat': 'alamat',
+          'Akreditasi': 'akreditasi', 'Cat Akre': 'catAkre', 'EA Code': 'eaCode',
+          'STD': 'std', 'IA Date': 'iaDate', 'Bulan Audit Sblm': 'bulanAuditSebelumnyaSustain',
+          'Exp Date': 'expDate', 'Tahap Audit': 'tahapAudit', 'Harga Kontrak': 'hargaKontrak',
+          'Bulan TTD': 'bulanTtdNotif', 'Bulan Audit': 'bulanAudit', 'Harga Terupdate': 'hargaTerupdate',
+          'Trimming': 'trimmingValue', 'Loss': 'lossValue', 'Cashback': 'cashback',
+          'Termin': 'terminPembayaran', 'Status Invoice': 'statusInvoice',
+          'Status Pembayaran': 'statusPembayaran', 'Status Komisi': 'statusKomisi',
+          'Status Sertifikat': 'statusSertifikat', 'Tgl Kunjungan': 'tanggalKunjungan',
+          'Status Kunjungan': 'statusKunjungan', 'Foto Bukti': 'fotoBuktiKunjungan',
+        };
+        const headers = jsonData[0].map((h: any) => {
+          const raw = String(h).trim();
+          return HEADER_MAP[raw] ?? raw;
+        });
         
         const targets: any[] = [];
 
