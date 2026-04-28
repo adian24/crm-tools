@@ -74,14 +74,17 @@ export function TrenBulananChart({ crmData, kategoriProduk }: TrenBulananChartPr
   });
 
   // 2026 dihitung client-side dari filteredTargets (semua filter aktif)
+  // Basis: status DONE, bulan & tahun dari bulanTtdNotif, nilai dari hargaTerupdate
   const y2026Stats = useMemo(() => {
     const acc = Object.fromEntries(BULAN_LIST.map(b => [b, 0]));
     for (const row of crmData) {
-      if (row.tahun !== "2026") continue;
       if (row.status !== "DONE") continue;
-      const bulan = BULAN_NORM[(row.bulanExpDate ?? "").toLowerCase().trim()];
-      if (!bulan) continue;
-      acc[bulan] += (row.hargaTerupdate ?? row.hargaKontrak ?? 0);
+      if (!row.bulanTtdNotif) continue;
+      const ttdDate = new Date(row.bulanTtdNotif);
+      if (isNaN(ttdDate.getTime())) continue;
+      if (ttdDate.getFullYear() !== 2026) continue;
+      const bulan = BULAN_LIST[ttdDate.getMonth()];
+      acc[bulan] += (row.hargaTerupdate ?? 0);
     }
     return acc;
   }, [crmData]);
