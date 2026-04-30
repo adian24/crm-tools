@@ -97,6 +97,7 @@ export default function KunjunganEngagementPartnershipPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [mobileFilterOpen, setMobileFilterOpen] = useState<'search' | 'date' | null>(null);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
   // Generate year options (current year - 2 to current year + 5)
   const currentYear = new Date().getFullYear();
@@ -128,6 +129,35 @@ export default function KunjunganEngagementPartnershipPage() {
   React.useEffect(() => {
     setCurrentPage(1);
   }, [selectedMonth, selectedYear, searchQuery, itemsPerPage]);
+
+  // Image viewer
+  const imageList = sortedKunjungan
+    .filter(c => !!c.fotoBukti)
+    .map(c => ({
+      src: c.fotoBukti!,
+      label: c.namaClient,
+      pic: c.namaPicClient,
+      picTsi: c.picTsi,
+      noHp: c.noHp,
+      tanggal: new Date(c.tglKunjungan).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+      catatan: c.catatan,
+      tindakLanjut: c.tindakLanjut,
+    }));
+
+  const previewImage = previewIndex !== null ? imageList[previewIndex] : null;
+  const goPrev = () => setPreviewIndex(i => i !== null ? (i - 1 + imageList.length) % imageList.length : null);
+  const goNext = () => setPreviewIndex(i => i !== null ? (i + 1) % imageList.length : null);
+
+  React.useEffect(() => {
+    if (previewIndex === null) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') goPrev();
+      else if (e.key === 'ArrowRight') goNext();
+      else if (e.key === 'Escape') setPreviewIndex(null);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [previewIndex, imageList.length]);
 
   const handleAdd = () => {
     setEditingKunjungan(null);
@@ -268,93 +298,100 @@ export default function KunjunganEngagementPartnershipPage() {
             </div>
           </Card>
         ) : viewMode === "grid" ? (
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 lg:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {sortedKunjungan.map((item) => (
               <Card
                 key={item._id}
-                className="overflow-hidden shadow-md hover:shadow-lg transition-all duration-200 flex flex-col bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-pointer group relative"
-                onClick={() => handleEdit(item)}
+                className="overflow-hidden shadow-sm hover:shadow-lg transition-all duration-200 flex flex-col bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 group"
               >
-                {/* Delete Button - Top Right Corner */}
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(item);
+                {/* Image */}
+                <div
+                  className={`relative aspect-square w-full overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 ${item.fotoBukti ? 'cursor-zoom-in' : ''}`}
+                  onClick={() => {
+                    if (!item.fotoBukti) return;
+                    const idx = imageList.findIndex(img => img.src === item.fotoBukti);
+                    if (idx !== -1) setPreviewIndex(idx);
                   }}
-                  className="absolute top-2 right-2 z-10 h-7 w-7 p-0 bg-white/95 dark:bg-slate-900/95 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 hover:text-red-700 rounded-full shadow-md border border-slate-200 dark:border-slate-700"
-                  disabled={isDeleting}
-                  title="Hapus"
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
+                  {item.fotoBukti ? (
+                    <>
+                      <img
+                        src={item.fotoBukti}
+                        alt="Foto Bukti"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/35 transition-all duration-200 flex items-center justify-center">
+                        <Eye className="h-7 w-7 text-white drop-shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-1.5">
+                      <ImageIcon className="h-10 w-10 text-slate-300 dark:text-slate-600" />
+                      <span className="text-[10px] text-slate-400 dark:text-slate-600">Tidak ada foto</span>
+                    </div>
+                  )}
+                </div>
 
-                {/* Foto Bukti - Thumbnail */}
-                {item.fotoBukti ? (
-                  <div className="relative aspect-square w-full overflow-hidden bg-slate-100 dark:bg-slate-900">
-                    <img
-                      src={item.fotoBukti}
-                      alt="Foto Bukti"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                    />
-                    {/* Overlay on hover */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                  </div>
-                ) : (
-                  /* Placeholder when no photo */
-                  <div className="aspect-square w-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
-                    <ImageIcon className="h-12 w-12 sm:h-16 sm:w-16 text-slate-400 dark:text-slate-600" />
-                  </div>
-                )}
-
-                {/* Content - Compact */}
-                <div className="px-2 py-1 sm:px-3 sm:py-1 lg:px-4 lg:py-1 flex flex-col flex-1 space-y-1 sm:space-y-1.5 lg:space-y-2 !mt-[-20px]">
-                  {/* Client Name */}
-                  <h3 className="font-semibold text-xs sm:text-sm lg:text-base text-slate-900 dark:text-white line-clamp-2 leading-tight">
+                {/* Content */}
+                <div className="p-3 flex flex-col flex-1 gap-2">
+                  <h3 className="font-bold text-sm text-slate-900 dark:text-white line-clamp-2 leading-snug">
                     {item.namaClient}
                   </h3>
 
-                  {/* PIC Client - Compact */}
-                  <div className="flex items-center gap-1 text-[10px] sm:text-xs lg:text-sm text-slate-600 dark:text-slate-400">
-                    <User className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 text-blue-500" />
-                    <span className="font-semibold flex-shrink-0">PIC Client:</span>
-                    <span className="line-clamp-1">{item.namaPicClient}</span>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+                      <User className="h-3.5 w-3.5 flex-shrink-0 text-blue-500" />
+                      <span className="font-semibold flex-shrink-0 text-slate-500 dark:text-slate-500">PIC Client:</span>
+                      <span className="truncate">{item.namaPicClient}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+                      <Building2 className="h-3.5 w-3.5 flex-shrink-0 text-purple-500" />
+                      <span className="font-semibold flex-shrink-0 text-slate-500 dark:text-slate-500">PIC TSI:</span>
+                      <span className="truncate">{item.picTsi}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-500">
+                      <Phone className="h-3.5 w-3.5 flex-shrink-0" />
+                      <span className="truncate">{item.noHp}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-500">
+                      <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+                      <span>{new Date(item.tglKunjungan).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                    </div>
                   </div>
 
-                  {/* PIC TSI - Compact */}
-                  <div className="flex items-center gap-1 text-[10px] sm:text-xs lg:text-sm text-slate-600 dark:text-slate-400">
-                    <Building2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 text-purple-500" />
-                    <span className="font-semibold flex-shrink-0">PIC TSI:</span>
-                    <span className="line-clamp-1">{item.picTsi}</span>
-                  </div>
+                  {item.catatan && (
+                    <div className="bg-blue-50 dark:bg-blue-950/40 rounded-md px-2 py-1.5 border border-blue-100 dark:border-blue-900/60">
+                      <p className="text-[10px] font-semibold text-blue-500 dark:text-blue-400 mb-0.5">Catatan</p>
+                      <p className="text-xs font-bold text-blue-700 dark:text-blue-300 leading-snug">{item.catatan}</p>
+                    </div>
+                  )}
 
-                  {/* Date - Compact */}
-                  <div className="flex items-center gap-1 text-[10px] sm:text-xs text-slate-500 dark:text-slate-500">
-                    <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
-                    <span className="line-clamp-1">
-                      {new Date(item.tglKunjungan).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
-                    </span>
-                  </div>
+                  {item.tindakLanjut && (
+                    <div className="bg-emerald-50 dark:bg-emerald-950/40 rounded-md px-2 py-1.5 border border-emerald-100 dark:border-emerald-900/60">
+                      <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 mb-0.5">Tindak Lanjut</p>
+                      <p className="text-xs text-emerald-700 dark:text-emerald-300 line-clamp-2 leading-snug">{item.tindakLanjut}</p>
+                    </div>
+                  )}
 
-                  {/* Catatan & Tindak Lanjut - Show values */}
-                  <div className="space-y-1 pt-1 mt-auto">
-                    {item.catatan && (
-                      <div className="bg-blue-50 dark:bg-blue-950/50 rounded-md px-1.5 py-1 border border-blue-200 dark:border-blue-800">
-                        <p className="text-[8px] sm:text-[9px] lg:text-[11px] text-blue-600 dark:text-blue-400 font-semibold mb-0.5">Catatan:</p>
-                        <p className="text-[9px] sm:text-[10px] lg:text-sm text-blue-700 dark:text-blue-300 font-medium line-clamp-2 leading-tight">
-                          {item.catatan}
-                        </p>
-                      </div>
-                    )}
-                    {item.tindakLanjut && (
-                      <div className="bg-green-50 dark:bg-green-950/50 rounded-md px-1.5 py-1 border border-green-200 dark:border-green-800">
-                        <p className="text-[8px] sm:text-[9px] lg:text-[11px] text-green-600 dark:text-green-400 font-semibold mb-0.5">Tindak Lanjut:</p>
-                        <p className="text-[9px] sm:text-[10px] lg:text-sm text-green-700 dark:text-green-300 font-medium line-clamp-2 leading-tight">
-                          {item.tindakLanjut}
-                        </p>
-                      </div>
-                    )}
+                  {/* Actions */}
+                  <div className="mt-auto pt-2 border-t border-slate-100 dark:border-slate-700/60 flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => handleEdit(item)}
+                      className="flex-1 h-7 text-xs cursor-pointer bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white gap-1.5"
+                    >
+                      <Pencil className="h-3 w-3" />
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDelete(item)}
+                      disabled={isDeleting}
+                      className="h-7 w-7 p-0 cursor-pointer border-red-200 dark:border-red-900 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-600"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
                   </div>
                 </div>
               </Card>
@@ -438,8 +475,8 @@ export default function KunjunganEngagementPartnershipPage() {
                               </div>
                             )}
                           </TableCell>
-                          <TableCell className="max-w-xs">
-                            <p className="text-sm line-clamp-2">
+                          <TableCell>
+                            <p className="text-sm font-bold">
                               {item.catatan || "-"}
                             </p>
                           </TableCell>
@@ -585,6 +622,93 @@ export default function KunjunganEngagementPartnershipPage() {
           </Card>
         )}
       </div>
+
+      {/* Image Viewer */}
+      {previewIndex !== null && imageList[previewIndex] && (
+        <div
+          className="fixed top-0 left-0 w-screen h-screen z-[9999] bg-black/95 backdrop-blur-sm flex flex-col overflow-hidden"
+          onClick={() => setPreviewIndex(null)}
+        >
+          {/* Top bar */}
+          <div className="flex items-center justify-between px-6 py-3 flex-shrink-0" onClick={e => e.stopPropagation()}>
+            <div className="text-white/60 text-sm font-medium">{previewIndex + 1} / {imageList.length}</div>
+            <button onClick={() => setPreviewIndex(null)} className="h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Main: image 80% | info 20% */}
+          <div className="flex flex-1 min-h-0">
+            {/* Image area */}
+            <div className="relative w-4/5 flex items-center justify-center" onClick={e => e.stopPropagation()}>
+              {imageList.length > 1 && (
+                <button onClick={goPrev} className="absolute left-4 h-11 w-11 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center text-white transition-colors cursor-pointer z-10">
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+              )}
+              <img src={imageList[previewIndex].src} alt={imageList[previewIndex].label} className="max-w-full max-h-full object-contain rounded-xl shadow-2xl px-16 py-4" />
+              {imageList.length > 1 && (
+                <button onClick={goNext} className="absolute right-4 h-11 w-11 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center text-white transition-colors cursor-pointer z-10">
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              )}
+            </div>
+
+            {/* Info panel */}
+            <div className="w-1/5 border-l border-white/10 flex flex-col p-5 gap-5 overflow-y-auto" onClick={e => e.stopPropagation()}>
+              <div>
+                <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">Client</p>
+                <p className="text-white font-semibold text-sm leading-snug">{imageList[previewIndex].label}</p>
+              </div>
+              {imageList[previewIndex].pic && (
+                <div>
+                  <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">PIC Client</p>
+                  <p className="text-white/80 text-sm">{imageList[previewIndex].pic}</p>
+                </div>
+              )}
+              {imageList[previewIndex].picTsi && (
+                <div>
+                  <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">PIC TSI</p>
+                  <p className="text-white/80 text-sm">{imageList[previewIndex].picTsi}</p>
+                </div>
+              )}
+              {imageList[previewIndex].noHp && (
+                <div>
+                  <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">No. HP</p>
+                  <p className="text-white/80 text-sm">{imageList[previewIndex].noHp}</p>
+                </div>
+              )}
+              {imageList[previewIndex].tanggal && (
+                <div>
+                  <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">Tanggal Kunjungan</p>
+                  <p className="text-white/80 text-sm">{imageList[previewIndex].tanggal}</p>
+                </div>
+              )}
+              {imageList[previewIndex].catatan && (
+                <div>
+                  <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">Catatan</p>
+                  <p className="text-white/80 text-base leading-relaxed">{imageList[previewIndex].catatan}</p>
+                </div>
+              )}
+              {imageList[previewIndex].tindakLanjut && (
+                <div>
+                  <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">Tindak Lanjut</p>
+                  <p className="text-white/80 text-base leading-relaxed">{imageList[previewIndex].tindakLanjut}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Dot indicators */}
+          {imageList.length > 1 && (
+            <div className="flex items-center justify-center gap-1.5 py-3 flex-shrink-0" onClick={e => e.stopPropagation()}>
+              {imageList.map((_, i) => (
+                <button key={i} onClick={() => setPreviewIndex(i)} className={`rounded-full transition-all cursor-pointer ${i === previewIndex ? 'w-5 h-2 bg-white' : 'w-2 h-2 bg-white/40 hover:bg-white/70'}`} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Add/Edit Dialog */}
       <KunjunganEngagementPartnershipDialog

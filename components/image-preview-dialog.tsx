@@ -6,12 +6,21 @@ import {
   DialogContent,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { X, ChevronLeft, ChevronRight, Download, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Download, ZoomIn, ZoomOut, RotateCcw, Calendar } from 'lucide-react';
+
+const MONTHS = [
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+];
 
 export interface ImageItem {
   url: string;
   title?: string;
   description?: string;
+  month?: number;
+  year?: number;
+  tanggalTerbit?: string;
+  tanggalBroadcast?: string;
 }
 
 interface ImagePreviewDialogProps {
@@ -200,48 +209,32 @@ const ImagePreviewDialog = ({ open, onOpenChange, images, initialIndex = 0 }: Im
 
   const current = images[currentIndex];
   const hasMultiple = images.length > 1;
-  const hasInfo = current?.title || current?.description;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!max-w-none w-screen h-screen max-h-screen p-0 gap-0 overflow-hidden bg-black border-0 rounded-none !fixed !inset-0 !translate-x-0 !translate-y-0 m-0">
+      <DialogContent className="!max-w-none w-screen h-screen max-h-screen p-0 gap-0 overflow-hidden bg-black/95 border-0 rounded-none !fixed !inset-0 !translate-x-0 !translate-y-0 m-0 flex flex-col">
         <DialogTitle className="sr-only">Preview Gambar</DialogTitle>
 
-        {/* Close button — top right */}
-        <button
-          onClick={() => onOpenChange(false)}
-          className="cursor-pointer absolute top-3 right-3 z-30 w-10 h-10 rounded-full bg-black/60 hover:bg-white/20 border border-white/20 flex items-center justify-center text-white transition-colors backdrop-blur-sm"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        {/* Prev arrow */}
-        {hasMultiple && (
+        {/* Top bar */}
+        <div className="flex items-center justify-between px-6 py-3 flex-shrink-0">
+          <div className="text-white/60 text-sm font-medium">
+            {hasMultiple ? `${currentIndex + 1} / ${images.length}` : ""}
+          </div>
           <button
-            onClick={goPrev}
-            className="absolute left-3 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-black/60 hover:bg-white/20 border border-white/20 flex items-center justify-center text-white transition-colors backdrop-blur-sm"
+            onClick={() => onOpenChange(false)}
+            className="h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer"
           >
-            <ChevronLeft className="w-6 h-6" />
+            <X className="w-5 h-5" />
           </button>
-        )}
+        </div>
 
-        {/* Next arrow */}
-        {hasMultiple && (
-          <button
-            onClick={goNext}
-            className="absolute right-3 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-black/60 hover:bg-white/20 border border-white/20 flex items-center justify-center text-white transition-colors backdrop-blur-sm"
-          >
-            <ChevronRight className="w-6 h-6" />
-          </button>
-        )}
-
-        {/* Main column layout */}
-        <div className="flex flex-col h-full">
+        {/* Main: image 80% | info panel 20% */}
+        <div className="flex flex-1 min-h-0">
 
           {/* Image area */}
           <div
             ref={containerRef}
-            className="flex-1 flex items-center justify-center overflow-hidden"
+            className="relative w-4/5 flex items-center justify-center overflow-hidden"
             style={{ cursor: dragging ? 'grabbing' : scale > 1 ? 'grab' : 'default' }}
             onMouseDown={onMouseDown}
             onMouseMove={onMouseMove}
@@ -249,6 +242,15 @@ const ImagePreviewDialog = ({ open, onOpenChange, images, initialIndex = 0 }: Im
             onMouseLeave={onMouseUp}
             onDoubleClick={resetView}
           >
+            {hasMultiple && (
+              <button
+                onClick={goPrev}
+                className="absolute left-4 h-11 w-11 rounded-full bg-white/10 hover:bg-white/25 border border-white/20 flex items-center justify-center text-white transition-colors cursor-pointer z-10"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+            )}
+
             {imageError ? (
               <div className="text-center text-white pointer-events-none">
                 <div className="w-16 h-16 mx-auto mb-4 bg-white/10 rounded-full flex items-center justify-center">
@@ -263,7 +265,7 @@ const ImagePreviewDialog = ({ open, onOpenChange, images, initialIndex = 0 }: Im
                 src={current?.url}
                 alt={current?.title || "Preview"}
                 draggable={false}
-                className="max-w-full max-h-full object-contain select-none"
+                className="max-w-full max-h-full object-contain select-none px-16 py-4"
                 style={{
                   transform: `translate(${pos.x}px, ${pos.y}px) scale(${scale})`,
                   transformOrigin: 'center center',
@@ -276,84 +278,115 @@ const ImagePreviewDialog = ({ open, onOpenChange, images, initialIndex = 0 }: Im
                 onError={() => setImageError(true)}
               />
             )}
+
+            {hasMultiple && (
+              <button
+                onClick={goNext}
+                className="absolute right-4 h-11 w-11 rounded-full bg-white/10 hover:bg-white/25 border border-white/20 flex items-center justify-center text-white transition-colors cursor-pointer z-10"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            )}
           </div>
 
-          {/* Description strip */}
-          {hasInfo && (
-            <div className="flex-shrink-0 px-6 py-3 bg-black/80 border-t border-white/10 text-center max-h-24 overflow-y-auto">
-              {current?.title && (
-                <p className="text-white font-semibold text-sm leading-tight">{current.title}</p>
-              )}
-              {current?.description && (
-                <p className="text-white/65 text-xs mt-1 leading-relaxed">{current.description}</p>
-              )}
-            </div>
-          )}
-
-          {/* Bottom bar */}
-          <div className="flex-shrink-0 flex items-center justify-between gap-2 px-4 py-3 bg-black/90 border-t border-white/10">
-
-            {/* Zoom controls */}
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => applyTransform(scaleRef.current * 0.75, posRef.current.x, posRef.current.y)}
-                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-white"
-              >
-                <ZoomOut className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={resetView}
-                className="text-white/70 text-[11px] font-mono bg-white/10 hover:bg-white/20 rounded-full px-2.5 py-1 border border-white/20 min-w-[3rem] text-center"
-              >
-                {Math.round(scale * 100)}%
-              </button>
-              <button
-                onClick={() => applyTransform(scaleRef.current * 1.33, posRef.current.x, posRef.current.y)}
-                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-white"
-              >
-                <ZoomIn className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={resetView}
-                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-white"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            {/* Navigation counter */}
-            {hasMultiple ? (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={goPrev}
-                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-white"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <span className="text-white/80 text-xs font-semibold min-w-[3.5rem] text-center">
-                  {currentIndex + 1} / {images.length}
-                </span>
-                <button
-                  onClick={goNext}
-                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-white"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+          {/* Info panel */}
+          <div className="w-1/5 border-l border-white/10 flex flex-col p-5 gap-5 overflow-y-auto">
+            {current?.title && (
+              <div>
+                <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">Judul</p>
+                <p className="text-white font-semibold text-sm leading-snug">{current.title}</p>
               </div>
-            ) : (
-              <div />
+            )}
+            {current?.description && (
+              <div>
+                <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">Deskripsi</p>
+                <p className="text-white/80 text-base leading-relaxed">{current.description}</p>
+              </div>
             )}
 
-            {/* Download */}
-            <button
-              onClick={handleDownload}
-              className="flex items-center gap-1.5 text-white/80 text-xs bg-white/10 hover:bg-white/20 border border-white/20 rounded-full px-3 py-1.5 transition-colors"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Download</span>
-            </button>
+            {(current?.month && current?.year) && (
+              <div>
+                <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">Periode</p>
+                <div className="flex items-center gap-1.5 text-white/80 text-sm">
+                  <Calendar className="w-3.5 h-3.5 text-white/40" />
+                  <span>{MONTHS[(current.month ?? 1) - 1]} {current.year}</span>
+                </div>
+              </div>
+            )}
+
+            {current?.tanggalTerbit && (
+              <div>
+                <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">Tanggal Terbit</p>
+                <div className="flex items-center gap-1.5 text-white/80 text-sm">
+                  <Calendar className="w-3.5 h-3.5 text-white/40" />
+                  <span>{new Date(current.tanggalTerbit).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                </div>
+              </div>
+            )}
+
+            {current?.tanggalBroadcast && (
+              <div>
+                <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">Tanggal Broadcast</p>
+                <div className="flex items-center gap-1.5 text-white/80 text-sm">
+                  <Calendar className="w-3.5 h-3.5 text-white/40" />
+                  <span>{new Date(current.tanggalBroadcast).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="flex-1" />
+
+            {/* Controls */}
+            <div className="space-y-2 border-t border-white/10 pt-4">
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => applyTransform(scaleRef.current * 0.75, posRef.current.x, posRef.current.y)}
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-white"
+                >
+                  <ZoomOut className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={resetView}
+                  className="text-white/70 text-[11px] font-mono bg-white/10 hover:bg-white/20 rounded-full px-2.5 py-1 border border-white/20 min-w-[3rem] text-center"
+                >
+                  {Math.round(scale * 100)}%
+                </button>
+                <button
+                  onClick={() => applyTransform(scaleRef.current * 1.33, posRef.current.x, posRef.current.y)}
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-white"
+                >
+                  <ZoomIn className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={resetView}
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-white"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <button
+                onClick={handleDownload}
+                className="flex items-center gap-1.5 text-white/80 text-xs bg-white/10 hover:bg-white/20 border border-white/20 rounded-full px-3 py-1.5 transition-colors w-full justify-center cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Download</span>
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Dot indicators */}
+        {hasMultiple && (
+          <div className="flex items-center justify-center gap-1.5 py-3 flex-shrink-0">
+            {images.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => goTo(i)}
+                className={`rounded-full transition-all cursor-pointer ${i === currentIndex ? 'w-5 h-2 bg-white' : 'w-2 h-2 bg-white/40 hover:bg-white/70'}`}
+              />
+            ))}
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

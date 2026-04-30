@@ -177,6 +177,10 @@ export default function FlyerPage() {
     url: f.imageUrl,
     title: f.title,
     description: f.description || undefined,
+    month: f.month,
+    year: f.year,
+    tanggalTerbit: f.tanggalTerbit,
+    tanggalBroadcast: f.tanggalBroadcast,
   }));
 
   const handleImageClick = (flyer: Flyer) => {

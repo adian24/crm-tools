@@ -206,6 +206,13 @@ export function ExistingClientView() {
     .map(([, targets]) => ({
       src: targets[0].fotoBuktiKunjungan!,
       label: targets[0].namaPerusahaan,
+      pic: targets[0].picCrm,
+      sales: targets[0].sales,
+      kota: targets[0].kota,
+      tanggal: targets[0].tanggalKunjungan
+        ? new Date(targets[0].tanggalKunjungan).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+        : undefined,
+      catatan: targets[0].catatanKunjungan,
     }));
 
   const previewImage = previewIndex !== null ? imageList[previewIndex] : null;
@@ -451,7 +458,7 @@ export function ExistingClientView() {
                     {latestVisit.catatanKunjungan && (
                       <div className="bg-blue-50 dark:bg-blue-950/40 rounded-md px-2 py-1.5 border border-blue-100 dark:border-blue-900/60">
                         <p className="text-[10px] font-semibold text-blue-500 dark:text-blue-400 mb-0.5">Catatan</p>
-                        <p className="text-xs text-blue-700 dark:text-blue-300 line-clamp-2 leading-snug">
+                        <p className="text-xs font-bold text-blue-700 dark:text-blue-300 leading-snug">
                           {latestVisit.catatanKunjungan}
                         </p>
                       </div>
@@ -569,8 +576,8 @@ export function ExistingClientView() {
                               ) : "-"}
                             </TableCell>
                           )}
-                          <TableCell className="max-w-xs">
-                            <p className="text-sm line-clamp-2">
+                          <TableCell>
+                            <p className="text-sm font-bold">
                               {item.catatanKunjungan || "-"}
                             </p>
                           </TableCell>
@@ -713,63 +720,78 @@ export function ExistingClientView() {
       {/* Image Viewer */}
       {previewImage && previewIndex !== null && (
         <div
-          className="fixed top-0 left-0 w-screen h-screen z-[9999] bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center overflow-hidden"
+          className="fixed top-0 left-0 w-screen h-screen z-[9999] bg-black/95 backdrop-blur-sm flex flex-col overflow-hidden"
           onClick={() => setPreviewIndex(null)}
         >
-          {/* Close */}
-          <button
-            onClick={() => setPreviewIndex(null)}
-            className="absolute top-4 right-4 h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer z-10"
-          >
-            <X className="h-5 w-5" />
-          </button>
-
-          {/* Counter */}
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 text-white/70 text-sm font-medium">
-            {previewIndex + 1} / {imageList.length}
+          {/* Top bar */}
+          <div className="flex items-center justify-between px-6 py-3 flex-shrink-0" onClick={e => e.stopPropagation()}>
+            <div className="text-white/60 text-sm font-medium">{previewIndex + 1} / {imageList.length}</div>
+            <button onClick={() => setPreviewIndex(null)} className="h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer">
+              <X className="h-5 w-5" />
+            </button>
           </div>
 
-          {/* Prev */}
-          {imageList.length > 1 && (
-            <button
-              onClick={e => { e.stopPropagation(); goPrev(); }}
-              className="absolute left-4 h-11 w-11 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center text-white transition-colors cursor-pointer z-10"
-            >
-              <ChevronLeft className="h-6 w-6" />
-            </button>
-          )}
+          {/* Main: image 80% | info 20% */}
+          <div className="flex flex-1 min-h-0">
+            {/* Image area */}
+            <div className="relative w-4/5 flex items-center justify-center" onClick={e => e.stopPropagation()}>
+              {imageList.length > 1 && (
+                <button onClick={goPrev} className="absolute left-4 h-11 w-11 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center text-white transition-colors cursor-pointer z-10">
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+              )}
+              <img src={previewImage.src} alt={previewImage.label} className="max-w-full max-h-full object-contain rounded-xl shadow-2xl px-16 py-4" />
+              {imageList.length > 1 && (
+                <button onClick={goNext} className="absolute right-4 h-11 w-11 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center text-white transition-colors cursor-pointer z-10">
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              )}
+            </div>
 
-          {/* Image */}
-          <div className="flex flex-col items-center gap-3 px-20" onClick={e => e.stopPropagation()}>
-            <img
-              src={previewImage.src}
-              alt={previewImage.label}
-              className="max-w-full max-h-[80vh] object-contain rounded-xl shadow-2xl"
-            />
-            <p className="text-white/80 text-sm font-medium text-center">{previewImage.label}</p>
+            {/* Info panel */}
+            <div className="w-1/5 border-l border-white/10 flex flex-col p-5 gap-5 overflow-y-auto" onClick={e => e.stopPropagation()}>
+              <div>
+                <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">Perusahaan</p>
+                <p className="text-white font-semibold text-sm leading-snug">{previewImage.label}</p>
+              </div>
+              {previewImage.pic && (
+                <div>
+                  <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">PIC CRM</p>
+                  <p className="text-white/80 text-sm">{previewImage.pic}</p>
+                </div>
+              )}
+              {previewImage.sales && (
+                <div>
+                  <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">Sales</p>
+                  <p className="text-white/80 text-sm">{previewImage.sales}</p>
+                </div>
+              )}
+              {previewImage.kota && (
+                <div>
+                  <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">Kota</p>
+                  <p className="text-white/80 text-sm">{previewImage.kota}</p>
+                </div>
+              )}
+              {previewImage.tanggal && (
+                <div>
+                  <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">Tanggal Kunjungan</p>
+                  <p className="text-white/80 text-sm">{previewImage.tanggal}</p>
+                </div>
+              )}
+              {previewImage.catatan && (
+                <div>
+                  <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">Catatan</p>
+                  <p className="text-white/80 text-base leading-relaxed">{previewImage.catatan}</p>
+                </div>
+              )}
+            </div>
           </div>
-
-          {/* Next */}
-          {imageList.length > 1 && (
-            <button
-              onClick={e => { e.stopPropagation(); goNext(); }}
-              className="absolute right-4 h-11 w-11 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center text-white transition-colors cursor-pointer z-10"
-            >
-              <ChevronRight className="h-6 w-6" />
-            </button>
-          )}
 
           {/* Dot indicators */}
           {imageList.length > 1 && (
-            <div className="absolute bottom-6 flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-center gap-1.5 py-3 flex-shrink-0" onClick={e => e.stopPropagation()}>
               {imageList.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setPreviewIndex(i)}
-                  className={`rounded-full transition-all cursor-pointer ${
-                    i === previewIndex ? 'w-5 h-2 bg-white' : 'w-2 h-2 bg-white/40 hover:bg-white/70'
-                  }`}
-                />
+                <button key={i} onClick={() => setPreviewIndex(i)} className={`rounded-full transition-all cursor-pointer ${i === previewIndex ? 'w-5 h-2 bg-white' : 'w-2 h-2 bg-white/40 hover:bg-white/70'}`} />
               ))}
             </div>
           )}
