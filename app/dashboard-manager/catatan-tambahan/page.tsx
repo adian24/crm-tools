@@ -566,7 +566,7 @@ export default function CatatanTambahanPage() {
       </div>
 
       {/* Sticky full-width Terima Kasih button — above mobile nav, at bottom on desktop */}
-      {/* <div className="fixed bottom-[68px] lg:bottom-0 left-0 right-0 z-40 px-4 py-3 lg:px-8 lg:py-4">
+      <div className="fixed bottom-[68px] lg:bottom-0 left-0 right-0 z-40 px-4 py-3 lg:px-8 lg:py-4">
         <button
           onClick={() => setTerimaKasihOpen(true)}
           className="cursor-pointer w-full flex items-center justify-center gap-2.5 py-3 rounded-xl text-white font-semibold text-sm tracking-wide shadow-lg transition-all hover:scale-[1.01] active:scale-[0.99]"
@@ -574,7 +574,7 @@ export default function CatatanTambahanPage() {
         >
           Click here... See you next month !
         </button>
-      </div> */}
+      </div>
 
       {/* Terima Kasih Drawer */}
       <TerimaKasihDrawer open={terimaKasihOpen} onClose={() => setTerimaKasihOpen(false)} />
