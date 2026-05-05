@@ -71,10 +71,11 @@ async function getAuthenticatedContext(
 ) {
   const context = await browser.newContext({ viewport: VIEWPORT });
 
-  // Inject existing session into localStorage on every new page
-  await context.addInitScript((userJson: string) => {
-    localStorage.setItem("crm_user", userJson);
-  }, sessionJson);
+  // Use string form (not function+arg) — more compatible with @sparticuz/chromium.
+  // Embeds the value directly so no Playwright argument serialisation is involved.
+  await context.addInitScript(
+    `window.localStorage.setItem("crm_user", ${JSON.stringify(sessionJson)});`
+  );
 
   return context;
 }
@@ -153,16 +154,53 @@ async function waitForContent(
   // Tunggu network idle
   await page.waitForLoadState("networkidle").catch(() => {});
 
-  // Tunggu sampai tidak ada spinner / skeleton
+  // Tunggu sampai tidak ada spinner / skeleton / InfinityLoader
   await page.waitForFunction(() => {
     const spinners = document.querySelectorAll(
-      '[class*="animate-spin"],[class*="skeleton"],[data-loading]'
+      '[class*="animate-spin"],[class*="animate-pulse-ring"],[class*="skeleton"],[data-loading]'
     );
     return spinners.length === 0;
-  }, { timeout: 12000 }).catch(() => {});
+  }, { timeout: 15000 }).catch(() => {});
 
   // Ekstra buffer untuk chart & tabel render
-  await page.waitForTimeout(1800);
+  await page.waitForTimeout(2000);
+}
+
+/** Navigate ke url, inject session, retry jika redirect ke /login */
+async function gotoAuthenticated(
+  page: Awaited<ReturnType<Awaited<ReturnType<typeof getAuthenticatedContext>>["newPage"]>>,
+  url: string,
+  sessionJson: string,
+) {
+  // Belt-and-suspenders: page-level init script (string form)
+  await page.addInitScript(
+    `window.localStorage.setItem("crm_user", ${JSON.stringify(sessionJson)});`
+  );
+
+  await page.goto(url, { waitUntil: "domcontentloaded" });
+
+  // Explicit set after domcontentloaded, before React's useEffect fires
+  await page.evaluate((userJson) => {
+    window.localStorage.setItem("crm_user", userJson);
+  }, sessionJson);
+
+  // Wait for full load & auth check to resolve
+  await page.waitForLoadState("networkidle").catch(() => {});
+  await page.waitForTimeout(500);
+
+  // If auth failed and we got redirected to /login, re-inject and retry once
+  if (page.url().includes("/login")) {
+    console.warn(`[pptx] Redirected to /login for ${url}, injecting session and retrying...`);
+    await page.evaluate((userJson) => {
+      window.localStorage.setItem("crm_user", userJson);
+    }, sessionJson);
+    await page.goto(url, { waitUntil: "domcontentloaded" });
+    await page.evaluate((userJson) => {
+      window.localStorage.setItem("crm_user", userJson);
+    }, sessionJson);
+    await page.waitForLoadState("networkidle").catch(() => {});
+    await page.waitForTimeout(500);
+  }
 }
 
 async function screenshotPage(
@@ -170,10 +208,11 @@ async function screenshotPage(
   url: string,
   month: number,
   year: number,
+  sessionJson: string,
 ): Promise<Buffer> {
   const page = await context.newPage();
   try {
-    await page.goto(`${BASE_URL}${url}`);
+    await gotoAuthenticated(page, `${BASE_URL}${url}`, sessionJson);
     await waitForContent(page);
 
     // Set filter bulan & tahun ke nilai yang dipilih user
@@ -198,10 +237,11 @@ async function screenshotPage(
 async function screenshotDashboardDataCharts(
   context: Awaited<ReturnType<typeof getAuthenticatedContext>>,
   year: number,
+  sessionJson: string,
 ): Promise<{ title: string; buffer: Buffer }[]> {
   const page = await context.newPage();
   try {
-    await page.goto(`${BASE_URL}/dashboard-manager/dashboard-data`);
+    await gotoAuthenticated(page, `${BASE_URL}/dashboard-manager/dashboard-data`, sessionJson);
     await waitForContent(page);
 
     // Hide sidebar for clean screenshots
@@ -341,12 +381,12 @@ export async function POST(req: NextRequest) {
     const screenshots: Record<string, Buffer> = {};
     for (const mod of MODULES) {
       console.log(`Screenshotting: ${mod.title}...`);
-      screenshots[mod.key] = await screenshotPage(context, mod.url, month, year);
+      screenshots[mod.key] = await screenshotPage(context, mod.url, month, year, sessionJson);
     }
 
     // Screenshot dashboard-data chart cards individually
     console.log("Screenshotting dashboard-data chart cards...");
-    const dashboardCharts = await screenshotDashboardDataCharts(context, year);
+    const dashboardCharts = await screenshotDashboardDataCharts(context, year, sessionJson);
 
     await browser.close();
     browser = undefined;
