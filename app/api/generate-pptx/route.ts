@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { chromium } from "playwright";
+import { chromium } from "playwright-core";
 import pptxgen from "pptxgenjs";
 
-const BASE_URL = "http://localhost:3000";
+// Di Vercel gunakan URL deployment; di local gunakan localhost
+const BASE_URL =
+  process.env.NEXT_PUBLIC_BASE_URL ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
+// Batas waktu eksekusi Vercel (butuh plan Pro untuk > 60s)
+export const maxDuration = 300;
 
 const MONTHS = [
   "", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -318,8 +324,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Session tidak ditemukan. Pastikan Anda sudah login." }, { status: 401 });
     }
 
-    // Launch headless browser
-    browser = await chromium.launch({ headless: true });
+    // Launch headless browser — sparticuz di Vercel, playwright default di local
+    if (process.env.VERCEL) {
+      const chromiumSparticuz = (await import("@sparticuz/chromium")).default;
+      browser = await chromium.launch({
+        args: chromiumSparticuz.args,
+        executablePath: await chromiumSparticuz.executablePath(),
+        headless: true,
+      });
+    } else {
+      browser = await chromium.launch({ headless: true });
+    }
     const context = await getAuthenticatedContext(browser, sessionJson);
 
     // Screenshot regular modules (single full-page per module)

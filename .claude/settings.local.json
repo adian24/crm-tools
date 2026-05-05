@@ -44,7 +44,11 @@
       "Bash(git push:*)",
       "Bash(PORT=3000 npm run dev:*)",
       "Bash(start http://localhost:3000/dashboard-manager/kontak)",
-      "Bash(python3 -c ' *)"
+      "Bash(python3 -c ' *)",
+      "Bash(Get-ChildItem *)",
+      "Bash(npm list *)",
+      "Bash(npx playwright *)",
+      "PowerShell(Get-Process *)"
     ],
     "deny": [],
     "ask": []
