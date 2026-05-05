@@ -147,23 +147,21 @@ async function findAndSetFilters(
   }
 }
 
-/** Tunggu semua loading indicator hilang */
+/** Tunggu konten selesai render — TIDAK pakai networkidle karena websocket/polling
+ *  dari Supabase Realtime bisa bikin networkidle tidak pernah tercapai. */
 async function waitForContent(
   page: Awaited<ReturnType<Awaited<ReturnType<typeof getAuthenticatedContext>>["newPage"]>>,
 ) {
-  // Tunggu network idle
-  await page.waitForLoadState("networkidle").catch(() => {});
+  // Tunggu JS bundle selesai (load = semua resource awal terdownload)
+  await page.waitForLoadState("load").catch(() => {});
 
-  // Tunggu sampai tidak ada spinner / skeleton / InfinityLoader
+  // Tunggu InfinityLoader / auth loader hilang (auth check selesai)
   await page.waitForFunction(() => {
-    const spinners = document.querySelectorAll(
-      '[class*="animate-spin"],[class*="animate-pulse-ring"],[class*="skeleton"],[data-loading]'
-    );
-    return spinners.length === 0;
-  }, { timeout: 15000 }).catch(() => {});
+    return document.querySelectorAll('[class*="animate-pulse-ring"]').length === 0;
+  }, { timeout: 8000 }).catch(() => {});
 
-  // Ekstra buffer untuk chart & tabel render
-  await page.waitForTimeout(2000);
+  // Buffer untuk API call + chart render
+  await page.waitForTimeout(1200);
 }
 
 /** Navigate ke url, inject session, retry jika redirect ke /login */
@@ -177,29 +175,27 @@ async function gotoAuthenticated(
     `window.localStorage.setItem("crm_user", ${JSON.stringify(sessionJson)});`
   );
 
-  await page.goto(url, { waitUntil: "domcontentloaded" });
+  // waitUntil:"load" — lebih cepat dari networkidle, tidak hang akibat websocket
+  await page.goto(url, { waitUntil: "load" });
 
-  // Explicit set after domcontentloaded, before React's useEffect fires
+  // Set localStorage setelah load (sebelum React useEffect sempat redirect)
   await page.evaluate((userJson) => {
     window.localStorage.setItem("crm_user", userJson);
   }, sessionJson);
 
-  // Wait for full load & auth check to resolve
-  await page.waitForLoadState("networkidle").catch(() => {});
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(300);
 
-  // If auth failed and we got redirected to /login, re-inject and retry once
+  // Jika tetap redirect ke /login, inject ulang lalu navigate sekali lagi
   if (page.url().includes("/login")) {
-    console.warn(`[pptx] Redirected to /login for ${url}, injecting session and retrying...`);
+    console.warn(`[pptx] Redirected to /login for ${url}, retrying...`);
     await page.evaluate((userJson) => {
       window.localStorage.setItem("crm_user", userJson);
     }, sessionJson);
-    await page.goto(url, { waitUntil: "domcontentloaded" });
+    await page.goto(url, { waitUntil: "load" });
     await page.evaluate((userJson) => {
       window.localStorage.setItem("crm_user", userJson);
     }, sessionJson);
-    await page.waitForLoadState("networkidle").catch(() => {});
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(300);
   }
 }
 
@@ -263,7 +259,7 @@ async function screenshotDashboardDataCharts(
 
       // Scroll element into view and wait for chart to re-render
       await el.scrollIntoViewIfNeeded();
-      await page.waitForTimeout(800);
+      await page.waitForTimeout(500);
 
       // Screenshot hanya elemen chart tersebut
       const buffer = await el.screenshot({ type: "jpeg", quality: 90 });
