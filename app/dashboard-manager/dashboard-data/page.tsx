@@ -2663,7 +2663,7 @@ export default function CrmDataManagementPage() {
         </div>
 
         {/* Pencapaian Chart - Monthly Breakdown */}
-        <Card>
+        <Card id="pptx-chart-pencapaian">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -3005,7 +3005,7 @@ export default function CrmDataManagementPage() {
 
                   {/* Chart - Target vs Pencapaian */}
                   <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold">Chart Kuadran</h3>
+                      <h3 className="text-lg font-semibold">Chart Target vs Pencapaian Per Bulan</h3>
                       <Select value={selectedChartType} onValueChange={setSelectedChartType}>
                         <SelectTrigger className="w-32 h-8">
                           <SelectValue />
@@ -3018,7 +3018,7 @@ export default function CrmDataManagementPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                  <div id="pptx-chart-pencapaian">
+                  <div>
                   <ChartCardPencapaianMonthly
                     title={`Target vs Pencapaian Per Bulan${filterStatus !== 'all' ? ` - ${filterStatus.toUpperCase()}` : ''}`}
                     data={chartData}
@@ -3035,7 +3035,7 @@ export default function CrmDataManagementPage() {
         </Card>
 
         {/* Kuadran Analytics - Monthly Trend */}
-        <Card>
+        <Card id="pptx-chart-kuadran">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -3250,7 +3250,7 @@ export default function CrmDataManagementPage() {
                   </div>
 
                   {/* Chart - Monthly Trend by Kuadran */}
-                  <div id="pptx-chart-kuadran" className="space-y-4">
+                  <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <h3 className="text-lg font-semibold">Chart Kuadran</h3>
                       <Select value={selectedChartType} onValueChange={setSelectedChartType}>
@@ -3280,7 +3280,7 @@ export default function CrmDataManagementPage() {
         </Card>
 
         {/* Associate Category Analytics - Monthly Trend */}
-        <Card>
+        <Card id="pptx-chart-associate">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -3406,7 +3406,7 @@ export default function CrmDataManagementPage() {
                   </div>
 
                   {/* Chart - Monthly Trend by Associate Type */}
-                  <div id="pptx-chart-associate" className="space-y-4">
+                  <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <h3 className="text-lg font-semibold">Trend Direct vs Associate Per Bulan</h3>
                       <Select value={selectedAssociateChartType} onValueChange={setSelectedAssociateChartType}>
@@ -4552,7 +4552,7 @@ export default function CrmDataManagementPage() {
         </Card>
 
         {/* Standar Distribution Analytics */}
-        <Card>
+        <Card id="pptx-chart-standar">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex-1">
@@ -4724,7 +4724,7 @@ export default function CrmDataManagementPage() {
               }).sort((a, b) => b.count - a.count);
 
               return (
-                <div id="pptx-chart-standar">
+                <div>
                 <ChartCardStandarDistribution
                   title="Distribusi Standar"
                   data={allStandar}
@@ -4738,7 +4738,7 @@ export default function CrmDataManagementPage() {
         </Card>
 
         {/* EA Code Distribution Analytics */}
-        <Card>
+        <Card id="pptx-chart-eacode">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -4888,7 +4888,7 @@ export default function CrmDataManagementPage() {
                 .sort((a, b) => b.count - a.count);
 
               return (
-                <div id="pptx-chart-eacode">
+                <div>
                 <ChartCardEaCodeDistribution
                   title="Distribusi EA Code"
                   data={allEaCodes}
@@ -4901,7 +4901,7 @@ export default function CrmDataManagementPage() {
         </Card>
 
         {/* Trimming Value Chart */}
-        <Card>
+        <Card id="pptx-chart-trimming">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -4962,7 +4962,7 @@ export default function CrmDataManagementPage() {
               });
 
               return (
-                <div id="pptx-chart-trimming">
+                <div>
                 <ChartCardTr
                   title="Trimming Value per Bulan"
                   data={dataForTrimming}
@@ -4975,7 +4975,7 @@ export default function CrmDataManagementPage() {
         </Card>
 
         {/* Pareto Chart - Alasan Distribution */}
-        <Card>
+        <Card id="pptx-chart-pareto">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -5081,7 +5081,7 @@ export default function CrmDataManagementPage() {
               }).sort((a, b) => b.count - a.count);
 
               return (
-                <div id="pptx-chart-pareto">
+                <div>
                 <ChartCardParetoAlasan
                   title="Pareto Chart - Alasan"
                   data={allAlasans}

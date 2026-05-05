@@ -10,7 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
 import {
   FileDown,
   Loader2,
@@ -28,6 +27,7 @@ import {
   FileText,
   Award,
 } from "lucide-react";
+import { usePptxCapture } from "@/lib/pptx-capture-context";
 
 const MONTHS = [
   "", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -63,57 +63,12 @@ const SLIDES = [
 
 export default function GeneratePPTXPage() {
   const now   = new Date();
-  const [month,    setMonth]    = useState(now.getMonth() + 1);
-  const [year,     setYear]     = useState(now.getFullYear());
-  const [loading,  setLoading]  = useState(false);
-  const [progress, setProgress] = useState("");
+  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [year,  setYear]  = useState(now.getFullYear());
+
+  const { startCapture, isCapturing } = usePptxCapture();
 
   const yearOptions = Array.from({ length: 5 }, (_, i) => now.getFullYear() - 2 + i);
-
-  async function handleGenerate() {
-    // Ambil session yang sudah ada dari localStorage
-    const sessionJson = localStorage.getItem("crm_user");
-    if (!sessionJson) {
-      toast.error("Session tidak ditemukan. Silakan login ulang terlebih dahulu.");
-      return;
-    }
-
-    setLoading(true);
-    setProgress("Menginisialisasi browser...");
-
-    try {
-      setProgress("Mengambil screenshot setiap halaman + 11 chart Pencapaian CRM...");
-
-      const res = await fetch("/api/generate-pptx", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ month, year, sessionJson }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Server error" }));
-        throw new Error(err.error ?? "Gagal generate PowerPoint");
-      }
-
-      setProgress("Menyusun file PowerPoint...");
-
-      const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement("a");
-      a.href     = url;
-      a.download = `Laporan_CRM_${MONTHS[month]}_${year}.pptx`;
-      a.click();
-      URL.revokeObjectURL(url);
-
-      toast.success(`File PowerPoint ${MONTHS[month]} ${year} berhasil didownload!`);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
-      toast.error(`Gagal: ${msg}`);
-    } finally {
-      setLoading(false);
-      setProgress("");
-    }
-  }
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -140,10 +95,8 @@ export default function GeneratePPTXPage() {
         <div className="flex flex-wrap gap-4 items-end">
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Bulan</label>
-            <Select value={String(month)} onValueChange={v => setMonth(Number(v))} disabled={loading}>
-              <SelectTrigger className="w-44">
-                <SelectValue />
-              </SelectTrigger>
+            <Select value={String(month)} onValueChange={v => setMonth(Number(v))} disabled={isCapturing}>
+              <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {MONTHS.slice(1).map((m, i) => (
                   <SelectItem key={i + 1} value={String(i + 1)}>{m}</SelectItem>
@@ -154,10 +107,8 @@ export default function GeneratePPTXPage() {
 
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Tahun</label>
-            <Select value={String(year)} onValueChange={v => setYear(Number(v))} disabled={loading}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
+            <Select value={String(year)} onValueChange={v => setYear(Number(v))} disabled={isCapturing}>
+              <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {yearOptions.map(y => (
                   <SelectItem key={y} value={String(y)}>{y}</SelectItem>
@@ -167,35 +118,25 @@ export default function GeneratePPTXPage() {
           </div>
 
           <Button
-            onClick={handleGenerate}
-            disabled={loading}
+            onClick={() => startCapture(month, year)}
+            disabled={isCapturing}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 h-10"
           >
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                {progress || "Memproses..."}
-              </>
+            {isCapturing ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Memproses...</>
             ) : (
-              <>
-                <FileDown className="w-4 h-4 mr-2" />
-                Generate &amp; Download
-              </>
+              <><FileDown className="w-4 h-4 mr-2" />Generate &amp; Download</>
             )}
           </Button>
         </div>
 
-        {loading && (
-          <div className="mt-4 p-3 rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800">
-            <p className="text-sm text-blue-700 dark:text-blue-300 flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-              {progress}
-            </p>
-            <p className="text-xs text-blue-500 dark:text-blue-400 mt-1 ml-6">
-              Proses ini membutuhkan waktu ~60-120 detik (11 module + 11 chart Pencapaian CRM)
-            </p>
-          </div>
-        )}
+        <div className="mt-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800">
+          <p className="text-xs text-amber-700 dark:text-amber-300">
+            <strong>Catatan:</strong> Screenshot diambil dari tampilan browser Anda saat ini.
+            Pastikan filter bulan/tahun sudah diatur di setiap halaman sebelum generate.
+            Proses membutuhkan waktu ~45–90 detik.
+          </p>
+        </div>
       </Card>
 
       {/* Slide list */}
@@ -238,13 +179,6 @@ export default function GeneratePPTXPage() {
               </div>
             );
           })}
-        </div>
-
-        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            <strong>Catatan:</strong> Screenshot diambil dari data yang sedang tampil di aplikasi saat ini.
-            Pastikan filter bulan/tahun sudah diatur di setiap halaman sebelum generate, atau screenshot akan menampilkan data default.
-          </p>
         </div>
       </Card>
     </div>
