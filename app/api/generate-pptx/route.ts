@@ -69,10 +69,26 @@ async function getAuthenticatedContext(
   browser: Awaited<ReturnType<typeof chromium.launch>>,
   sessionJson: string,
 ) {
-  const context = await browser.newContext({ viewport: VIEWPORT });
+  // storageState pre-populates localStorage via CDP before any page opens.
+  // This is far more reliable than addInitScript on @sparticuz/chromium because
+  // it does not depend on JS injection timing or script evaluation order.
+  const origin = new URL(BASE_URL).origin;
 
-  // Use string form (not function+arg) — more compatible with @sparticuz/chromium.
-  // Embeds the value directly so no Playwright argument serialisation is involved.
+  const context = await browser.newContext({
+    viewport: VIEWPORT,
+    storageState: {
+      cookies: [],
+      origins: [
+        {
+          origin,
+          localStorage: [{ name: "crm_user", value: sessionJson }],
+        },
+      ],
+    },
+  });
+
+  // Belt-and-suspenders: addInitScript (string form) in case storageState
+  // is cleared by a navigation to a different path on the same origin.
   await context.addInitScript(
     `window.localStorage.setItem("crm_user", ${JSON.stringify(sessionJson)});`
   );
@@ -164,37 +180,21 @@ async function waitForContent(
   await page.waitForTimeout(1200);
 }
 
-/** Navigate ke url, inject session, retry jika redirect ke /login */
+/** Navigate ke url. storageState di context sudah pre-set crm_user,
+ *  jadi auth check di useEffect akan langsung berhasil. */
 async function gotoAuthenticated(
   page: Awaited<ReturnType<Awaited<ReturnType<typeof getAuthenticatedContext>>["newPage"]>>,
   url: string,
   sessionJson: string,
 ) {
-  // Belt-and-suspenders: page-level init script (string form)
-  await page.addInitScript(
-    `window.localStorage.setItem("crm_user", ${JSON.stringify(sessionJson)});`
-  );
-
-  // waitUntil:"load" — lebih cepat dari networkidle, tidak hang akibat websocket
   await page.goto(url, { waitUntil: "load" });
-
-  // Set localStorage setelah load (sebelum React useEffect sempat redirect)
-  await page.evaluate((userJson) => {
-    window.localStorage.setItem("crm_user", userJson);
-  }, sessionJson);
-
   await page.waitForTimeout(300);
 
-  // Jika tetap redirect ke /login, inject ulang lalu navigate sekali lagi
+  // Fallback: jika karena alasan apapun masih redirect ke /login
   if (page.url().includes("/login")) {
-    console.warn(`[pptx] Redirected to /login for ${url}, retrying...`);
-    await page.evaluate((userJson) => {
-      window.localStorage.setItem("crm_user", userJson);
-    }, sessionJson);
+    console.warn(`[pptx] Still on /login for ${url} — forcing localStorage and retrying`);
+    await page.evaluate((v) => window.localStorage.setItem("crm_user", v), sessionJson);
     await page.goto(url, { waitUntil: "load" });
-    await page.evaluate((userJson) => {
-      window.localStorage.setItem("crm_user", userJson);
-    }, sessionJson);
     await page.waitForTimeout(300);
   }
 }
