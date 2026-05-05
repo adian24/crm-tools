@@ -1522,7 +1522,7 @@ export default function CrmDataManagementPage() {
         </div>
 
         {/* Total Target Card & PIC CRM Cards - In same row */}
-        <div className="grid grid-cols-2 lg:grid-cols-6 gap-2">
+        <div id="pptx-stats" className="grid grid-cols-2 lg:grid-cols-6 gap-2">
           {/* MRC Card - Takes 1 column */}
           {(filterPicCrm === 'all' || filterPicCrm === 'MRC') && (
             <div className="lg:col-span-1 order-1">
@@ -3018,6 +3018,7 @@ export default function CrmDataManagementPage() {
                         </SelectContent>
                       </Select>
                     </div>
+                  <div id="pptx-chart-pencapaian">
                   <ChartCardPencapaianMonthly
                     title={`Target vs Pencapaian Per Bulan${filterStatus !== 'all' ? ` - ${filterStatus.toUpperCase()}` : ''}`}
                     data={chartData}
@@ -3025,6 +3026,7 @@ export default function CrmDataManagementPage() {
                     chartType={selectedChartType}
                     isFullWidth={true}
                   />
+                  </div>
 
                 </div>
               );
@@ -3248,7 +3250,7 @@ export default function CrmDataManagementPage() {
                   </div>
 
                   {/* Chart - Monthly Trend by Kuadran */}
-                  <div className="space-y-4">
+                  <div id="pptx-chart-kuadran" className="space-y-4">
                     <div className="flex items-center justify-between">
                       <h3 className="text-lg font-semibold">Chart Kuadran</h3>
                       <Select value={selectedChartType} onValueChange={setSelectedChartType}>
@@ -3404,7 +3406,7 @@ export default function CrmDataManagementPage() {
                   </div>
 
                   {/* Chart - Monthly Trend by Associate Type */}
-                  <div className="space-y-4">
+                  <div id="pptx-chart-associate" className="space-y-4">
                     <div className="flex items-center justify-between">
                       <h3 className="text-lg font-semibold">Trend Direct vs Associate Per Bulan</h3>
                       <Select value={selectedAssociateChartType} onValueChange={setSelectedAssociateChartType}>
@@ -3761,7 +3763,7 @@ export default function CrmDataManagementPage() {
         </Card>
 
         {/* Sales Performance Analytics */}
-        <Card>
+        <Card id="pptx-chart-sales">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -4193,7 +4195,7 @@ export default function CrmDataManagementPage() {
         </Card>
 
         {/* Tahapan Audit Distribution Analytics */}
-        <Card>
+        <Card id="pptx-chart-tahapan">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -4722,12 +4724,14 @@ export default function CrmDataManagementPage() {
               }).sort((a, b) => b.count - a.count);
 
               return (
+                <div id="pptx-chart-standar">
                 <ChartCardStandarDistribution
                   title="Distribusi Standar"
                   data={allStandar}
                   chartType={selectedStandarChartType}
                   filterStatus={filterStatus}
                 />
+                </div>
               );
             })()}
           </CardContent>
@@ -4884,11 +4888,13 @@ export default function CrmDataManagementPage() {
                 .sort((a, b) => b.count - a.count);
 
               return (
+                <div id="pptx-chart-eacode">
                 <ChartCardEaCodeDistribution
                   title="Distribusi EA Code"
                   data={allEaCodes}
                   chartType={selectedEaCodeChartType}
                 />
+                </div>
               );
             })()}
           </CardContent>
@@ -4956,11 +4962,13 @@ export default function CrmDataManagementPage() {
               });
 
               return (
+                <div id="pptx-chart-trimming">
                 <ChartCardTr
                   title="Trimming Value per Bulan"
                   data={dataForTrimming}
                   chartType={selectedTrChartType}
                 />
+                </div>
               );
             })()}
           </CardContent>
@@ -5073,10 +5081,12 @@ export default function CrmDataManagementPage() {
               }).sort((a, b) => b.count - a.count);
 
               return (
+                <div id="pptx-chart-pareto">
                 <ChartCardParetoAlasan
                   title="Pareto Chart - Alasan"
                   data={allAlasans}
                 />
+                </div>
               );
             })()}
           </CardContent>
@@ -5084,10 +5094,12 @@ export default function CrmDataManagementPage() {
 
 
         {/* Tren Penjualan Bulanan 2024-2026 */}
+        <div id="pptx-chart-tren">
         <TrenBulananChart
           crmData={filteredTargets}
           kategoriProduk={filterKategoriProduk !== 'SEMUA' ? filterKategoriProduk : undefined}
         />
+        </div>
 
         {/* Table */}
         <CrmDataTable data={filteredTargets as CrmTarget[]} canEdit={false} showExport={false} />

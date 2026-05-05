@@ -30,6 +30,7 @@ import {
   IconChartPie,
   IconUserCheck,
   IconClipboardData,
+  IconPresentation,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -87,6 +88,7 @@ const getNavigationItems = (role: string) => {
       { title: "CRM Data Management",           url: "/dashboard-manager/crm-data",                       icon: IconTarget },
       { title: "Data Historis 2024-2025",       url: "/dashboard-manager/monthly-input",                  icon: IconClipboardData },
       { title: "Kontak",                        url: "/dashboard-manager/kontak",                         icon: IconAddressBook },
+      { title: "Generate Laporan PPT",          url: "/dashboard-manager/generate-pptx",                  icon: IconPresentation },
       {
         title: "Master Data",
         icon: IconDatabase,
@@ -114,6 +116,7 @@ const getNavigationItems = (role: string) => {
     { title: "CRM Data Management",           url: "/dashboard-manager/crm-data",                       icon: IconTarget },
     { title: "Data Historis 2024-2025",       url: "/dashboard-manager/monthly-input",                  icon: IconClipboardData },
     { title: "Kontak",                        url: "/dashboard-manager/kontak",                         icon: IconAddressBook },
+    { title: "Generate Laporan PPT",          url: "/dashboard-manager/generate-pptx",                  icon: IconPresentation },
     {
       title: "Master Data",
       icon: IconDatabase,
