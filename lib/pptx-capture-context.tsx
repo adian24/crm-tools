@@ -280,25 +280,58 @@ async function buildAndDownload(
   month: number,
   year: number,
 ) {
+  const label    = `${MONTHS[month]} ${year}`;
+  const HEADER_H = 0.45;
+  const CONTENT_H = 7.5 - HEADER_H;
+
+  // ── 1. Fetch cover & closing sebagai PNG data URL ─────────────────────────
+  async function fetchImageAsDataUrl(url: string): Promise<string | null> {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const buf  = await res.arrayBuffer();
+      const mime = res.headers.get("content-type") ?? "image/jpeg";
+      const b64  = btoa(String.fromCharCode(...new Uint8Array(buf)));
+      return `data:${mime};base64,${b64}`;
+    } catch {
+      return null;
+    }
+  }
+
+  const [coverPng, closingPng] = await Promise.all([
+    fetchImageAsDataUrl("/templateppt/cover.jpeg"),
+    fetchImageAsDataUrl("/templateppt/closing.jpeg"),
+  ]);
+
+  // ── 2. Build PPTX dengan pptxgenjs ────────────────────────────────────────
   const { default: pptxgen } = await import("pptxgenjs");
   const pptx = new pptxgen();
   pptx.layout = "LAYOUT_WIDE";
 
-  const HEADER_H = 0.45;
-  const CONTENT_H = 7.5 - HEADER_H;
-  const label = `${MONTHS[month]} ${year}`;
-
-  // Cover
+  // Cover — pakai JPEG template jika ada, fallback ke solid shape
   const cover = pptx.addSlide();
-  cover.addShape("rect", { x: 0, y: 0,    w: 13.33, h: 7.5,  fill: { color: "1B3A6B" }, line: { color: "1B3A6B", width: 0 } });
-  cover.addShape("rect", { x: 0, y: 3.65, w: 13.33, h: 0.07, fill: { color: "2563EB" }, line: { color: "2563EB", width: 0 } });
-  cover.addText("LAPORAN BULANAN CRM", { x: 0.5, y: 1.5,  w: 12.33, h: 1.1,  fontSize: 40, bold: true,   color: "FFFFFF", align: "center" });
-  cover.addText(label,                  { x: 0.5, y: 2.75, w: 12.33, h: 0.8,  fontSize: 28,               color: "93C5FD", align: "center" });
-  cover.addText("TSI Certification",    { x: 0.5, y: 3.9,  w: 12.33, h: 0.55, fontSize: 16, italic: true, color: "FFFFFF", align: "center" });
-  cover.addShape("rect", { x: 0, y: 7.0, w: 13.33, h: 0.5, fill: { color: "0F2044" }, line: { color: "0F2044", width: 0 } });
-  cover.addText("Dokumen Internal – Rahasia", { x: 0.5, y: 7.0, w: 12.33, h: 0.5, fontSize: 9, color: "94A3B8", align: "center", valign: "middle" });
+  if (coverPng) {
+    cover.addImage({ data: coverPng, x: 0, y: 0, w: 13.33, h: 7.5 });
+    // Overlay teks "Business Review [Bulan] [Tahun]" di area kiri tengah
+    cover.addText("Business Review", {
+      x: 0.35, y: 2.8, w: 5.5, h: 0.65,
+      fontSize: 28, bold: true, color: "1B3A6B", align: "left",
+      fontFace: "Calibri",
+    });
+    cover.addText(label, {
+      x: 0.35, y: 3.4, w: 5.5, h: 0.55,
+      fontSize: 22, bold: false, color: "1B3A6B", align: "left",
+      fontFace: "Calibri",
+    });
+  } else {
+    cover.addShape("rect", { x: 0, y: 0,    w: 13.33, h: 7.5,  fill: { color: "1B3A6B" }, line: { color: "1B3A6B", width: 0 } });
+    cover.addShape("rect", { x: 0, y: 3.65, w: 13.33, h: 0.07, fill: { color: "2563EB" }, line: { color: "2563EB", width: 0 } });
+    cover.addText("LAPORAN BULANAN CRM", { x: 0.5, y: 1.5,  w: 12.33, h: 1.1,  fontSize: 40, bold: true,   color: "FFFFFF", align: "center" });
+    cover.addText(label,                  { x: 0.5, y: 2.75, w: 12.33, h: 0.8,  fontSize: 28,               color: "93C5FD", align: "center" });
+    cover.addText("TSI Certification",    { x: 0.5, y: 3.9,  w: 12.33, h: 0.55, fontSize: 16, italic: true, color: "FFFFFF", align: "center" });
+  }
 
-  // Screenshot slides
+  // Content slides
   for (const { title, dataUrl } of slides) {
     const s = pptx.addSlide();
     s.addShape("rect", { x: 0, y: 0, w: 13.33, h: HEADER_H, fill: { color: "1B3A6B" }, line: { color: "1B3A6B", width: 0 } });
@@ -308,18 +341,21 @@ async function buildAndDownload(
       sizing: { type: "contain", w: 13.33, h: CONTENT_H } });
   }
 
-  // Closing
+  // Closing — pakai PNG template jika ada, fallback ke solid shape
   const closing = pptx.addSlide();
-  closing.addShape("rect", { x: 0, y: 0,   w: 13.33, h: 7.5,  fill: { color: "1B3A6B" }, line: { color: "1B3A6B", width: 0 } });
-  closing.addShape("rect", { x: 0, y: 3.5, w: 13.33, h: 0.07, fill: { color: "2563EB" }, line: { color: "2563EB", width: 0 } });
-  closing.addText("Terima Kasih",              { x: 0.5, y: 1.5,  w: 12.33, h: 1.1, fontSize: 42, bold: true,   color: "FFFFFF", align: "center" });
-  closing.addText("Sampai Jumpa Bulan Depan!", { x: 0.5, y: 2.65, w: 12.33, h: 0.7, fontSize: 22,               color: "93C5FD", align: "center" });
-  closing.addText(`${label}  •  TSI Certification`, { x: 0.5, y: 3.75, w: 12.33, h: 0.5, fontSize: 14, italic: true, color: "CBD5E1", align: "center" });
-  closing.addShape("rect", { x: 0, y: 7.0, w: 13.33, h: 0.5, fill: { color: "0F2044" }, line: { color: "0F2044", width: 0 } });
-  closing.addText("Dokumen Internal – Rahasia", { x: 0.5, y: 7.0, w: 12.33, h: 0.5, fontSize: 9, color: "94A3B8", align: "center", valign: "middle" });
+  if (closingPng) {
+    closing.addImage({ data: closingPng, x: 0, y: 0, w: 13.33, h: 7.5 });
+  } else {
+    closing.addShape("rect", { x: 0, y: 0,   w: 13.33, h: 7.5,  fill: { color: "1B3A6B" }, line: { color: "1B3A6B", width: 0 } });
+    closing.addShape("rect", { x: 0, y: 3.5, w: 13.33, h: 0.07, fill: { color: "2563EB" }, line: { color: "2563EB", width: 0 } });
+    closing.addText("Terima Kasih",              { x: 0.5, y: 1.5,  w: 12.33, h: 1.1, fontSize: 42, bold: true,   color: "FFFFFF", align: "center" });
+    closing.addText("Sampai Jumpa Bulan Depan!", { x: 0.5, y: 2.65, w: 12.33, h: 0.7, fontSize: 22,               color: "93C5FD", align: "center" });
+    closing.addText(`${label}  •  TSI Certification`, { x: 0.5, y: 3.75, w: 12.33, h: 0.5, fontSize: 14, italic: true, color: "CBD5E1", align: "center" });
+  }
 
-  // Download
   const arrayBuffer = await pptx.write({ outputType: "arraybuffer" }) as ArrayBuffer;
+
+  // ── 3. Download ────────────────────────────────────────────────────────────
   const blob = new Blob([arrayBuffer], {
     type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
   });

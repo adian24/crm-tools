@@ -48,7 +48,8 @@
       "Bash(Get-ChildItem *)",
       "Bash(npm list *)",
       "Bash(npx playwright *)",
-      "PowerShell(Get-Process *)"
+      "PowerShell(Get-Process *)",
+      "PowerShell(head *)"
     ],
     "deny": [],
     "ask": []
