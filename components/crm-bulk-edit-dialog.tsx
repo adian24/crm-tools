@@ -50,7 +50,7 @@ type EditableField =
   | "statusKunjungan" | "catatanKunjungan";
 
 type ColKey  = EditableField | "trimmingValue" | "lossValue";
-type CellType = "text" | "number" | "combobox" | "calc";
+type CellType = "text" | "number" | "combobox" | "calc" | "date";
 
 interface ColDef {
   key: ColKey;
@@ -237,6 +237,29 @@ function CellInput({ value, onChange, isDirty, isNumber, isCurrency, onEnterDown
   );
 }
 
+// ─── CellDate ─────────────────────────────────────────────────────────────────
+interface CellDateProps {
+  value: string;
+  onChange: (v: string) => void;
+  isDirty?: boolean;
+  inputRef?: (el: HTMLInputElement | null) => void;
+}
+
+function CellDate({ value, onChange, isDirty, inputRef }: CellDateProps) {
+  return (
+    <input
+      ref={inputRef}
+      type="date"
+      value={value}
+      className={cn(
+        "w-full h-full px-2 text-[11px] bg-transparent focus:outline-none",
+        isDirty && "bg-amber-50",
+      )}
+      onChange={e => onChange(e.target.value)}
+    />
+  );
+}
+
 // ─── CellCalc (read-only) ─────────────────────────────────────────────────────
 function CellCalc({ value }: { value: string }) {
   return (
@@ -296,14 +319,14 @@ export function CrmBulkEditDialog({ open, onOpenChange, rows, onSaved }: CrmBulk
     { key:"eaCode",            header:"EA Code",          width:80,  type:"combobox", options:eaCodeOptions },
     { key:"std",               header:"STD",              width:90,  type:"combobox", options:stdOptions },
     // ── Tanggal & Audit ───────────────────────────────────────────────────
-    { key:"iaDate",            header:"IA Date",          width:110, type:"text" },
-    { key:"bulanAuditSebelumnyaSustain", header:"Bulan Audit Sblm", width:130, type:"combobox", options:MONTHS },
-    { key:"expDate",           header:"Exp Date",         width:110, type:"text" },
+    { key:"iaDate",            header:"IA Date",          width:140, type:"date" },
+    { key:"bulanAuditSebelumnyaSustain", header:"Bulan Audit Sblm", width:140, type:"date" },
+    { key:"expDate",           header:"Exp Date",         width:140, type:"date" },
     { key:"tahapAudit",        header:"Tahap Audit",      width:120, type:"combobox", options:tahapanOptions },
     // ── Keuangan ──────────────────────────────────────────────────────────
     { key:"hargaKontrak",      header:"Harga Kontrak",    width:140, type:"number", isCurrency:true },
-    { key:"bulanTtdNotif",     header:"Bulan TTD",        width:110, type:"combobox", options:MONTHS },
-    { key:"bulanAudit",        header:"Bulan Audit",      width:110, type:"text" },
+    { key:"bulanTtdNotif",     header:"Bulan TTD",        width:140, type:"date" },
+    { key:"bulanAudit",        header:"Bulan Audit",      width:140, type:"date" },
     { key:"hargaTerupdate",    header:"Harga Terupdate",  width:140, type:"number", isCurrency:true },
     { key:"trimmingValue",     header:"Trimming",         width:120, type:"calc" },
     { key:"lossValue",         header:"Loss",             width:120, type:"calc" },
@@ -315,7 +338,7 @@ export function CrmBulkEditDialog({ open, onOpenChange, rows, onSaved }: CrmBulk
     { key:"statusKomisi",      header:"Status Komisi",    width:130, type:"combobox", options:STATUS_KOMISI_OPTIONS },
     { key:"statusSertifikat",  header:"Status Sertifikat",width:120, type:"combobox", options:STATUS_SERTIFIKAT_OPTIONS },
     // ── Kunjungan ─────────────────────────────────────────────────────────
-    { key:"tanggalKunjungan",  header:"Tgl Kunjungan",    width:120, type:"text" },
+    { key:"tanggalKunjungan",  header:"Tgl Kunjungan",    width:140, type:"date" },
     { key:"statusKunjungan",   header:"Status Kunjungan", width:120, type:"combobox", options:STATUS_KUNJUNGAN_OPTIONS },
   ], [salesOptions, associateOptions, tahapanOptions, kuadranOptions, alasanOptions,
       akreditasiOptions, eaCodeOptions, stdOptions, provinsiOptions, allKotaOptions]);
@@ -648,6 +671,13 @@ export function CrmBulkEditDialog({ open, onOpenChange, rows, onSaved }: CrmBulk
                               onChange={v => setCellValue(row._id, field, v)}
                               isDirty={cellDirty}
                               onEnterDown={() => focusCell(rowIdx + 1, colIdx)}
+                              inputRef={el => cellRefsMap.current.set(refKey, el)}
+                            />
+                          ) : col.type === "date" ? (
+                            <CellDate
+                              value={val}
+                              onChange={v => setCellValue(row._id, field, v)}
+                              isDirty={cellDirty}
                               inputRef={el => cellRefsMap.current.set(refKey, el)}
                             />
                           ) : (
