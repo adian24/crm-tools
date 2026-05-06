@@ -246,6 +246,21 @@ function getStatusKunjunganBadgeStyle(s: string | undefined): string {
 function fmtCurrency(v: number | undefined): string {
   return v ? `Rp ${v.toLocaleString("id-ID")}` : "-";
 }
+
+function getExpireAlert(expDate: string | undefined): "red" | "orange" | "yellow" | null {
+  if (!expDate?.trim() || expDate.trim() === "-") return null;
+  const parsed = new Date(expDate.trim());
+  if (isNaN(parsed.getTime())) return null;
+  const now   = new Date();
+  now.setHours(0, 0, 0, 0);
+  const diffMs   = parsed.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffMs / 86400000);
+  if (diffDays < 0)   return null;        // sudah lewat
+  if (diffDays <= 30)  return "red";
+  if (diffDays <= 60)  return "orange";
+  if (diffDays <= 90)  return "yellow";
+  return null;
+}
 const MONTH_FULL = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
 const MONTH_SHORT_MAP: Record<string, number> = {
   jan: 0, feb: 1, mar: 2, apr: 3, mei: 4, jun: 5,
@@ -1155,6 +1170,23 @@ export function CrmDataTable({ data, canEdit = false, showExport = true, onEdit,
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col gap-2">
+      <style>{`
+        @keyframes blink-yellow {
+          0%, 100% { background-color: rgba(254, 240, 138, 0.55); }
+          50%       { background-color: transparent; }
+        }
+        @keyframes blink-orange {
+          0%, 100% { background-color: rgba(253, 186, 116, 0.55); }
+          50%       { background-color: transparent; }
+        }
+        @keyframes blink-red {
+          0%, 100% { background-color: rgba(252, 165, 165, 0.65); }
+          50%       { background-color: transparent; }
+        }
+        .expire-yellow { animation: blink-yellow 1.8s ease-in-out infinite; }
+        .expire-orange { animation: blink-orange 1.4s ease-in-out infinite; }
+        .expire-red    { animation: blink-red    1.0s ease-in-out infinite; }
+      `}</style>
       {/* ── Toolbar ── */}
       <div className="flex flex-col gap-2 rounded-lg border bg-card px-3 py-2.5">
 
@@ -1368,12 +1400,13 @@ export function CrmDataTable({ data, canEdit = false, showExport = true, onEdit,
                     const isGrouped = row.getIsGrouped();
                     const isSelected = row.getIsSelected();
                     const isEven = rowIdx % 2 === 0;
+                    const expAlert = !isGrouped ? getExpireAlert(row.original.expDate) : null;
 
                     return (
                       <tr
                         key={row.id}
                         className={`border-b transition-colors cursor-pointer
-                          ${isGrouped ? "bg-purple-50 font-medium hover:bg-purple-100" : isSelected ? "bg-primary/10 hover:bg-primary/15" : isEven ? "bg-white hover:bg-purple-50" : "bg-purple-50/40 hover:bg-purple-100/60"}
+                          ${expAlert ? `expire-${expAlert}` : isGrouped ? "bg-purple-50 font-medium hover:bg-purple-100" : isSelected ? "bg-primary/10 hover:bg-primary/15" : isEven ? "bg-white hover:bg-purple-50" : "bg-purple-50/40 hover:bg-purple-100/60"}
                         `}
                         onClick={() => {
                           if (isGrouped) { row.getToggleExpandedHandler()(); }
