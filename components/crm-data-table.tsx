@@ -178,7 +178,6 @@ const GROUPABLE_COLUMNS = [
   { id: "iaDate", label: "IA Date" },
   { id: "bulanAuditSebelumnyaSustain", label: "Bln Audit Sblm" },
   { id: "expDate", label: "Exp Date" },
-  { id: "tahapAudit", label: "Tahap Audit" },
   { id: "bulanTtdNotif", label: "Bulan TTD" },
   { id: "bulanAudit", label: "Bulan Audit" },
   { id: "tanggalKunjungan", label: "Tgl Kunjungan" },
@@ -300,10 +299,16 @@ function getPinStyles(column: Column<CrmTarget>, isHeader = false): React.CSSPro
 }
 
 // ── Custom filter fn ──────────────────────────────────────────────────────────
+const EMPTY_SENTINEL = "__EMPTY__";
+
 const multiSelectFilter: FilterFn<CrmTarget> = (row, columnId, filterValue: string[]) => {
   if (!filterValue?.length) return true;
-  const cell = String(row.getValue(columnId) ?? "").toLowerCase().trim();
-  return filterValue.map(v => v.toLowerCase().trim()).includes(cell);
+  const raw = row.getValue(columnId);
+  const cell = String(raw ?? "").toLowerCase().trim();
+  const isEmpty = !cell || cell === "-";
+  if (filterValue.includes(EMPTY_SENTINEL) && isEmpty) return true;
+  const others = filterValue.filter(v => v !== EMPTY_SENTINEL).map(v => v.toLowerCase().trim());
+  return others.length > 0 && others.includes(cell);
 };
 multiSelectFilter.autoRemove = (v: string[]) => !v?.length;
 
@@ -342,6 +347,15 @@ function ColumnFilterPopover({ column, title }: { column: Column<CrmTarget>; tit
     column.setFilterValue(next.length ? next : undefined);
   };
 
+  const toggleEmpty = () => {
+    const next = currentFilter.includes(EMPTY_SENTINEL)
+      ? currentFilter.filter(v => v !== EMPTY_SENTINEL)
+      : [...currentFilter, EMPTY_SENTINEL];
+    column.setFilterValue(next.length ? next : undefined);
+  };
+
+  const emptyChecked = currentFilter.includes(EMPTY_SENTINEL);
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -359,6 +373,11 @@ function ColumnFilterPopover({ column, title }: { column: Column<CrmTarget>; tit
         <Input placeholder="Cari..." value={search} onChange={e => setSearch(e.target.value)} className="mb-2 h-7 text-xs" />
         <ScrollArea className="h-44">
           <div className="space-y-0.5 pr-1">
+            {/* Kosong (blank) option */}
+            <div className="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 hover:bg-accent border-b border-dashed border-muted mb-1 pb-1" onClick={toggleEmpty}>
+              <Checkbox checked={emptyChecked} className="pointer-events-none h-3.5 w-3.5" />
+              <span className="truncate text-xs italic text-muted-foreground">(Kosong)</span>
+            </div>
             {displayed.length === 0 ? (
               <p className="py-3 text-center text-xs text-muted-foreground">Tidak ada nilai</p>
             ) : displayed.map(val => {
@@ -1081,7 +1100,7 @@ export function CrmDataTable({ data, canEdit = false, showExport = true, onEdit,
         "Termin": d.terminPembayaran ?? "", "Status Invoice": d.statusInvoice ?? "",
         "Status Pembayaran": d.statusPembayaran ?? "", "Status Komisi": d.statusKomisi ?? "",
         "Status Sertifikat": d.statusSertifikat ?? "", "Tgl Kunjungan": d.tanggalKunjungan ?? "",
-        "Status Kunjungan": d.statusKunjungan ?? "", "Foto Bukti": d.fotoBuktiKunjungan ?? "",
+        "Status Kunjungan": d.statusKunjungan ?? "",
       };
     });
     const ws = XLSX.utils.json_to_sheet(exportData);

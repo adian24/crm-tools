@@ -2535,6 +2535,7 @@ export default function CrmDataManagementPage() {
         <CrmDataTable
           data={filteredTargets}
           canEdit={canEdit}
+          showExport={canEdit}
           onEdit={(target) => { setSelectedTarget(target); setIsEditDialogOpen(true); }}
           onDelete={async (id) => {
             await deleteTarget({ id: id as Id<"crmTargets"> });
