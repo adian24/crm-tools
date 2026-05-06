@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { CustomerComplainDialog } from '@/components/customer-complain-dialog';
 import { toast } from 'sonner';
+import { useGlobalFilter } from "@/lib/global-filter-context";
 import {
   AlertTriangle,
   Plus,
@@ -79,8 +80,7 @@ export default function CustomerComplainPage() {
   const deleteCustomerComplainMutation = useMutation(api.customerComplain.deleteCustomerComplain);
   const updateStatusMutation = useMutation(api.customerComplain.updateCustomerComplainStatus);
 
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1); // Default: current month (1-12)
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const { month: selectedMonth, setMonth: setSelectedMonth, year: selectedYear, setYear: setSelectedYear } = useGlobalFilter();
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingComplain, setEditingComplain] = useState<CustomerComplain | null>(null);

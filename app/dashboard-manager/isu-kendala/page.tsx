@@ -30,6 +30,7 @@ import {
 import { IsuKendalaDialog } from '@/components/isu-kendala-dialog';
 import { ImagePreviewDialog } from '@/components/image-preview-dialog';
 import { toast } from 'sonner';
+import { useGlobalFilter } from "@/lib/global-filter-context";
 import {
   AlertTriangle,
   Plus,
@@ -79,8 +80,7 @@ export default function IsuKendalaPage() {
   const deleteIsuKendalaMutation = useMutation(api.isuKendala.deleteIsuKendala);
   const updateStatusMutation = useMutation(api.isuKendala.updateIsuKendalaStatus);
 
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const { month: selectedMonth, setMonth: setSelectedMonth, year: selectedYear, setYear: setSelectedYear } = useGlobalFilter();
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingIsu, setEditingIsu] = useState<IsuKendala | null>(null);

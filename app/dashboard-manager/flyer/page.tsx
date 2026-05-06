@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { FlyerDialog } from '@/components/flyer-dialog';
 import { toast } from 'sonner';
+import { useGlobalFilter } from "@/lib/global-filter-context";
 import {
   Image as PhotoIcon,
   Plus,
@@ -76,8 +77,7 @@ export default function FlyerPage() {
   const deleteFlyerMutation = useMutation(api.flyers.deleteFlyer);
   const updateStatusMutation = useMutation(api.flyers.updateFlyerStatus);
 
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const { month: selectedMonth, setMonth: setSelectedMonth, year: selectedYear, setYear: setSelectedYear } = useGlobalFilter();
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingFlyer, setEditingFlyer] = useState<Flyer | null>(null);

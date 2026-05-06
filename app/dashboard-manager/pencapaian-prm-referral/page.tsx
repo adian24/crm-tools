@@ -61,6 +61,7 @@ import {
   Cell,
   LabelList,
 } from "recharts";
+import { useGlobalFilter } from "@/lib/global-filter-context";
 
 interface PrmReferralPencapaian {
   _id: Id<"prmReferralPencapaian">;
@@ -110,8 +111,7 @@ export default function PencapaianPrmReferralPage() {
   const updateMutation = useMutation(api.prmReferralPencapaian.updatePrmReferralPencapaian);
   const deleteMutation = useMutation(api.prmReferralPencapaian.deletePrmReferralPencapaian);
 
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const { month: selectedMonth, setMonth: setSelectedMonth, year: selectedYear, setYear: setSelectedYear } = useGlobalFilter();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<PrmReferralPencapaian | null>(null);

@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Calendar, User, Search, X, DollarSign, LayoutGrid, Table as TableIcon, Plus } from 'lucide-react';
+import { useGlobalFilter } from "@/lib/global-filter-context";
 
 const MONTHS = [
   "All", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -54,8 +55,7 @@ export function LaporanKunjunganTabs() {
   const [activeTab, setActiveTab] = useState("existing");
 
   // Shared filter state
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const { month: selectedMonth, setMonth: setSelectedMonth, year: selectedYear, setYear: setSelectedYear } = useGlobalFilter();
   const [selectedPicCrm, setSelectedPicCrm] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");

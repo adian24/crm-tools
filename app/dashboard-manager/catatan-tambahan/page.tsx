@@ -47,6 +47,7 @@ import {
 } from 'lucide-react';
 import { ImagePreviewDialog } from '@/components/image-preview-dialog';
 import { TerimaKasihDrawer } from '@/components/TerimaKasihDrawer';
+import { useGlobalFilter } from "@/lib/global-filter-context";
 
 interface CatatanTambahan {
   _id: Id<"catatanTambahan">;
@@ -75,8 +76,7 @@ export default function CatatanTambahanPage() {
   const deleteCatatanMutation = useMutation(api.catatanTambahan.deleteCatatanTambahan);
   const updateStatusMutation = useMutation(api.catatanTambahan.updateCatatanTambahanStatus);
 
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const { month: selectedMonth, setMonth: setSelectedMonth, year: selectedYear, setYear: setSelectedYear } = useGlobalFilter();
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCatatan, setEditingCatatan] = useState<CatatanTambahan | null>(null);

@@ -8,6 +8,7 @@ import { CRMHeader } from './crm-header';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { InfinityLoader } from '@/components/ui/infinity-loader';
 import { PptxCaptureProvider } from '@/lib/pptx-capture-context';
+import { GlobalFilterProvider } from '@/lib/global-filter-context';
 
 interface User {
   id: string;
@@ -85,6 +86,7 @@ export default function ManagerDashboardLayout({ children }: ManagerDashboardLay
   }
 
   return (
+    <GlobalFilterProvider>
     <PptxCaptureProvider>
     <SidebarProvider defaultOpen={true}>
       <div className={`flex h-screen w-full overflow-hidden ${isDarkMode ? 'bg-gradient-to-br from-purple-950/50 via-background to-blue-950/50' : 'bg-gradient-to-br from-purple-100/80 via-blue-50/60 to-purple-400/80'}`}>
@@ -106,5 +108,6 @@ export default function ManagerDashboardLayout({ children }: ManagerDashboardLay
       </div>
     </SidebarProvider>
     </PptxCaptureProvider>
+    </GlobalFilterProvider>
   );
 }

@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { KunjunganEngagementPartnershipDialog } from '@/components/kunjungan-engagement-partnership-dialog';
 import { toast } from 'sonner';
+import { useGlobalFilter } from "@/lib/global-filter-context";
 import {
   Handshake,
   Plus,
@@ -83,8 +84,7 @@ export default function KunjunganEngagementPartnershipPage() {
   const kunjungan = useQuery(api.kunjunganEngagementPartnership.getKunjunganEngagementPartnership);
   const deleteKunjunganMutation = useMutation(api.kunjunganEngagementPartnership.deleteKunjunganEngagementPartnership);
 
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const { month: selectedMonth, setMonth: setSelectedMonth, year: selectedYear, setYear: setSelectedYear } = useGlobalFilter();
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingKunjungan, setEditingKunjungan] = useState<KunjunganEngagementPartnership | null>(null);

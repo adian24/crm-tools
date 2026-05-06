@@ -36,6 +36,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useGlobalFilter } from "@/lib/global-filter-context";
 import {
   Plus,
   Pencil,
@@ -109,8 +110,7 @@ export default function NPSPage() {
   const updateMutation = useMutation(api.nps.updateNPS);
   const deleteMutation = useMutation(api.nps.deleteNPS);
 
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const { month: selectedMonth, setMonth: setSelectedMonth, year: selectedYear, setYear: setSelectedYear } = useGlobalFilter();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<NPS | null>(null);

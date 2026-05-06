@@ -23,6 +23,13 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { handleLogout } from "@/lib/auth"
+import { useGlobalFilter } from "@/lib/global-filter-context"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+const MONTH_NAMES = [
+  "Januari","Februari","Maret","April","Mei","Juni",
+  "Juli","Agustus","September","Oktober","November","Desember",
+]
 
 export interface CRMUser {
   id: string;
@@ -41,6 +48,9 @@ export interface CRMHeaderProps {
 export function CRMHeader({ user, onThemeToggle, isDarkMode }: CRMHeaderProps) {
   const [searchQuery, setSearchQuery] = React.useState("")
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
+  const { month, year, setMonth, setYear } = useGlobalFilter()
+  const now = new Date()
+  const yearOptions = Array.from({ length: 5 }, (_, i) => now.getFullYear() - 2 + i)
 
   const getRoleLabel = (role: string) => {
     switch (role) {
@@ -69,6 +79,31 @@ export function CRMHeader({ user, onThemeToggle, isDarkMode }: CRMHeaderProps) {
           </div>
 
           <Separator orientation="vertical" className={`h-6 hidden sm:block ${isDarkMode ? 'bg-white/20' : 'bg-gradient-to-b from-purple-400/50 to-purple-200/50'}`} />
+
+          {/* Global month/year filter */}
+          <div className="hidden sm:flex items-center gap-1.5 ml-3">
+            <IconCalendar className={`h-3.5 w-3.5 flex-shrink-0 ${isDarkMode ? 'text-purple-200' : 'text-purple-700'}`} />
+            <Select value={String(month)} onValueChange={v => setMonth(Number(v))}>
+              <SelectTrigger className={`h-7 w-[108px] text-xs border-0 shadow-none focus:ring-0 ${isDarkMode ? 'bg-white/10 text-white' : 'bg-white/60 text-purple-900'}`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent style={{ maxHeight: "none" }}>
+                {MONTH_NAMES.map((m, i) => (
+                  <SelectItem key={i + 1} value={String(i + 1)} className="text-xs">{m}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={String(year)} onValueChange={v => setYear(Number(v))}>
+              <SelectTrigger className={`h-7 w-[90px] text-xs border-0 shadow-none focus:ring-0 ${isDarkMode ? 'bg-white/10 text-white' : 'bg-white/60 text-purple-900'}`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {yearOptions.map(y => (
+                  <SelectItem key={y} value={String(y)} className="text-xs">{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           <div className="ml-auto flex items-center gap-2">
             
