@@ -43,6 +43,12 @@ export interface CrmTarget {
   statusKunjungan?: string;
   catatanKunjungan?: string;
   fotoBuktiKunjungan?: string;
+  picDirect?: string;
+  noTelp?: string;
+  email?: string;
+  namaKonsultan?: string;
+  noTelpKonsultan?: string;
+  emailKonsultan?: string;
   createdAt: number;
   updatedAt: number;
 }

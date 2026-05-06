@@ -135,6 +135,12 @@ const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {
   bulanAuditSebelumnyaSustain: false,
   fotoBuktiKunjungan: false,
   tahun: false,
+  picDirect: false,
+  noTelp: false,
+  email: false,
+  namaKonsultan: false,
+  noTelpKonsultan: false,
+  emailKonsultan: false,
 };
 
 const DEFAULT_COLUMN_PINNING: ColumnPinningState = {
@@ -174,6 +180,12 @@ const GROUPABLE_COLUMNS = [
   { id: "statusKomisi", label: "Status Komisi" },
   { id: "statusSertifikat", label: "Status Sertifikat" },
   { id: "statusKunjungan", label: "Status Kunjungan" },
+  { id: "picDirect", label: "PIC Direct" },
+  { id: "noTelp", label: "No Telp" },
+  { id: "email", label: "Email" },
+  { id: "namaKonsultan", label: "Konsultan" },
+  { id: "noTelpKonsultan", label: "Telp Konsultan" },
+  { id: "emailKonsultan", label: "Email Konsultan" },
   { id: "eaCode", label: "EA Code" },
   { id: "iaDate", label: "IA Date" },
   { id: "bulanAuditSebelumnyaSustain", label: "Bln Audit Sblm" },
@@ -192,7 +204,8 @@ const BASE_COLUMN_IDS = [
   "bulanTtdNotif", "bulanAudit", "hargaTerupdate", "trimmingValue", "lossValue",
   "cashback", "terminPembayaran", "statusInvoice", "statusPembayaran",
   "statusKomisi", "statusSertifikat", "tanggalKunjungan", "statusKunjungan",
-  "fotoBuktiKunjungan",
+  "fotoBuktiKunjungan", "picDirect", "noTelp", "email",
+  "namaKonsultan", "noTelpKonsultan", "emailKonsultan",
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -525,6 +538,12 @@ function DetailDrawer({ target, open, onClose, onEdit, canEdit, isMobile }: {
     { label: "Tgl Kunjungan", value: fmtDateFull(target.tanggalKunjungan) },
     { label: "Status Kunjungan", value: target.statusKunjungan ? <Badge variant="outline" className={`text-[10px] ${getStatusKunjunganBadgeStyle(target.statusKunjungan)}`}>{target.statusKunjungan}</Badge> : "-" },
     { label: "Catatan", value: target.catatanKunjungan ?? "-", span: true },
+    { label: "PIC Direct", value: target.picDirect ?? "-" },
+    { label: "No Telp", value: target.noTelp ?? "-" },
+    { label: "Email", value: target.email ?? "-" },
+    { label: "Konsultan", value: target.namaKonsultan ?? "-" },
+    { label: "Telp Konsultan", value: target.noTelpKonsultan ?? "-" },
+    { label: "Email Konsultan", value: target.emailKonsultan ?? "-" },
   ];
 
   const content = (
@@ -978,6 +997,12 @@ export function CrmDataTable({ data, canEdit = false, showExport = true, onEdit,
         <Badge variant="outline" className={`text-[10px] ${getStatusKunjunganBadgeStyle(String(v))}`}>{String(v)}</Badge>
       ) : "-", { size: 120 }),
       mkCol("fotoBuktiKunjungan", "Foto Bukti", undefined, { enableColumnFilter: false, enableGrouping: false, size: 100 }),
+      mkCol("picDirect", "PIC Direct", v => <span>{String(v ?? "") || "-"}</span>, { size: 130 }),
+      mkCol("noTelp", "No Telp", v => <span>{String(v ?? "") || "-"}</span>, { size: 130 }),
+      mkCol("email", "Email", v => <span className="truncate">{String(v ?? "") || "-"}</span>, { size: 180 }),
+      mkCol("namaKonsultan", "Konsultan", v => <span>{String(v ?? "") || "-"}</span>, { size: 140 }),
+      mkCol("noTelpKonsultan", "Telp Konsultan", v => <span>{String(v ?? "") || "-"}</span>, { size: 130 }),
+      mkCol("emailKonsultan", "Email Konsultan", v => <span className="truncate">{String(v ?? "") || "-"}</span>, { size: 180 }),
     ];
 
     const noCol: ColumnDef<CrmTarget> = {
@@ -1101,6 +1126,8 @@ export function CrmDataTable({ data, canEdit = false, showExport = true, onEdit,
         "Status Pembayaran": d.statusPembayaran ?? "", "Status Komisi": d.statusKomisi ?? "",
         "Status Sertifikat": d.statusSertifikat ?? "", "Tgl Kunjungan": d.tanggalKunjungan ?? "",
         "Status Kunjungan": d.statusKunjungan ?? "",
+        "PIC Direct": d.picDirect ?? "", "No Telp": d.noTelp ?? "", "Email": d.email ?? "",
+        "Konsultan": d.namaKonsultan ?? "", "Telp Konsultan": d.noTelpKonsultan ?? "", "Email Konsultan": d.emailKonsultan ?? "",
       };
     });
     const ws = XLSX.utils.json_to_sheet(exportData);

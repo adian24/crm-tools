@@ -47,7 +47,8 @@ type EditableField =
   | "bulanTtdNotif" | "bulanAudit" | "tanggalKunjungan"
   | "hargaKontrak" | "hargaTerupdate" | "cashback"
   | "terminPembayaran" | "statusInvoice" | "statusPembayaran" | "statusKomisi" | "statusSertifikat"
-  | "statusKunjungan" | "catatanKunjungan";
+  | "statusKunjungan" | "catatanKunjungan"
+  | "picDirect" | "noTelp" | "email" | "namaKonsultan" | "noTelpKonsultan" | "emailKonsultan";
 
 type ColKey  = EditableField | "trimmingValue" | "lossValue";
 type CellType = "text" | "number" | "combobox" | "calc" | "date";
@@ -340,6 +341,13 @@ export function CrmBulkEditDialog({ open, onOpenChange, rows, onSaved }: CrmBulk
     // ── Kunjungan ─────────────────────────────────────────────────────────
     { key:"tanggalKunjungan",  header:"Tgl Kunjungan",    width:140, type:"date" },
     { key:"statusKunjungan",   header:"Status Kunjungan", width:120, type:"combobox", options:STATUS_KUNJUNGAN_OPTIONS },
+    // ── Kontak ────────────────────────────────────────────────────────────────
+    { key:"picDirect",         header:"PIC Direct",       width:140, type:"text" },
+    { key:"noTelp",            header:"No Telp",          width:130, type:"text" },
+    { key:"email",             header:"Email",            width:180, type:"text" },
+    { key:"namaKonsultan",     header:"Konsultan",        width:140, type:"text" },
+    { key:"noTelpKonsultan",   header:"Telp Konsultan",   width:130, type:"text" },
+    { key:"emailKonsultan",    header:"Email Konsultan",  width:180, type:"text" },
   ], [salesOptions, associateOptions, tahapanOptions, kuadranOptions, alasanOptions,
       akreditasiOptions, eaCodeOptions, stdOptions, provinsiOptions, allKotaOptions]);
 
@@ -518,6 +526,12 @@ export function CrmBulkEditDialog({ open, onOpenChange, rows, onSaved }: CrmBulk
           ...(e.statusSertifikat          !== undefined && { statusSertifikat:          s(e.statusSertifikat) }),
           ...(e.statusKunjungan           !== undefined && { statusKunjungan:           s(e.statusKunjungan) }),
           ...(e.catatanKunjungan          !== undefined && { catatanKunjungan:          s(e.catatanKunjungan) }),
+          ...(e.picDirect                 !== undefined && { picDirect:                 s(e.picDirect) }),
+          ...(e.noTelp                    !== undefined && { noTelp:                    s(e.noTelp) }),
+          ...(e.email                     !== undefined && { email:                     s(e.email) }),
+          ...(e.namaKonsultan             !== undefined && { namaKonsultan:             s(e.namaKonsultan) }),
+          ...(e.noTelpKonsultan           !== undefined && { noTelpKonsultan:           s(e.noTelpKonsultan) }),
+          ...(e.emailKonsultan            !== undefined && { emailKonsultan:            s(e.emailKonsultan) }),
         });
         ok++;
       } catch {
