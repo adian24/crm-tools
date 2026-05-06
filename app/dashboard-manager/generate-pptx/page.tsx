@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -28,6 +28,7 @@ import {
   Award,
 } from "lucide-react";
 import { usePptxCapture } from "@/lib/pptx-capture-context";
+import { useGlobalFilter } from "@/lib/global-filter-context";
 
 const MONTHS = [
   "", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -62,12 +63,10 @@ const SLIDES = [
 ];
 
 export default function GeneratePPTXPage() {
-  const now   = new Date();
-  const [month, setMonth] = useState(now.getMonth() + 1);
-  const [year,  setYear]  = useState(now.getFullYear());
-
+  const { month, setMonth, year, setYear } = useGlobalFilter();
   const { startCapture, isCapturing } = usePptxCapture();
 
+  const now = new Date();
   const yearOptions = Array.from({ length: 5 }, (_, i) => now.getFullYear() - 2 + i);
 
   return (
