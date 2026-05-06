@@ -123,19 +123,12 @@ function ChartCardAssociateMonthly({
   );
 
   return (
-    <Card className="@container/card relative overflow-hidden">
-      {/* Futuristic background overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-green-500/20 via-blue-400/10 to-transparent opacity-60"></div>
-      <div className="absolute inset-0 bg-gradient-to-tr from-green-500/5 via-transparent to-blue-500/5"></div>
-
-      <CardHeader className="relative z-10 pb-2">
+    <Card className="@container/card">
+      <CardHeader className="pb-2">
         <CardTitle className="text-sm font-semibold text-center">{title}</CardTitle>
-        <CardDescription className="text-sm text-center font-semibold text-black/70">
-          Total: {data.length} data
-        </CardDescription>
       </CardHeader>
 
-      <CardContent className="px-0 pt-2 relative z-10">
+      <CardContent className="px-0 pt-2">
         <div className="overflow-x-auto overflow-y-hidden pb-2">
           <ChartContainer
             config={chartConfig}
@@ -156,7 +149,7 @@ function ChartCardAssociateMonthly({
             switch (chartType) {
               case 'bar':
                 return (
-                  <BarChart data={chartData} margin={{ top: 20, right: 20, left: -10, bottom: 40 }}>
+                  <BarChart data={chartData} margin={{ top: 30, right: 20, left: -10, bottom: 40 }}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis
                       dataKey="month"
@@ -194,7 +187,7 @@ function ChartCardAssociateMonthly({
                       <LabelList
                         dataKey="Direct"
                         position="top"
-                        fontSize={11}
+                        fontSize={14}
                         fontWeight="bold"
                         fill={associateColors.Direct}
                         formatter={(value: number) => {
@@ -213,7 +206,7 @@ function ChartCardAssociateMonthly({
                       <LabelList
                         dataKey="Associate"
                         position="top"
-                        fontSize={11}
+                        fontSize={14}
                         fontWeight="bold"
                         fill={associateColors.Associate}
                         formatter={(value: number) => {
@@ -233,7 +226,7 @@ function ChartCardAssociateMonthly({
 
               case 'line':
                 return (
-                  <LineChart data={chartData} margin={{ top: 20, right: 20, left: -10, bottom: 40 }}>
+                  <LineChart data={chartData} margin={{ top: 30, right: 20, left: -10, bottom: 40 }}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis
                       dataKey="month"
@@ -278,7 +271,7 @@ function ChartCardAssociateMonthly({
                       <LabelList
                         dataKey="Direct"
                         position="top"
-                        fontSize={10}
+                        fontSize={14}
                         fontWeight="bold"
                         fill={associateColors.Direct}
                         formatter={(value: number) => {
@@ -304,7 +297,7 @@ function ChartCardAssociateMonthly({
                       <LabelList
                         dataKey="Associate"
                         position="top"
-                        fontSize={10}
+                        fontSize={14}
                         fontWeight="bold"
                         fill={associateColors.Associate}
                         formatter={(value: number) => {
@@ -384,7 +377,7 @@ function ChartCardAssociateMonthly({
 
               default: // area chart
                 return (
-                  <AreaChart data={chartData} margin={{ top: 20, right: 20, left: -10, bottom: 40 }}>
+                  <AreaChart data={chartData} margin={{ top: 30, right: 20, left: -10, bottom: 40 }}>
                     <defs>
                       <linearGradient id="colorDirect" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={associateColors.Direct} stopOpacity={0.8}/>
@@ -438,7 +431,7 @@ function ChartCardAssociateMonthly({
                       <LabelList
                         dataKey="Direct"
                         position="top"
-                        fontSize={10}
+                        fontSize={14}
                         fontWeight="bold"
                         fill={associateColors.Direct}
                         formatter={(value: number) => {
@@ -463,7 +456,7 @@ function ChartCardAssociateMonthly({
                       <LabelList
                         dataKey="Associate"
                         position="top"
-                        fontSize={10}
+                        fontSize={14}
                         fontWeight="bold"
                         fill={associateColors.Associate}
                         formatter={(value: number) => {

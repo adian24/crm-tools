@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, Table
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Search, Filter, BarChart3, ChevronDown, ChevronRight, Users, X, SlidersHorizontal, RotateCcw, ArrowUp } from 'lucide-react';
+import { Search, Filter, BarChart3, ChevronDown, ChevronRight, Users, Building2, X, SlidersHorizontal, RotateCcw, ArrowUp, Scissors, TrendingDown, Gift, Wallet } from 'lucide-react';
 import { CrmDataTable } from '@/components/crm-data-table';
 import type { CrmTarget } from '@/lib/crm-types';
 import indonesiaData from '@/data/indonesia-provinsi-kota.json';
@@ -27,6 +27,7 @@ import { ChartCardAssociateMonthly } from '@/components/chart-card-associate-mon
 import { ChartCardStandarDistribution } from '@/components/chart-card-standar-distribution';
 import { ChartCardEaCodeDistribution } from '@/components/chart-card-ea-code-distribution';
 import { ChartCardTr } from '@/components/chart-card-tr';
+import { useGlobalFilter } from '@/lib/global-filter-context';
 import { ChartCardParetoAlasan } from '@/components/chart-card-pareto-alasan';
 import { TrenBulananChart } from '@/components/TrenBulananChart';
 import { InfinityLoader } from '@/components/ui/infinity-loader';
@@ -80,8 +81,12 @@ export default function CrmDataManagementPage() {
 
   // Comprehensive Filters
   const [expandedFilterSections, setExpandedFilterSections] = useState<string[]>(['kategoriProduk', 'date', 'sertifikat', 'pembayaran']);
+  const { year: globalYear } = useGlobalFilter();
   const currentYear = new Date().getFullYear().toString();
-  const [filterTahun, setFilterTahun] = useState<string>(currentYear);
+  const [filterTahun, setFilterTahun] = useState<string>(String(globalYear));
+
+  // Sync filterTahun ke global header year
+  React.useEffect(() => { setFilterTahun(String(globalYear)); }, [globalYear]);
   const [filterFromBulanExp, setFilterFromBulanExp] = useState<string>('1');
   const [filterToBulanExp, setFilterToBulanExp] = useState<string>('12');
   const [filterAlasan, setFilterAlasan] = useState<string>('all');
@@ -465,6 +470,62 @@ export default function CrmDataManagementPage() {
     filterFromKunjungan,
     filterToKunjungan,
     filterStatusKunjungan
+  ]);
+
+  // Data khusus untuk chart Trimming — filter by bulanExpDate ATAU bulanTtdNotif tergantung toggle
+  const dataForTrimmingChart = useMemo(() => {
+    if (!crmTargets) return [];
+
+    const ALL_MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    const bulanNameToNum: Record<string, number> = {
+      'januari':1,'februari':2,'maret':3,'april':4,'mei':5,'juni':6,
+      'juli':7,'agustus':8,'september':9,'oktober':10,'november':11,'desember':12,
+    };
+
+    const fromExp = parseInt(filterFromBulanExp) || 1;
+    const toExp   = parseInt(filterToBulanExp)   || 12;
+    const fromTTD = parseInt(filterFromBulanTTD) || 1;
+    const toTTD   = parseInt(filterToBulanTTD)   || 12;
+
+    return crmTargets
+      .filter(t => {
+        if (t.tahun !== String(globalYear)) return false;
+        if (filterStatus !== 'all' && t.status !== filterStatus) return false;
+        if (filterTipeProduk !== 'all') {
+          const p = (t.produk || '').toUpperCase();
+          if (filterTipeProduk === 'ISO' && !p.includes('ISO'))     return false;
+          if (filterTipeProduk === 'SUSTAIN' && !p.includes('ISPO')) return false;
+        }
+
+        if (filterBulanTTDEnabled) {
+          // TTD filter aktif: hanya DONE dengan bulanTtdNotif dalam range
+          if (t.status !== 'DONE') return false;
+          if (!t.bulanTtdNotif) return false;
+          const m = new Date(t.bulanTtdNotif).getMonth() + 1;
+          return m >= fromTTD && m <= toTTD;
+        }
+
+        if (filterBulanExpEnabled) {
+          const raw = (t.bulanExpDate || '').toLowerCase().trim();
+          let m = parseInt(raw);
+          if (isNaN(m)) m = bulanNameToNum[raw] || 0;
+          if (m > 0) return m >= fromExp && m <= toExp;
+        }
+
+        return true;
+      })
+      .map(t => {
+        // Saat TTD filter aktif, ganti bulanExpDate dengan bulan TTD agar X-axis chart sesuai
+        if (filterBulanTTDEnabled && t.bulanTtdNotif) {
+          const mIdx = new Date(t.bulanTtdNotif).getMonth();
+          return { ...t, bulanExpDate: ALL_MONTH_NAMES[mIdx] };
+        }
+        return t;
+      });
+  }, [
+    crmTargets, globalYear, filterStatus, filterTipeProduk,
+    filterBulanExpEnabled, filterFromBulanExp, filterToBulanExp,
+    filterBulanTTDEnabled, filterFromBulanTTD, filterToBulanTTD,
   ]);
 
   // Pagination
@@ -3228,21 +3289,44 @@ export default function CrmDataManagementPage() {
                       const colors = kuadranColors[kuadran] || kuadranColors['K1'];
                       const percentage = grandTotalAmount > 0 ? Math.round((kuadranTotal / grandTotalAmount) * 100) : 0;
 
+                      const kBg   = kuadran === 'K1' ? 'border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50 to-sky-100 dark:from-blue-950/60 dark:to-sky-900/30'
+                                  : kuadran === 'K2' ? 'border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-950/60 dark:to-green-900/30'
+                                  : kuadran === 'K3' ? 'border-amber-200 dark:border-amber-800 bg-gradient-to-br from-amber-50 to-orange-100 dark:from-amber-950/60 dark:to-orange-900/30'
+                                  :                    'border-purple-200 dark:border-purple-800 bg-gradient-to-br from-purple-50 to-violet-100 dark:from-purple-950/60 dark:to-violet-900/30';
+                      const kAccent = kuadran === 'K1' ? 'bg-blue-500'
+                                    : kuadran === 'K2' ? 'bg-emerald-500'
+                                    : kuadran === 'K3' ? 'bg-amber-500'
+                                    :                    'bg-purple-500';
+                      const kDecor1 = kuadran === 'K1' ? 'bg-blue-300'    : kuadran === 'K2' ? 'bg-emerald-300' : kuadran === 'K3' ? 'bg-amber-300'  : 'bg-purple-300';
+                      const kDecor2 = kuadran === 'K1' ? 'bg-sky-400'     : kuadran === 'K2' ? 'bg-green-400'   : kuadran === 'K3' ? 'bg-orange-400' : 'bg-violet-400';
+                      const kText   = kuadran === 'K1' ? 'text-blue-800 dark:text-blue-200'
+                                    : kuadran === 'K2' ? 'text-emerald-800 dark:text-emerald-200'
+                                    : kuadran === 'K3' ? 'text-amber-800 dark:text-amber-200'
+                                    :                    'text-purple-800 dark:text-purple-200';
+                      const kSub    = kuadran === 'K1' ? 'text-blue-600 dark:text-blue-400'
+                                    : kuadran === 'K2' ? 'text-emerald-600 dark:text-emerald-400'
+                                    : kuadran === 'K3' ? 'text-amber-600 dark:text-amber-400'
+                                    :                    'text-purple-600 dark:text-purple-400';
                       return (
-                        <div key={kuadran} className={`bg-gradient-to-br ${colors.bg} rounded-lg border ${colors.border} p-2 sm:p-4 shadow-sm`}>
-                          <div className="flex items-center justify-between mb-1 sm:mb-2">
-                            <h4 className="text-base sm:text-xl lg:text-2xl font-bold" style={{ color: colors.color }}>{kuadran}</h4>
-                            <div className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-gradient-to-r ${colors.gradient} flex items-center justify-center shadow`}>
-                              <span className="text-white text-[10px] sm:text-xs font-bold">{percentage}%</span>
+                        <div key={kuadran} className={`relative overflow-hidden rounded-2xl border p-4 shadow-sm ${kBg}`}>
+                          <div className={`absolute -right-4 -top-4 w-20 h-20 rounded-full opacity-25 ${kDecor1}`} />
+                          <div className={`absolute right-3 -bottom-4 w-12 h-12 rounded-full opacity-20 ${kDecor2}`} />
+                          <div className="relative">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm font-extrabold text-white text-sm ${kAccent}`}>
+                                {kuadran}
+                              </div>
+                              <span className={`px-2.5 py-1 rounded-full text-white text-xs font-extrabold shadow-sm ${kAccent}`}>
+                                {percentage}%
+                              </span>
                             </div>
-                          </div>
-                          <div className="space-y-0.5 sm:space-y-1">
-                            <p className="text-xs sm:text-sm lg:text-base font-semibold" style={{ color: colors.color }}>
+                            <p className={`text-xl font-extrabold leading-tight mb-1 ${kText}`}>
                               Rp {kuadranTotal.toLocaleString('id-ID')}
                             </p>
-                            <p className="text-[10px] sm:text-xs text-muted-foreground">
-                              {kuadranCount} Sertifikat . {kuadranCompanyCount} Perusahaan
+                            <p className={`text-xs font-semibold mb-0.5 ${kSub}`}>
+                              {kuadranCount} Sertifikat
                             </p>
+                            <p className="text-xs text-muted-foreground">{kuadranCompanyCount} Perusahaan</p>
                           </div>
                         </div>
                       );
@@ -3384,21 +3468,39 @@ export default function CrmDataManagementPage() {
                       const grandTotal = dataWithAssociate.reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0);
                       const percentage = grandTotal > 0 ? Math.round((assocTotal / grandTotal) * 100) : 0;
 
+                      const isDirect = assocType === 'Direct';
                       return (
-                        <div key={assocType} className={`bg-gradient-to-br ${colors.bg} rounded-lg border ${colors.border} p-4`}>
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="text-lg font-bold" style={{ color: colors.color }}>{assocType}</h4>
-                            <div className={`h-8 w-8 rounded-full bg-gradient-to-r ${colors.gradient} flex items-center justify-center`}>
-                              <span className="text-white text-xs font-bold">{percentage}%</span>
+                        <div key={assocType} className={`relative overflow-hidden rounded-2xl border p-5 shadow-sm ${
+                          isDirect
+                            ? 'border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50 to-sky-100 dark:from-blue-950/60 dark:to-sky-900/30'
+                            : 'border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-950/60 dark:to-green-900/30'
+                        }`}>
+                          <div className={`absolute -right-5 -top-5 w-24 h-24 rounded-full opacity-25 ${isDirect ? 'bg-blue-300' : 'bg-emerald-300'}`} />
+                          <div className={`absolute right-4 -bottom-5 w-14 h-14 rounded-full opacity-20 ${isDirect ? 'bg-sky-400' : 'bg-green-400'}`} />
+                          <div className="relative">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <div className={`p-2 rounded-xl shadow-sm ${isDirect ? 'bg-blue-500' : 'bg-emerald-500'}`}>
+                                  {isDirect
+                                    ? <Users className="w-4 h-4 text-white" />
+                                    : <Building2 className="w-4 h-4 text-white" />
+                                  }
+                                </div>
+                                <p className={`text-sm font-bold uppercase tracking-wide ${isDirect ? 'text-blue-700 dark:text-blue-300' : 'text-emerald-700 dark:text-emerald-300'}`}>
+                                  {assocType}
+                                </p>
+                              </div>
+                              <span className={`px-2.5 py-1 rounded-full text-white text-xs font-extrabold shadow-sm ${isDirect ? 'bg-blue-500' : 'bg-emerald-500'}`}>
+                                {percentage}%
+                              </span>
                             </div>
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-sm font-semibold" style={{ color: colors.color }}>
+                            <p className={`text-2xl font-extrabold leading-tight mb-1 ${isDirect ? 'text-blue-800 dark:text-blue-200' : 'text-emerald-800 dark:text-emerald-200'}`}>
                               Rp {assocTotal.toLocaleString('id-ID')}
                             </p>
-                            <p className="text-xs text-muted-foreground">
-                              {assocCount} Sertifikat . {assocCompanyCount} Perusahaan
+                            <p className={`text-sm font-semibold mb-1 ${isDirect ? 'text-blue-600 dark:text-blue-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                              {assocCount} Sertifikat
                             </p>
+                            <p className="text-xs text-muted-foreground">{assocCompanyCount} Perusahaan</p>
                           </div>
                         </div>
                       );
@@ -4910,7 +5012,7 @@ export default function CrmDataManagementPage() {
                   Trimming Value per Bulan
                 </CardTitle>
                 <CardDescription className="mt-1">
-                  Total trimming value berdasarkan bulan {filterStatus !== 'all' ? `- Status: ${filterStatus.toUpperCase()}` : '(Semua Status)'}
+                  Tahun {globalYear} {filterStatus !== 'all' ? `· Status: ${filterStatus.toUpperCase()}` : '· Semua Status'}
                 </CardDescription>
               </div>
               <Select value={selectedTrChartType} onValueChange={setSelectedTrChartType}>
@@ -4929,45 +5031,80 @@ export default function CrmDataManagementPage() {
           <CardContent>
             {(() => {
               // Filter data: filter tahun dan tipe produk dari ALL data
-              const dataForTrimming = (crmTargets || []).filter(t => {
-                // Filter tahun
-                const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
-                // Filter by status - if 'all' show all data, otherwise filter by selected status
-                const matchesStatus = filterStatus === 'all' || t.status === filterStatus;
+              const dataForTrimming = dataForTrimmingChart;
 
-                // Filter Tipe Produk
-                let matchesTipeProduk = true;
-                if (filterTipeProduk !== 'all') {
-                  const produkUpper = (t.produk || '').toUpperCase();
-                  if (filterTipeProduk === 'ISO') {
-                    matchesTipeProduk = produkUpper.includes('ISO');
-                  } else if (filterTipeProduk === 'SUSTAIN') {
-                    matchesTipeProduk = produkUpper.includes('ISPO');
-                  }
-                }
-
-                // Filter Kategori Produk
-                let matchesKategoriProduk = true;
-                if (filterKategoriProduk !== 'SEMUA') {
-                  const stdCode = (t.std || '').trim();
-                  const standar = masterStandarData.standar.find((s: any) => s.kode === stdCode);
-                  if (standar) {
-                    matchesKategoriProduk = standar.kategori_produk === filterKategoriProduk;
-                  } else {
-                    matchesKategoriProduk = false;
-                  }
-                }
-
-                return matchesTahun && matchesStatus && matchesTipeProduk && matchesKategoriProduk;
-              });
+              const totalTrimming    = dataForTrimming.reduce((s, t) => s + (t.trimmingValue || 0), 0);
+              const totalLoss        = dataForTrimming.reduce((s, t) => s + (t.lossValue     || 0), 0);
+              const totalCashback    = dataForTrimming.reduce((s, t) => s + (t.cashback       || 0), 0);
+              const totalNilaiBersih = totalTrimming - totalLoss - totalCashback;
+              const fmtRp = (v: number) => `Rp ${v.toLocaleString('id-ID')}`;
 
               return (
-                <div>
-                <ChartCardTr
-                  title="Trimming Value per Bulan"
-                  data={dataForTrimming}
-                  chartType={selectedTrChartType}
-                />
+                <div className="space-y-4">
+                  {/* Summary cards */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {/* Trimming */}
+                    <div className="relative overflow-hidden rounded-2xl border border-sky-200 dark:border-sky-800 bg-gradient-to-br from-sky-50 to-cyan-100 dark:from-sky-950/60 dark:to-cyan-900/30 p-4 shadow-sm">
+                      <div className="absolute -right-3 -top-3 w-16 h-16 rounded-full bg-sky-200/50 dark:bg-sky-700/20" />
+                      <div className="absolute -right-1 -bottom-4 w-10 h-10 rounded-full bg-cyan-200/40 dark:bg-cyan-700/10" />
+                      <div className="relative">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="p-1.5 rounded-lg bg-sky-500 shadow-sm">
+                            <Scissors className="w-3.5 h-3.5 text-white" />
+                          </div>
+                          <p className="text-xs font-semibold text-sky-700 dark:text-sky-300 uppercase tracking-wide">Total Trimming</p>
+                        </div>
+                        <p className="text-2xl font-extrabold text-sky-800 dark:text-sky-200 leading-tight">{fmtRp(totalTrimming)}</p>
+                      </div>
+                    </div>
+                    {/* Loss */}
+                    <div className="relative overflow-hidden rounded-2xl border border-red-200 dark:border-red-800 bg-gradient-to-br from-red-50 to-rose-100 dark:from-red-950/60 dark:to-rose-900/30 p-4 shadow-sm">
+                      <div className="absolute -right-3 -top-3 w-16 h-16 rounded-full bg-red-200/50 dark:bg-red-700/20" />
+                      <div className="absolute -right-1 -bottom-4 w-10 h-10 rounded-full bg-rose-200/40 dark:bg-rose-700/10" />
+                      <div className="relative">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="p-1.5 rounded-lg bg-red-500 shadow-sm">
+                            <TrendingDown className="w-3.5 h-3.5 text-white" />
+                          </div>
+                          <p className="text-xs font-semibold text-red-700 dark:text-red-300 uppercase tracking-wide">Total Loss</p>
+                        </div>
+                        <p className="text-2xl font-extrabold text-red-800 dark:text-red-200 leading-tight">{fmtRp(totalLoss)}</p>
+                      </div>
+                    </div>
+                    {/* Cashback */}
+                    <div className="relative overflow-hidden rounded-2xl border border-orange-200 dark:border-orange-800 bg-gradient-to-br from-orange-50 to-amber-100 dark:from-orange-950/60 dark:to-amber-900/30 p-4 shadow-sm">
+                      <div className="absolute -right-3 -top-3 w-16 h-16 rounded-full bg-orange-200/50 dark:bg-orange-700/20" />
+                      <div className="absolute -right-1 -bottom-4 w-10 h-10 rounded-full bg-amber-200/40 dark:bg-amber-700/10" />
+                      <div className="relative">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="p-1.5 rounded-lg bg-orange-500 shadow-sm">
+                            <Gift className="w-3.5 h-3.5 text-white" />
+                          </div>
+                          <p className="text-xs font-semibold text-orange-700 dark:text-orange-300 uppercase tracking-wide">Total Cashback</p>
+                        </div>
+                        <p className="text-2xl font-extrabold text-orange-800 dark:text-orange-200 leading-tight">{fmtRp(totalCashback)}</p>
+                      </div>
+                    </div>
+                    {/* Nilai Bersih */}
+                    <div className="relative overflow-hidden rounded-2xl border border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950/60 dark:to-emerald-900/30 p-4 shadow-sm">
+                      <div className="absolute -right-3 -top-3 w-16 h-16 rounded-full bg-green-200/50 dark:bg-green-700/20" />
+                      <div className="absolute -right-1 -bottom-4 w-10 h-10 rounded-full bg-emerald-200/40 dark:bg-emerald-700/10" />
+                      <div className="relative">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="p-1.5 rounded-lg bg-green-500 shadow-sm">
+                            <Wallet className="w-3.5 h-3.5 text-white" />
+                          </div>
+                          <p className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase tracking-wide">Nilai Bersih</p>
+                        </div>
+                        <p className="text-2xl font-extrabold text-green-800 dark:text-green-200 leading-tight">{fmtRp(totalNilaiBersih)}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <ChartCardTr
+                    title="Trimming Value per Bulan"
+                    data={dataForTrimming}
+                    chartType={selectedTrChartType}
+                  />
                 </div>
               );
             })()}
@@ -5098,6 +5235,9 @@ export default function CrmDataManagementPage() {
         <TrenBulananChart
           crmData={filteredTargets}
           kategoriProduk={filterKategoriProduk !== 'SEMUA' ? filterKategoriProduk : undefined}
+          bulanTtdEnabled={filterBulanTTDEnabled}
+          bulanTtdFrom={filterFromBulanTTD}
+          bulanTtdTo={filterToBulanTTD}
         />
         </div>
 

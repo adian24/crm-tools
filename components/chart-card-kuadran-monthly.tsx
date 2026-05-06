@@ -287,7 +287,7 @@ function ChartCardKuadranMonthly({
                     />
                     <Legend />
                     <Line type="monotone" dataKey="K1" stroke={kuadranColors.K1} strokeWidth={3} dot={{ fill: kuadranColors.K1, strokeWidth: 2, r: 6 }} activeDot={{ r: 8 }}>
-                      <LabelList dataKey="K1" position="top" fontSize={12} fontWeight="bold" fill={kuadranColors.K1}
+                      <LabelList dataKey="K1" position="top" fontSize={14} fontWeight="bold" fill={kuadranColors.K1}
                         formatter={(value: number) => {
                           if (value === 0) return '';
                           const percentage = totalCount > 0 ? Math.round((value / totalCount) * 100) : 0;
@@ -296,7 +296,7 @@ function ChartCardKuadranMonthly({
                       />
                     </Line>
                     <Line type="monotone" dataKey="K2" stroke={kuadranColors.K2} strokeWidth={3} dot={{ fill: kuadranColors.K2, strokeWidth: 2, r: 6 }} activeDot={{ r: 8 }}>
-                      <LabelList dataKey="K2" position="top" fontSize={12} fontWeight="bold" fill={kuadranColors.K2}
+                      <LabelList dataKey="K2" position="top" fontSize={14} fontWeight="bold" fill={kuadranColors.K2}
                         formatter={(value: number) => {
                           if (value === 0) return '';
                           const percentage = totalCount > 0 ? Math.round((value / totalCount) * 100) : 0;
@@ -305,7 +305,7 @@ function ChartCardKuadranMonthly({
                       />
                     </Line>
                     <Line type="monotone" dataKey="K3" stroke={kuadranColors.K3} strokeWidth={3} dot={{ fill: kuadranColors.K3, strokeWidth: 2, r: 6 }} activeDot={{ r: 8 }}>
-                      <LabelList dataKey="K3" position="top" fontSize={12} fontWeight="bold" fill={kuadranColors.K3}
+                      <LabelList dataKey="K3" position="top" fontSize={14} fontWeight="bold" fill={kuadranColors.K3}
                         formatter={(value: number) => {
                           if (value === 0) return '';
                           const percentage = totalCount > 0 ? Math.round((value / totalCount) * 100) : 0;
@@ -314,7 +314,7 @@ function ChartCardKuadranMonthly({
                       />
                     </Line>
                     <Line type="monotone" dataKey="K4" stroke={kuadranColors.K4} strokeWidth={3} dot={{ fill: kuadranColors.K4, strokeWidth: 2, r: 6 }} activeDot={{ r: 8 }}>
-                      <LabelList dataKey="K4" position="top" fontSize={12} fontWeight="bold" fill={kuadranColors.K4}
+                      <LabelList dataKey="K4" position="top" fontSize={14} fontWeight="bold" fill={kuadranColors.K4}
                         formatter={(value: number) => {
                           if (value === 0) return '';
                           const percentage = totalCount > 0 ? Math.round((value / totalCount) * 100) : 0;
@@ -392,7 +392,7 @@ function ChartCardKuadranMonthly({
                     />
                     <Legend />
                     <Area type="monotone" dataKey="K1" stroke={kuadranColors.K1} strokeWidth={3} fill="url(#colorK1Area)">
-                      <LabelList dataKey="K1" position="top" fontSize={12} fontWeight="bold" fill={kuadranColors.K1}
+                      <LabelList dataKey="K1" position="top" fontSize={14} fontWeight="bold" fill={kuadranColors.K1}
                         formatter={(value: number) => {
                           if (value === 0) return '';
                           const percentage = totalCount > 0 ? Math.round((value / totalCount) * 100) : 0;
@@ -401,7 +401,7 @@ function ChartCardKuadranMonthly({
                       />
                     </Area>
                     <Area type="monotone" dataKey="K2" stroke={kuadranColors.K2} strokeWidth={3} fill="url(#colorK2Area)">
-                      <LabelList dataKey="K2" position="top" fontSize={12} fontWeight="bold" fill={kuadranColors.K2}
+                      <LabelList dataKey="K2" position="top" fontSize={14} fontWeight="bold" fill={kuadranColors.K2}
                         formatter={(value: number) => {
                           if (value === 0) return '';
                           const percentage = totalCount > 0 ? Math.round((value / totalCount) * 100) : 0;
@@ -410,7 +410,7 @@ function ChartCardKuadranMonthly({
                       />
                     </Area>
                     <Area type="monotone" dataKey="K3" stroke={kuadranColors.K3} strokeWidth={3} fill="url(#colorK3Area)">
-                      <LabelList dataKey="K3" position="top" fontSize={12} fontWeight="bold" fill={kuadranColors.K3}
+                      <LabelList dataKey="K3" position="top" fontSize={14} fontWeight="bold" fill={kuadranColors.K3}
                         formatter={(value: number) => {
                           if (value === 0) return '';
                           const percentage = totalCount > 0 ? Math.round((value / totalCount) * 100) : 0;
@@ -419,7 +419,7 @@ function ChartCardKuadranMonthly({
                       />
                     </Area>
                     <Area type="monotone" dataKey="K4" stroke={kuadranColors.K4} strokeWidth={3} fill="url(#colorK4Area)">
-                      <LabelList dataKey="K4" position="top" fontSize={12} fontWeight="bold" fill={kuadranColors.K4}
+                      <LabelList dataKey="K4" position="top" fontSize={14} fontWeight="bold" fill={kuadranColors.K4}
                         formatter={(value: number) => {
                           if (value === 0) return '';
                           const percentage = totalCount > 0 ? Math.round((value / totalCount) * 100) : 0;

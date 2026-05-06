@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  AreaChart, Area, BarChart, Bar,
+  AreaChart, Area, BarChart, Bar, Cell,
   ResponsiveContainer, CartesianGrid, XAxis, YAxis,
   Tooltip, Legend, LabelList,
 } from "recharts";
@@ -61,11 +61,14 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 interface TrenBulananChartProps {
-  crmData: any[];          // filteredTargets dari parent (sudah difilter semua)
-  kategoriProduk?: string; // undefined = semua, "ISO" | "SUSTAIN" untuk monthly_summary
+  crmData: any[];
+  kategoriProduk?: string;
+  bulanTtdEnabled?: boolean;
+  bulanTtdFrom?: string;
+  bulanTtdTo?: string;
 }
 
-export function TrenBulananChart({ crmData, kategoriProduk }: TrenBulananChartProps) {
+export function TrenBulananChart({ crmData, kategoriProduk, bulanTtdEnabled, bulanTtdFrom, bulanTtdTo }: TrenBulananChartProps) {
   const [chartType, setChartType] = useState<"area" | "bar">("area");
 
   // 2024 & 2025 dari monthly_summary (data historis manual), difilter by kategori
@@ -91,42 +94,55 @@ export function TrenBulananChart({ crmData, kategoriProduk }: TrenBulananChartPr
 
   const chartData = useMemo(() => {
     if (!historicalData) return undefined;
-    return historicalData.map((d, i) => ({
-      bulan: d.bulan,
-      bulanShort: BULAN_SHORT[i],
-      y2024: d.y2024,
-      y2025: d.y2025,
-      y2026: y2026Stats[d.bulan] ?? 0,
-    }));
-  }, [historicalData, y2026Stats]);
+    const fromMonth = bulanTtdEnabled ? (parseInt(bulanTtdFrom ?? '1') || 1) : 1;
+    const toMonth   = bulanTtdEnabled ? (parseInt(bulanTtdTo   ?? '12') || 12) : 12;
+    return historicalData.map((d, i) => {
+      const inRange = (i + 1) >= fromMonth && (i + 1) <= toMonth;
+      return {
+        bulan: d.bulan,
+        bulanShort: BULAN_SHORT[i],
+        y2024: inRange ? d.y2024 : 0,
+        y2025: inRange ? d.y2025 : 0,
+        y2026: y2026Stats[d.bulan] ?? 0,
+      };
+    });
+  }, [historicalData, y2026Stats, bulanTtdEnabled, bulanTtdFrom, bulanTtdTo]);
 
   return (
     <Card className="overflow-hidden border-0 shadow-md">
       <div className="h-1 w-full bg-purple-500" />
       <CardHeader className="pb-2">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <CardTitle className="text-base font-semibold">Tren Penjualan Bulanan</CardTitle>
-            <CardDescription className="text-xs">
-              Perbandingan nilai bersih per bulan — 2024 · 2025 · 2026
-              {kategoriProduk && <span className="ml-1 font-medium text-indigo-600">· {kategoriProduk}</span>}
-            </CardDescription>
-          </div>
-          <div className="flex rounded-md border overflow-hidden">
-            <Button
-              variant={chartType === "area" ? "default" : "ghost"}
-              size="sm"
-              className="h-8 rounded-none text-xs px-3"
-              onClick={() => setChartType("area")}
-            >Area</Button>
-            <Button
-              variant={chartType === "bar" ? "default" : "ghost"}
-              size="sm"
-              className="h-8 rounded-none text-xs px-3"
-              onClick={() => setChartType("bar")}
-            >Bar</Button>
-          </div>
-        </div>
+        {(() => {
+          const from = parseInt(bulanTtdFrom ?? '1') || 1;
+          const to   = parseInt(bulanTtdTo   ?? '12') || 12;
+          const isFullYear = from === 1 && to === 12;
+          const fromLabel = BULAN_SHORT[from - 1];
+          const toLabel   = BULAN_SHORT[to - 1];
+          return (
+            <div className="grid grid-cols-3 items-center gap-3">
+              <div>
+                <CardTitle className="text-base font-semibold">Tren Penjualan Bulanan</CardTitle>
+                <CardDescription className="text-xs mt-0.5">
+                  Perbandingan nilai bersih per bulan — 2024 · 2025 · 2026
+                  {kategoriProduk && <span className="ml-1 font-medium text-indigo-600">· {kategoriProduk}</span>}
+                </CardDescription>
+              </div>
+              <div className="flex justify-center">
+                <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-purple-100 text-purple-700 text-base font-extrabold whitespace-nowrap">
+                  <span className="w-2 h-2 rounded-full bg-purple-500 inline-block" />
+                  {isFullYear ? "YTD: Jan – Des" : `YTD: ${fromLabel} – ${toLabel}`}
+                  {!isFullYear && <span className="font-normal text-purple-500 text-sm">({to - from + 1} bln)</span>}
+                </span>
+              </div>
+              <div className="flex justify-end">
+                <div className="flex rounded-md border overflow-hidden">
+                  <Button variant={chartType === "area" ? "default" : "ghost"} size="sm" className="h-8 rounded-none text-xs px-3" onClick={() => setChartType("area")}>Area</Button>
+                  <Button variant={chartType === "bar" ? "default" : "ghost"} size="sm" className="h-8 rounded-none text-xs px-3" onClick={() => setChartType("bar")}>Bar</Button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </CardHeader>
 
       <CardContent className="px-2 pb-4">
@@ -222,6 +238,123 @@ export function TrenBulananChart({ crmData, kategoriProduk }: TrenBulananChartPr
             </table>
           </div>
         )}
+
+        {/* Total per Year chart */}
+        {chartData && (() => {
+          const totals = [
+            { tahun: "2024", nilai: chartData.reduce((s, d) => s + d.y2024, 0), color: YEAR_COLORS.y2024 },
+            { tahun: "2025", nilai: chartData.reduce((s, d) => s + d.y2025, 0), color: YEAR_COLORS.y2025 },
+            { tahun: "2026", nilai: chartData.reduce((s, d) => s + d.y2026, 0), color: YEAR_COLORS.y2026 },
+          ];
+          const maxNilai = Math.max(...totals.map(t => t.nilai));
+
+          const growthPct = (prev: number, curr: number) =>
+            prev === 0 ? null : (((curr - prev) / prev) * 100);
+          const g2025 = growthPct(totals[0].nilai, totals[1].nilai);
+          const g2026 = growthPct(totals[1].nilai, totals[2].nilai);
+
+          const GrowthBadge = ({ pct }: { pct: number | null }) => {
+            if (pct === null) return null;
+            const up = pct >= 0;
+            return (
+              <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs font-bold ${
+                up ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-600"
+              }`}>
+                {up ? "▲" : "▼"} {Math.abs(pct).toFixed(1)}%
+              </span>
+            );
+          };
+
+          return (
+            <div className="mt-6 rounded-2xl border border-purple-200 bg-gradient-to-br from-purple-50 via-violet-50 to-indigo-50 p-4 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm font-bold text-gray-700">Total per Tahun</p>
+                <div className="flex items-center gap-3 text-xs text-gray-500">
+                  <span className="flex items-center gap-1">
+                    <span className="font-semibold text-gray-600">2024→2025</span>
+                    <GrowthBadge pct={g2025} />
+                  </span>
+                  <span className="text-gray-300">|</span>
+                  <span className="flex items-center gap-1">
+                    <span className="font-semibold text-gray-600">2025→2026</span>
+                    <GrowthBadge pct={g2026} />
+                  </span>
+                </div>
+              </div>
+
+              {/* Summary row */}
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                {totals.map((t, i) => {
+                  const prev = i > 0 ? totals[i - 1].nilai : null;
+                  const pct = prev !== null ? growthPct(prev, t.nilai) : null;
+                  return (
+                    <div key={t.tahun} className={`relative rounded-xl p-3 flex items-center justify-between gap-2 ${
+                      t.tahun === "2024" ? "bg-gradient-to-br from-orange-50 to-red-100 border border-orange-200"
+                    : t.tahun === "2025" ? "bg-gradient-to-br from-purple-50 to-violet-100 border border-purple-200"
+                    :                      "bg-gradient-to-br from-emerald-50 to-green-100 border border-emerald-200"
+                    }`}>
+                      <div>
+                        <p className="text-[11px] font-bold uppercase tracking-wide mb-1" style={{ color: t.color }}>{t.tahun}</p>
+                        <p className="text-sm font-extrabold leading-snug" style={{ color: t.color }}>
+                          {t.nilai > 0 ? fmtIDR(t.nilai) : <span className="text-gray-300 font-normal">—</span>}
+                        </p>
+                        {pct !== null && (
+                          <p className="text-[10px] text-gray-400 mt-0.5">vs {totals[i-1].tahun}</p>
+                        )}
+                      </div>
+                      {pct !== null && (
+                        <span className={`shrink-0 inline-flex flex-col items-center justify-center w-14 h-14 rounded-xl text-lg font-extrabold ${
+                          pct >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-600"
+                        }`}>
+                          <span className="text-base leading-none">{pct >= 0 ? "▲" : "▼"}</span>
+                          <span className="text-sm leading-tight">{Math.abs(pct).toFixed(1)}%</span>
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={totals} margin={{ top: 20, right: 10, left: 0, bottom: 0 }} barCategoryGap="35%">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                  <XAxis dataKey="tahun" tick={{ fontSize: 13, fontWeight: 700 }} axisLine={false} tickLine={false} />
+                  <YAxis tickFormatter={fmtAxis} tick={{ fontSize: 10 }} width={52} axisLine={false} tickLine={false} domain={[0, maxNilai * 1.2]} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar dataKey="nilai" name="Total" radius={[8, 8, 0, 0]}>
+                    {totals.map((t, i) => (
+                      <Cell key={i} fill={t.color} />
+                    ))}
+                    <LabelList
+                      dataKey="nilai"
+                      position="top"
+                      content={(props: any) => {
+                        const { x, y, width, value, index } = props;
+                        if (!value) return null;
+                        const t = totals[index];
+                        const prev = index > 0 ? totals[index - 1].nilai : null;
+                        const pct = prev !== null ? growthPct(prev, value) : null;
+                        return (
+                          <g>
+                            <text x={x + width / 2} y={y - 18} textAnchor="middle" fontSize={12} fontWeight="700" fill={t.color}>
+                              {fmtIDR(value)}
+                            </text>
+                            {pct !== null && (
+                              <text x={x + width / 2} y={y - 4} textAnchor="middle" fontSize={11} fontWeight="700"
+                                fill={pct >= 0 ? "#059669" : "#dc2626"}>
+                                {pct >= 0 ? "▲" : "▼"} {Math.abs(pct).toFixed(1)}%
+                              </text>
+                            )}
+                          </g>
+                        );
+                      }}
+                    />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          );
+        })()}
       </CardContent>
     </Card>
   );

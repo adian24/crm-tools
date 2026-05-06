@@ -107,7 +107,7 @@ function ChartCardParetoAlasan({
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={chartData} margin={{ top: 50, right: 30, left: 20, bottom: 80 }}>
+              <ComposedChart data={chartData} margin={{ top: 70, right: 30, left: 20, bottom: 80 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis
                   dataKey="alasan"
@@ -154,9 +154,26 @@ function ChartCardParetoAlasan({
                   })}
                   <LabelList
                     dataKey="count"
-                    position="top"
-                    fontSize={17}
-                    fontWeight="bold"
+                    content={(props: any) => {
+                      const { x, y, width, value, index } = props;
+                      const nilai = chartData[index]?.totalNilai || 0;
+                      const fmtNilai = nilai >= 1_000_000_000
+                        ? `${(nilai / 1_000_000_000).toFixed(1)}M`
+                        : nilai >= 1_000_000
+                        ? `${(nilai / 1_000_000).toFixed(1)}Jt`
+                        : `${(nilai / 1_000).toFixed(0)}rb`;
+                      const color = chartData[index]?.labelColor || '#7c3aed';
+                      return (
+                        <g>
+                          <text x={x + width / 2} y={y - 26} textAnchor="middle" fontSize={17} fontWeight="bold" fill={color}>
+                            {value}
+                          </text>
+                          <text x={x + width / 2} y={y - 8} textAnchor="middle" fontSize={12} fontWeight="600" fill="#059669">
+                            {nilai > 0 ? `Rp ${fmtNilai}` : ''}
+                          </text>
+                        </g>
+                      );
+                    }}
                   />
                 </Bar>
                 <Line
