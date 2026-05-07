@@ -67,7 +67,7 @@ export default function LoginPage() {
 
         // Redirect ke dashboard berdasarkan role
         if (user.role === 'staff') {
-          router.push('/dashboard-manager/dashboard-kunjungan');
+          router.push('/dashboard-manager/dashboard-data');
         } else if (user.role === 'manager' || user.role === 'super_admin') {
           router.push('/dashboard-manager/dashboard-data');
         } else {

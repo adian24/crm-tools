@@ -113,10 +113,28 @@ export default function CrmDataManagementPage() {
   // State untuk deferred chart loading
   const [chartsVisible, setChartsVisible] = useState(false);
 
+  // Current logged-in user
+  const [currentUser, setCurrentUser] = useState<{ name: string; email: string; role: string; staffId?: string } | null>(null);
+  const isStaffUser = currentUser?.role === 'staff';
+
   // Fetch CRM targets
   const crmTargets = useQuery(api.crmTargets.getCrmTargets);
   const allUsers = useQuery(api.auth.getAllUsers);
   const staffUsers = allUsers?.filter(user => user.role === 'staff') || [];
+
+  // Load current user from localStorage dan auto-filter untuk staff
+  useEffect(() => {
+    try {
+      const userData = localStorage.getItem('crm_user');
+      if (userData) {
+        const parsed = JSON.parse(userData);
+        setCurrentUser(parsed);
+        if (parsed.role === 'staff' && parsed.name) {
+          setFilterPicCrm(parsed.name);
+        }
+      }
+    } catch {}
+  }, []);
 
   // Defer chart loading setelah initial render
   useEffect(() => {
@@ -205,7 +223,8 @@ export default function CrmDataManagementPage() {
     setFilterTahun(currentYear);
     setFilterFromBulanExp('1');
     setFilterToBulanExp('12');
-    setFilterPicCrm('all');
+    // Staff: keep their own filter locked; others reset to 'all'
+    setFilterPicCrm(isStaffUser && currentUser?.name ? currentUser.name : 'all');
     setFilterStatus('all');
     setFilterAlasan('all');
     setFilterCategory('all');
@@ -235,6 +254,11 @@ export default function CrmDataManagementPage() {
     if (!crmTargets) return [];
 
     return crmTargets.filter(target => {
+    // Staff users only see their own data
+    if (isStaffUser && currentUser?.name) {
+      if (target.picCrm !== currentUser.name) return false;
+    }
+
     // Search filter - search across all important fields (optimized order)
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = searchTerm === '' || (
@@ -469,7 +493,9 @@ export default function CrmDataManagementPage() {
     filterKategoriProduk,
     filterFromKunjungan,
     filterToKunjungan,
-    filterStatusKunjungan
+    filterStatusKunjungan,
+    isStaffUser,
+    currentUser,
   ]);
 
   // Data khusus untuk chart Trimming — filter by bulanExpDate ATAU bulanTtdNotif tergantung toggle
@@ -769,18 +795,20 @@ export default function CrmDataManagementPage() {
                 />
               </FilterSection>
               
-              {/* Section Details - PIC CRM */}
-              <FilterSection
-                title="Filter PIC CRM"
-                isExpanded={expandedFilterSections.includes('details')}
-                onToggle={() => toggleFilterSection('details')}
-              >
-                <FilterPicCrmSection
-                  filterPicCrm={filterPicCrm}
-                  setFilterPicCrm={setFilterPicCrm}
-                  picCrmOptions={uniquePicCrms}
-                />
-              </FilterSection>
+              {/* Section Details - PIC CRM (hidden for staff) */}
+              {!isStaffUser && (
+                <FilterSection
+                  title="Filter PIC CRM"
+                  isExpanded={expandedFilterSections.includes('details')}
+                  onToggle={() => toggleFilterSection('details')}
+                >
+                  <FilterPicCrmSection
+                    filterPicCrm={filterPicCrm}
+                    setFilterPicCrm={setFilterPicCrm}
+                    picCrmOptions={uniquePicCrms}
+                  />
+                </FilterSection>
+              )}
 
               {/* Section Date */}
               <FilterSection
