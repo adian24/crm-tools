@@ -946,31 +946,54 @@ export default function KontakManagementPage() {
                 ) : table.getRowModel().rows.map(row => {
                   if (row.getIsGrouped()) {
                     const groupVal = row.getValue(row.groupingColumnId ?? "");
-                    const countLeaf = row.subRows.filter(r => !r.getIsGrouped()).length;
+                    const hasSubGroups = row.subRows.some(r => r.getIsGrouped());
+                    const count = row.subRows.length;
+                    const countLabel = hasSubGroups ? `${count} grup` : `${count} data`;
+                    const depth = row.depth;
+                    // Style palette per depth level
+                    const depthStyles = [
+                      { row: "bg-purple-100 dark:bg-purple-900/50 hover:bg-purple-200/80 dark:hover:bg-purple-800/60 border-l-purple-500 dark:border-l-purple-400", text: "text-purple-900 dark:text-purple-100", chevron: "text-purple-600 dark:text-purple-300", badge: "bg-purple-600 hover:bg-purple-600 text-white border-purple-600", font: "font-bold text-sm" },
+                      { row: "bg-violet-50 dark:bg-violet-900/30 hover:bg-violet-100 dark:hover:bg-violet-800/40 border-l-violet-400 dark:border-l-violet-500", text: "text-violet-800 dark:text-violet-200", chevron: "text-violet-500 dark:text-violet-400", badge: "bg-violet-500 hover:bg-violet-500 text-white border-violet-500", font: "font-semibold text-[13px]" },
+                      { row: "bg-sky-50 dark:bg-sky-900/20 hover:bg-sky-100 dark:hover:bg-sky-800/30 border-l-sky-400 dark:border-l-sky-500", text: "text-sky-800 dark:text-sky-200", chevron: "text-sky-500 dark:text-sky-400", badge: "bg-sky-500 hover:bg-sky-500 text-white border-sky-500", font: "font-semibold text-xs" },
+                    ];
+                    const style = depthStyles[Math.min(depth, depthStyles.length - 1)];
                     return (
-                      <TableRow key={row.id} className="bg-purple-50/60 dark:bg-purple-950/20 hover:bg-purple-100/60 cursor-pointer"
+                      <TableRow key={row.id}
+                        className={`cursor-pointer border-l-4 ${style.row}`}
                         onClick={() => row.toggleExpanded()}>
-                        <TableCell colSpan={columns.length} className="py-2 px-3">
-                          <div className="flex items-center gap-2">
+                        <TableCell colSpan={columns.length} className="py-2.5 px-3">
+                          <div className="flex items-center gap-2" style={{ paddingLeft: depth * 20 }}>
                             {row.getIsExpanded()
-                              ? <IconChevronDown className="h-4 w-4 text-purple-600 shrink-0" />
-                              : <IconChevronRight className="h-4 w-4 text-purple-600 shrink-0" />}
-                            <span className="font-semibold text-sm text-purple-800 dark:text-purple-200">
+                              ? <IconChevronDown className={`h-4 w-4 ${style.chevron} shrink-0`} />
+                              : <IconChevronRight className={`h-4 w-4 ${style.chevron} shrink-0`} />}
+                            <span className={`${style.font} ${style.text}`}>
                               {String(groupVal ?? "(kosong)")}
                             </span>
-                            <Badge variant="outline" className="text-[10px] bg-purple-100 text-purple-700 border-purple-300">
-                              {countLeaf} data
+                            <Badge className={`text-[10px] ${style.badge}`}>
+                              {countLabel}
                             </Badge>
                           </div>
                         </TableCell>
                       </TableRow>
                     );
                   }
+                  const isInsideGroup = grouping.length > 0;
+                  const leafIndent = grouping.length * 20;
                   return (
-                    <TableRow key={row.id} className="hover:bg-muted/30 text-sm">
-                      {row.getVisibleCells().map(cell => (
+                    <TableRow key={row.id}
+                      className={
+                        isInsideGroup
+                          ? "bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 border-l-4 border-l-slate-200 dark:border-l-zinc-700 text-sm"
+                          : "hover:bg-muted/30 text-sm"
+                      }>
+                      {row.getVisibleCells().map((cell, idx) => (
                         <TableCell key={cell.id} className="py-2 px-3 text-xs"
-                          style={{ width: cell.column.getSize(), minWidth: cell.column.columnDef.minSize, maxWidth: cell.column.columnDef.maxSize }}>
+                          style={{
+                            width: cell.column.getSize(),
+                            minWidth: cell.column.columnDef.minSize,
+                            maxWidth: cell.column.columnDef.maxSize,
+                            paddingLeft: isInsideGroup && idx === 0 ? leafIndent + 12 : undefined,
+                          }}>
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </TableCell>
                       ))}
