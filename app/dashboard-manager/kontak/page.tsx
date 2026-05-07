@@ -810,43 +810,100 @@ export default function KontakManagementPage() {
   return (
     <div className="space-y-6 px-4 lg:px-6 pt-4">
       {/* Header */}
-      <div>
-        <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
-          Manajemen Kontak
-        </h1>
-        <p className="text-muted-foreground mt-2">Kelola informasi kontak perusahaan dan konsultan</p>
+      <div className="flex items-start justify-between border-b pb-4">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 shadow-md">
+            <Phone className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                Manajemen Kontak
+              </h1>
+              <span className="rounded-full bg-purple-100 dark:bg-purple-900/40 px-2.5 py-0.5 text-xs font-semibold text-purple-700 dark:text-purple-300">
+                {stats.total} perusahaan
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground mt-0.5">Kelola informasi kontak perusahaan dan konsultan</p>
+          </div>
+        </div>
       </div>
 
       {/* Stats */}
       <div className="grid gap-3 grid-cols-3 md:gap-4">
-        <Card className="p-2 md:p-6">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 px-2 md:px-6">
-            <CardTitle className="text-[10px] font-medium md:text-sm">Total Perusahaan</CardTitle>
-            <Building className="h-3 w-3 text-muted-foreground md:h-4 md:w-4" />
-          </CardHeader>
-          <CardContent className="px-2 md:px-6">
-            <div className="text-lg font-bold md:text-2xl">{stats.total}</div>
-            <p className="text-[9px] text-muted-foreground mt-0.5 md:text-xs">{stats.withPhone} memiliki telp</p>
+        {/* Card 1 — Total Perusahaan */}
+        <Card className="relative overflow-hidden border-0 shadow-md bg-gradient-to-br from-purple-500 to-indigo-600">
+          <div className="absolute inset-0 opacity-10">
+            <Building2 className="absolute -right-4 -bottom-4 h-24 w-24 text-white" />
+          </div>
+          <CardContent className="p-3 md:p-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[10px] md:text-xs font-medium text-purple-100 uppercase tracking-wide">Total Perusahaan</p>
+                <p className="text-2xl md:text-3xl font-bold text-white mt-1">{stats.total}</p>
+              </div>
+              <div className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm">
+                <Building2 className="h-4 w-4 md:h-5 md:w-5 text-white" />
+              </div>
+            </div>
+            <div className="mt-2 md:mt-3">
+              <div className="h-1 w-full rounded-full bg-white/20">
+                <div className="h-1 rounded-full bg-white/70" style={{ width: '100%' }} />
+              </div>
+              <p className="text-[9px] md:text-[10px] text-purple-100 mt-1">Seluruh data kontak</p>
+            </div>
           </CardContent>
         </Card>
-        <Card className="p-2 md:p-6">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 px-2 md:px-6">
-            <CardTitle className="text-[10px] font-medium md:text-sm">Ada No Telp</CardTitle>
-            <Phone className="h-3 w-3 text-muted-foreground md:h-4 md:w-4" />
-          </CardHeader>
-          <CardContent className="px-2 md:px-6">
-            <div className="text-lg font-bold md:text-2xl">{stats.withPhone}</div>
-            <p className="text-[9px] text-muted-foreground mt-0.5 md:text-xs">Dari {stats.total} perusahaan</p>
+
+        {/* Card 2 — Ada No Telp */}
+        <Card className="relative overflow-hidden border-0 shadow-md bg-gradient-to-br from-emerald-500 to-teal-600">
+          <div className="absolute inset-0 opacity-10">
+            <Phone className="absolute -right-4 -bottom-4 h-24 w-24 text-white" />
+          </div>
+          <CardContent className="p-3 md:p-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[10px] md:text-xs font-medium text-emerald-100 uppercase tracking-wide">Ada No Telp</p>
+                <p className="text-2xl md:text-3xl font-bold text-white mt-1">{stats.withPhone}</p>
+              </div>
+              <div className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm">
+                <Phone className="h-4 w-4 md:h-5 md:w-5 text-white" />
+              </div>
+            </div>
+            <div className="mt-2 md:mt-3">
+              <div className="h-1 w-full rounded-full bg-white/20">
+                <div className="h-1 rounded-full bg-white/70" style={{ width: `${stats.total ? Math.round((stats.withPhone / stats.total) * 100) : 0}%` }} />
+              </div>
+              <p className="text-[9px] md:text-[10px] text-emerald-100 mt-1">
+                {stats.total ? Math.round((stats.withPhone / stats.total) * 100) : 0}% dari total perusahaan
+              </p>
+            </div>
           </CardContent>
         </Card>
-        <Card className="p-2 md:p-6">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 px-2 md:px-6">
-            <CardTitle className="text-[10px] font-medium md:text-sm">Ada Konsultan</CardTitle>
-            <User className="h-3 w-3 text-muted-foreground md:h-4 md:w-4" />
-          </CardHeader>
-          <CardContent className="px-2 md:px-6">
-            <div className="text-lg font-bold md:text-2xl">{stats.withKonsultan}</div>
-            <p className="text-[9px] text-muted-foreground mt-0.5 md:text-xs">Dari {stats.total} perusahaan</p>
+
+        {/* Card 3 — Ada Konsultan */}
+        <Card className="relative overflow-hidden border-0 shadow-md bg-gradient-to-br from-orange-500 to-rose-500">
+          <div className="absolute inset-0 opacity-10">
+            <User className="absolute -right-4 -bottom-4 h-24 w-24 text-white" />
+          </div>
+          <CardContent className="p-3 md:p-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[10px] md:text-xs font-medium text-orange-100 uppercase tracking-wide">Ada Konsultan</p>
+                <p className="text-2xl md:text-3xl font-bold text-white mt-1">{stats.withKonsultan}</p>
+              </div>
+              <div className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm">
+                <User className="h-4 w-4 md:h-5 md:w-5 text-white" />
+              </div>
+            </div>
+            <div className="mt-2 md:mt-3">
+              <div className="h-1 w-full rounded-full bg-white/20">
+                <div className="h-1 rounded-full bg-white/70" style={{ width: `${stats.total ? Math.round((stats.withKonsultan / stats.total) * 100) : 0}%` }} />
+              </div>
+              <p className="text-[9px] md:text-[10px] text-orange-100 mt-1">
+                {stats.total ? Math.round((stats.withKonsultan / stats.total) * 100) : 0}% dari total perusahaan
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -859,20 +916,25 @@ export default function KontakManagementPage() {
               <CardTitle>Daftar Kontak</CardTitle>
               <CardDescription>{filteredRows.filter(r => !r.getIsGrouped()).length} data ditampilkan</CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="gap-1.5 text-xs cursor-pointer h-8" onClick={handleDownloadTemplate}>
-                <FileSpreadsheet className="h-3.5 w-3.5 text-green-600" />
-                <span className="hidden sm:inline">Template</span>
-              </Button>
-              <Button variant="outline" size="sm" className="gap-1.5 text-xs cursor-pointer h-8" onClick={() => setIsUploadDialogOpen(true)}>
-                <Upload className="h-3.5 w-3.5 text-blue-600" />
-                <span className="hidden sm:inline">Import</span>
-              </Button>
-              <Button variant="outline" size="sm" className="gap-1.5 text-xs cursor-pointer h-8" onClick={handleExport}>
-                <IconDownload className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Export</span>
-              </Button>
-            </div>
+            {currentUser?.role !== 'staff' && (
+              <div className="flex items-center gap-2">
+                <Button size="sm" className="gap-1.5 text-xs cursor-pointer h-8 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm" onClick={handleDownloadTemplate}>
+                  <FileSpreadsheet className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Template</span>
+                </Button>
+                <Button size="sm" className="gap-1.5 text-xs cursor-pointer h-8 bg-blue-600 hover:bg-blue-700 text-white shadow-sm" onClick={() => setIsUploadDialogOpen(true)}>
+                  <Upload className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Import</span>
+                </Button>
+                <Button size="sm" className="gap-1.5 text-xs cursor-pointer h-8 bg-orange-500 hover:bg-orange-600 text-white shadow-sm" onClick={handleExport}>
+                  <IconDownload className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Export</span>
+                  <span className="rounded-full bg-white/30 px-1.5 py-0.5 text-[10px] font-semibold leading-none">
+                    {filteredRows.filter(r => !r.getIsGrouped()).length}
+                  </span>
+                </Button>
+              </div>
+            )}
           </div>
         </CardHeader>
 
