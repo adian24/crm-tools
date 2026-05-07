@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/select';
 import { Search, Edit, Phone, Mail, User, Building, Save, X, Building2, Briefcase, ChevronDown, ChevronUp, Filter, Copy, Check, Download, FileSpreadsheet, Upload, AlertCircle, CheckCircle2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { WhatsAppIcon, formatPhoneForWa, buildWaMessage, renderWaPreview } from '@/lib/wa-utils';
 import { toast } from 'sonner';
 import { getCurrentUser } from '@/lib/auth';
 import { InfinityLoader } from '@/components/ui/infinity-loader';
@@ -39,11 +40,37 @@ interface ContactData {
   kota: string;
   createdAt: number;
   updatedAt: number;
+  produk?: string;
+  std?: string;
+  tahapAudit?: string;
+  expDate?: string;
 }
 
 interface GroupedContact {
   namaPerusahaan: string;
   contacts: ContactData[];
+}
+
+function WhatsAppButton({
+  phone,
+  group,
+  onOpen,
+}: {
+  phone: string;
+  group: GroupedContact;
+  iconClassName?: string;
+  onOpen: (group: GroupedContact, phone: string) => void;
+}) {
+  if (!phone || phone.trim() === '') return null;
+  return (
+    <button
+      onClick={() => onOpen(group, phone)}
+      className="flex items-center justify-center h-6 w-6 rounded hover:bg-green-50 dark:hover:bg-green-950/30 transition-colors cursor-pointer shrink-0"
+      title="Kirim WhatsApp"
+    >
+      <WhatsAppIcon className="h-3.5 w-3.5 text-green-500" />
+    </button>
+  );
 }
 
 export default function KontakManagementPage() {
@@ -69,6 +96,14 @@ export default function KontakManagementPage() {
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [skippedRowsCount, setSkippedRowsCount] = useState(0);
+  const [waDialog, setWaDialog] = useState<{
+    open: boolean;
+    group: GroupedContact;
+    phone: string;
+    selectedIdx: number;
+    message: string;
+  } | null>(null);
+  const [waTab, setWaTab] = useState<'preview' | 'edit'>('preview');
 
   // Copy to clipboard function
   const copyToClipboard = async (text: string, label: string) => {
@@ -509,6 +544,10 @@ export default function KontakManagementPage() {
         kota: target.kota || '-',
         createdAt: target.createdAt,
         updatedAt: target.updatedAt,
+        produk: target.produk,
+        std: target.std,
+        tahapAudit: target.tahapAudit,
+        expDate: target.expDate,
       });
     });
 
@@ -709,6 +748,11 @@ export default function KontakManagementPage() {
     );
   };
 
+  const openWaDialog = (group: GroupedContact, phone: string) => {
+    const message = buildWaMessage(group.contacts[0]);
+    setWaDialog({ open: true, group, phone, selectedIdx: 0, message });
+  };
+
   // Mobile Contact Card Component
   const MobileContactCard = ({ group, index }: { group: GroupedContact; index: number }) => {
     const contact = group.contacts[0];
@@ -759,6 +803,7 @@ export default function KontakManagementPage() {
                 label={`Telp ${contact.namaPerusahaan}`}
                 className="flex-1"
               />
+              <WhatsAppButton phone={contact.noTelp || ''} group={group} onOpen={openWaDialog} />
             </div>
 
             {/* Row 3: Email Perusahaan */}
@@ -793,6 +838,7 @@ export default function KontakManagementPage() {
                 className="flex-1"
                 iconClassName="text-purple-500"
               />
+              <WhatsAppButton phone={contact.noTelpKonsultan || ''} group={group} onOpen={openWaDialog} />
             </div>
 
             {/* Row 6: Email Konsultan */}
@@ -1120,11 +1166,14 @@ export default function KontakManagementPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <CopyableText
-                              text={contact.noTelp || ''}
-                              icon={Phone}
-                              label={`Telp ${contact.namaPerusahaan}`}
-                            />
+                            <div className="flex items-center gap-1">
+                              <CopyableText
+                                text={contact.noTelp || ''}
+                                icon={Phone}
+                                label={`Telp ${contact.namaPerusahaan}`}
+                              />
+                              <WhatsAppButton phone={contact.noTelp || ''} group={group} onOpen={openWaDialog} />
+                            </div>
                           </TableCell>
                           <TableCell>
                             <CopyableText
@@ -1142,12 +1191,15 @@ export default function KontakManagementPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <CopyableText
-                              text={contact.noTelpKonsultan || ''}
-                              icon={Phone}
-                              label={`Telp Konsultan ${contact.namaPerusahaan}`}
-                              iconClassName="text-purple-500"
-                            />
+                            <div className="flex items-center gap-1">
+                              <CopyableText
+                                text={contact.noTelpKonsultan || ''}
+                                icon={Phone}
+                                label={`Telp Konsultan ${contact.namaPerusahaan}`}
+                                iconClassName="text-purple-500"
+                              />
+                              <WhatsAppButton phone={contact.noTelpKonsultan || ''} group={group} iconClassName="text-green-500" onOpen={openWaDialog} />
+                            </div>
                           </TableCell>
                           <TableCell>
                             <CopyableText
@@ -1497,6 +1549,110 @@ export default function KontakManagementPage() {
 
       {/* Mobile Spacer for Bottom Nav */}
       {isMobile && <div className="h-16"></div>}
+
+      {/* WhatsApp Dialog */}
+      {waDialog && (
+        <Dialog open={waDialog.open} onOpenChange={(open) => !open && setWaDialog(null)}>
+          <DialogContent className="!w-[95vw] !max-w-[95vw] sm:!w-[70vw] sm:!max-w-[70vw] !h-[90vh] !max-h-[90vh] flex flex-col overflow-hidden p-4 sm:p-6">
+            <DialogHeader className="shrink-0">
+              <DialogTitle className="flex items-center gap-2">
+                <WhatsAppIcon className="h-5 w-5 text-green-500" />
+                Kirim WhatsApp
+              </DialogTitle>
+              <DialogDescription>
+                ke {waDialog.phone} — {waDialog.group.namaPerusahaan}
+              </DialogDescription>
+            </DialogHeader>
+
+            {/* Pilih sertifikasi jika lebih dari 1 */}
+            {waDialog.group.contacts.length > 1 && (
+              <div className="space-y-1.5 shrink-0">
+                <label className="text-sm font-medium">Pilih Sertifikasi</label>
+                <Select
+                  value={String(waDialog.selectedIdx)}
+                  onValueChange={(val) => {
+                    const idx = Number(val);
+                    const msg = buildWaMessage(waDialog.group.contacts[idx]);
+                    setWaDialog({ ...waDialog, selectedIdx: idx, message: msg });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {waDialog.group.contacts.map((c, i) => (
+                      <SelectItem key={i} value={String(i)}>
+                        {c.produk || 'Produk -'} • {c.tahapAudit || 'Tahap -'} • Exp: {c.expDate || '-'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Tab switcher — mobile only */}
+            <div className="flex sm:hidden shrink-0 border rounded-lg overflow-hidden">
+              <button
+                onClick={() => setWaTab('preview')}
+                className={`flex-1 py-2 text-sm font-medium transition-colors ${waTab === 'preview' ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground'}`}
+              >
+                Preview
+              </button>
+              <button
+                onClick={() => setWaTab('edit')}
+                className={`flex-1 py-2 text-sm font-medium transition-colors ${waTab === 'edit' ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground'}`}
+              >
+                Edit
+              </button>
+            </div>
+
+            {/* Layout: 2 kolom di desktop, tab di mobile */}
+            <div className="flex-1 min-h-0 sm:grid sm:grid-cols-2 sm:gap-4">
+
+              {/* Preview */}
+              <div className={`flex flex-col space-y-1.5 min-h-0 h-full ${isMobile && waTab !== 'preview' ? 'hidden' : ''}`}>
+                <div className="hidden sm:flex items-center gap-2 shrink-0">
+                  <WhatsAppIcon className="h-3.5 w-3.5 text-green-500" />
+                  <span className="text-sm font-medium">Preview WhatsApp</span>
+                </div>
+                <div className="flex-1 overflow-y-auto rounded-2xl rounded-tl-sm bg-[#dcf8c6] dark:bg-[#056162] p-4 text-sm text-gray-800 dark:text-gray-100 whitespace-pre-wrap leading-relaxed shadow-sm">
+                  {renderWaPreview(waDialog.message)}
+                </div>
+              </div>
+
+              {/* Edit */}
+              <div className={`flex flex-col space-y-1.5 min-h-0 h-full ${isMobile && waTab !== 'edit' ? 'hidden' : ''}`}>
+                <div className="hidden sm:flex items-center gap-2 shrink-0">
+                  <span className="text-sm font-medium">Edit Pesan</span>
+                  <span className="text-xs text-muted-foreground">— gunakan *teks* untuk bold</span>
+                </div>
+                <textarea
+                  className="flex-1 w-full text-sm border rounded-lg p-3 resize-none focus:outline-none focus:ring-2 focus:ring-green-500 bg-background font-mono"
+                  value={waDialog.message}
+                  onChange={(e) => setWaDialog({ ...waDialog, message: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setWaDialog(null)}>
+                Batal
+              </Button>
+              <Button
+                className="bg-green-600 hover:bg-green-700 text-white"
+                onClick={() => {
+                  const phone = formatPhoneForWa(waDialog.phone);
+                  const url = `https://wa.me/${phone}?text=${encodeURIComponent(waDialog.message)}`;
+                  window.open(url, '_blank');
+                }}
+              >
+                <WhatsAppIcon className="h-4 w-4 mr-2" />
+                Buka WhatsApp
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>

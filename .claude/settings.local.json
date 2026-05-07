@@ -52,7 +52,8 @@
       "PowerShell(head *)",
       "Bash(Get-Content \"D:\\\\PROJECT\\\\crm-tools\\\\app\\\\dashboard-manager\\\\laporan-kunjungan\\\\page.tsx\")",
       "Bash(Select-String \"useState|Month|Year|month|year|bulan|tahun\")",
-      "Bash(Select-Object -First 20)"
+      "Bash(Select-Object -First 20)",
+      "Bash(Select-Object -ExpandProperty FullName)"
     ],
     "deny": [],
     "ask": []

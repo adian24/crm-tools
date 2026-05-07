@@ -99,6 +99,9 @@ import { Id } from "@/convex/_generated/dataModel";
 import { CrmTarget } from "@/lib/crm-types";
 import { CrmBulkEditDialog } from "@/components/crm-bulk-edit-dialog";
 import { EditCrmDialog } from "@/components/crm-edit-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { WhatsAppIcon, formatPhoneForWa, buildWaMessage, renderWaPreview } from "@/lib/wa-utils";
 
 // ── Module augmentation ──────────────────────────────────────────────────────
 declare module "@tanstack/react-table" {
@@ -507,9 +510,10 @@ function GroupByBar({ grouping, onGroupingChange }: { grouping: string[]; onGrou
 }
 
 // ── DetailDrawer ──────────────────────────────────────────────────────────────
-function DetailDrawer({ target, open, onClose, onEdit, canEdit, isMobile }: {
+function DetailDrawer({ target, open, onClose, onEdit, canEdit, isMobile, onWaClick }: {
   target: CrmTarget | null; open: boolean; onClose: () => void;
   onEdit?: (t: CrmTarget) => void; canEdit?: boolean; isMobile: boolean;
+  onWaClick?: (target: CrmTarget, phone: string) => void;
 }) {
   if (!target) return null;
   const fields: { label: string; value: React.ReactNode; span?: boolean }[] = [
@@ -582,9 +586,16 @@ function DetailDrawer({ target, open, onClose, onEdit, canEdit, isMobile }: {
             <DrawerTitle className="text-sm">{target.namaPerusahaan}</DrawerTitle>
           </DrawerHeader>
           {content}
-          <DrawerFooter className="pt-2 flex-row gap-2 border-t">
+          <DrawerFooter className="pt-2 flex-row gap-2 border-t flex-wrap">
             {canEdit && onEdit && (
               <Button className="flex-1 h-9 text-sm cursor-pointer" onClick={() => { onEdit(target); onClose(); }}>Edit Data</Button>
+            )}
+            {onWaClick && (target.noTelp || target.noTelpKonsultan) && (
+              <Button variant="outline" className="flex-1 h-9 text-sm cursor-pointer text-green-600 border-green-300 hover:bg-green-50"
+                onClick={() => onWaClick(target, target.noTelp || target.noTelpKonsultan || "")}>
+                <WhatsAppIcon className="h-4 w-4 mr-1.5 text-green-500" />
+                WhatsApp
+              </Button>
             )}
             <DrawerClose asChild>
               <Button variant="outline" className="flex-1 h-9 text-sm cursor-pointer">Tutup</Button>
@@ -707,6 +718,13 @@ export function CrmDataTable({ data, canEdit = false, showExport = true, onEdit,
   });
   const [editDialogTarget, setEditDialogTarget] = useState<CrmTarget | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [waDialog, setWaDialog] = useState<{ open: boolean; phone: string; target: CrmTarget; message: string } | null>(null);
+  const [waTab, setWaTab] = useState<"preview" | "edit">("preview");
+
+  const openWaDialog = useCallback((target: CrmTarget, phone: string) => {
+    setWaDialog({ open: true, phone, target, message: buildWaMessage(target) });
+    setWaTab("preview");
+  }, []);
   const allUsers = useQuery(api.auth.getAllUsers);
   const staffUsers = allUsers?.filter((u: { role: string }) => u.role === "staff") ?? [];
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
@@ -1013,10 +1031,34 @@ export function CrmDataTable({ data, canEdit = false, showExport = true, onEdit,
       ) : "-", { size: 120 }),
       mkCol("fotoBuktiKunjungan", "Foto Bukti", undefined, { enableColumnFilter: false, enableGrouping: false, size: 100 }),
       mkCol("picDirect", "PIC Direct", v => <span>{String(v ?? "") || "-"}</span>, { size: 130 }),
-      mkCol("noTelp", "No Telp", v => <span>{String(v ?? "") || "-"}</span>, { size: 130 }),
+      mkCol("noTelp", "No Telp", (v, row) => {
+        const phone = String(v ?? "");
+        if (!phone) return <span>-</span>;
+        return (
+          <div className="flex items-center gap-1">
+            <span>{phone}</span>
+            <button onClick={e => { e.stopPropagation(); openWaDialog(row.original, phone); }}
+              className="flex items-center justify-center h-5 w-5 rounded hover:bg-green-50 dark:hover:bg-green-950/30 transition-colors cursor-pointer shrink-0" title="Kirim WhatsApp">
+              <WhatsAppIcon className="h-3 w-3 text-green-500" />
+            </button>
+          </div>
+        );
+      }, { size: 155 }),
       mkCol("email", "Email", v => <span className="truncate">{String(v ?? "") || "-"}</span>, { size: 180 }),
       mkCol("namaKonsultan", "Konsultan", v => <span>{String(v ?? "") || "-"}</span>, { size: 140 }),
-      mkCol("noTelpKonsultan", "Telp Konsultan", v => <span>{String(v ?? "") || "-"}</span>, { size: 130 }),
+      mkCol("noTelpKonsultan", "Telp Konsultan", (v, row) => {
+        const phone = String(v ?? "");
+        if (!phone) return <span>-</span>;
+        return (
+          <div className="flex items-center gap-1">
+            <span>{phone}</span>
+            <button onClick={e => { e.stopPropagation(); openWaDialog(row.original, phone); }}
+              className="flex items-center justify-center h-5 w-5 rounded hover:bg-green-50 dark:hover:bg-green-950/30 transition-colors cursor-pointer shrink-0" title="Kirim WhatsApp">
+              <WhatsAppIcon className="h-3 w-3 text-green-500" />
+            </button>
+          </div>
+        );
+      }, { size: 155 }),
       mkCol("emailKonsultan", "Email Konsultan", v => <span className="truncate">{String(v ?? "") || "-"}</span>, { size: 180 }),
     ];
 
@@ -1586,6 +1628,73 @@ export function CrmDataTable({ data, canEdit = false, showExport = true, onEdit,
           </AlertDialog>
         );
       })()}
+
+      {/* ── WhatsApp Dialog ── */}
+      {waDialog && (
+        <Dialog open={waDialog.open} onOpenChange={(open) => !open && setWaDialog(null)}>
+          <DialogContent className="!w-[95vw] !max-w-[95vw] sm:!w-[70vw] sm:!max-w-[70vw] !h-[90vh] !max-h-[90vh] flex flex-col overflow-hidden p-4 sm:p-6">
+            <DialogHeader className="shrink-0">
+              <DialogTitle className="flex items-center gap-2">
+                <WhatsAppIcon className="h-5 w-5 text-green-500" />
+                Kirim WhatsApp
+              </DialogTitle>
+              <DialogDescription>
+                ke {waDialog.phone} — {waDialog.target.namaPerusahaan}
+              </DialogDescription>
+            </DialogHeader>
+
+            {/* Tab switcher mobile */}
+            <div className="flex sm:hidden shrink-0 border rounded-lg overflow-hidden">
+              <button onClick={() => setWaTab("preview")}
+                className={`flex-1 py-2 text-sm font-medium transition-colors ${waTab === "preview" ? "bg-green-600 text-white" : "bg-muted text-muted-foreground"}`}>
+                Preview
+              </button>
+              <button onClick={() => setWaTab("edit")}
+                className={`flex-1 py-2 text-sm font-medium transition-colors ${waTab === "edit" ? "bg-green-600 text-white" : "bg-muted text-muted-foreground"}`}>
+                Edit
+              </button>
+            </div>
+
+            {/* Layout 2 kolom desktop / tab mobile */}
+            <div className="flex-1 min-h-0 sm:grid sm:grid-cols-2 sm:gap-4">
+              {/* Preview */}
+              <div className={`flex flex-col space-y-1.5 min-h-0 h-full ${isMobile && waTab !== "preview" ? "hidden" : ""}`}>
+                <div className="hidden sm:flex items-center gap-2 shrink-0">
+                  <WhatsAppIcon className="h-3.5 w-3.5 text-green-500" />
+                  <span className="text-sm font-medium">Preview WhatsApp</span>
+                </div>
+                <div className="flex-1 overflow-y-auto rounded-2xl rounded-tl-sm bg-[#dcf8c6] dark:bg-[#056162] p-4 text-sm text-gray-800 dark:text-gray-100 whitespace-pre-wrap leading-relaxed shadow-sm">
+                  {renderWaPreview(waDialog.message)}
+                </div>
+              </div>
+              {/* Edit */}
+              <div className={`flex flex-col space-y-1.5 min-h-0 h-full ${isMobile && waTab !== "edit" ? "hidden" : ""}`}>
+                <div className="hidden sm:flex items-center gap-2 shrink-0">
+                  <span className="text-sm font-medium">Edit Pesan</span>
+                  <span className="text-xs text-muted-foreground">— gunakan *teks* untuk bold</span>
+                </div>
+                <textarea
+                  className="flex-1 w-full text-sm border rounded-lg p-3 resize-none focus:outline-none focus:ring-2 focus:ring-green-500 bg-background font-mono"
+                  value={waDialog.message}
+                  onChange={(e) => setWaDialog({ ...waDialog, message: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 shrink-0">
+              <Button variant="outline" onClick={() => setWaDialog(null)}>Batal</Button>
+              <Button className="bg-green-600 hover:bg-green-700 text-white"
+                onClick={() => {
+                  const phone = formatPhoneForWa(waDialog.phone);
+                  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(waDialog.message)}`, "_blank");
+                }}>
+                <WhatsAppIcon className="h-4 w-4 mr-2" />
+                Buka WhatsApp
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Bulk edit dialog */}
       <CrmBulkEditDialog

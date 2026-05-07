@@ -2,31 +2,38 @@
   "tahapan": [
     {
       "kode": "IA",
-      "nama": "IA"
+      "nama": "IA",
+      "desc": "Initial Audit"
     },
     {
       "kode": "RC",
-      "nama": "RC"
+      "nama": "RC",
+      "desc": "Recertification"
     },
     {
       "kode": "SV1",
-      "nama": "SV1"
+      "nama": "SV1",
+      "desc": "Surveillance 1"
     },
     {
       "kode": "SV2",
-      "nama": "SV2"
+      "nama": "SV2",
+      "desc": "Surveillance 2"
     },
     {
       "kode": "SV3",
-      "nama": "SV3"
+      "nama": "SV3",
+      "desc": "Surveillance 3"
     },
     {
       "kode": "SV4",
-      "nama": "SV4"
+      "nama": "SV4",
+      "desc": "Surveillance 4"
     },
     {
       "kode": "GAP",
-      "nama": "GAP"
+      "nama": "GAP",
+      "desc": "Gap Analysis"
     }
   ]
 }
