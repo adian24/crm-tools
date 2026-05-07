@@ -62,6 +62,7 @@ export interface CRMSidebarProps extends React.ComponentProps<typeof Sidebar> {
 const getNavigationItems = (role: string) => {
   if (role === 'staff') {
     return [
+      { title: "Pencapaian CRM",                url: "/dashboard-manager/dashboard-data",                 icon: IconChartPie },
       { title: "Jadwal Kunjungan",              url: "/dashboard-manager/dashboard-kunjungan",            icon: IconCalendar },
       { title: "Laporan Kunjungan",             url: "/dashboard-manager/laporan-kunjungan",              icon: IconReport },
       { title: "CRM Data Management",           url: "/dashboard-manager/crm-data",                       icon: IconTarget },
