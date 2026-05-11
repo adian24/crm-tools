@@ -2,6 +2,7 @@ import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 
 interface FilterSertifikatSectionProps {
   filterStandar: string;
@@ -89,19 +90,14 @@ export function FilterSertifikatSection({
       {/* Standar */}
       <div>
         <Label className="mb-1.5 block text-xs">Standar</Label>
-        <Select value={filterStandar} onValueChange={setFilterStandar}>
-          <SelectTrigger className="w-full h-8 text-xs">
-            <SelectValue placeholder="All Standar" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Standar</SelectItem>
-            {standarOptions.map((standar) => (
-              <SelectItem key={standar} value={standar}>
-                {standar}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <SearchableSelect
+          options={[{ value: 'all', label: 'All Standar' }, ...standarOptions.map(s => ({ value: s, label: s }))]}
+          value={filterStandar}
+          onChange={setFilterStandar}
+          placeholder="All Standar"
+          emptyText="Standar tidak ditemukan"
+          className="w-full h-8 text-xs"
+        />
       </div>
 
       {/* Akreditasi */}

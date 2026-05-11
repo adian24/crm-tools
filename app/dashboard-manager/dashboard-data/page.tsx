@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Label } from '@/components/ui/label';
 import { Search, Filter, BarChart3, ChevronDown, ChevronRight, Users, Building2, X, SlidersHorizontal, RotateCcw, ArrowUp, Scissors, TrendingDown, Gift, Wallet } from 'lucide-react';
 import { CrmDataTable } from '@/components/crm-data-table';
@@ -1225,17 +1226,14 @@ export default function CrmDataManagementPage() {
                   {/* Standar */}
                   <div>
                     <Label className="mb-1.5 block text-xs">Standar</Label>
-                    <Select value={filterStandar} onValueChange={setFilterStandar}>
-                      <SelectTrigger className="w-full h-10">
-                        <SelectValue placeholder="All Standar" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Standar</SelectItem>
-                        {standarOptions.map((standar) => (
-                          <SelectItem key={standar} value={standar}>{standar}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      options={[{ value: 'all', label: 'All Standar' }, ...standarOptions.map(s => ({ value: s, label: s }))]}
+                      value={filterStandar}
+                      onChange={setFilterStandar}
+                      placeholder="All Standar"
+                      emptyText="Standar tidak ditemukan"
+                      className="w-full h-10"
+                    />
                   </div>
 
                   {/* Akreditasi */}
@@ -5149,7 +5147,7 @@ export default function CrmDataManagementPage() {
                   Pareto Chart - Alasan
                 </CardTitle>
                 <CardDescription className="mt-1">
-                  Analisis 80/20 alasan berdasarkan jumlah {filterStatus !== 'all' ? `- Status: ${filterStatus.toUpperCase()}` : '(Semua Status)'} {filterAlasan !== 'all' ? `- Alasan: ${filterAlasan}` : ''}
+                  Analisis 80/20 alasan berdasarkan jumlah {filterStatus !== 'all' ? `- Status: ${filterStatus.toUpperCase()}` : '(Semua Status)'} {filterAlasan !== 'all' ? `- Alasan: ${filterAlasan}` : ''} {filterStandar !== 'all' ? `- Standar: ${filterStandar}` : ''}
                 </CardDescription>
               </div>
             </div>
@@ -5186,6 +5184,9 @@ export default function CrmDataManagementPage() {
                   }
                 }
 
+                // Filter Standar
+                const matchesStandar = filterStandar === 'all' || t.std === filterStandar;
+
                 // Filter Alasan
                 let matchesAlasan = true;
                 if (filterAlasan !== 'all') {
@@ -5193,7 +5194,7 @@ export default function CrmDataManagementPage() {
                   matchesAlasan = normalizedAlasan === filterAlasan;
                 }
 
-                return matchesTahun && matchesStatus && matchesTipeProduk && matchesKategoriProduk && matchesAlasan;
+                return matchesTahun && matchesStatus && matchesTipeProduk && matchesKategoriProduk && matchesStandar && matchesAlasan;
               });
 
               // Get list of valid alasan from master
