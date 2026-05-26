@@ -524,6 +524,8 @@ export default function CrmDataManagementPage() {
           if (filterTipeProduk === 'SUSTAIN' && !p.includes('ISPO')) return false;
         }
 
+        if (filterStandar !== 'all' && t.std !== filterStandar) return false;
+
         if (filterBulanTTDEnabled) {
           // TTD filter aktif: hanya DONE dengan bulanTtdNotif dalam range
           if (t.status !== 'DONE') return false;
@@ -550,7 +552,7 @@ export default function CrmDataManagementPage() {
         return t;
       });
   }, [
-    crmTargets, globalYear, filterStatus, filterTipeProduk,
+    crmTargets, globalYear, filterStatus, filterTipeProduk, filterStandar,
     filterBulanExpEnabled, filterFromBulanExp, filterToBulanExp,
     filterBulanTTDEnabled, filterFromBulanTTD, filterToBulanTTD,
   ]);
@@ -3455,7 +3457,9 @@ export default function CrmDataManagementPage() {
                   }
                 }
 
-                return matchesStatus && isSertifikatMatch && hasBulanTtdNotif && hasAssociate && matchesTahun && matchesTipeProduk && matchesKategoriProduk;
+                const matchesStandar = filterStandar === 'all' || t.std === filterStandar;
+
+                return matchesStatus && isSertifikatMatch && hasBulanTtdNotif && hasAssociate && matchesTahun && matchesTipeProduk && matchesKategoriProduk && matchesStandar;
               });
 
               // Debug: log total counts
@@ -3990,7 +3994,9 @@ export default function CrmDataManagementPage() {
                       matchesBulanTtdNotif = false;
                     }
 
-                    return matchesContractStatus && matchesStatus && matchesTahun && matchesBulanTtdNotif && matchesTipeProduk && matchesKategoriProduk;
+                    const matchesStandar = filterStandar === 'all' || t.std === filterStandar;
+
+                    return matchesContractStatus && matchesStatus && matchesTahun && matchesBulanTtdNotif && matchesTipeProduk && matchesKategoriProduk && matchesStandar;
                   });
 
                   // Group by sales and get totals
@@ -4420,7 +4426,9 @@ export default function CrmDataManagementPage() {
                       matchesBulanExp = bulanExpNum > 0 && bulanExpNum >= fromMonth && bulanExpNum <= toMonth;
                     }
 
-                    return matchesTahun && matchesContractStatus && matchesStatus && matchesPicCrm && matchesTipeProduk && matchesKategoriProduk && matchesBulanExp;
+                    const matchesStandar = filterStandar === 'all' || t.std === filterStandar;
+
+                    return matchesTahun && matchesContractStatus && matchesStatus && matchesPicCrm && matchesTipeProduk && matchesKategoriProduk && matchesBulanExp && matchesStandar;
                   });
 
                   // Group by tahapAudit and get totals
@@ -4786,7 +4794,9 @@ export default function CrmDataManagementPage() {
                   }
                 }
 
-                return matchesTahun && matchesStatus && matchesBulanExp && matchesTipeProduk && matchesKategoriProduk;
+                const matchesStandar = filterStandar === 'all' || t.std === filterStandar;
+
+                return matchesTahun && matchesStatus && matchesBulanExp && matchesTipeProduk && matchesKategoriProduk && matchesStandar;
               });
 
               // Group by std and get counts
@@ -4955,7 +4965,9 @@ export default function CrmDataManagementPage() {
                   }
                 }
 
-                return matchesTahun && matchesStatus && matchesBulanExp && matchesTipeProduk && matchesKategoriProduk;
+                const matchesStandar = filterStandar === 'all' || t.std === filterStandar;
+
+                return matchesTahun && matchesStatus && matchesBulanExp && matchesTipeProduk && matchesKategoriProduk && matchesStandar;
               });
 
               // Get list of valid EA codes from master ea code - normalized
