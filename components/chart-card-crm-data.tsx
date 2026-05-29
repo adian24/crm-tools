@@ -348,12 +348,23 @@ function ChartCardCrmData({
                         cx="50%"
                         cy="50%"
                         labelLine={true}
-                        label={({ name, value, percent }: any) => {
-                          let nominal = '';
-                          if (value >= 1000000000) nominal = (value / 1000000000).toFixed(1) + 'M';
-                          else if (value >= 1000000) nominal = (value / 1000000).toFixed(1) + 'Jt';
-                          else nominal = (value / 1000).toFixed(0) + 'rb';
-                          return `${name}: ${nominal} (${(percent * 100).toFixed(0)}%)`;
+                        label={(props: any) => {
+                          const { cx, cy, midAngle, outerRadius, name, value, percent } = props;
+                          const RADIAN = Math.PI / 180;
+                          const radius = outerRadius + 30;
+                          const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                          const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                          const anchor = x > cx ? 'start' : 'end';
+                          let amount = '';
+                          if (value >= 1000000000) amount = (value / 1000000000).toFixed(1) + 'M';
+                          else if (value >= 1000000) amount = (value / 1000000).toFixed(1) + 'Jt';
+                          else amount = (value / 1000).toFixed(0) + 'rb';
+                          return (
+                            <text x={x} y={y} textAnchor={anchor} dominantBaseline="central" fontSize={13} fill="#555">
+                              <tspan x={x} dy="-7" fontWeight="600">{name}: {amount}</tspan>
+                              <tspan x={x} dy="16" fontSize={12} fill="#888" fontWeight="600">{(percent * 100).toFixed(0)}%</tspan>
+                            </text>
+                          );
                         }}
                         outerRadius={70}
                         innerRadius={0}

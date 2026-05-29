@@ -333,7 +333,7 @@ function ChartCardAssociateMonthly({
                 );
 
               case 'pie':
-                // Calculate totals per associate type for pie chart
+                // Calculate totals, counts, and companies per associate type
                 const associateTotals = chartData.reduce((acc, month) => {
                   return {
                     Direct: acc.Direct + month.Direct,
@@ -341,32 +341,46 @@ function ChartCardAssociateMonthly({
                   };
                 }, { Direct: 0, Associate: 0 });
 
+                const associateCounts = { Direct: 0, Associate: 0 };
+                const associateCompanies: { Direct: Set<string>; Associate: Set<string> } = { Direct: new Set(), Associate: new Set() };
+                data.forEach((item: any) => {
+                  const type = (item.directOrAssociate || '').toLowerCase() === 'associate' ? 'Associate' : 'Direct';
+                  associateCounts[type] += 1;
+                  if (item.namaPerusahaan) associateCompanies[type].add(item.namaPerusahaan);
+                });
+
                 const pieData = [
-                  { name: 'Direct', value: associateTotals.Direct, color: associateColors.Direct },
-                  { name: 'Associate', value: associateTotals.Associate, color: associateColors.Associate },
+                  { name: 'Direct', value: associateTotals.Direct, count: associateCounts.Direct, companyCount: associateCompanies.Direct.size, color: associateColors.Direct },
+                  { name: 'Associate', value: associateTotals.Associate, count: associateCounts.Associate, companyCount: associateCompanies.Associate.size, color: associateColors.Associate },
                 ].filter(item => item.value > 0);
 
                 return (
                   <div className="flex flex-col items-center justify-center">
-                    <PieChart width={300} height={300}>
+                    <PieChart width={360} height={320}>
                       <Pie
                         data={pieData}
                         cx="50%"
                         cy="50%"
                         labelLine={true}
-                        label={(entry) => {
-                          const value = entry.value;
-                          let label = '';
-                          if (value >= 1000000000) {
-                            label = (value / 1000000000).toFixed(1) + 'M';
-                          } else if (value >= 1000000) {
-                            label = (value / 1000000).toFixed(1) + 'Jt';
-                          } else {
-                            label = (value / 1000).toFixed(0) + 'rb';
-                          }
-                          return `${entry.name}: ${label}`;
+                        label={(props: any) => {
+                          const { cx, cy, midAngle, outerRadius, name, value, count, companyCount } = props;
+                          const RADIAN = Math.PI / 180;
+                          const radius = outerRadius + 35;
+                          const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                          const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                          const anchor = x > cx ? 'start' : 'end';
+                          let amount = '';
+                          if (value >= 1000000000) amount = (value / 1000000000).toFixed(1) + 'M';
+                          else if (value >= 1000000) amount = (value / 1000000).toFixed(1) + 'Jt';
+                          else amount = (value / 1000).toFixed(0) + 'rb';
+                          return (
+                            <text x={x} y={y} textAnchor={anchor} dominantBaseline="central" fontSize={13} fill="#555">
+                              <tspan x={x} dy="-7" fontWeight="600">{name}: {amount}</tspan>
+                              <tspan x={x} dy="16" fontSize={12} fill="#888" fontWeight="600">{count} Sertifikat · {companyCount} Perusahaan</tspan>
+                            </text>
+                          );
                         }}
-                        outerRadius={100}
+                        outerRadius={90}
                         fill="#8884d8"
                         dataKey="value"
                       >

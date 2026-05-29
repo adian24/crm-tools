@@ -2789,11 +2789,23 @@ export default function CrmDataManagementPage() {
               // IMPORTANT: Target should match totalNilaiKontrak calculation (tahun + statusSertifikat filter)
               const monthlyTargetData: { [key: string]: { total: number; count: number } } = {};
 
-              // Get data for TARGET - same filter as totalNilaiKontrak (use crmTargets, not filteredTargets)
+              // Get data for TARGET - filter by tahun, statusSertifikat, and kategoriProduk
               const targetData = (crmTargets || []).filter(t => {
                 const matchesTahun = filterTahun === 'all' || t.tahun === filterTahun;
                 const matchesStatus = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
-                return matchesTahun && matchesStatus;
+
+                let matchesKategoriProduk = true;
+                if (filterKategoriProduk !== 'SEMUA') {
+                  const stdCode = (t.std || '').trim();
+                  const standar = masterStandarData.standar.find((s: any) => s.kode === stdCode);
+                  if (standar) {
+                    matchesKategoriProduk = standar.kategori_produk === filterKategoriProduk;
+                  } else {
+                    matchesKategoriProduk = false;
+                  }
+                }
+
+                return matchesTahun && matchesStatus && matchesKategoriProduk;
               });
 
               targetData.forEach(target => {
@@ -3749,15 +3761,25 @@ export default function CrmDataManagementPage() {
                                         cx="50%"
                                         cy="50%"
                                         labelLine={true}
-                                        label={(entry) => {
-                                          const value = entry.value;
-                                          let label = '';
-                                          if (value >= 1000000000) label = (value / 1000000000).toFixed(1) + 'M';
-                                          else if (value >= 1000000) label = (value / 1000000).toFixed(1) + 'Jt';
-                                          else label = (value / 1000).toFixed(0) + 'rb';
-                                          return `${entry.name}: ${label}`;
+                                        label={(props: any) => {
+                                          const { cx, cy, midAngle, outerRadius, name, value, count, companyCount } = props;
+                                          const RADIAN = Math.PI / 180;
+                                          const radius = outerRadius + 35;
+                                          const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                                          const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                                          const anchor = x > cx ? 'start' : 'end';
+                                          let amount = '';
+                                          if (value >= 1000000000) amount = (value / 1000000000).toFixed(1) + 'M';
+                                          else if (value >= 1000000) amount = (value / 1000000).toFixed(1) + 'Jt';
+                                          else amount = (value / 1000).toFixed(0) + 'rb';
+                                          return (
+                                            <text x={x} y={y} textAnchor={anchor} dominantBaseline="central" fontSize={13} fill="#555">
+                                              <tspan x={x} dy="-7" fontWeight="600">{name}: {amount}</tspan>
+                                              <tspan x={x} dy="16" fontSize={12} fill="#888" fontWeight="600">{count} Sertifikat · {companyCount} Perusahaan</tspan>
+                                            </text>
+                                          );
                                         }}
-                                        outerRadius={120}
+                                        outerRadius={110}
                                         dataKey="value"
                                       >
                                         {pieData.map((entry, index) => (
@@ -4217,15 +4239,25 @@ export default function CrmDataManagementPage() {
                                     cx="50%"
                                     cy="50%"
                                     labelLine={true}
-                                    label={(entry) => {
-                                      const value = entry.value;
-                                      let label = '';
-                                      if (value >= 1000000000) label = (value / 1000000000).toFixed(1) + 'M';
-                                      else if (value >= 1000000) label = (value / 1000000).toFixed(1) + 'Jt';
-                                      else label = (value / 1000).toFixed(0) + 'rb';
-                                      return `${entry.name}: ${label}`;
+                                    label={(props: any) => {
+                                      const { cx, cy, midAngle, outerRadius, name, value, count, companyCount } = props;
+                                      const RADIAN = Math.PI / 180;
+                                      const radius = outerRadius + 35;
+                                      const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                                      const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                                      const anchor = x > cx ? 'start' : 'end';
+                                      let amount = '';
+                                      if (value >= 1000000000) amount = (value / 1000000000).toFixed(1) + 'M';
+                                      else if (value >= 1000000) amount = (value / 1000000).toFixed(1) + 'Jt';
+                                      else amount = (value / 1000).toFixed(0) + 'rb';
+                                      return (
+                                        <text x={x} y={y} textAnchor={anchor} dominantBaseline="central" fontSize={13} fill="#555">
+                                          <tspan x={x} dy="-7" fontWeight="600">{name}: {amount}</tspan>
+                                          <tspan x={x} dy="16" fontSize={12} fill="#888" fontWeight="600">{count} Sertifikat · {companyCount} Perusahaan</tspan>
+                                        </text>
+                                      );
                                     }}
-                                    outerRadius={120}
+                                    outerRadius={110}
                                     dataKey="value"
                                   >
                                     {pieData.map((entry, index) => (
@@ -4576,15 +4608,25 @@ export default function CrmDataManagementPage() {
                                     cx="50%"
                                     cy="50%"
                                     labelLine={true}
-                                    label={(entry) => {
-                                      const value = entry.value;
-                                      let label = '';
-                                      if (value >= 1000000000) label = (value / 1000000000).toFixed(1) + 'M';
-                                      else if (value >= 1000000) label = (value / 1000000).toFixed(1) + 'Jt';
-                                      else label = (value / 1000).toFixed(0) + 'rb';
-                                      return `${entry.name}: ${label}`;
+                                    label={(props: any) => {
+                                      const { cx, cy, midAngle, outerRadius, name, value, count, companyCount } = props;
+                                      const RADIAN = Math.PI / 180;
+                                      const radius = outerRadius + 35;
+                                      const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                                      const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                                      const anchor = x > cx ? 'start' : 'end';
+                                      let amount = '';
+                                      if (value >= 1000000000) amount = (value / 1000000000).toFixed(1) + 'M';
+                                      else if (value >= 1000000) amount = (value / 1000000).toFixed(1) + 'Jt';
+                                      else amount = (value / 1000).toFixed(0) + 'rb';
+                                      return (
+                                        <text x={x} y={y} textAnchor={anchor} dominantBaseline="central" fontSize={13} fill="#555">
+                                          <tspan x={x} dy="-7" fontWeight="600">{name}: {amount}</tspan>
+                                          <tspan x={x} dy="16" fontSize={12} fill="#888" fontWeight="600">{count} Sertifikat · {companyCount} Perusahaan</tspan>
+                                        </text>
+                                      );
                                     }}
-                                    outerRadius={120}
+                                    outerRadius={110}
                                     dataKey="value"
                                   >
                                     {pieData.map((entry, index) => (
@@ -4598,7 +4640,7 @@ export default function CrmDataManagementPage() {
                                         return (
                                           <div className="bg-background border rounded-lg shadow-lg p-2">
                                             <p className="font-semibold text-sm mb-1">{data.name}</p>
-                                            <p className="text-xs text-muted-foreground">{data.count} Sertifikat . {data.companyCount} Perusahaan</p>
+                                            <p className="text-xs text-muted-foreground">{data.count} Sertifikat · {data.companyCount} Perusahaan</p>
                                             <p className="text-sm font-bold">Rp {data.value.toLocaleString('id-ID')}</p>
                                           </div>
                                         );
