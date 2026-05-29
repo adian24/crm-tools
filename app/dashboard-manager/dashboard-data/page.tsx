@@ -1764,28 +1764,29 @@ export default function CrmDataManagementPage() {
                         .reduce((sum, t) => sum + (t.hargaKontrak || 0), 0)
                     );
 
-                    // DONE: filter with bulanTtdNotif + sertifikat + tahun (use display data, affected by status filter)
-                    // For DONE with bulanTtdNotif, use year from bulanTtdNotif instead of t.tahun
+                    // LOSS dan SUSPEND: target 10% dari target normal (0.9 * 0.1 = 0.09), lainnya 90%
+                    const mrcTargetMultiplier = (filterStatus === 'LOSS' || filterStatus === 'SUSPEND') ? 0.09 : 0.9;
+
+                    // Pencapaian: DONE pakai hargaTerupdate, status lain pakai hargaKontrak
                     const mrcDoneAmount = Math.round(
-                      mrcDataDisplay
-                        .filter(t => {
-                          const isDone = t.status === 'DONE';
-                          const isSertifikatMatch = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
-                          const hasBulanTtdNotif = t.bulanTtdNotif && t.bulanTtdNotif !== '';
-
-                          // For DONE with bulanTtdNotif, use year from bulanTtdNotif
-                          let matchesTahun = filterTahun === 'all';
-                          if (!matchesTahun && hasBulanTtdNotif) {
-                            const ttdDate = new Date(t.bulanTtdNotif!);
-                            const ttdYear = ttdDate.getFullYear();
-                            matchesTahun = ttdYear.toString() === filterTahun;
-                          } else if (!matchesTahun) {
-                            matchesTahun = t.tahun === filterTahun;
-                          }
-
-                          return isDone && isSertifikatMatch && hasBulanTtdNotif && matchesTahun;
-                        })
-                        .reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0)
+                      filterStatus !== 'all' && filterStatus !== 'DONE'
+                        ? mrcDataDisplay.reduce((sum, t) => sum + (t.hargaKontrak || 0), 0)
+                        : mrcDataDisplay
+                            .filter(t => {
+                              const isDone = t.status === 'DONE';
+                              const isSertifikatMatch = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
+                              const hasBulanTtdNotif = t.bulanTtdNotif && t.bulanTtdNotif !== '';
+                              let matchesTahun = filterTahun === 'all';
+                              if (!matchesTahun && hasBulanTtdNotif) {
+                                const ttdDate = new Date(t.bulanTtdNotif!);
+                                const ttdYear = ttdDate.getFullYear();
+                                matchesTahun = ttdYear.toString() === filterTahun;
+                              } else if (!matchesTahun) {
+                                matchesTahun = t.tahun === filterTahun;
+                              }
+                              return isDone && isSertifikatMatch && hasBulanTtdNotif && matchesTahun;
+                            })
+                            .reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0)
                     );
 
                     const mrcDone = mrcDataDisplay.filter(t => {
@@ -1843,17 +1844,17 @@ export default function CrmDataManagementPage() {
                         <div className="space-y-1">
                           <div className="flex items-center justify-between text-[10px]">
                             <span className="text-emerald-600 font-semibold">TARGET</span>
-                            <span className="font-bold">{formatCurrency(Math.round(mrcTotalAmount * 0.9))}</span>
+                            <span className="font-bold">{formatCurrency(Math.round(mrcTotalAmount * mrcTargetMultiplier))}</span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-3 relative">
                             <div
                               className="bg-gradient-to-r from-emerald-500 to-green-600 h-3 rounded-full transition-all duration-500 flex items-center justify-center"
-                              style={{ width: `${mrcTotalAmount > 0 ? Math.min((mrcDoneAmount / (mrcTotalAmount * 0.9)) * 100, 100) : 0}%` }}
+                              style={{ width: `${mrcTotalAmount > 0 ? Math.min((mrcDoneAmount / (mrcTotalAmount * mrcTargetMultiplier)) * 100, 100) : 0}%` }}
                             >
                             </div>
                             <div className="absolute inset-0 flex items-center justify-center">
                               <span className={`text-[11px] font-bold ${mrcTotalAmount > 0 && mrcDoneAmount > 0 ? 'text-black' : 'text-gray-500'}`}>
-                                {mrcTotalAmount > 0 && mrcDoneAmount > 0 ? Math.round((mrcDoneAmount / (mrcTotalAmount * 0.9)) * 100) : 0}%
+                                {mrcTotalAmount > 0 && mrcDoneAmount > 0 ? Math.round((mrcDoneAmount / (mrcTotalAmount * mrcTargetMultiplier)) * 100) : 0}%
                               </span>
                             </div>
                           </div>
@@ -2079,26 +2080,29 @@ export default function CrmDataManagementPage() {
 
                     // DONE: filter with bulanTtdNotif + sertifikat + tahun (use display data, affected by status filter)
                     // For DONE with bulanTtdNotif, use year from bulanTtdNotif instead of t.tahun
+                    // LOSS dan SUSPEND: target 10% dari target normal (0.9 * 0.1 = 0.09), lainnya 90%
+                    const dhaTargetMultiplier = (filterStatus === 'LOSS' || filterStatus === 'SUSPEND') ? 0.09 : 0.9;
+
+                    // Pencapaian: DONE pakai hargaTerupdate, status lain pakai hargaKontrak
                     const dhaDoneAmount = Math.round(
-                      dhaDataDisplay
-                        .filter(t => {
-                          const isDone = t.status === 'DONE';
-                          const isSertifikatMatch = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
-                          const hasBulanTtdNotif = t.bulanTtdNotif && t.bulanTtdNotif !== '';
-
-                          // For DONE with bulanTtdNotif, use year from bulanTtdNotif
-                          let matchesTahun = filterTahun === 'all';
-                          if (!matchesTahun && hasBulanTtdNotif) {
-                            const ttdDate = new Date(t.bulanTtdNotif!);
-                            const ttdYear = ttdDate.getFullYear();
-                            matchesTahun = ttdYear.toString() === filterTahun;
-                          } else if (!matchesTahun) {
-                            matchesTahun = t.tahun === filterTahun;
-                          }
-
-                          return isDone && isSertifikatMatch && hasBulanTtdNotif && matchesTahun;
-                        })
-                        .reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0)
+                      filterStatus !== 'all' && filterStatus !== 'DONE'
+                        ? dhaDataDisplay.reduce((sum, t) => sum + (t.hargaKontrak || 0), 0)
+                        : dhaDataDisplay
+                            .filter(t => {
+                              const isDone = t.status === 'DONE';
+                              const isSertifikatMatch = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
+                              const hasBulanTtdNotif = t.bulanTtdNotif && t.bulanTtdNotif !== '';
+                              let matchesTahun = filterTahun === 'all';
+                              if (!matchesTahun && hasBulanTtdNotif) {
+                                const ttdDate = new Date(t.bulanTtdNotif!);
+                                const ttdYear = ttdDate.getFullYear();
+                                matchesTahun = ttdYear.toString() === filterTahun;
+                              } else if (!matchesTahun) {
+                                matchesTahun = t.tahun === filterTahun;
+                              }
+                              return isDone && isSertifikatMatch && hasBulanTtdNotif && matchesTahun;
+                            })
+                            .reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0)
                     );
 
                     const dhaDone = dhaDataDisplay.filter(t => {
@@ -2157,17 +2161,17 @@ export default function CrmDataManagementPage() {
                         <div className="space-y-1">
                           <div className="flex items-center justify-between text-[10px]">
                             <span className="text-emerald-600 font-semibold">TARGET</span>
-                            <span className="font-bold">{formatCurrency(Math.round(dhaTotalAmount * 0.9))}</span>
+                            <span className="font-bold">{formatCurrency(Math.round(dhaTotalAmount * dhaTargetMultiplier))}</span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-3 relative">
                             <div
                               className="bg-gradient-to-r from-emerald-500 to-green-600 h-3 rounded-full transition-all duration-500 flex items-center justify-center"
-                              style={{ width: `${dhaTotalAmount > 0 ? Math.min((dhaDoneAmount / (dhaTotalAmount * 0.9)) * 100, 100) : 0}%` }}
+                              style={{ width: `${dhaTotalAmount > 0 ? Math.min((dhaDoneAmount / (dhaTotalAmount * dhaTargetMultiplier)) * 100, 100) : 0}%` }}
                             >
                             </div>
                             <div className="absolute inset-0 flex items-center justify-center">
                               <span className={`text-[11px] font-bold ${dhaTotalAmount > 0 && dhaDoneAmount > 0 ? 'text-black' : 'text-gray-500'}`}>
-                                {dhaTotalAmount > 0 && dhaDoneAmount > 0 ? Math.round((dhaDoneAmount / (dhaTotalAmount * 0.9)) * 100) : 0}%
+                                {dhaTotalAmount > 0 && dhaDoneAmount > 0 ? Math.round((dhaDoneAmount / (dhaTotalAmount * dhaTargetMultiplier)) * 100) : 0}%
                               </span>
                             </div>
                           </div>
