@@ -82,17 +82,33 @@ function ChartCardAssociateMonthly({
       monthlyData[month] = { Direct: 0, Associate: 0 };
     });
 
+    const bulanNameToIndex: { [key: string]: number } = {
+      'januari': 0, 'februari': 1, 'maret': 2, 'april': 3, 'mei': 4, 'juni': 5,
+      'juli': 6, 'agustus': 7, 'september': 8, 'oktober': 9, 'november': 10, 'desember': 11,
+      'jan': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'may': 4, 'jun': 5,
+      'jul': 6, 'aug': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dec': 11
+    };
+
     // Group by month and associate type
     data.forEach(item => {
-      // Extract month from bulanTtdNotif
+      // DONE: use bulanTtdNotif; others: use bulanExpDate as fallback
       let monthIndex = 0;
       const ttdNotif = item.bulanTtdNotif || '';
+      const bulanExpDate = (item.bulanExpDate || '').toLowerCase().trim();
 
-      // Parse date from bulanTtdNotif (format: YYYY-MM-DD)
       if (ttdNotif && ttdNotif.includes('-')) {
+        // Parse YYYY-MM-DD format
         const date = new Date(ttdNotif);
         if (!isNaN(date.getTime())) {
-          monthIndex = date.getMonth(); // getMonth() returns 0-11
+          monthIndex = date.getMonth();
+        }
+      } else if (bulanExpDate) {
+        // Parse Indonesian month name or number from bulanExpDate
+        const parsedNum = parseInt(bulanExpDate);
+        if (!isNaN(parsedNum) && parsedNum >= 1 && parsedNum <= 12) {
+          monthIndex = parsedNum - 1;
+        } else if (bulanNameToIndex[bulanExpDate] !== undefined) {
+          monthIndex = bulanNameToIndex[bulanExpDate];
         }
       }
 
@@ -101,9 +117,10 @@ function ChartCardAssociateMonthly({
       const associateTypeRaw = item.directOrAssociate || 'Direct';
       const associateType = associateTypeRaw.toLowerCase() === 'associate' ? 'Associate' : 'Direct';
 
-      // Add hargaTerupdate to the corresponding month and associate type
+      // DONE uses hargaTerupdate, others use hargaKontrak
+      const amount = item.status === 'DONE' ? (item.hargaTerupdate || 0) : (item.hargaKontrak || 0);
       if (monthlyData[monthName] && associateType in monthlyData[monthName]) {
-        monthlyData[monthName][associateType as keyof typeof monthlyData[typeof monthName]] += item.hargaTerupdate || 0;
+        monthlyData[monthName][associateType as keyof typeof monthlyData[typeof monthName]] += amount;
       }
     });
 

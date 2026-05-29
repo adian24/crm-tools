@@ -1764,10 +1764,10 @@ export default function CrmDataManagementPage() {
                         .reduce((sum, t) => sum + (t.hargaKontrak || 0), 0)
                     );
 
-                    // DONE: filter with bulanTtdNotif + sertifikat + tahun (use display data)
+                    // DONE: filter with bulanTtdNotif + sertifikat + tahun (use display data, affected by status filter)
                     // For DONE with bulanTtdNotif, use year from bulanTtdNotif instead of t.tahun
                     const mrcDoneAmount = Math.round(
-                      mrcDataBase
+                      mrcDataDisplay
                         .filter(t => {
                           const isDone = t.status === 'DONE';
                           const isSertifikatMatch = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
@@ -1788,7 +1788,7 @@ export default function CrmDataManagementPage() {
                         .reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0)
                     );
 
-                    const mrcDone = mrcDataBase.filter(t => {
+                    const mrcDone = mrcDataDisplay.filter(t => {
                       const isDone = t.status === 'DONE';
                       const isSertifikatMatch = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
                       const hasBulanTtdNotif = t.bulanTtdNotif && t.bulanTtdNotif !== '';
@@ -1806,14 +1806,14 @@ export default function CrmDataManagementPage() {
                       return isDone && isSertifikatMatch && hasBulanTtdNotif && matchesTahun;
                     }).length;
 
-                    const mrcProses = mrcDataBase.filter(t => t.status === 'PROSES').length;
-                    const mrcProsesAmount = Math.round(mrcDataBase.filter(t => t.status === 'PROSES').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
-                    const mrcLoss = mrcDataBase.filter(t => t.status === 'LOSS').length;
-                    const mrcLossAmount = Math.round(mrcDataBase.filter(t => t.status === 'LOSS').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
-                    const mrcSuspend = mrcDataBase.filter(t => t.status === 'SUSPEND').length;
-                    const mrcSuspendAmount = Math.round(mrcDataBase.filter(t => t.status === 'SUSPEND').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
-                    const mrcWaiting = mrcDataBase.filter(t => t.status === 'WAITING').length;
-                    const mrcWaitingAmount = Math.round(mrcDataBase.filter(t => t.status === 'WAITING').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
+                    const mrcProses = mrcDataDisplay.filter(t => t.status === 'PROSES').length;
+                    const mrcProsesAmount = Math.round(mrcDataDisplay.filter(t => t.status === 'PROSES').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
+                    const mrcLoss = mrcDataDisplay.filter(t => t.status === 'LOSS').length;
+                    const mrcLossAmount = Math.round(mrcDataDisplay.filter(t => t.status === 'LOSS').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
+                    const mrcSuspend = mrcDataDisplay.filter(t => t.status === 'SUSPEND').length;
+                    const mrcSuspendAmount = Math.round(mrcDataDisplay.filter(t => t.status === 'SUSPEND').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
+                    const mrcWaiting = mrcDataDisplay.filter(t => t.status === 'WAITING').length;
+                    const mrcWaitingAmount = Math.round(mrcDataDisplay.filter(t => t.status === 'WAITING').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
 
                     // Calculate visits - use ALL data for this PIC WITHOUT filters (except PIC)
                     // This matches the behavior in dashboard-kunjungan
@@ -2063,6 +2063,9 @@ export default function CrmDataManagementPage() {
                              matchesTermin && matchesTipeProduk && matchesKategoriProduk && matchesKunjungan && matchesStatusKunjungan;
                     });
 
+                    // For display counts, use the filteredTargets with status filter applied
+                    const dhaDataDisplay = (filteredTargets || []).filter(t => (t.picCrm || '').toUpperCase() === 'DHA');
+
                     // Total Nilai Kontrak: use base data (NOT affected by status filter)
                     const dhaTotalAmount = Math.round(
                       dhaDataBase
@@ -2074,10 +2077,10 @@ export default function CrmDataManagementPage() {
                         .reduce((sum, t) => sum + (t.hargaKontrak || 0), 0)
                     );
 
-                    // DONE: filter with bulanTtdNotif + sertifikat + tahun (use base data)
+                    // DONE: filter with bulanTtdNotif + sertifikat + tahun (use display data, affected by status filter)
                     // For DONE with bulanTtdNotif, use year from bulanTtdNotif instead of t.tahun
                     const dhaDoneAmount = Math.round(
-                      dhaDataBase
+                      dhaDataDisplay
                         .filter(t => {
                           const isDone = t.status === 'DONE';
                           const isSertifikatMatch = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
@@ -2098,7 +2101,7 @@ export default function CrmDataManagementPage() {
                         .reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0)
                     );
 
-                    const dhaDone = dhaDataBase.filter(t => {
+                    const dhaDone = dhaDataDisplay.filter(t => {
                       const isDone = t.status === 'DONE';
                       const isSertifikatMatch = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
                       const hasBulanTtdNotif = t.bulanTtdNotif && t.bulanTtdNotif !== '';
@@ -2116,14 +2119,14 @@ export default function CrmDataManagementPage() {
                       return isDone && isSertifikatMatch && hasBulanTtdNotif && matchesTahun;
                     }).length;
 
-                    const dhaProses = dhaDataBase.filter(t => t.status === 'PROSES').length;
-                    const dhaProsesAmount = Math.round(dhaDataBase.filter(t => t.status === 'PROSES').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
-                    const dhaLoss = dhaDataBase.filter(t => t.status === 'LOSS').length;
-                    const dhaLossAmount = Math.round(dhaDataBase.filter(t => t.status === 'LOSS').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
-                    const dhaSuspend = dhaDataBase.filter(t => t.status === 'SUSPEND').length;
-                    const dhaSuspendAmount = Math.round(dhaDataBase.filter(t => t.status === 'SUSPEND').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
-                    const dhaWaiting = dhaDataBase.filter(t => t.status === 'WAITING').length;
-                    const dhaWaitingAmount = Math.round(dhaDataBase.filter(t => t.status === 'WAITING').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
+                    const dhaProses = dhaDataDisplay.filter(t => t.status === 'PROSES').length;
+                    const dhaProsesAmount = Math.round(dhaDataDisplay.filter(t => t.status === 'PROSES').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
+                    const dhaLoss = dhaDataDisplay.filter(t => t.status === 'LOSS').length;
+                    const dhaLossAmount = Math.round(dhaDataDisplay.filter(t => t.status === 'LOSS').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
+                    const dhaSuspend = dhaDataDisplay.filter(t => t.status === 'SUSPEND').length;
+                    const dhaSuspendAmount = Math.round(dhaDataDisplay.filter(t => t.status === 'SUSPEND').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
+                    const dhaWaiting = dhaDataDisplay.filter(t => t.status === 'WAITING').length;
+                    const dhaWaitingAmount = Math.round(dhaDataDisplay.filter(t => t.status === 'WAITING').reduce((sum, t) => sum + (t.hargaKontrak || 0), 0));
 
                     // Calculate visits - use ALL data for this PIC WITHOUT filters (except PIC)
                     // This matches the behavior in dashboard-kunjungan
@@ -3408,58 +3411,21 @@ export default function CrmDataManagementPage() {
           </CardHeader>
           <CardContent>
             {(() => {
-              // Filter data by tahun from bulanTtdNotif, status DONE, statusSertifikat, and directOrAssociate field
-              const dataWithAssociate = (crmTargets || []).filter(t => {
-                // Filter by status - if 'all' show all data, otherwise filter by selected status
-                const matchesStatus = filterStatus === 'all' || t.status === filterStatus;
-                const isSertifikatMatch = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
+              // Use filteredTargets as base so all standard filters (status, picCrm, etc.) are applied
+              const dataWithAssociate = (filteredTargets || []).filter(t => {
                 const hasBulanTtdNotif = t.bulanTtdNotif && t.bulanTtdNotif !== '';
                 const hasAssociate = t.directOrAssociate && t.directOrAssociate.trim() !== '';
 
-                // Filter Tipe Produk
-                let matchesTipeProduk = true;
-                if (filterTipeProduk !== 'all') {
-                  const produkUpper = (t.produk || '').toUpperCase();
-                  if (filterTipeProduk === 'ISO') {
-                    matchesTipeProduk = produkUpper.includes('ISO');
-                  } else if (filterTipeProduk === 'SUSTAIN') {
-                    matchesTipeProduk = produkUpper.includes('ISPO');
-                  }
+                // DONE with bulanTtdNotif: override year check using TTD year (may differ from t.tahun)
+                // Non-DONE: filteredTargets already applied year filter via t.tahun
+                let matchesTahun = true;
+                if (hasBulanTtdNotif && filterTahun !== 'all') {
+                  const ttdDate = new Date(t.bulanTtdNotif!);
+                  const ttdYear = ttdDate.getFullYear();
+                  matchesTahun = ttdYear.toString() === filterTahun;
                 }
 
-                // Filter Kategori Produk - filter based on kategori_produk from master-standar.json
-                let matchesKategoriProduk = true;
-                if (filterKategoriProduk !== 'SEMUA') {
-                  const stdCode = (t.std || '').trim();
-                  const standar = masterStandarData.standar.find((s: any) => s.kode === stdCode);
-                  if (standar) {
-                    matchesKategoriProduk = standar.kategori_produk === filterKategoriProduk;
-                  } else {
-                    // If std not found in master, exclude it
-                    matchesKategoriProduk = false;
-                  }
-                }
-
-                // Debug: log filter results
-                // if (filterTipeProduk !== 'all' && matchesStatus && isSertifikatMatch && hasBulanTtdNotif && hasAssociate) {
-                //   console.log('Associate Filter - Produk:', t.produk, 'Filter:', filterTipeProduk, 'Match:', matchesTipeProduk);
-                // }
-
-                // Check tahun dari bulanTtdNotif
-                let matchesTahun = false;
-                if (hasBulanTtdNotif) {
-                  if (filterTahun === 'all') {
-                    matchesTahun = true;
-                  } else {
-                    const ttdDate = new Date(t.bulanTtdNotif!);
-                    const ttdYear = ttdDate.getFullYear();
-                    matchesTahun = ttdYear.toString() === filterTahun;
-                  }
-                }
-
-                const matchesStandar = filterStandar === 'all' || t.std === filterStandar;
-
-                return matchesStatus && isSertifikatMatch && hasBulanTtdNotif && hasAssociate && matchesTahun && matchesTipeProduk && matchesKategoriProduk && matchesStandar;
+                return hasAssociate && matchesTahun;
               });
 
               // Debug: log total counts
@@ -3480,7 +3446,7 @@ export default function CrmDataManagementPage() {
                     {['Direct', 'Associate'].map(assocType => {
                       const assocTotal = dataWithAssociate
                         .filter(t => t.directOrAssociate && t.directOrAssociate.toLowerCase() === assocType.toLowerCase())
-                        .reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0);
+                        .reduce((sum, t) => sum + (t.status === 'DONE' ? (t.hargaTerupdate || 0) : (t.hargaKontrak || 0)), 0);
                       const assocCount = dataWithAssociate.filter(t => t.directOrAssociate && t.directOrAssociate.toLowerCase() === assocType.toLowerCase()).length;
 
                       // Calculate unique companies per associate type
@@ -3495,7 +3461,7 @@ export default function CrmDataManagementPage() {
                         ? { color: '#3B82F6', bg: 'bg-blue-50', border: 'border-blue-500', gradient: 'from-blue-500 to-blue-600' }
                         : { color: '#10B981', bg: 'bg-green-50', border: 'border-green-500', gradient: 'from-green-500 to-green-600' };
 
-                      const grandTotal = dataWithAssociate.reduce((sum, t) => sum + (t.hargaTerupdate || 0), 0);
+                      const grandTotal = dataWithAssociate.reduce((sum, t) => sum + (t.status === 'DONE' ? (t.hargaTerupdate || 0) : (t.hargaKontrak || 0)), 0);
                       const percentage = grandTotal > 0 ? Math.round((assocTotal / grandTotal) * 100) : 0;
 
                       const isDirect = assocType === 'Direct';
@@ -3598,7 +3564,7 @@ export default function CrmDataManagementPage() {
                         }
 
                         const associate = target.namaAssociate || 'Unknown';
-                        const amount = target.hargaTerupdate || 0;
+                        const amount = target.status === 'DONE' ? (target.hargaTerupdate || 0) : (target.hargaKontrak || 0);
                         const company = target.namaPerusahaan;
 
                         if (!associateTotals[associate]) {
@@ -3789,7 +3755,7 @@ export default function CrmDataManagementPage() {
                                           if (value >= 1000000000) label = (value / 1000000000).toFixed(1) + 'M';
                                           else if (value >= 1000000) label = (value / 1000000).toFixed(1) + 'Jt';
                                           else label = (value / 1000).toFixed(0) + 'rb';
-                                          return `${entry.name}`;
+                                          return `${entry.name}: ${label}`;
                                         }}
                                         outerRadius={120}
                                         dataKey="value"
@@ -3933,46 +3899,19 @@ export default function CrmDataManagementPage() {
                     salesLookupMap[sales.nama] = `${sales.nama} ${sales.nama_lengkap}`;
                   });
 
-                  // Filter data for Sales Performance Analytics - based on bulanTtdNotif, tahun, sertifikat filter, and status DONE
-                  const dataWithSalesTtdNotif = (crmTargets || []).filter(t => {
-                    // Filter by status - if 'all' show all data, otherwise filter by selected status
-                    const matchesContractStatus = filterStatus === 'all' || t.status === filterStatus;
-                    const matchesStatus = filterStatusSertifikatTerbit === 'all' || (t.statusSertifikat || '').trim().toLowerCase() === filterStatusSertifikatTerbit.toLowerCase();
-
-                    // Filter Tipe Produk
-                    let matchesTipeProduk = true;
-                    if (filterTipeProduk !== 'all') {
-                      const produkUpper = (t.produk || '').toUpperCase();
-                      if (filterTipeProduk === 'ISO') {
-                        matchesTipeProduk = produkUpper.includes('ISO');
-                      } else if (filterTipeProduk === 'SUSTAIN') {
-                        matchesTipeProduk = produkUpper.includes('ISPO');
-                      }
-                    }
-
-                    // Filter Kategori Produk
-                    let matchesKategoriProduk = true;
-                    if (filterKategoriProduk !== 'SEMUA') {
-                      const stdCode = (t.std || '').trim();
-                      const standar = masterStandarData.standar.find((s: any) => s.kode === stdCode);
-                      if (standar) {
-                        matchesKategoriProduk = standar.kategori_produk === filterKategoriProduk;
-                      } else {
-                        matchesKategoriProduk = false;
-                      }
-                    }
+                  // Use filteredTargets as base so all standard filters (status, picCrm, etc.) are applied
+                  const dataWithSalesTtdNotif = (filteredTargets || []).filter(t => {
+                    const hasBulanTtdNotif = !!(t.bulanTtdNotif);
 
                     // Parse bulanTtdNotif to get month and year
                     let ttdMonth = 0;
-                    let ttdYear = null;
+                    let ttdYear: number | null = null;
 
-                    if (t.bulanTtdNotif) {
-                      // Try to parse as date (format: YYYY-MM-DD)
-                      const dateParts = t.bulanTtdNotif.split('-');
+                    if (hasBulanTtdNotif) {
+                      const dateParts = t.bulanTtdNotif!.split('-');
                       if (dateParts.length === 3) {
                         const year = parseInt(dateParts[0]);
                         const month = parseInt(dateParts[1]);
-
                         if (!isNaN(month) && month >= 1 && month <= 12 && !isNaN(year)) {
                           ttdMonth = month;
                           ttdYear = year;
@@ -3980,23 +3919,21 @@ export default function CrmDataManagementPage() {
                       }
                     }
 
-                    // Filter by tahun from bulanTtdNotif
-                    const matchesTahun = filterTahun === 'all' || (ttdYear && ttdYear.toString() === filterTahun);
-
-                    // Filter by bulan range from bulanTtdNotif
-                    let matchesBulanTtdNotif = true;
-                    if (ttdMonth > 0) {
-                      const fromMonth = parseInt(filterFromBulanTTD) || 1;
-                      const toMonth = parseInt(filterToBulanTTD) || 12;
-                      matchesBulanTtdNotif = ttdMonth >= fromMonth && ttdMonth <= toMonth;
+                    if (hasBulanTtdNotif) {
+                      // Records with bulanTtdNotif: apply TTD year and range filter
+                      const matchesTahun = filterTahun === 'all' || (ttdYear !== null && ttdYear.toString() === filterTahun);
+                      let matchesBulanRange = true;
+                      if (filterBulanTTDEnabled && ttdMonth > 0) {
+                        const fromMonth = filterFromBulanTTD !== 'all' ? parseInt(filterFromBulanTTD) : 1;
+                        const toMonth = filterToBulanTTD !== 'all' ? parseInt(filterToBulanTTD) : 12;
+                        matchesBulanRange = ttdMonth >= fromMonth && ttdMonth <= toMonth;
+                      }
+                      return matchesTahun && matchesBulanRange;
                     } else {
-                      // If no bulanTtdNotif, exclude the data
-                      matchesBulanTtdNotif = false;
+                      // Non-DONE without bulanTtdNotif: bulan TTD filter doesn't apply to them
+                      // filteredTargets already applied year filter via t.tahun
+                      return true;
                     }
-
-                    const matchesStandar = filterStandar === 'all' || t.std === filterStandar;
-
-                    return matchesContractStatus && matchesStatus && matchesTahun && matchesBulanTtdNotif && matchesTipeProduk && matchesKategoriProduk && matchesStandar;
                   });
 
                   // Group by sales and get totals
@@ -4004,7 +3941,7 @@ export default function CrmDataManagementPage() {
 
                   dataWithSalesTtdNotif.forEach(target => {
                     const sales = target.sales || 'Unknown';
-                    const amount = target.hargaTerupdate || 0;
+                    const amount = target.status === 'DONE' ? (target.hargaTerupdate || 0) : (target.hargaKontrak || 0);
                     const company = target.namaPerusahaan;
 
                     if (!salesTotals[sales]) {
@@ -4286,7 +4223,7 @@ export default function CrmDataManagementPage() {
                                       if (value >= 1000000000) label = (value / 1000000000).toFixed(1) + 'M';
                                       else if (value >= 1000000) label = (value / 1000000).toFixed(1) + 'Jt';
                                       else label = (value / 1000).toFixed(0) + 'rb';
-                                      return `${entry.name}`;
+                                      return `${entry.name}: ${label}`;
                                     }}
                                     outerRadius={120}
                                     dataKey="value"
@@ -4645,7 +4582,7 @@ export default function CrmDataManagementPage() {
                                       if (value >= 1000000000) label = (value / 1000000000).toFixed(1) + 'M';
                                       else if (value >= 1000000) label = (value / 1000000).toFixed(1) + 'Jt';
                                       else label = (value / 1000).toFixed(0) + 'rb';
-                                      return `${entry.name}`;
+                                      return `${entry.name}: ${label}`;
                                     }}
                                     outerRadius={120}
                                     dataKey="value"

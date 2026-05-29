@@ -347,8 +347,14 @@ function ChartCardCrmData({
                         data={pieData}
                         cx="50%"
                         cy="50%"
-                        labelLine={false}
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        labelLine={true}
+                        label={({ name, value, percent }: any) => {
+                          let nominal = '';
+                          if (value >= 1000000000) nominal = (value / 1000000000).toFixed(1) + 'M';
+                          else if (value >= 1000000) nominal = (value / 1000000).toFixed(1) + 'Jt';
+                          else nominal = (value / 1000).toFixed(0) + 'rb';
+                          return `${name}: ${nominal} (${(percent * 100).toFixed(0)}%)`;
+                        }}
                         outerRadius={70}
                         innerRadius={0}
                         fill="#8884d8"
