@@ -51,13 +51,13 @@
     {
       "kode": "HACCP",
       "nama": "HACCP",
-      "kategori_produk": "GMP",
+      "kategori_produk": "ISO",
       "deskripsi": "Hazard Analysis Critical Control Point"
     },
     {
       "kode": "SMK3",
       "nama": "Sistem Manajemen K3",
-      "kategori_produk": "SMK3",
+      "kategori_produk": "ISO",
       "deskripsi": "Sistem manajemen kesehatan dan keselamatan kerja"
     },
     {
@@ -135,14 +135,20 @@
     {
       "kode": "GDP",
       "nama": "Good Distribution Practice",
-      "kategori_produk": "GMP",
+      "kategori_produk": "ISO",
       "deskripsi": "Praktik distribusi yang baik"
     },
     {
       "kode": "GMP",
       "nama": "Good Manufacturing Practice",
-      "kategori_produk": "GMP",
+      "kategori_produk": "ISO",
       "deskripsi": "Cara pembuatan yang baik"
+    },
+    {
+      "kode": "SMETA",
+      "nama": "SMETA",
+      "kategori_produk": "ISO",
+      "deskripsi": "SMETA"
     }
   ]
 }

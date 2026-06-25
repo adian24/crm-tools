@@ -1022,7 +1022,7 @@ export default function CrmDataManagementPage() {
     const matchesAkreditasi = filterAkreditasi === 'all' || target.akreditasi === filterAkreditasi;
     const matchesEaCode = filterEaCode === '' || (target.eaCode || '').toLowerCase().includes(filterEaCode.toLowerCase());
     const matchesTahapAudit = filterTahapAudit === 'all' || target.tahapAudit === filterTahapAudit;
-    const matchesStatusSertifikat = filterStatusSertifikat === 'all' || target.statusSertifikat === filterStatusSertifikat;
+    const matchesStatusSertifikat = filterStatusSertifikat === 'all' || (target.statusSertifikat || '').toLowerCase() === filterStatusSertifikat.toLowerCase();
     const matchesTermin = filterTermin === 'all' || target.terminPembayaran === filterTermin;
 
     let matchesBulanTTD = true;

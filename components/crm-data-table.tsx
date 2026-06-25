@@ -1012,7 +1012,17 @@ export function CrmDataTable({ data, canEdit = false, showExport = true, onEdit,
       mkCol("statusKomisi", "Status Komisi", v => v ? (
         <Badge variant="outline" className="text-[10px]">{String(v)}</Badge>
       ) : "-", { size: 110 }),
-      mkCol("statusSertifikat", "Status Sertifikat", undefined, { size: 120 }),
+      mkCol("statusSertifikat", "Status Sertifikat", undefined, {
+        size: 120,
+        getGroupingValue: (row: CrmTarget) => {
+          const v = row.statusSertifikat ?? "";
+          if (!v) return "-";
+          const lower = v.toLowerCase();
+          if (lower === "terbit") return "Terbit";
+          if (lower.includes("belum")) return "Belum Terbit";
+          return v;
+        },
+      }),
       mkCol("nomorSertifikat", "No. Sertifikat", undefined, { size: 140 }),
       mkCol("tanggalKunjungan", "Tgl Kunjungan", v => fmtDateFull(String(v ?? "")), {
         size: 110,
