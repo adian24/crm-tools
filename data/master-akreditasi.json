@@ -44,6 +44,11 @@
       "id": 9,
       "kode": "UAF",
       "nama": "UAF"
+    },
+    {
+      "id": 10,
+      "kode": "AIA",
+      "nama": "AIA"
     }
   ]
 }
