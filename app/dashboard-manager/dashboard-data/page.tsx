@@ -12,7 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Label } from '@/components/ui/label';
-import { Search, Filter, BarChart3, ChevronDown, ChevronRight, Users, Building2, X, SlidersHorizontal, RotateCcw, ArrowUp, Scissors, TrendingDown, Gift, Wallet } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Search, Filter, BarChart3, ChevronDown, ChevronRight, Users, Building2, X, SlidersHorizontal, RotateCcw, ArrowUp, Scissors, TrendingDown, Gift, Wallet, Info } from 'lucide-react';
 import { CrmDataTable } from '@/components/crm-data-table';
 import type { CrmTarget } from '@/lib/crm-types';
 import indonesiaData from '@/data/indonesia-provinsi-kota.json';
@@ -65,6 +66,65 @@ const normalizeKota = (str: string): string => {
     .replace(/^kabupaten\s+/i, '') // remove "Kabupaten " prefix
     .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ''); // remove special chars
 };
+
+function PanduanInfo({ title, items, headerFrom = 'from-blue-600', headerTo = 'to-indigo-600' }: {
+  title: string;
+  items: { label: string; desc: string; color?: 'blue' | 'green' | 'amber' | 'purple' | 'red' | 'gray' | 'teal' }[];
+  headerFrom?: string;
+  headerTo?: string;
+}) {
+  const colorMap: Record<string, string> = {
+    blue:   'bg-blue-100 text-blue-800',
+    green:  'bg-emerald-100 text-emerald-800',
+    amber:  'bg-amber-100 text-amber-800',
+    purple: 'bg-purple-100 text-purple-800',
+    red:    'bg-red-100 text-red-800',
+    gray:   'bg-gray-100 text-gray-700',
+    teal:   'bg-teal-100 text-teal-800',
+  };
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="inline-flex items-center justify-center h-5 w-5 rounded-full border border-blue-300 bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white hover:border-blue-500 transition-all duration-200 flex-shrink-0 shadow-sm"
+          title="Lihat Panduan"
+        >
+          <Info className="h-3 w-3" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 p-0 overflow-hidden shadow-xl rounded-xl" side="bottom" align="start">
+        {/* Header */}
+        <div className={`bg-gradient-to-r ${headerFrom} ${headerTo} px-4 py-3`}>
+          <div className="flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 shadow-inner">
+              <Info className="h-4 w-4 text-white" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-bold text-white text-[13px] leading-tight truncate">{title}</p>
+              <p className="text-white/65 text-[10px] mt-0.5 font-medium tracking-wide uppercase">Ketentuan & Sumber Data</p>
+            </div>
+          </div>
+        </div>
+        {/* Items */}
+        <div className="bg-white dark:bg-gray-950 divide-y divide-gray-100 dark:divide-gray-800">
+          {items.map((item, i) => (
+            <div key={i}>
+              <div className={`w-full px-3 py-1 text-[10px] font-bold tracking-wide uppercase ${colorMap[item.color ?? 'blue']}`}>
+                {item.label}
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-relaxed px-3 py-1.5">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+        {/* Footer */}
+        <div className="px-4 py-1.5 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
+          <p className="text-[10px] text-muted-foreground/60 text-center">⚡ Data diperbarui secara real-time</p>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export default function CrmDataManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -1615,7 +1675,7 @@ export default function CrmDataManagementPage() {
           {/* MRC Card - Takes 1 column */}
           {(filterPicCrm === 'all' || filterPicCrm === 'MRC') && (
             <div className="lg:col-span-1 order-1">
-              <Card>
+              <Card className="relative">
                 <CardContent className="p-3">
                   {(() => {
                     // Create base data with ALL filters EXCEPT status (for TARGET calculation)
@@ -1922,6 +1982,19 @@ export default function CrmDataManagementPage() {
                     );
                   })()}
                 </CardContent>
+                <div className="absolute bottom-3 right-3 z-10">
+                  <PanduanInfo
+                    title="Kartu Performa MRC"
+                    headerFrom="from-emerald-600"
+                    headerTo="to-green-500"
+                    items={[
+                      { label: 'TARGET', desc: '90% dari total hargaKontrak milik MRC. Filter: tahun, bulan EXP, kategori produk, status sertifikat.', color: 'green' },
+                      { label: 'PENCAPAIAN', desc: 'Total hargaTerupdate dari kontrak DONE + punya bulanTtdNotif. Tahun diambil dari bulanTtdNotif (bukan t.tahun).', color: 'blue' },
+                      { label: 'TARGET VISITS', desc: '50% dari total unique perusahaan milik MRC — dihitung tanpa filter apapun.', color: 'purple' },
+                      { label: 'VISITED', desc: 'Unique perusahaan dengan statusKunjungan = "VISITED".', color: 'amber' },
+                    ]}
+                  />
+                </div>
               </Card>
             </div>
           )}
@@ -1929,7 +2002,7 @@ export default function CrmDataManagementPage() {
           {/* DHA Card - Takes 1 column */}
           {(filterPicCrm === 'all' || filterPicCrm === 'DHA') && (
             <div className="lg:col-span-1 order-2">
-              <Card>
+              <Card className="relative">
                 <CardContent className="p-3">
                   {(() => {
                     // Create base data with ALL filters EXCEPT status (for TARGET calculation)
@@ -2238,13 +2311,26 @@ export default function CrmDataManagementPage() {
                     );
                   })()}
                 </CardContent>
+                <div className="absolute bottom-3 right-3 z-10">
+                  <PanduanInfo
+                    title="Kartu Performa DHA"
+                    headerFrom="from-emerald-600"
+                    headerTo="to-green-500"
+                    items={[
+                      { label: 'TARGET', desc: '90% dari total hargaKontrak milik DHA. Filter: tahun, bulan EXP, kategori produk, status sertifikat.', color: 'green' },
+                      { label: 'PENCAPAIAN', desc: 'Total hargaTerupdate dari kontrak DONE + punya bulanTtdNotif. Tahun diambil dari bulanTtdNotif (bukan t.tahun).', color: 'blue' },
+                      { label: 'TARGET VISITS', desc: '50% dari total unique perusahaan milik DHA — dihitung tanpa filter apapun.', color: 'purple' },
+                      { label: 'VISITED', desc: 'Unique perusahaan dengan statusKunjungan = "VISITED".', color: 'amber' },
+                    ]}
+                  />
+                </div>
               </Card>
             </div>
           )}
 
           {/* Total Target Card - Dynamically adjusts width based on visible PIC cards */}
           <div className={`col-span-2 order-3 ${filterPicCrm === 'all' ? 'lg:col-span-4' : 'lg:col-span-5'}`}>
-            <Card>
+            <Card className="relative">
               <CardContent className="px-6">
                 {(() => {
               // Calculate TOTAL with filter kategori produk
@@ -2451,7 +2537,9 @@ export default function CrmDataManagementPage() {
                         <BarChart3 className="h-4 w-4 lg:h-6 lg:w-6 text-white" />
                       </div>
                       <div className="min-w-0">
-                        <h3 className="text-sm lg:text-lg font-bold truncate">Total Target ( Contract Base )</h3>
+                        <h3 className="text-sm lg:text-lg font-bold truncate flex items-center gap-1.5">
+                          Total Target ( Contract Base )
+                        </h3>
                         <p className="text-[11px] lg:text-sm text-muted-foreground">
                           Combined MRC & DHA
                           {filterKategoriProduk !== 'SEMUA' && ` (${filterKategoriProduk})`}
@@ -2754,12 +2842,26 @@ export default function CrmDataManagementPage() {
               );
             })()}
           </CardContent>
+          <div className="absolute bottom-3 right-3 z-10">
+            <PanduanInfo
+              title="Total Target (Contract Base)"
+              headerFrom="from-blue-700"
+              headerTo="to-purple-600"
+              items={[
+                { label: 'TOTAL KONTRAK', desc: 'Akumulasi hargaKontrak seluruh data. Filter: hanya kategori produk (tanpa filter tahun).', color: 'blue' },
+                { label: 'TARGET 90%', desc: 'Total nilai kontrak × 0.9 — digunakan sebagai acuan target pencapaian realistis.', color: 'amber' },
+                { label: 'DONE', desc: 'Total hargaTerupdate dari kontrak DONE yang punya bulanTtdNotif.', color: 'green' },
+                { label: 'PROSES / LOSS / dll', desc: 'Menggunakan hargaKontrak (bukan hargaTerupdate).', color: 'gray' },
+                { label: 'SERTIFIKAT & PERUSAHAAN', desc: 'Dihitung hanya dengan filter kategori produk + tahun.', color: 'purple' },
+              ]}
+            />
+          </div>
         </Card>
           </div>
         </div>
 
         {/* Pencapaian Chart - Monthly Breakdown */}
-        <Card id="pptx-chart-pencapaian">
+        <Card id="pptx-chart-pencapaian" className="relative">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -3140,10 +3242,23 @@ export default function CrmDataManagementPage() {
               );
             })()}
           </CardContent>
+          <div className="absolute bottom-3 right-3 z-10">
+            <PanduanInfo
+              title="Breakdown Target VS Pencapaian"
+              headerFrom="from-blue-600"
+              headerTo="to-indigo-600"
+              items={[
+                { label: 'TARGET / BULAN', desc: 'Dari hargaKontrak, dikelompokkan per bulanExpDate (jatuh tempo). Filter: tahun, status sertifikat, kategori produk.', color: 'amber' },
+                { label: 'PENCAPAIAN / BULAN', desc: 'Dari hargaTerupdate (DONE) / hargaKontrak (lainnya), dikelompokkan per bulanTtdNotif.', color: 'green' },
+                { label: 'STATUS = ALL', desc: 'Pencapaian hanya menampilkan data berstatus DONE.', color: 'blue' },
+                { label: 'STATUS DIPILIH', desc: 'Menampilkan status yang dipilih saja (tidak terbatas DONE).', color: 'purple' },
+              ]}
+            />
+          </div>
         </Card>
 
         {/* Kuadran Analytics - Monthly Trend */}
-        <Card id="pptx-chart-kuadran">
+        <Card id="pptx-chart-kuadran" className="relative">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -3408,10 +3523,23 @@ export default function CrmDataManagementPage() {
               );
             })()}
           </CardContent>
+          <div className="absolute bottom-3 right-3 z-10">
+            <PanduanInfo
+              title="Kuadran Analytics"
+              headerFrom="from-violet-600"
+              headerTo="to-purple-600"
+              items={[
+                { label: 'ACUAN WAKTU', desc: 'bulanTtdNotif — tanggal TTD notifikasi kontrak digunakan sebagai penentu bulan.', color: 'blue' },
+                { label: 'NILAI', desc: 'DONE → hargaTerupdate; status lain → hargaKontrak.', color: 'green' },
+                { label: 'KUADRAN', desc: 'Segmentasi klien (Q1–Q4) yang diisi manual pada setiap record di data CRM.', color: 'amber' },
+                { label: 'FILTER AKTIF', desc: 'Tahun (dari bulanTtdNotif untuk DONE), bulan TTD range, kategori produk, PIC CRM.', color: 'gray' },
+              ]}
+            />
+          </div>
         </Card>
 
         {/* Associate Category Analytics - Monthly Trend */}
-        <Card id="pptx-chart-associate">
+        <Card id="pptx-chart-associate" className="relative">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -3884,10 +4012,24 @@ export default function CrmDataManagementPage() {
               );
             })()}
           </CardContent>
+          <div className="absolute bottom-3 right-3 z-10">
+            <PanduanInfo
+              title="Associate Category Analytics"
+              headerFrom="from-teal-600"
+              headerTo="to-cyan-600"
+              items={[
+                { label: 'DIRECT', desc: 'Kontrak langsung dari BSN tanpa melalui mitra / partner.', color: 'blue' },
+                { label: 'ASSOCIATE', desc: 'Kontrak yang diproses melalui mitra atau partner associate.', color: 'green' },
+                { label: 'ACUAN WAKTU', desc: 'bulanTtdNotif untuk DONE; tahun kontrak (t.tahun) untuk non-DONE.', color: 'amber' },
+                { label: 'NILAI', desc: 'DONE → hargaTerupdate; status lain → hargaKontrak.', color: 'purple' },
+                { label: 'FILTER AKTIF', desc: 'Semua filter utama: tahun, bulan TTD, kategori produk, PIC CRM, status.', color: 'gray' },
+              ]}
+            />
+          </div>
         </Card>
 
         {/* Sales Performance Analytics */}
-        <Card id="pptx-chart-sales">
+        <Card id="pptx-chart-sales" className="relative">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -4299,10 +4441,24 @@ export default function CrmDataManagementPage() {
               </div>
             </div>
           </CardContent>
+          <div className="absolute bottom-3 right-3 z-10">
+            <PanduanInfo
+              title="Sales Performance Analytics"
+              headerFrom="from-orange-600"
+              headerTo="to-amber-500"
+              items={[
+                { label: 'DATA MASUK', desc: 'Hanya kontrak yang memiliki bulanTtdNotif yang masuk ke perhitungan grafik ini.', color: 'blue' },
+                { label: 'ACUAN WAKTU', desc: 'Tahun dan range bulan diambil dari bulanTtdNotif (bukan bulanExpDate).', color: 'amber' },
+                { label: 'NILAI', desc: 'hargaTerupdate untuk DONE; hargaKontrak untuk status lainnya.', color: 'green' },
+                { label: 'NAMA SALES', desc: 'Dari field "sales" pada data CRM, dicocokkan dengan master-sales.json.', color: 'purple' },
+                { label: 'FILTER AKTIF', desc: 'Semua filter utama: bulan TTD range, status sertifikat, kategori produk, PIC CRM.', color: 'gray' },
+              ]}
+            />
+          </div>
         </Card>
 
         {/* Tahapan Audit Distribution Analytics */}
-        <Card id="pptx-chart-tahapan">
+        <Card id="pptx-chart-tahapan" className="relative">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -4668,10 +4824,23 @@ export default function CrmDataManagementPage() {
               </div>
             </div>
           </CardContent>
+          <div className="absolute bottom-3 right-3 z-10">
+            <PanduanInfo
+              title="Distribusi Tahapan Audit"
+              headerFrom="from-teal-600"
+              headerTo="to-emerald-500"
+              items={[
+                { label: 'ACUAN WAKTU', desc: 'bulanExpDate — bukan bulanTtdNotif. Data difilter berdasarkan bulan jatuh tempo (EXP).', color: 'blue' },
+                { label: 'NILAI', desc: 'Total hargaKontrak per tahapan audit (bukan hargaTerupdate).', color: 'green' },
+                { label: 'FILTER AKTIF', desc: 'Tahun, bulan EXP, status contract, status sertifikat, PIC CRM, kategori produk, tipe produk.', color: 'amber' },
+                { label: 'SUMBER', desc: 'Field "tahapAudit" pada data CRM (referensi: master-tahapan.json).', color: 'gray' },
+              ]}
+            />
+          </div>
         </Card>
 
         {/* Standar Distribution Analytics */}
-        <Card id="pptx-chart-standar">
+        <Card id="pptx-chart-standar" className="relative">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex-1">
@@ -4856,10 +5025,24 @@ export default function CrmDataManagementPage() {
               );
             })()}
           </CardContent>
+          <div className="absolute bottom-3 right-3 z-10">
+            <PanduanInfo
+              title="Chart Standar"
+              headerFrom="from-blue-600"
+              headerTo="to-sky-500"
+              items={[
+                { label: 'SATUAN', desc: 'Jumlah sertifikat per standar — bukan nilai rupiah.', color: 'blue' },
+                { label: 'ACUAN WAKTU', desc: 'bulanExpDate (bulan jatuh tempo sertifikat).', color: 'amber' },
+                { label: 'FILTER AKTIF', desc: 'Tahun, bulan EXP, status contract, kategori produk.', color: 'green' },
+                { label: 'CATATAN', desc: 'Tidak memfilter berdasarkan status sertifikat terbit — semua ditampilkan.', color: 'red' },
+                { label: 'SUMBER', desc: 'Field "std" pada data CRM (referensi: master-standar.json).', color: 'gray' },
+              ]}
+            />
+          </div>
         </Card>
 
         {/* EA Code Distribution Analytics */}
-        <Card id="pptx-chart-eacode">
+        <Card id="pptx-chart-eacode" className="relative">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -5021,10 +5204,24 @@ export default function CrmDataManagementPage() {
               );
             })()}
           </CardContent>
+          <div className="absolute bottom-3 right-3 z-10">
+            <PanduanInfo
+              title="EA Code Distribution"
+              headerFrom="from-indigo-600"
+              headerTo="to-blue-500"
+              items={[
+                { label: 'EA CODE', desc: 'Kode sektor industri klien (misal EA31 = Makanan & Minuman).', color: 'blue' },
+                { label: 'SATUAN', desc: 'Jumlah sertifikat per kode EA — bukan nilai rupiah.', color: 'green' },
+                { label: 'ACUAN WAKTU', desc: 'bulanExpDate (bulan jatuh tempo sertifikat).', color: 'amber' },
+                { label: 'FILTER AKTIF', desc: 'Tahun, bulan EXP, status, kategori produk, dan input text filter EA Code.', color: 'purple' },
+                { label: 'SUMBER', desc: 'Field "eaCode" pada data CRM (referensi: master-ea-code.json).', color: 'gray' },
+              ]}
+            />
+          </div>
         </Card>
 
         {/* Trimming Value Chart */}
-        <Card id="pptx-chart-trimming">
+        <Card id="pptx-chart-trimming" className="relative">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -5130,10 +5327,25 @@ export default function CrmDataManagementPage() {
               );
             })()}
           </CardContent>
+          <div className="absolute bottom-3 right-3 z-10">
+            <PanduanInfo
+              title="Trimming Value per Bulan"
+              headerFrom="from-sky-600"
+              headerTo="to-cyan-500"
+              items={[
+                { label: 'TRIMMING', desc: 'Potongan harga dari kontrak awal — field "trimmingValue".', color: 'blue' },
+                { label: 'LOSS VALUE', desc: 'Nilai kontrak yang tidak jadi / hilang — field "lossValue".', color: 'red' },
+                { label: 'CASHBACK', desc: 'Cashback yang diberikan ke klien — field "cashback".', color: 'amber' },
+                { label: 'NILAI BERSIH', desc: 'Trimming − Loss − Cashback (dihitung per bulan).', color: 'green' },
+                { label: 'ACUAN WAKTU', desc: 'bulanTtdNotif — filter bulan TTD aktif digunakan.', color: 'purple' },
+                { label: 'FILTER AKTIF', desc: 'Semua filter utama: bulan TTD range, kategori produk, PIC CRM.', color: 'gray' },
+              ]}
+            />
+          </div>
         </Card>
 
         {/* Pareto Chart - Alasan Distribution */}
-        <Card id="pptx-chart-pareto">
+        <Card id="pptx-chart-pareto" className="relative">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -5251,6 +5463,21 @@ export default function CrmDataManagementPage() {
               );
             })()}
           </CardContent>
+          <div className="absolute bottom-3 right-3 z-10">
+            <PanduanInfo
+              title="Pareto Chart - Alasan"
+              headerFrom="from-rose-600"
+              headerTo="to-red-500"
+              items={[
+                { label: 'PRINSIP 80/20', desc: 'Mengidentifikasi alasan dominan yang menyumbang 80% dari total kejadian.', color: 'red' },
+                { label: 'SATUAN', desc: 'Jumlah kontrak per alasan — bukan nilai rupiah.', color: 'blue' },
+                { label: 'GARIS KUMULATIF', desc: 'Menunjukkan persentase kumulatif kontribusi tiap alasan terhadap total.', color: 'amber' },
+                { label: 'FILTER AKTIF', desc: 'Tahun, status contract, kategori produk, standar, dan filter alasan spesifik.', color: 'green' },
+                { label: 'VALIDASI', desc: 'Alasan hanya dihitung jika terdaftar di master-alasan.json.', color: 'purple' },
+                { label: 'KEGUNAAN', desc: 'Identifikasi alasan utama klien tidak lanjut atau melakukan suspend kontrak.', color: 'gray' },
+              ]}
+            />
+          </div>
         </Card>
 
 
