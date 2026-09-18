@@ -7,6 +7,7 @@ import { Id } from "@/convex/_generated/dataModel"
 import { format, parseISO, isPast, isToday, isFuture, startOfMonth, endOfMonth, isSameMonth, isSameDay } from "date-fns"
 import { id } from "date-fns/locale"
 import indonesiaData from "@/data/indonesia-provinsi-kota.json"
+import { useAllCrmTargets } from "@/hooks/use-all-crm-targets"
 
 import {
   Card,
@@ -129,7 +130,7 @@ export default function DashboardKunjunganPage() {
   }, [])
 
   // Query based on user role
-  const allCrmTargets = useQuery(api.crmTargets.list) || []
+  const allCrmTargets = useAllCrmTargets() || []
   const allUsers = useQuery(api.auth.getAllUsers);
   const staffUsers = allUsers?.filter(user => user.role === 'staff') || [];
 

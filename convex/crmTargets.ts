@@ -1,26 +1,25 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { paginationOptsValidator, PaginationResult } from "convex/server";
+import { action, mutation, query } from "./_generated/server";
+import { api } from "./_generated/api";
+import { Doc } from "./_generated/dataModel";
+
+// Batch size for operations that must page through the whole crmTargets
+// table, since a single query/mutation execution is capped at 16MB read.
+const BATCH_SIZE = 500;
 
 // === QUERIES ===
 
 // Get paginated CRM targets (more efficient than loading all)
 export const getCrmTargetsPaginated = query({
   args: {
-    paginationOpts: v.object({
-      numItems: v.number(),
-      cursor: v.union(v.string(), v.null()),
-    }),
+    paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
-    const results = await ctx.db
+    return await ctx.db
       .query("crmTargets")
       .order("desc")
       .paginate(args.paginationOpts);
-
-    return {
-      page: results.page,
-      continueCursor: results.continueCursor,
-    };
   },
 });
 
@@ -104,76 +103,114 @@ export const getCrmTargetsByProvinsi = query({
 });
 
 // Get CRM targets by Date Range (tanggalKunjungan)
-export const getCrmTargetsByDateRange = query({
+// Implemented as an action that pages through getCrmTargetsPaginated so no
+// single execution reads the whole table (same filtering logic as before).
+export const getCrmTargetsByDateRange = action({
   args: {
     startDate: v.string(),
     endDate: v.string(),
   },
-  handler: async (ctx, args) => {
-    const crmTargets = await ctx.db
-      .query("crmTargets")
-      .withIndex("by_tanggalKunjungan")
-      .collect();
+  handler: async (ctx, args): Promise<Doc<"crmTargets">[]> => {
+    const startDate = new Date(args.startDate);
+    const endDate = new Date(args.endDate);
+    const matches: Doc<"crmTargets">[] = [];
 
-    // Filter by date range on the client side
-    return crmTargets.filter((target) => {
-      if (!target.tanggalKunjungan) return false;
-      const targetDate = new Date(target.tanggalKunjungan);
-      const startDate = new Date(args.startDate);
-      const endDate = new Date(args.endDate);
-      return targetDate >= startDate && targetDate <= endDate;
-    });
+    let cursor: string | null = null;
+    let isDone = false;
+    while (!isDone) {
+      const result: PaginationResult<Doc<"crmTargets">> = await ctx.runQuery(
+        api.crmTargets.getCrmTargetsPaginated,
+        { paginationOpts: { numItems: BATCH_SIZE, cursor } }
+      );
+      for (const target of result.page) {
+        if (!target.tanggalKunjungan) continue;
+        const targetDate = new Date(target.tanggalKunjungan);
+        if (targetDate >= startDate && targetDate <= endDate) {
+          matches.push(target);
+        }
+      }
+      cursor = result.continueCursor;
+      isDone = result.isDone;
+    }
+
+    return matches;
   },
 });
 
 // Get CRM targets statistics
-export const getCrmTargetsStats = query({
-  args: {},
-  handler: async (ctx) => {
-    const crmTargets = await ctx.db.query("crmTargets").collect();
+// Implemented as an action that pages through getCrmTargetsPaginated so no
+// single execution reads the whole table (same aggregation logic as before).
+interface CrmTargetsStats {
+  total: number;
+  byStatus: Record<string, number>;
+  byPicCrm: Record<string, number>;
+  bySales: Record<string, number>;
+  byProvinsi: Record<string, number>;
+  byCategory: Record<string, number>;
+  visitedCount: number;
+  notYetVisitedCount: number;
+  totalHargaKontrak: number;
+}
 
-    const stats = {
-      total: crmTargets.length,
-      byStatus: {} as Record<string, number>,
-      byPicCrm: {} as Record<string, number>,
-      bySales: {} as Record<string, number>,
-      byProvinsi: {} as Record<string, number>,
-      byCategory: {} as Record<string, number>,
+export const getCrmTargetsStats = action({
+  args: {},
+  handler: async (ctx): Promise<CrmTargetsStats> => {
+    const stats: CrmTargetsStats = {
+      total: 0,
+      byStatus: {},
+      byPicCrm: {},
+      bySales: {},
+      byProvinsi: {},
+      byCategory: {},
       visitedCount: 0,
       notYetVisitedCount: 0,
       totalHargaKontrak: 0,
     };
 
-    crmTargets.forEach((target) => {
-      // By Status
-      stats.byStatus[target.status] = (stats.byStatus[target.status] || 0) + 1;
+    let cursor: string | null = null;
+    let isDone = false;
+    while (!isDone) {
+      const result: PaginationResult<Doc<"crmTargets">> = await ctx.runQuery(
+        api.crmTargets.getCrmTargetsPaginated,
+        { paginationOpts: { numItems: BATCH_SIZE, cursor } }
+      );
 
-      // By PIC CRM
-      stats.byPicCrm[target.picCrm] = (stats.byPicCrm[target.picCrm] || 0) + 1;
+      result.page.forEach((target) => {
+        stats.total++;
 
-      // By Sales
-      stats.bySales[target.sales] = (stats.bySales[target.sales] || 0) + 1;
+        // By Status
+        stats.byStatus[target.status] = (stats.byStatus[target.status] || 0) + 1;
 
-      // By Provinsi
-      stats.byProvinsi[target.provinsi] = (stats.byProvinsi[target.provinsi] || 0) + 1;
+        // By PIC CRM
+        stats.byPicCrm[target.picCrm] = (stats.byPicCrm[target.picCrm] || 0) + 1;
 
-      // By Category
-      if (target.category) {
-        stats.byCategory[target.category] = (stats.byCategory[target.category] || 0) + 1;
-      }
+        // By Sales
+        stats.bySales[target.sales] = (stats.bySales[target.sales] || 0) + 1;
 
-      // By Kunjungan Status
-      if (target.tanggalKunjungan) {
-        stats.visitedCount++;
-      } else {
-        stats.notYetVisitedCount++;
-      }
+        // By Provinsi
+        stats.byProvinsi[target.provinsi] = (stats.byProvinsi[target.provinsi] || 0) + 1;
 
-      // Total Harga Kontrak
-      if (target.hargaKontrak) {
-        stats.totalHargaKontrak += target.hargaKontrak;
-      }
-    });
+        // By Category
+        if (target.category) {
+          stats.byCategory[target.category] = (stats.byCategory[target.category] || 0) + 1;
+        }
+
+        // By Kunjungan Status
+        if (target.tanggalKunjungan) {
+          stats.visitedCount++;
+        } else {
+          stats.notYetVisitedCount++;
+        }
+
+        // Total Harga Kontrak
+        if (target.hargaKontrak) {
+          stats.totalHargaKontrak += target.hargaKontrak;
+        }
+      });
+
+      cursor = result.continueCursor;
+      isDone = result.isDone;
+    }
 
     return stats;
   },
@@ -455,13 +492,17 @@ export const bulkInsertCrmTargets = mutation({
 });
 
 // Fix typo in directOrAssociate field (Assosiate -> Associate)
+// Processes one batch per call, then reschedules itself for the next page,
+// so no single execution reads/writes more than BATCH_SIZE rows at once.
 export const fixDirectOrAssociateTypo = mutation({
-  args: {},
-  handler: async (ctx) => {
-    const crmTargets = await ctx.db.query("crmTargets").collect();
-    let fixedCount = 0;
+  args: { cursor: v.optional(v.union(v.string(), v.null())) },
+  handler: async (ctx, args): Promise<{ fixedCount: number; done: boolean }> => {
+    const result: PaginationResult<Doc<"crmTargets">> = await ctx.db
+      .query("crmTargets")
+      .paginate({ numItems: BATCH_SIZE, cursor: args.cursor ?? null });
 
-    for (const target of crmTargets) {
+    let fixedCount = 0;
+    for (const target of result.page) {
       // Check if directOrAssociate has typo variations
       if (target.directOrAssociate) {
         const normalized = target.directOrAssociate.toLowerCase();
@@ -485,30 +526,60 @@ export const fixDirectOrAssociateTypo = mutation({
       }
     }
 
-    return { fixedCount };
+    if (!result.isDone) {
+      await ctx.scheduler.runAfter(0, api.crmTargets.fixDirectOrAssociateTypo, {
+        cursor: result.continueCursor,
+      });
+    }
+
+    return { fixedCount, done: result.isDone };
   },
 });
 
 // Delete all CRM targets (useful for re-import)
+// Deletes one batch per call, then reschedules itself until the table is
+// empty, so no single execution reads/deletes more than BATCH_SIZE rows.
 export const deleteAllCrmTargets = mutation({
   args: {},
-  handler: async (ctx) => {
-    const crmTargets = await ctx.db.query("crmTargets").collect();
-    for (const target of crmTargets) {
+  handler: async (ctx): Promise<{ deletedCount: number; done: boolean }> => {
+    const batch: Doc<"crmTargets">[] = await ctx.db.query("crmTargets").take(BATCH_SIZE);
+    for (const target of batch) {
       await ctx.db.delete(target._id);
     }
-    return { deletedCount: crmTargets.length };
+
+    const done = batch.length < BATCH_SIZE;
+    if (!done) {
+      await ctx.scheduler.runAfter(0, api.crmTargets.deleteAllCrmTargets, {});
+    }
+
+    return { deletedCount: batch.length, done };
   },
 });
 
 // Get visited CRM targets (for Laporan Kunjungan)
-export const getVisitedTargets = query({
+// Implemented as an action that pages through getCrmTargetsPaginated so no
+// single execution reads the whole table (same filtering logic as before).
+export const getVisitedTargets = action({
   args: {},
-  handler: async (ctx) => {
-    const crmTargets = await ctx.db.query("crmTargets").collect();
-    // Filter only VISITED status and has tanggalKunjungan
-    return crmTargets.filter((target) => {
-      return target.statusKunjungan === "VISITED" && target.tanggalKunjungan;
-    });
+  handler: async (ctx): Promise<Doc<"crmTargets">[]> => {
+    const matches: Doc<"crmTargets">[] = [];
+
+    let cursor: string | null = null;
+    let isDone = false;
+    while (!isDone) {
+      const result: PaginationResult<Doc<"crmTargets">> = await ctx.runQuery(
+        api.crmTargets.getCrmTargetsPaginated,
+        { paginationOpts: { numItems: BATCH_SIZE, cursor } }
+      );
+      for (const target of result.page) {
+        if (target.statusKunjungan === "VISITED" && target.tanggalKunjungan) {
+          matches.push(target);
+        }
+      }
+      cursor = result.continueCursor;
+      isDone = result.isDone;
+    }
+
+    return matches;
   },
 });

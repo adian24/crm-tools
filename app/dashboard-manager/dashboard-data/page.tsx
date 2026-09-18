@@ -33,6 +33,7 @@ import { useGlobalFilter } from '@/lib/global-filter-context';
 import { ChartCardParetoAlasan } from '@/components/chart-card-pareto-alasan';
 import { TrenBulananChart } from '@/components/TrenBulananChart';
 import { InfinityLoader } from '@/components/ui/infinity-loader';
+import { useAllCrmTargets } from '@/hooks/use-all-crm-targets';
 import { DashboardSkeleton } from '@/components/dashboard-skeleton';
 import { AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip, Legend, LabelList } from 'recharts';
 import {
@@ -179,7 +180,7 @@ export default function CrmDataManagementPage() {
   const isStaffUser = currentUser?.role === 'staff';
 
   // Fetch CRM targets
-  const crmTargets = useQuery(api.crmTargets.getCrmTargets);
+  const crmTargets = useAllCrmTargets();
   const allUsers = useQuery(api.auth.getAllUsers);
   const staffUsers = allUsers?.filter(user => user.role === 'staff') || [];
 

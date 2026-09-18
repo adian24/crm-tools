@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Building2, Sparkles } from 'lucide-react';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import { useAllCrmTargets } from '@/hooks/use-all-crm-targets';
 import { ExistingClientView } from './existing-client-view';
 import { NewClientView } from './new-client-view';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -49,7 +50,10 @@ export function useFilterContext() {
 }
 
 export function LaporanKunjunganTabs() {
-  const visitedTargets = useQuery(api.crmTargets.getVisitedTargets);
+  const allCrmTargets = useAllCrmTargets();
+  const visitedTargets = allCrmTargets?.filter(
+    (t) => t.statusKunjungan === 'VISITED' && t.tanggalKunjungan
+  );
   const newClients = useQuery(api.crmNewClient.getAllNewClients);
 
   const [activeTab, setActiveTab] = useState("existing");

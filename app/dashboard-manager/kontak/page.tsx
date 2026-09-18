@@ -4,6 +4,7 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
+import { useAllCrmTargets } from '@/hooks/use-all-crm-targets';
 import {
   ColumnDef, ColumnFiltersState, ExpandedState, FilterFn, GroupingState,
   PaginationState, SortingState, VisibilityState, Column, Row,
@@ -383,7 +384,7 @@ export default function KontakManagementPage() {
   const isMobile = useMediaQuery("(max-width: 768px)");
 
   // ── Convex ────────────────────────────────────────────────────────────────
-  const crmTargets = useQuery(api.crmTargets.getCrmTargets);
+  const crmTargets = useAllCrmTargets();
   const updateTargetMutation = useMutation(api.crmTargets.updateCrmTarget);
   const isLoading = crmTargets === undefined;
 

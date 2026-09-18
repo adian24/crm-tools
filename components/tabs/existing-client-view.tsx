@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
+import { useAllCrmTargets } from '@/hooks/use-all-crm-targets';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -110,7 +111,10 @@ const MONTHS = [
 ];
 
 export function ExistingClientView() {
-  const visitedTargets = useQuery(api.crmTargets.getVisitedTargets);
+  const allCrmTargets = useAllCrmTargets();
+  const visitedTargets = allCrmTargets?.filter(
+    (t) => t.statusKunjungan === 'VISITED' && t.tanggalKunjungan
+  );
   const updateCrmTargetMutation = useMutation(api.crmTargets.updateCrmTarget);
   const deleteCrmTargetMutation = useMutation(api.crmTargets.deleteCrmTarget);
   const { user } = useCurrentUser();

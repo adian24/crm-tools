@@ -2,7 +2,7 @@ import { Id } from "@/convex/_generated/dataModel";
 
 export interface CrmTarget {
   _id: Id<"crmTargets">;
-  tahun?: string;
+  tahun: string;
   bulanExpDate: string;
   produk: string;
   picCrm: string;
@@ -35,9 +35,9 @@ export interface CrmTarget {
   lossValue?: number;
   cashback?: number;
   terminPembayaran?: string;
-  statusInvoice?: string;
-  statusPembayaran?: string;
-  statusKomisi?: string;
+  statusInvoice?: "Terbit" | "Belum Terbit";
+  statusPembayaran?: "Lunas" | "Belum Lunas" | "Sudah DP";
+  statusKomisi?: "Sudah Diajukan" | "Belum Diajukan" | "Tidak Ada";
   statusSertifikat?: string;
   nomorSertifikat?: string;
   tanggalKunjungan?: string;

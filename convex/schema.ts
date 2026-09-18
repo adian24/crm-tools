@@ -190,7 +190,8 @@ export default defineSchema({
     .index("by_kota", ["kota"])
     .index("by_tanggalKunjungan", ["tanggalKunjungan"])
     .index("by_created_by", ["created_by"])
-    .index("by_createdAt", ["createdAt"]),
+    .index("by_createdAt", ["createdAt"])
+    .index("by_tahun_status", ["tahun", "status"]),
 
   // Table KPI Annual (1 KPI per tahun untuk divisi)
   kpiAnnual: defineTable({

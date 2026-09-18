@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Calendar, Building2, Loader2, Save, X, Plus, CheckCircle2, DollarSign } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { useAllCrmTargets } from '@/hooks/use-all-crm-targets';
 import masterAlasanData from '@/data/master-alasan.json';
 import { ImagePreviewDialog } from '@/components/image-preview-dialog';
 
@@ -49,7 +50,7 @@ const TambahKunjunganDialog = ({ open, onOpenChange, onSuccess }: TambahKunjunga
   const updateMutation = useMutation(api.crmTargets.updateCrmTarget);
 
   // Fetch all CRM targets for company selection
-  const allTargets = useQuery(api.crmTargets.getCrmTargets);
+  const allTargets = useAllCrmTargets();
 
   // Group targets by company
   const groupedCompanies = React.useMemo(() => {

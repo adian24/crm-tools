@@ -36,6 +36,7 @@ import { FilterBulanAuditSustain } from '@/components/filters/FilterBulanAuditSu
 import { FilterBulanAudit } from '@/components/filters/FilterBulanAudit';
 import { EditCrmDialog } from '@/components/crm-edit-dialog';
 import { CrmDataTable } from '@/components/crm-data-table';
+import { useAllCrmTargets } from '@/hooks/use-all-crm-targets';
 
 interface CrmTarget {
   _id: Id<"crmTargets">;
@@ -704,7 +705,7 @@ export default function CrmDataManagementPage() {
   const [activeFilterSheet, setActiveFilterSheet] = useState<string | null>(null);
   const [statsOpen, setStatsOpen] = useState(false);
   // Fetch CRM targets and user permissions
-  const crmTargets = useQuery(api.crmTargets.getCrmTargets);
+  const crmTargets = useAllCrmTargets();
   const allUsers = useQuery(api.auth.getAllUsers);
   const associates = useQuery(api.masterAssociate.getAssociates);
   const staffUsers = allUsers?.filter(user => user.role === 'staff') || [];

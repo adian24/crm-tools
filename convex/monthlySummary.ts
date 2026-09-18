@@ -45,10 +45,11 @@ export const getMultiYearMonthlyStats = query({
     }
 
     // ── Data 2026 dari crmTargets ─────────────────────────────────────────────
-    const crm2026 = await ctx.db.query("crmTargets").collect();
+    const crm2026 = await ctx.db
+      .query("crmTargets")
+      .withIndex("by_tahun_status", q => q.eq("tahun", "2026").eq("status", "DONE"))
+      .collect();
     for (const row of crm2026) {
-      if (row.tahun !== "2026") continue;
-      if (row.status !== "DONE") continue;
       if (kategori_produk && row.produk !== kategori_produk) continue;
       const bulan = BULAN_NORM[row.bulanExpDate?.toLowerCase().trim() ?? ""];
       if (!bulan || !result[bulan]) continue;
