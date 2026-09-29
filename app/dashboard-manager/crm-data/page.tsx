@@ -720,6 +720,7 @@ export default function CrmDataManagementPage() {
   // Get current user with role and permissions
   const [currentUser, setCurrentUser] = React.useState<any>(null);
   const [canEdit, setCanEdit] = React.useState(true);
+  const [canExport, setCanExport] = React.useState(true);
   const [canViewAll, setCanViewAll] = React.useState(true);
 
   React.useEffect(() => {
@@ -730,19 +731,22 @@ export default function CrmDataManagementPage() {
         setCurrentUser(parsedUser);
 
         // Check permissions based on role
-        // All STAFF are view-only (tidak bisa edit/delete/export)
+        // STAFF (DHA, MRC) can add/edit/delete their own data, but cannot export
         if (parsedUser.role === 'staff') {
-          setCanEdit(false);     // View-only mode
-          setCanViewAll(false);  // Hanya lihat data sendiri
+          setCanEdit(true);       // Bisa tambah, edit, hapus
+          setCanExport(false);    // Tidak bisa export
+          setCanViewAll(false);   // Hanya lihat data sendiri
         }
         // Admin and super_admin: full access
         else if (parsedUser.role === 'admin' || parsedUser.role === 'super_admin') {
           setCanEdit(true);
+          setCanExport(true);
           setCanViewAll(true);
         }
         // Manager: full access
         else if (parsedUser.role === 'manager') {
           setCanEdit(true);
+          setCanExport(true);
           setCanViewAll(true);
         }
 
@@ -754,6 +758,7 @@ export default function CrmDataManagementPage() {
     } catch (error) {
       console.error('Error parsing user data:', error);
       setCanEdit(true);
+      setCanExport(true);
       setCanViewAll(true);
     }
   }, []);
@@ -1983,9 +1988,9 @@ export default function CrmDataManagementPage() {
                 <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent">
                   CRM Data Management
                 </h1>
-                {currentUser?.role === 'staff' && !canEdit && (
+                {currentUser?.role === 'staff' && !canExport && (
                   <Badge variant="secondary" className="bg-amber-100 text-amber-700 border-amber-300 text-[10px]">
-                    👁️ View Only
+                    🚫 Export Dinonaktifkan
                   </Badge>
                 )}
                 {currentUser?.role === 'staff' && (
@@ -2481,8 +2486,8 @@ export default function CrmDataManagementPage() {
           )}
         </div>
 
-        {/* View-Only Mode Banner */}
-        {currentUser?.role === 'staff' && !canEdit && (
+        {/* No-Export Mode Banner */}
+        {currentUser?.role === 'staff' && !canExport && (
           <div className="mb-4 flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
             <div className="text-amber-600 dark:text-amber-400">
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2492,10 +2497,10 @@ export default function CrmDataManagementPage() {
             </div>
             <div className="flex-1">
               <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-                👁️ Mode View-Only - {currentUser?.name}
+                {currentUser?.name}
               </p>
               <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
-                Anda hanya dapat melihat data milik PIC CRM <span className="font-bold">{currentUser?.name}</span>. Tidak dapat menambah, mengedit, menghapus, atau mengekspor data.
+                Anda dapat menambah, mengedit, dan menghapus data milik PIC CRM <span className="font-bold">{currentUser?.name}</span>. Export data dinonaktifkan untuk akun ini.
               </p>
             </div>
           </div>
@@ -2559,7 +2564,7 @@ export default function CrmDataManagementPage() {
         <CrmDataTable
           data={filteredTargets}
           canEdit={canEdit}
-          showExport={canEdit}
+          showExport={canExport}
           onEdit={(target) => { setSelectedTarget(target); setIsEditDialogOpen(true); }}
           onDelete={async (id) => {
             await deleteTarget({ id: id as Id<"crmTargets"> });
